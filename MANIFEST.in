@@ -1,0 +1,2 @@
+include versioneer.py
+include fslash/_version.py

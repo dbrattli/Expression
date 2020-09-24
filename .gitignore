@@ -114,8 +114,8 @@ venv.bak/
 .spyderproject
 .spyproject
 
-# Rope project settings
-.ropeproject
+# Fslashe project settings
+.Fslasheproject
 
 # mkdocs documentation
 /site
@@ -127,3 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.coveragerc
