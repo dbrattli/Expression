@@ -6,8 +6,8 @@
 > Python :heart: F#
 
 FSlash aims to be a solid library for practical functional programming in
-Python inspired by [F#](https://fsharp.org). By practical we mean that the goal
-of the library if to enable you to do meaningful and productive functional
+Python 3.8+ inspired by [F#](https://fsharp.org). By practical we mean that the
+goal of the library if to enable you to do meaningful and productive functional
 programming in Python instead of being a [Monad
 tutorial](https://github.com/dbrattli/OSlash).
 
@@ -23,6 +23,8 @@ like Python than C# and F# can also do a lot of things better than Python:
 - Strongly typed, if it compiles it usually works
 - Type inference, the compiler deduces types during compilation
 - Expression based language
+
+> Better Python with F#
 
 FSlash tries to make a better Python by providing several functional
 features inspired by F# into Python. This serves two purposes:
@@ -123,7 +125,9 @@ def exists (x : Option[int]) -> bool:
      )
 ```
 
-Options as computational expressions:
+Options as computational expressions. Computational expressions in OSlash are
+implemented as coroutines using `yield`, `yield from` and `return` to consume
+or generate optional values:
 
 ```py
 from fslash import option
@@ -137,6 +141,35 @@ def fn():
 
 xs = fn()
 ```
+
+This enables railway oriented programming e.g if one part of the function
+yields from Nothing then the function is short-circuit and the next statements
+will never be executed. The end result of the expression will be `Nothing`.
+
+```py
+from fslash import option
+
+@option
+def fn():
+     x = yield from Nothing # or function returning Nothing
+
+     # -- The rest will never be executed --
+     y = yield from Some(43)
+
+     return x + y
+
+xs = fn()
+assert xs is Nothing
+```
+
+### Results
+
+TBW.
+
+
+### Sequences
+
+TBW.
 
 ## Resources
 
