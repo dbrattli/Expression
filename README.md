@@ -56,6 +56,13 @@ For a long time I'm been wanting to make a "bridge" between these two worlds
 and got inspired to write this library after watching "F# as a Better Python" -
 Phillip Carter - NDC Oslo 2020 (https://www.youtube.com/watch?v=_QnbV6CAWXc).
 
+I named the project FSlash since it's an F# inspired version of my previously
+written [OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I
+ported a number of Haskell abstractions to Python. I never felt that OSlash was
+really practically usable in Python, but F# is much closer to Python than
+Haskell, so it makes more sense to try and make a functional library inspired
+by F# instead.
+
 ## Goals
 
 - The resulting code should look and feel like Python. We want to make a
