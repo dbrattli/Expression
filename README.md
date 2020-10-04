@@ -98,11 +98,26 @@ we go along.
   - result - an error handling world for working with result values
 - Pattern matching - provided by [Pampy](https://github.com/santinic/pampy).
 
+
+### Pipelining
+
+OSlash provides a `pipe` function similar to `|>` in F#. We don't want to
+overload any Python operators e.g `|` so `pipe` is a plain function taking
+N-arguments so you can pipe a value though any number of functions.
+
+```py
+gn = lambda g: g * y
+fn = lambda x: x + z
+value = pipe(x, fn, gn)
+
+assert(value == gn(fn(x)))
+```
+
 ### Options
 
 The option type in is used when an actual value might not exist for a named
 value or variable. An option has an underlying type and can hold a value of
-that type, or it might not have a value.
+that type (`Some(value)`), or it might not have a value (`Nothing`).
 
 ```py
 from fslash import Some, Nothing
@@ -145,6 +160,7 @@ xs = fn()
 This enables railway oriented programming e.g if one part of the function
 yields from Nothing then the function is short-circuit and the next statements
 will never be executed. The end result of the expression will be `Nothing`.
+Thus results can either be `Ok(value)` or `Error(error_value)`.
 
 ```py
 from fslash import option
@@ -164,8 +180,8 @@ assert xs is Nothing
 
 ### Results
 
-TBW.
-
+The `Result[T,TError]` type lets you write error-tolerant code that can be composed. Result works similar to `Option` but lets you define the
+value used for errors, e.g an exception type or similar. This is great when you want to know why some operation failed (not just `Nothing`).
 
 ### Sequences
 
