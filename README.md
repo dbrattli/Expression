@@ -96,6 +96,48 @@ we go along.
   - result - an error handling world for working with result values
 - Pattern matching - provided by [Pampy](https://github.com/santinic/pampy).
 
+### Options
+
+The option type in is used when an actual value might not exist for a named
+value or variable. An option has an underlying type and can hold a value of
+that type, or it might not have a value.
+
+```py
+from fslash import Some, Nothing
+
+def keep_positive(a: int) -> Option[int]:
+    if a > 0:
+        return Some(a)
+    else:
+        return Nothing
+```
+
+```py
+from pampy import match
+
+def exists (x : Option[int]) -> bool:
+     return match(
+       x,
+       Some, lambda some: True
+       Nothing, False
+     )
+```
+
+Options as computational expressions:
+
+```py
+from fslash import option
+
+@option
+def fn():
+     x = yield 42
+     y = yield from Some(43)
+
+     return x + y
+
+xs = fn()
+```
+
 ## Resources
 
 - F# (http://fsharp.org)
