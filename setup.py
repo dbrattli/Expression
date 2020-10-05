@@ -35,7 +35,7 @@ setup(
     ],
     install_requires=[],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'hypothesis', 'pampy'],
+    tests_require=['pytest', 'pytest-cov', 'hypothesis', 'pampy'],
 
     packages=['fslash'],
     package_dir={'fslash': 'fslash'}

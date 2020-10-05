@@ -1,2 +1,4 @@
 pampy
 hypothesis
+pytest
+pytest-cov
