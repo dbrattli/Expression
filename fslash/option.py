@@ -1,8 +1,6 @@
 from abc import abstractmethod
 from typing import Generic, Generator, Optional, TypeVar, Callable, List, Iterable, Iterator, Coroutine, cast, Union
 
-from pampy import match, _
-
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 
@@ -35,26 +33,33 @@ class OptionModule(Generic[TSource]):
             return option.or_else(if_none)
         return _or_else
 
-    @classmethod
-    def to_list(cls) -> 'Callable[[Option[TSource]], List[TSource]]':
+    @staticmethod
+    def to_list() -> 'Callable[[Option[TSource]], List[TSource]]':
         def _to_list(option: Option[TSource]) -> List[TSource]:
             return option.to_list()
         return _to_list
 
-    @classmethod
-    def to_seq(cls, option: "Option[TSource]") -> Iterable[TSource]:
-        return match(option, Some, lambda some: option, _, [])  # type: ignore
+    @staticmethod
+    def to_seq() -> 'Callable[[Option[TSource]], Iterable[TSource]]':
+        def _to_seq(option: Option[TSource]) -> Iterable[TSource]:
+            return option.to_list()
+        return _to_seq
 
-    @classmethod
-    def is_some(cls, option: "Option[TSource]") -> bool:
-        return match(option, Some, True, _, False)  # type: ignore
+    @staticmethod
+    def is_some() -> 'Callable[[Option[TSource]], bool]':
+        def _is_some(option: "Option[TSource]") -> bool:
+            return option.is_some()
+        return _is_some
 
-    @classmethod
-    def is_none(cls, option: "Option[TSource]") -> bool:
-        return not cls.is_some(option)
+    @staticmethod
+    def is_none() -> 'Callable[[Option[TSource]], bool]':
+        def _is_none(option: "Option[TSource]") -> bool:
+            return option.is_none()
+        return _is_none
 
 
 class Option(Iterable[TSource]):
+    """Option abstract base class."""
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -> 'Option[TResult]':  # noqa: T484
@@ -93,6 +98,8 @@ class Option(Iterable[TSource]):
 
 
 class Some(Option[TSource]):
+    """The Some option case class."""
+
     def __init__(self, value: TSource) -> None:
         self._value = value
 
@@ -138,9 +145,10 @@ class Some(Option[TSource]):
 
 
 class _None(Option[TSource]):
-    """Do not use.
+    """The Some option case class.
 
-    Use the singleton None_ instead."""
+    Do not use. Use the singleton None_ instead.
+    """
 
     def is_some(self) -> bool:
         return False
@@ -215,7 +223,7 @@ def option(
             Generator[TSource, Optional[TSource], Optional[Option[TSource]]],
             # or simply just an Option
             Option[TSource]
-        ],
+        ]
     ]
 ) -> Callable[..., Option[TSource]]:
     """Option builder.
@@ -229,7 +237,7 @@ def option(
         returns either a coroutine, generator or an option.
 
     Returns:
-        An Option object.
+        An `Option` object.
     """
 
     # This is a mess, but we basically just want to convert plain functions with a return statement into coroutines.

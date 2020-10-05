@@ -2,10 +2,11 @@
 
 ![Python package](https://github.com/dbrattli/fslash/workflows/Python%20package/badge.svg)
 ![Upload Python Package](https://github.com/dbrattli/fslash/workflows/Upload%20Python%20Package/badge.svg)
+[![codecov](https://codecov.io/gh/dbrattli/FSlash/branch/master/graph/badge.svg)](https://codecov.io/gh/dbrattli/FSlash)
 
 > Python :heart: F#
 
-FSlash aims to be a solid library for practical functional programming in
+FSlash (F/) aims to be a solid library for practical functional programming in
 Python 3.8+ inspired by [F#](https://fsharp.org). By practical we mean that the
 goal of the library if to enable you to do meaningful and productive functional
 programming in Python instead of being a [Monad
@@ -30,8 +31,8 @@ FSlash tries to make a better Python by providing several functional
 features inspired by F# into Python. This serves two purposes:
 
 - Make it easier for Python programmers to learn F# by starting out in a
-  programming language they already know. Then get inspired to try out
-  F# by itself.
+  programming language they already know. Then get inspired to [try out
+  F#](https://aka.ms/fsharphome) by itself.
 - Make it easier for F# developers to use Python when needed, and re-use many
   of the concepts and abstractions that they already know and love.
 
@@ -41,6 +42,15 @@ such as [Railway oriented
 programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
 and predictable error handling. Pipelining for workflows, computational
 expressions, etc.
+
+## Getting Started
+
+You can install the latest `fslash` from PyPI by running `pip` (or `pip3`).
+Note that `fslash` only works for Python 3.8+.
+
+```sh
+pip install fslash
+```
 
 ## Why
 
@@ -54,9 +64,12 @@ expressions, etc.
   for Python. So I already know that Python can do anything that F# can. The
   challenge is how to make it look nice (syntactic sugar).
 
-For a long time I'm been wanting to make a "bridge" between these two worlds
-and got inspired to write this library after watching "F# as a Better Python" -
-Phillip Carter - NDC Oslo 2020 (https://www.youtube.com/watch?v=_QnbV6CAWXc).
+For a long time I'm been wanting to make a "bridge" between these two languages
+and got inspired to write this library after watching "[F# as a Better
+Python](https://www.youtube.com/watch?v=_QnbV6CAWXc)" - Phillip Carter - NDC
+Oslo 2020. Doing a transpiler like [Fable](https://fable.io) for Python is one
+option, but a Python library may give a lower barrier and a better introduction
+to existing Python programmers.
 
 I named the project FSlash since it's an F# inspired version of my previously
 written [OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I
@@ -82,28 +95,29 @@ by F# instead.
 
 ## Non Goals
 
-- Provide all features of F# and .NET to Python, see [Supported Features](https://github.com/dbrattli/fslash#supported-features).
+- Provide all features of F# and .NET to Python, see [Supported
+  Features](https://github.com/dbrattli/fslash#supported-features).
 
 ## Supported features
 
 FSlash will never provide you with all the features of F# and .NET. We are
-providing a few of the features we think are useful, and will add more on-demand as
-we go along.
+providing a few of the features we think are useful, and will add more
+on-demand as we go along.
 
 - Options - for optional stuff and better `None` handling.
-- Result - for better error handling and enables railway-oriented programming in Python.
+- Result - for better error handling and enables railway-oriented programming
+  in Python.
 - Sequences - a better [itertools](https://docs.python.org/3/library/itertools.html)
 - Computational Expressions:
   - option - an optional world for working with optional values
   - result - an error handling world for working with result values
 - Pattern matching - provided by [Pampy](https://github.com/santinic/pampy).
 
-
 ### Pipelining
 
 OSlash provides a `pipe` function similar to `|>` in F#. We don't want to
-overload any Python operators e.g `|` so `pipe` is a plain function taking
-N-arguments so you can pipe a value though any number of functions.
+overload any Python operators e.g `|` so `pipe` is a plain old function taking
+N-arguments and thus lets you pipe a value though any number of functions.
 
 ```py
 gn = lambda g: g * y
@@ -115,9 +129,9 @@ assert(value == gn(fn(x)))
 
 ### Options
 
-The option type in is used when an actual value might not exist for a named
+The option type is used when an actual value might not exist for a named
 value or variable. An option has an underlying type and can hold a value of
-that type (`Some(value)`), or it might not have a value (`Nothing`).
+that type `Some(value)`, or it might not have the value `Nothing`.
 
 ```py
 from fslash import Some, Nothing
@@ -134,15 +148,16 @@ from pampy import match
 
 def exists (x : Option[int]) -> bool:
      return match(
-       x,
-       Some, lambda some: True
-       Nothing, False
+          x,
+          Some, lambda some: True
+          Nothing, False
      )
 ```
 
-Options as computational expressions. Computational expressions in OSlash are
-implemented as coroutines using `yield`, `yield from` and `return` to consume
-or generate optional values:
+Options as decorators for computational expressions. Computational expressions
+in OSlash are implemented as coroutines ([enhanced
+generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`, `yield from`
+and `return` to consume or generate optional values:
 
 ```py
 from fslash import option
@@ -157,19 +172,21 @@ def fn():
 xs = fn()
 ```
 
-This enables railway oriented programming e.g if one part of the function
-yields from Nothing then the function is short-circuit and the next statements
-will never be executed. The end result of the expression will be `Nothing`.
-Thus results can either be `Ok(value)` or `Error(error_value)`.
+This enables ["railway oriented
+programming"](https://fsharpforfunandprofit.com/rop/) e.g if one part of the
+function yields from `Nothing` then the function is side-tracked
+(short-circuit) and the following statements will never be executed. The end
+result of the expression will be `Nothing`. Thus results from such a option
+decorated function can either be `Ok(value)` or `Error(error_value)`.
 
 ```py
 from fslash import option
 
 @option
 def fn():
-     x = yield from Nothing # or function returning Nothing
+     x = yield from Nothing # or a function returning Nothing
 
-     # -- The rest will never be executed --
+     # -- The rest of the function will never be executed --
      y = yield from Some(43)
 
      return x + y
@@ -180,12 +197,14 @@ assert xs is Nothing
 
 ### Results
 
-The `Result[T,TError]` type lets you write error-tolerant code that can be composed. Result works similar to `Option` but lets you define the
-value used for errors, e.g an exception type or similar. This is great when you want to know why some operation failed (not just `Nothing`).
+The `Result[T,TError]` type lets you write error-tolerant code that can be
+composed. Result works similar to `Option` but lets you define the value used
+for errors, e.g an exception type or similar. This is great when you want to
+know why some operation failed (not just `Nothing`).
 
 ### Sequences
 
-TBW.
+Contains operations for working with iterables.
 
 ## Resources
 
@@ -196,6 +215,14 @@ TBW.
 - Pampy: Pattern Matching for Python (https://github.com/santinic/pampy)
 - OSlash (https://github.com/dbrattli/OSlash)
 - RxPY (https://github.com/ReactiveX/RxPY)
+- PEP 342 -- Coroutines via Enhanced Generators (https://www.python.org/dev/peps/pep-0342/)
+
+## How-to Contribute
+
+You are welcome to contribute with PRs. Any code should be aligned with F#
+modules, functions and documentation. Code, doc-strings and comments should also
+follow the [Google Python Style
+Guide](https://google.github.io/styleguide/pyguide.html).
 
 ## License
 

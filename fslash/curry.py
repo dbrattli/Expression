@@ -21,3 +21,6 @@ def curried(fn):
         except TypeError:
             return partial(fn, *args, **kw)
     return wrapper
+
+
+__all__ = ["curried"]

@@ -73,13 +73,14 @@ def compose(*funcs: Callable) -> Callable:  # type: ignore
     functions are composed left to right. A composition of zero
     functions gives back the identity function.
 
-    compose()(x) == x
-    compose(f)(x) == f(x)
-    compose(f, g)(x) == g(f(x))
-    compose(f, g, h)(x) == h(g(f(x)))
+    >>> compose()(x) == x
+    >>> compose(f)(x) == f(x)
+    >>> compose(f, g)(x) == g(f(x))
+    >>> compose(f, g, h)(x) == h(g(f(x)))
     ...
 
-    Returns the composed function.
+    Returns:
+        The composed function.
     """
 
     def _compose(source: Any) -> Any:

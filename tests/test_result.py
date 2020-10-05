@@ -2,14 +2,14 @@ import pytest
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash import Result, Ok, Error, result
+from fslash import Result, Ok, Error, result, TResult, pipe
 from .utils import CustomException, throw
 
 
 def test_result_ok():
     xs = Ok(42)
 
-    assert(isinstance(xs, Result))
+    assert(isinstance(xs, TResult))
     res = match(xs,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
@@ -19,7 +19,7 @@ def test_result_ok():
 def test_result_error():
     xs = Error(CustomException("d'oh!"))
 
-    assert(isinstance(xs, Result))
+    assert(isinstance(xs, TResult))
     with pytest.raises(CustomException):
         match(xs,
               Ok, lambda ok: ok.value,
@@ -27,7 +27,19 @@ def test_result_error():
 
 
 @given(st.integers(), st.integers())
-def test_result_map(x, y):
+def test_result_map_piped(x, y):
+    xs = Ok(x)
+    mapper = lambda x: x + y
+
+    ys = pipe(xs, Result.map(mapper))
+    res = match(ys,
+                Ok, lambda ok: ok.value,
+                Error, lambda error: throw(error.error))
+    assert(res == mapper(x))
+
+
+@given(st.integers(), st.integers())
+def test_result_map_fluent(x, y):
     xs = Ok(x)
     mapper = lambda x: x + y
 
@@ -49,6 +61,18 @@ def test_result_chained_map(x, y):
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
     assert(res == mapper2(mapper1(x)))
+
+
+@given(st.integers(), st.integers())
+def test_result_bind_piped(x, y):
+    xs = Ok(x)
+    mapper = lambda x: Ok(x + y)
+
+    ys = pipe(xs, Result.bind(mapper))
+    res = match(ys,
+                Ok, lambda ok: ok.value,
+                Error, lambda error: throw(error.error))
+    assert(Ok(res) == mapper(x))
 
 
 def test_result_builder_zero():

@@ -25,6 +25,8 @@ class ResultModule(Generic[TSource, TError]):
 
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
+    """The result abstract base class."""
+
     @abstractmethod
     def __iter__(self) -> Iterator[TSource]:
         raise NotImplementedError
@@ -37,11 +39,16 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     def bind(self, mapper: Callable[[TSource], "Result[TResult, TError]"]) -> "Result[TResult, TError]":
         raise NotImplementedError
 
+    def __eq__(self, other):
+        raise NotImplementedError
+
     def __repr__(self):
         return str(self)
 
 
 class Ok(Result[TSource, TError]):
+    """The Ok result case class."""
+
     def __init__(self, value: TSource) -> None:
         self._value = value
 
@@ -58,6 +65,11 @@ class Ok(Result[TSource, TError]):
     def map_error(self, mapper: Callable[[TError], TResult]) -> Result[TSource, TResult]:
         return Ok(self._value)
 
+    def __eq__(self, other):
+        if isinstance(other, Ok):
+            return self.value == other.value
+        return False
+
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for Ok case."""
         return (yield self._value)
@@ -67,6 +79,8 @@ class Ok(Result[TSource, TError]):
 
 
 class Error(Result[TSource, TError]):
+    """The Error result case class."""
+
     def __init__(self, error: TError) -> None:
         self._error = error
 
@@ -82,6 +96,11 @@ class Error(Result[TSource, TError]):
 
     def map_error(self, mapper: Callable[[TError], TResult]) -> Result[TSource, TResult]:
         return Error(mapper(self._error))
+
+    def __eq__(self, other):
+        if isinstance(other, Error):
+            return self.error == other.error
+        return False
 
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for Error case."""

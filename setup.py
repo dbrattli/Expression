@@ -33,9 +33,9 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    install_requires=['pampy'],
+    install_requires=[],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'hypothesis'],
+    tests_require=['pytest', 'hypothesis', 'pampy'],
 
     packages=['fslash'],
     package_dir={'fslash': 'fslash'}

@@ -1,22 +1,23 @@
-from fslash import Option, TOption, Some, Nothing, pipe, option
 from hypothesis import given, strategies as st
 from pampy import match, _
+
+from fslash import Option, TOption, Some, Nothing, pipe, option
 
 
 def test_option_some():
     xs = Some(42)
 
     assert isinstance(xs, TOption)
-    assert pipe(xs, Option.is_some) is True
-    assert pipe(xs, Option.is_none) is False
+    assert pipe(xs, Option.is_some()) is True
+    assert pipe(xs, Option.is_none()) is False
 
 
 def test_option_none():
     xs = Nothing
 
     assert isinstance(xs, TOption)
-    assert pipe(xs, Option.is_some) is False
-    assert pipe(xs, Option.is_none) is True
+    assert pipe(xs, Option.is_some()) is False
+    assert pipe(xs, Option.is_none()) is True
 
 
 def test_option_none_equals_none():
