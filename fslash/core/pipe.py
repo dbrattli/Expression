@@ -1,6 +1,8 @@
-from typing import TypeVar, Callable, overload
+from typing import TypeVar, Callable, Tuple, overload
 
 from .compose import compose
+from .misc import starid
+
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -22,14 +24,14 @@ def pipe(value: A, fn1: Callable[[A], B]) -> B:
 
 
 @overload
-def pipe(value: A, fn2: Callable[[A], B], fn1: Callable[[B], C]) -> C:
+def pipe(value: A, fn1: Callable[[A], B], fn2: Callable[[B], C]) -> C:
     ...
 
 
 @overload
 def pipe(
     value: A,
-    fn3: Callable[[A], B], fn2: Callable[[B], C], fn1: Callable[[C], D]
+    fn1: Callable[[A], B], fn2: Callable[[B], C], fn3: Callable[[C], D]
 ) -> D:
     ...
 
@@ -37,10 +39,10 @@ def pipe(
 @overload
 def pipe(
     value: A,
-    fn4: Callable[[A], B],
-    fn3: Callable[[B], C],
-    fn2: Callable[[C], D],
-    fn1: Callable[[D], E],
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
 ) -> E:
     ...
 
@@ -48,11 +50,11 @@ def pipe(
 @overload
 def pipe(
     value: A,
-    fn5: Callable[[A], B],
-    fn4: Callable[[B], C],
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
     fn3: Callable[[C], D],
-    fn2: Callable[[D], E],
-    fn1: Callable[[E], F],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
 ) -> F:
     ...
 
@@ -84,4 +86,51 @@ def pipe(x, *fns):  # type: ignore
     return compose(*fns)(x)  # type: ignore
 
 
-__all__ = ["pipe"]
+@overload
+def pipe2(value: Tuple[A, B]) -> Tuple[A, B]:
+    ...
+
+
+@overload
+def pipe2(value: Tuple[A, B], fn1: Callable[[A, B], C]) -> C:
+    ...
+
+
+@overload
+def pipe2(value: Tuple[A, B], fn1: Callable[[A, B], C], fn2: Callable[[C], D]) -> D:
+    ...
+
+
+@overload
+def pipe2(
+    value: Tuple[A, B],
+    fn1: Callable[[A, B], C], fn2: Callable[[C], D], fn3: Callable[[D], E]
+) -> D:
+    ...
+
+
+def pipe2(args, *fns):
+    return starpipe(args, *fns)
+
+
+def pipe3(args, *fns):
+    return starpipe(args, *fns)
+
+
+def starpipe(args, *fns):  # type: ignore
+    """Functional pipeN (||>, ||>, |||>, etc)
+
+    Allows the use of function arguments on the left side of the function.
+
+    Example:
+        starpipe((x, y), fn) == fn(x, y)  # Same as (x, y) ||> fn
+        starpipe((x, y), fn, gn) == gn(fn(x))  # Same as (x, y) ||> fn |> gn
+        ...
+    """
+
+    fn = fns[0] if len(fns) else starid
+
+    return compose(*fns[1:])(fn(*args))  # type: ignore
+
+
+__all__ = ["pipe", "pipe2", "pipe3", "starpipe"]

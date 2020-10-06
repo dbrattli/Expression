@@ -1,5 +1,5 @@
 from hypothesis import given, strategies as st
-from fslash.core import pipe
+from fslash.core import pipe, pipe2
 
 
 @given(st.integers())
@@ -21,3 +21,24 @@ def test_pipe_fn_gn(x, y, z):
     value = pipe(x, fn, gn)
 
     assert value == gn(fn(x))
+
+
+@given(st.integers(), st.integers())
+def test_pipe2_id(x, y):
+    value = pipe2((x, y))
+    assert value == (x, y)
+
+
+@given(st.integers(), st.integers())
+def test_pipe2_fn(x, y):
+    value = pipe2((x, y), lambda x, y: x + y)
+    assert value == x + y
+
+
+@given(st.integers(), st.integers(), st.integers())
+def test_pipe2_fn_gn(x, y, z):
+    gn = lambda g: g * y
+    fn = lambda x, y: x + y
+    value = pipe2((x, y), fn, gn)
+
+    assert value == gn(fn(x, y))

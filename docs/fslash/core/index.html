@@ -32,14 +32,14 @@ Core abstractions such as pipes, options and results.
 &#34;&#34;&#34;
 
 from .compose import compose
-from .pipe import pipe
+from .pipe import pipe, pipe2, pipe3
 from .curry import curried
 from .option import Option as TOption, OptionModule as Option, Some, Nothing
 from .result import Result as TResult, ResultModule as Result, Ok, Error
 
 
 __all__ = [
-    &#39;compose&#39;, &#39;pipe&#39;, &#39;curried&#39;,
+    &#39;compose&#39;, &#39;pipe&#39;, &#39;pipe2&#39;, &#39;pipe3&#39;, &#39;curried&#39;,
     &#39;Option&#39;, &#39;TOption&#39;, &#39;Some&#39;, &#39;Nothing&#39;,
     &#39;Result&#39;, &#39;TResult&#39;, &#39;Ok&#39;, &#39;Error&#39;,
 ]</code></pre>
@@ -49,6 +49,10 @@ __all__ = [
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
 <dt><code class="name"><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="fslash.core.misc" href="misc.html">fslash.core.misc</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -179,6 +183,32 @@ pipe(x, fn, gn) == gn(fn(x))
     &#34;&#34;&#34;
 
     return compose(*fns)(x)  # type: ignore</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.pipe2"><code class="name flex">
+<span>def <span class="ident">pipe2</span></span>(<span>args, *fns)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe2(args, *fns):
+    return starpipe(args, *fns)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.pipe3"><code class="name flex">
+<span>def <span class="ident">pipe3</span></span>(<span>args, *fns)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe3(args, *fns):
+    return starpipe(args, *fns)</code></pre>
 </details>
 </dd>
 </dl>
@@ -475,11 +505,15 @@ def value(self):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#39;Option[T2]&#39;) -&gt; &#39;Option[TResult]&#39;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:
         raise NotImplementedError
 
     @abstractmethod
@@ -534,7 +568,7 @@ def value(self):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -578,7 +612,21 @@ def is_some(cls) -&gt; bool:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Option.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>], other: <a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[T2]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#39;Option[T2]&#39;) -&gt; &#39;Option[TResult]&#39;:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -655,6 +703,12 @@ sequence as the only argument.</p></div>
         def _map(option: Option[TSource]) -&gt; &#34;Option[TResult]&#34;:
             return option.map(mapper)
         return _map
+
+    @staticmethod
+    def map2(mapper: Callable[[T1, T2], TResult]) -&gt; &#34;Callable[[Option[T1], Option[T2]], Option[TResult]]&#34;:
+        def _map2(opt1: Option[T1], opt2: Option[T2]) -&gt; &#34;Option[TResult]&#34;:
+            return opt1.map2(mapper, opt2)
+        return _map2
 
     @staticmethod
     def bind(mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Callable[[Option[TSource]], Option[TResult]]&#39;:
@@ -799,6 +853,22 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Option[TSourc
     def _map(option: Option[TSource]) -&gt; &#34;Option[TResult]&#34;:
         return option.map(mapper)
     return _map</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.OptionModule.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>mapper: Callable[[~T1, ~T2], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> Callable[[<a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~T1], <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~T2]], <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def map2(mapper: Callable[[T1, T2], TResult]) -&gt; &#34;Callable[[Option[T1], Option[T2]], Option[TResult]]&#34;:
+    def _map2(opt1: Option[T1], opt2: Option[T2]) -&gt; &#34;Option[TResult]&#34;:
+        return opt1.map2(mapper, opt2)
+    return _map2</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.OptionModule.of_obj"><code class="name flex">
@@ -1142,6 +1212,11 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSourc
     def map(self, mapper: Callable[[TSource], TResult]):
         return Some(mapper(self._value))
 
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+        if isinstance(other, Some):
+            return Some(mapper(self._value, other.value))
+        return Nothing
+
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
         return mapper(self._value)
 
@@ -1256,6 +1331,21 @@ def value(self):
     return Some(mapper(self._value))</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.Some.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>], other: <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~T2]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+    if isinstance(other, Some):
+        return Some(mapper(self._value, other.value))
+    return Nothing</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.Some.or_else"><code class="name flex">
 <span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]</span>
 </code></dt>
@@ -1315,6 +1405,7 @@ def value(self):
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></li>
+<li><code><a title="fslash.core.misc" href="misc.html">fslash.core.misc</a></code></li>
 <li><code><a title="fslash.core.option" href="option.html">fslash.core.option</a></code></li>
 <li><code><a title="fslash.core.result" href="result.html">fslash.core.result</a></code></li>
 </ul>
@@ -1324,6 +1415,8 @@ def value(self):
 <li><code><a title="fslash.core.compose" href="#fslash.core.compose">compose</a></code></li>
 <li><code><a title="fslash.core.curried" href="#fslash.core.curried">curried</a></code></li>
 <li><code><a title="fslash.core.pipe" href="#fslash.core.pipe">pipe</a></code></li>
+<li><code><a title="fslash.core.pipe2" href="#fslash.core.pipe2">pipe2</a></code></li>
+<li><code><a title="fslash.core.pipe3" href="#fslash.core.pipe3">pipe3</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -1357,6 +1450,7 @@ def value(self):
 <li><code><a title="fslash.core.Option.is_none" href="#fslash.core.Option.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.Option.is_some" href="#fslash.core.Option.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.Option.map" href="#fslash.core.Option.map">map</a></code></li>
+<li><code><a title="fslash.core.Option.map2" href="#fslash.core.Option.map2">map2</a></code></li>
 <li><code><a title="fslash.core.Option.or_else" href="#fslash.core.Option.or_else">or_else</a></code></li>
 <li><code><a title="fslash.core.Option.to_list" href="#fslash.core.Option.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.Option.to_seq" href="#fslash.core.Option.to_seq">to_seq</a></code></li>
@@ -1369,6 +1463,7 @@ def value(self):
 <li><code><a title="fslash.core.OptionModule.is_none" href="#fslash.core.OptionModule.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.OptionModule.is_some" href="#fslash.core.OptionModule.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.OptionModule.map" href="#fslash.core.OptionModule.map">map</a></code></li>
+<li><code><a title="fslash.core.OptionModule.map2" href="#fslash.core.OptionModule.map2">map2</a></code></li>
 <li><code><a title="fslash.core.OptionModule.of_obj" href="#fslash.core.OptionModule.of_obj">of_obj</a></code></li>
 <li><code><a title="fslash.core.OptionModule.of_optional" href="#fslash.core.OptionModule.of_optional">of_optional</a></code></li>
 <li><code><a title="fslash.core.OptionModule.or_else" href="#fslash.core.OptionModule.or_else">or_else</a></code></li>
@@ -1399,6 +1494,7 @@ def value(self):
 <li><code><a title="fslash.core.Some.is_none" href="#fslash.core.Some.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.Some.is_some" href="#fslash.core.Some.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.Some.map" href="#fslash.core.Some.map">map</a></code></li>
+<li><code><a title="fslash.core.Some.map2" href="#fslash.core.Some.map2">map2</a></code></li>
 <li><code><a title="fslash.core.Some.or_else" href="#fslash.core.Some.or_else">or_else</a></code></li>
 <li><code><a title="fslash.core.Some.to_list" href="#fslash.core.Some.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.Some.to_seq" href="#fslash.core.Some.to_seq">to_seq</a></code></li>

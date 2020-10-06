@@ -31,6 +31,8 @@ from typing import Generic, Optional, TypeVar, Callable, List, Iterable, Iterato
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
+T1 = TypeVar(&#34;T1&#34;)
+T2 = TypeVar(&#34;T2&#34;)
 
 
 class OptionModule(Generic[TSource]):
@@ -47,6 +49,12 @@ class OptionModule(Generic[TSource]):
         def _map(option: Option[TSource]) -&gt; &#34;Option[TResult]&#34;:
             return option.map(mapper)
         return _map
+
+    @staticmethod
+    def map2(mapper: Callable[[T1, T2], TResult]) -&gt; &#34;Callable[[Option[T1], Option[T2]], Option[TResult]]&#34;:
+        def _map2(opt1: Option[T1], opt2: Option[T2]) -&gt; &#34;Option[TResult]&#34;:
+            return opt1.map2(mapper, opt2)
+        return _map2
 
     @staticmethod
     def bind(mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Callable[[Option[TSource]], Option[TResult]]&#39;:
@@ -126,11 +134,15 @@ class Option(Iterable[TSource]):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#39;Option[T2]&#39;) -&gt; &#39;Option[TResult]&#39;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:
         raise NotImplementedError
 
     @abstractmethod
@@ -181,6 +193,11 @@ class Some(Option[TSource]):
     def map(self, mapper: Callable[[TSource], TResult]):
         return Some(mapper(self._value))
 
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+        if isinstance(other, Some):
+            return Some(mapper(self._value, other.value))
+        return Nothing
+
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
         return mapper(self._value)
 
@@ -230,6 +247,9 @@ class _None(Option[TSource]):
 
     def map(self, mapper: Callable[[TSource], TResult]):
         return self
+
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+        return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
         return Nothing
@@ -304,11 +324,15 @@ __all__ = [&#34;OptionModule&#34;, &#34;Option&#34;, &#34;Some&#34;, &#34;Nothin
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#39;Option[T2]&#39;) -&gt; &#39;Option[TResult]&#39;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:
         raise NotImplementedError
 
     @abstractmethod
@@ -363,7 +387,7 @@ __all__ = [&#34;OptionModule&#34;, &#34;Option&#34;, &#34;Some&#34;, &#34;Nothin
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Option[TResult]&#39;:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -407,7 +431,21 @@ def is_some(cls) -&gt; bool:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:  # noqa: T484
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#39;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.option.Option.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[T2]) ‑> <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#39;Option[T2]&#39;) -&gt; &#39;Option[TResult]&#39;:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -484,6 +522,12 @@ sequence as the only argument.</p></div>
         def _map(option: Option[TSource]) -&gt; &#34;Option[TResult]&#34;:
             return option.map(mapper)
         return _map
+
+    @staticmethod
+    def map2(mapper: Callable[[T1, T2], TResult]) -&gt; &#34;Callable[[Option[T1], Option[T2]], Option[TResult]]&#34;:
+        def _map2(opt1: Option[T1], opt2: Option[T2]) -&gt; &#34;Option[TResult]&#34;:
+            return opt1.map2(mapper, opt2)
+        return _map2
 
     @staticmethod
     def bind(mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Callable[[Option[TSource]], Option[TResult]]&#39;:
@@ -628,6 +672,22 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Option[TSourc
     def _map(option: Option[TSource]) -&gt; &#34;Option[TResult]&#34;:
         return option.map(mapper)
     return _map</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.option.OptionModule.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>mapper: Callable[[~T1, ~T2], ~TResult]) ‑> Callable[[<a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~T1], <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~T2]], <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def map2(mapper: Callable[[T1, T2], TResult]) -&gt; &#34;Callable[[Option[T1], Option[T2]], Option[TResult]]&#34;:
+    def _map2(opt1: Option[T1], opt2: Option[T2]) -&gt; &#34;Option[TResult]&#34;:
+        return opt1.map2(mapper, opt2)
+    return _map2</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.option.OptionModule.of_obj"><code class="name flex">
@@ -778,6 +838,11 @@ def to_seq() -&gt; &#39;Callable[[Option[TSource]], Iterable[TSource]]&#39;:
     def map(self, mapper: Callable[[TSource], TResult]):
         return Some(mapper(self._value))
 
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+        if isinstance(other, Some):
+            return Some(mapper(self._value, other.value))
+        return Nothing
+
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
         return mapper(self._value)
 
@@ -892,6 +957,21 @@ def value(self):
     return Some(mapper(self._value))</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.option.Some.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~T2]) ‑> <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+    if isinstance(other, Some):
+        return Some(mapper(self._value, other.value))
+    return Nothing</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.option.Some.or_else"><code class="name flex">
 <span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]) ‑> <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]</span>
 </code></dt>
@@ -961,6 +1041,9 @@ def value(self):
 
     def map(self, mapper: Callable[[TSource], TResult]):
         return self
+
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+        return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
         return Nothing
@@ -1057,6 +1140,19 @@ def value(self):
     return self</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.option._None.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~T2]) ‑> <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+    return Nothing</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.option._None.or_else"><code class="name flex">
 <span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]) ‑> <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]</span>
 </code></dt>
@@ -1127,6 +1223,7 @@ def value(self):
 <li><code><a title="fslash.core.option.Option.is_none" href="#fslash.core.option.Option.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.option.Option.is_some" href="#fslash.core.option.Option.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.option.Option.map" href="#fslash.core.option.Option.map">map</a></code></li>
+<li><code><a title="fslash.core.option.Option.map2" href="#fslash.core.option.Option.map2">map2</a></code></li>
 <li><code><a title="fslash.core.option.Option.or_else" href="#fslash.core.option.Option.or_else">or_else</a></code></li>
 <li><code><a title="fslash.core.option.Option.to_list" href="#fslash.core.option.Option.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.option.Option.to_seq" href="#fslash.core.option.Option.to_seq">to_seq</a></code></li>
@@ -1139,6 +1236,7 @@ def value(self):
 <li><code><a title="fslash.core.option.OptionModule.is_none" href="#fslash.core.option.OptionModule.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.option.OptionModule.is_some" href="#fslash.core.option.OptionModule.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.option.OptionModule.map" href="#fslash.core.option.OptionModule.map">map</a></code></li>
+<li><code><a title="fslash.core.option.OptionModule.map2" href="#fslash.core.option.OptionModule.map2">map2</a></code></li>
 <li><code><a title="fslash.core.option.OptionModule.of_obj" href="#fslash.core.option.OptionModule.of_obj">of_obj</a></code></li>
 <li><code><a title="fslash.core.option.OptionModule.of_optional" href="#fslash.core.option.OptionModule.of_optional">of_optional</a></code></li>
 <li><code><a title="fslash.core.option.OptionModule.or_else" href="#fslash.core.option.OptionModule.or_else">or_else</a></code></li>
@@ -1153,6 +1251,7 @@ def value(self):
 <li><code><a title="fslash.core.option.Some.is_none" href="#fslash.core.option.Some.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.option.Some.is_some" href="#fslash.core.option.Some.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.option.Some.map" href="#fslash.core.option.Some.map">map</a></code></li>
+<li><code><a title="fslash.core.option.Some.map2" href="#fslash.core.option.Some.map2">map2</a></code></li>
 <li><code><a title="fslash.core.option.Some.or_else" href="#fslash.core.option.Some.or_else">or_else</a></code></li>
 <li><code><a title="fslash.core.option.Some.to_list" href="#fslash.core.option.Some.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.option.Some.to_seq" href="#fslash.core.option.Some.to_seq">to_seq</a></code></li>
@@ -1166,6 +1265,7 @@ def value(self):
 <li><code><a title="fslash.core.option._None.is_none" href="#fslash.core.option._None.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.option._None.is_some" href="#fslash.core.option._None.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.option._None.map" href="#fslash.core.option._None.map">map</a></code></li>
+<li><code><a title="fslash.core.option._None.map2" href="#fslash.core.option._None.map2">map2</a></code></li>
 <li><code><a title="fslash.core.option._None.or_else" href="#fslash.core.option._None.or_else">or_else</a></code></li>
 <li><code><a title="fslash.core.option._None.to_list" href="#fslash.core.option._None.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.option._None.to_seq" href="#fslash.core.option._None.to_seq">to_seq</a></code></li>

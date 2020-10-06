@@ -3,6 +3,8 @@ from typing import Generic, Optional, TypeVar, Callable, List, Iterable, Iterato
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
 
 
 class OptionModule(Generic[TSource]):
@@ -19,6 +21,12 @@ class OptionModule(Generic[TSource]):
         def _map(option: Option[TSource]) -> "Option[TResult]":
             return option.map(mapper)
         return _map
+
+    @staticmethod
+    def map2(mapper: Callable[[T1, T2], TResult]) -> "Callable[[Option[T1], Option[T2]], Option[TResult]]":
+        def _map2(opt1: Option[T1], opt2: Option[T2]) -> "Option[TResult]":
+            return opt1.map2(mapper, opt2)
+        return _map2
 
     @staticmethod
     def bind(mapper: Callable[[TSource], 'Option[TResult]']) -> 'Callable[[Option[TSource]], Option[TResult]]':
@@ -98,11 +106,15 @@ class Option(Iterable[TSource]):
     """Option abstract base class."""
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -> 'Option[TResult]':  # noqa: T484
+    def map(self, mapper: Callable[[TSource], TResult]) -> 'Option[TResult]':
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], 'Option[TResult]']) -> 'Option[TResult]':  # noqa: T484
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: 'Option[T2]') -> 'Option[TResult]':
+        raise NotImplementedError
+
+    @abstractmethod
+    def bind(self, mapper: Callable[[TSource], 'Option[TResult]']) -> 'Option[TResult]':
         raise NotImplementedError
 
     @abstractmethod
@@ -153,6 +165,11 @@ class Some(Option[TSource]):
     def map(self, mapper: Callable[[TSource], TResult]):
         return Some(mapper(self._value))
 
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -> Option[TResult]:
+        if isinstance(other, Some):
+            return Some(mapper(self._value, other.value))
+        return Nothing
+
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
         return mapper(self._value)
 
@@ -202,6 +219,9 @@ class _None(Option[TSource]):
 
     def map(self, mapper: Callable[[TSource], TResult]):
         return self
+
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -> Option[TResult]:
+        return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
         return Nothing

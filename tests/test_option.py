@@ -1,7 +1,7 @@
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash.core import Option, TOption, Some, Nothing, pipe
+from fslash.core import Option, TOption, Some, Nothing, pipe, pipe2
 from fslash.builders import option
 
 
@@ -85,6 +85,19 @@ def test_option_none_map():
         Some, lambda some: False,
         _, True
     )
+
+
+@given(st.integers(), st.integers())
+def test_option_some_map2_piped(x, y):
+    xs = Some(x)
+    ys = Some(y)
+    zs = pipe2((xs, ys), Option.map2(lambda x, y: x + y))
+
+    assert match(
+        zs,
+        Some, lambda some: some.value,
+        _, False
+    ) == x + y
 
 
 def test_option_some_bind_fluent():
@@ -293,3 +306,25 @@ def test_option_builder_none_short_circuits():
         Some, lambda some: some.value,
         _, None
     ) is None
+
+
+"""
+Idea: for applicative
+def gather(a, b):
+    return a
+
+
+def test_option_builder_applicative():
+    @option
+    def fn():
+        x, y = yield from gather(Some(2), Some(43))
+
+        return x + y
+
+    xs = fn()
+    assert match(
+        xs,
+        Some, lambda some: some.value,
+        _, None
+    ) is None
+ """
