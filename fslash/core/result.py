@@ -28,10 +28,6 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     """The result abstract base class."""
 
     @abstractmethod
-    def __iter__(self) -> Iterator[TSource]:
-        raise NotImplementedError
-
-    @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -> "Result[TResult, TError]":
         raise NotImplementedError
 
@@ -40,6 +36,10 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
         raise NotImplementedError
 
     def __eq__(self, other):
+        raise NotImplementedError
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[TSource]:
         raise NotImplementedError
 
     def __repr__(self):

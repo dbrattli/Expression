@@ -130,6 +130,26 @@ def test_option_some_bind_piped():
     )
 
 
+def test_option_none_to_list():
+    xs = Nothing
+    assert xs.to_list() == []
+
+
+def test_option_some_to_list():
+    xs = Some(42)
+    assert xs.to_list() == [42]
+
+
+def test_option_none_to_str():
+    xs = Nothing
+    assert str(xs) == "Nothing"
+
+
+def test_option_some_to_str():
+    xs = Some(42)
+    assert str(xs) == f"Some {xs.value}"
+
+
 def test_option_none_is_none():
     xs = Nothing
     assert xs.is_none()
