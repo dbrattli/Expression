@@ -93,6 +93,7 @@ coroutines. Thus inside the coroutine the keywords <code>yield</code> and
 
     # This is a mess, but we basically just want to convert plain functions with a return statement into coroutines.
     gen = iter(cast(Iterable[TSource], fn()))
+    print(gen)
 
     def wrapper(*args, **kw) -&gt; Option[TSource]:
         done: List[bool] = []

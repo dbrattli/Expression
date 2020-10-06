@@ -1,5 +1,10 @@
 """
 Result module.
+
+The Result[TSource,TError] type lets you write error-tolerant code that
+can be composed. The Result type is typically used in monadic
+error-handling, which is often referred to as Railway-oriented
+Programming.
 """
 
 from abc import abstractmethod

@@ -171,6 +171,16 @@ def test_option_some_is_some():
     assert xs.is_some()
 
 
+def test_option_of_object_none():
+    xs = Option.of_obj(None)
+    assert xs.is_none()
+
+
+def test_option_of_object_value():
+    xs = Option.of_obj(42)
+    assert xs.is_some()
+
+
 def test_option_builder_zero():
     @option
     def fn():
@@ -212,17 +222,17 @@ def test_option_builder_return_some():
 
 
 def test_option_builder_return_none():
-    """FIXME: result should be Some(Nothing)"""
     @option
     def fn():
         return Nothing
+        yield
 
     xs = fn()
     assert match(
         xs,
         Some, lambda some: some.value,
         _, None
-    ) is None
+    ) is Nothing
 
 
 def test_option_builder_yield_from_some():

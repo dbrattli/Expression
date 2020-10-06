@@ -126,7 +126,7 @@ gn = lambda g: g * y
 fn = lambda x: x + z
 value = pipe(x, fn, gn)
 
-assert(value == gn(fn(x)))
+assert value == gn(fn(x))
 ```
 
 ### Options
