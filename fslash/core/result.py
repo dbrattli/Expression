@@ -8,7 +8,8 @@ Programming.
 """
 
 from abc import abstractmethod
-from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union
+from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
+from .misc import identity
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -31,6 +32,22 @@ class ResultModule(Generic[TSource, TError]):
             return result.bind(mapper)
 
         return _bind
+
+    @staticmethod
+    def traverse(
+        fn: Callable[[TSource], "Result[TResult, TError]"], lst: "List[Result[TSource, TError]]"
+    ) -> "Result[List[TResult], TError]":
+        from fslash.collections.seq import SeqModule
+
+        def folder(head: TSource, tail: Result[List[TResult], TError]) -> Result[List[TResult], TError]:
+            # print(f"head: {head}, tail: {tail}")
+            return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+
+        return SeqModule.fold_back(folder, lst)(Ok([]))
+
+    @staticmethod
+    def sequence(lst: "List[Result[TSource, TError]]") -> "Result[List[TSource], TError]":
+        return ResultModule.traverse(identity, lst)
 
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):

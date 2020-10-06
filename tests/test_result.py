@@ -1,4 +1,5 @@
 import pytest
+from typing import List
 from hypothesis import given, strategies as st
 from pampy import match, _
 
@@ -122,6 +123,30 @@ def test_result_bind_piped(x, y):
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
     assert(Ok(res) == mapper(x))
+
+
+@given(st.lists(st.integers()))
+def test_result_traverse_ok(xs):
+    ys: List[TResult[int, str]] = [Ok(x) for x in xs]
+    zs = Result.sequence(ys)
+    res = match(zs,
+                Ok, lambda ok: sum(ok.value),
+                Error, lambda error: throw(error.error))
+
+    assert res == sum(xs)
+
+
+@given(st.lists(st.integers(), min_size=5))
+def test_result_traverse_error(xs):
+    error = "Do'h"
+    ys: List[TResult[int, str]] = [Ok(x) if x % 2 else Error(error) for x in xs]
+
+    zs = Result.sequence(ys)
+    res = match(zs,
+                Ok, lambda ok: "",
+                Error, lambda error: error.error)
+
+    assert res == error
 
 
 def test_result_builder_zero():

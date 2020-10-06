@@ -116,6 +116,29 @@ class SeqModule(Generic[TSource]):
         return _fold
 
     @staticmethod
+    def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -> Callable[[TState], TState]:
+        """Applies a function to each element of the collection,
+        starting from the end, threading an accumulator argument through
+        the computation. If the input function is f and the elements are
+        i0...iN then computes f i0 (... (f iN s)...)
+
+        Args:
+            folder: A function that updates the state with each element
+                from the sequence.
+            state: The initial state.
+        Returns:
+            Partially applied fold_back function.
+        """
+        def _fold_back(state: TState) -> TState:
+            """Partially applied fold_back function.
+            Returns:
+                The state object after the folding function is applied
+                to each element of the sequence.
+            """
+            return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+        return _fold_back
+
+    @staticmethod
     def head() -> Callable[[Iterable[TSource]], TSource]:
         """Return the first element of the sequence.
 

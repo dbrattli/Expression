@@ -73,13 +73,13 @@ def pipe(
 
 
 def pipe(x, *fns):  # type: ignore
-    """Functional pipe (|>)
+    """Functional pipe (`|>`)
 
     Allows the use of function argument on the left side of the function.
 
     Example:
-        pipe(x, fn) == fn(x)  # Same as x |> fn
-        pipe(x, fn, gn) == gn(fn(x))  # Same as x |> fn |> gn
+        >>> pipe(x, fn) == fn(x)  # Same as x |> fn
+        >>> pipe(x, fn, gn) == gn(fn(x))  # Same as x |> fn |> gn
         ...
     """
 
@@ -118,13 +118,13 @@ def pipe3(args, *fns):
 
 
 def starpipe(args, *fns):  # type: ignore
-    """Functional pipeN (||>, ||>, |||>, etc)
+    """Functional pipe_n (`||>`, `||>`, `|||>`, etc)
 
     Allows the use of function arguments on the left side of the function.
 
     Example:
-        starpipe((x, y), fn) == fn(x, y)  # Same as (x, y) ||> fn
-        starpipe((x, y), fn, gn) == gn(fn(x))  # Same as (x, y) ||> fn |> gn
+        >>> starpipe((x, y), fn) == fn(x, y)  # Same as (x, y) ||> fn
+        >>> starpipe((x, y), fn, gn) == gn(fn(x))  # Same as (x, y) ||> fn |> gn
         ...
     """
 

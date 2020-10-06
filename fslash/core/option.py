@@ -37,6 +37,7 @@ class OptionModule(Generic[TSource]):
     @staticmethod
     def or_else(if_none: 'Option[TSource]') -> 'Callable[[Option[TSource]], Option[TSource]]':
         """Returns option if it is Some, otherwise returns ifNone."""
+
         def _or_else(option: 'Option[TSource]') -> 'Option[TSource]':
             return option.or_else(if_none)
         return _or_else

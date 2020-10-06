@@ -154,6 +154,16 @@ def test_option_some_to_list():
     assert xs.to_list() == [42]
 
 
+def test_option_none_to_seq():
+    xs = Nothing
+    assert list(xs.to_seq()) == []
+
+
+def test_option_some_to_seq():
+    xs = Some(42)
+    assert list(xs.to_seq()) == [42]
+
+
 def test_option_none_to_str():
     xs = Nothing
     assert str(xs) == "Nothing"
