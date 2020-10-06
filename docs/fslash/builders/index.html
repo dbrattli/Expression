@@ -149,16 +149,14 @@ coroutines. Thus inside the coroutine the keywords <code>yield</code> and
         A Result object.
     &#34;&#34;&#34;
 
-    # This is a mess, but we basically just want to convert plain functions with a return statement into coroutines.
-    gen = iter(cast(Iterable[TSource], fn()))
-
     def wrapper(*args, **kw) -&gt; Result[TSource, TError]:
         done: List[bool] = []
+        gen = iter(cast(Iterable[TSource], fn(*args, **kw)))
         result: Result[TSource, TError] = send(gen, done)
 
         while not isinstance(result, Error) and not done:
             result = result.bind(lambda value: send(gen, done, value))
-            print(&#34;Result: &#34;, result)
+            # print(&#34;Result: &#34;, result)
 
         return result
     return wrapper</code></pre>

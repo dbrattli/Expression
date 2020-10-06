@@ -1144,15 +1144,20 @@ return default</p></div>
 
     @staticmethod
     def traverse(
-        fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: &#34;List[Result[TSource, TError]]&#34;
-    ) -&gt; &#34;Result[List[TResult], TError]&#34;:
-        from fslash.collections.seq import SeqModule
+        fn: Callable[[TSource], &#39;Result[TResult, TError]&#39;], lst: List[TSource]
+    ) -&gt; &#39;Result[List[TResult], TError]&#39;:
 
-        def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Result[List[TResult], TError]:
-            # print(f&#34;head: {head}, tail: {tail}&#34;)
-            return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+        # flake8: noqa: T484
+        @result
+        def folder(head: TSource, tail: Result[List[TResult], TError]):
+            &#34;&#34;&#34;Same as:
+            &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+            &#34;&#34;&#34;
+            h = yield from fn(head)
+            t = yield from tail
+            return [h] + t
 
-        return SeqModule.fold_back(folder, lst)(Ok([]))
+        return SeqModule.fold_back(folder, lst)(Ok([]))  # type: ignore
 
     @staticmethod
     def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[List[TSource], TError]&#34;:
@@ -1215,7 +1220,7 @@ def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[Lis
 </details>
 </dd>
 <dt id="fslash.core.ResultModule.traverse"><code class="name flex">
-<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], ForwardRef('<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, TError]')], lst: List[<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[TSource, TError]]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[typing.List[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>], ~TError]</span>
+<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], ForwardRef('<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, TError]')], lst: List[~TSource]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[typing.List[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>], ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1225,15 +1230,20 @@ def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[Lis
 </summary>
 <pre><code class="python">@staticmethod
 def traverse(
-    fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: &#34;List[Result[TSource, TError]]&#34;
-) -&gt; &#34;Result[List[TResult], TError]&#34;:
-    from fslash.collections.seq import SeqModule
+    fn: Callable[[TSource], &#39;Result[TResult, TError]&#39;], lst: List[TSource]
+) -&gt; &#39;Result[List[TResult], TError]&#39;:
 
-    def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Result[List[TResult], TError]:
-        # print(f&#34;head: {head}, tail: {tail}&#34;)
-        return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+    # flake8: noqa: T484
+    @result
+    def folder(head: TSource, tail: Result[List[TResult], TError]):
+        &#34;&#34;&#34;Same as:
+        &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+        &#34;&#34;&#34;
+        h = yield from fn(head)
+        t = yield from tail
+        return [h] + t
 
-    return SeqModule.fold_back(folder, lst)(Ok([]))</code></pre>
+    return SeqModule.fold_back(folder, lst)(Ok([]))  # type: ignore</code></pre>
 </details>
 </dd>
 </dl>

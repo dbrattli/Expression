@@ -54,16 +54,14 @@ def result(
         A Result object.
     """
 
-    # This is a mess, but we basically just want to convert plain functions with a return statement into coroutines.
-    gen = iter(cast(Iterable[TSource], fn()))
-
     def wrapper(*args, **kw) -> Result[TSource, TError]:
         done: List[bool] = []
+        gen = iter(cast(Iterable[TSource], fn(*args, **kw)))
         result: Result[TSource, TError] = send(gen, done)
 
         while not isinstance(result, Error) and not done:
             result = result.bind(lambda value: send(gen, done, value))
-            print("Result: ", result)
+            # print("Result: ", result)
 
         return result
     return wrapper

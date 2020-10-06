@@ -8,8 +8,10 @@ Programming.
 """
 
 from abc import abstractmethod
-from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
+from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List, Generator
 from .misc import identity
+
+from fslash.collections.seq import SeqModule
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -35,15 +37,20 @@ class ResultModule(Generic[TSource, TError]):
 
     @staticmethod
     def traverse(
-        fn: Callable[[TSource], "Result[TResult, TError]"], lst: "List[Result[TSource, TError]]"
-    ) -> "Result[List[TResult], TError]":
-        from fslash.collections.seq import SeqModule
+        fn: Callable[[TSource], 'Result[TResult, TError]'], lst: List[TSource]
+    ) -> 'Result[List[TResult], TError]':
 
-        def folder(head: TSource, tail: Result[List[TResult], TError]) -> Result[List[TResult], TError]:
-            # print(f"head: {head}, tail: {tail}")
-            return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+        # flake8: noqa: T484
+        @result
+        def folder(head: TSource, tail: Result[List[TResult], TError]):
+            """Same as:
+            >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+            """
+            h = yield from fn(head)
+            t = yield from tail
+            return [h] + t
 
-        return SeqModule.fold_back(folder, lst)(Ok([]))
+        return SeqModule.fold_back(folder, lst)(Ok([]))  # type: ignore
 
     @staticmethod
     def sequence(lst: "List[Result[TSource, TError]]") -> "Result[List[TSource], TError]":
@@ -166,3 +173,5 @@ class ResultException(Exception):
 
 
 __all__ = ["ResultModule", "Result", "Ok", "Error", "ResultException"]
+
+from fslash.builders import result
