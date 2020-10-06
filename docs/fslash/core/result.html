@@ -41,7 +41,8 @@ Programming.
 &#34;&#34;&#34;
 
 from abc import abstractmethod
-from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union
+from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
+from .misc import identity
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -64,6 +65,22 @@ class ResultModule(Generic[TSource, TError]):
             return result.bind(mapper)
 
         return _bind
+
+    @staticmethod
+    def traverse(
+        fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: &#34;List[Result[TSource, TError]]&#34;
+    ) -&gt; &#34;Result[List[TResult], TError]&#34;:
+        from fslash.collections.seq import SeqModule
+
+        def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Result[List[TResult], TError]:
+            # print(f&#34;head: {head}, tail: {tail}&#34;)
+            return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+
+        return SeqModule.fold_back(folder, lst)(Ok([]))
+
+    @staticmethod
+    def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[List[TSource], TError]&#34;:
+        return ResultModule.traverse(identity, lst)
 
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
@@ -639,7 +656,23 @@ return default</p></div>
         def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
             return result.bind(mapper)
 
-        return _bind</code></pre>
+        return _bind
+
+    @staticmethod
+    def traverse(
+        fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: &#34;List[Result[TSource, TError]]&#34;
+    ) -&gt; &#34;Result[List[TResult], TError]&#34;:
+        from fslash.collections.seq import SeqModule
+
+        def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Result[List[TResult], TError]:
+            # print(f&#34;head: {head}, tail: {tail}&#34;)
+            return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+
+        return SeqModule.fold_back(folder, lst)(Ok([]))
+
+    @staticmethod
+    def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[List[TSource], TError]&#34;:
+        return ResultModule.traverse(identity, lst)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -681,6 +714,42 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSourc
         return result.map(mapper)
 
     return _map</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.result.ResultModule.sequence"><code class="name flex">
+<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[TSource, TError]]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TSource], ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[List[TSource], TError]&#34;:
+    return ResultModule.traverse(identity, lst)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.result.ResultModule.traverse"><code class="name flex">
+<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], ForwardRef('<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[TResult, TError]')], lst: List[<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[TSource, TError]]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TResult], ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def traverse(
+    fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: &#34;List[Result[TSource, TError]]&#34;
+) -&gt; &#34;Result[List[TResult], TError]&#34;:
+    from fslash.collections.seq import SeqModule
+
+    def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Result[List[TResult], TError]:
+        # print(f&#34;head: {head}, tail: {tail}&#34;)
+        return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+
+    return SeqModule.fold_back(folder, lst)(Ok([]))</code></pre>
 </details>
 </dd>
 </dl>
@@ -740,6 +809,8 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSourc
 <ul class="">
 <li><code><a title="fslash.core.result.ResultModule.bind" href="#fslash.core.result.ResultModule.bind">bind</a></code></li>
 <li><code><a title="fslash.core.result.ResultModule.map" href="#fslash.core.result.ResultModule.map">map</a></code></li>
+<li><code><a title="fslash.core.result.ResultModule.sequence" href="#fslash.core.result.ResultModule.sequence">sequence</a></code></li>
+<li><code><a title="fslash.core.result.ResultModule.traverse" href="#fslash.core.result.ResultModule.traverse">traverse</a></code></li>
 </ul>
 </li>
 </ul>

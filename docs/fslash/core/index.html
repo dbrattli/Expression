@@ -159,26 +159,25 @@ completeness.</p>
 <span>def <span class="ident">pipe</span></span>(<span>x, *fns)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Functional pipe (|&gt;)</p>
+<div class="desc"><p>Functional pipe (<code>|&gt;</code>)</p>
 <p>Allows the use of function argument on the left side of the function.</p>
 <h2 id="example">Example</h2>
-<p>pipe(x, fn) == fn(x)
-# Same as x |&gt; fn
-pipe(x, fn, gn) == gn(fn(x))
-# Same as x |&gt; fn |&gt; gn
-&hellip;</p></div>
+<pre><code class="python-repl">&gt;&gt;&gt; pipe(x, fn) == fn(x)  # Same as x |&gt; fn
+&gt;&gt;&gt; pipe(x, fn, gn) == gn(fn(x))  # Same as x |&gt; fn |&gt; gn
+...
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def pipe(x, *fns):  # type: ignore
-    &#34;&#34;&#34;Functional pipe (|&gt;)
+    &#34;&#34;&#34;Functional pipe (`|&gt;`)
 
     Allows the use of function argument on the left side of the function.
 
     Example:
-        pipe(x, fn) == fn(x)  # Same as x |&gt; fn
-        pipe(x, fn, gn) == gn(fn(x))  # Same as x |&gt; fn |&gt; gn
+        &gt;&gt;&gt; pipe(x, fn) == fn(x)  # Same as x |&gt; fn
+        &gt;&gt;&gt; pipe(x, fn, gn) == gn(fn(x))  # Same as x |&gt; fn |&gt; gn
         ...
     &#34;&#34;&#34;
 
@@ -719,6 +718,7 @@ sequence as the only argument.</p></div>
     @staticmethod
     def or_else(if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Callable[[Option[TSource]], Option[TSource]]&#39;:
         &#34;&#34;&#34;Returns option if it is Some, otherwise returns ifNone.&#34;&#34;&#34;
+
         def _or_else(option: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:
             return option.or_else(if_none)
         return _or_else
@@ -953,6 +953,7 @@ def of_optional(value: Optional[TSource]) -&gt; &#39;Option[TSource]&#39;:
 <pre><code class="python">@staticmethod
 def or_else(if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Callable[[Option[TSource]], Option[TSource]]&#39;:
     &#34;&#34;&#34;Returns option if it is Some, otherwise returns ifNone.&#34;&#34;&#34;
+
     def _or_else(option: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:
         return option.or_else(if_none)
     return _or_else</code></pre>
@@ -1139,7 +1140,23 @@ return default</p></div>
         def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
             return result.bind(mapper)
 
-        return _bind</code></pre>
+        return _bind
+
+    @staticmethod
+    def traverse(
+        fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: &#34;List[Result[TSource, TError]]&#34;
+    ) -&gt; &#34;Result[List[TResult], TError]&#34;:
+        from fslash.collections.seq import SeqModule
+
+        def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Result[List[TResult], TError]:
+            # print(f&#34;head: {head}, tail: {tail}&#34;)
+            return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+
+        return SeqModule.fold_back(folder, lst)(Ok([]))
+
+    @staticmethod
+    def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[List[TSource], TError]&#34;:
+        return ResultModule.traverse(identity, lst)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1181,6 +1198,42 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSourc
         return result.map(mapper)
 
     return _map</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.ResultModule.sequence"><code class="name flex">
+<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[TSource, TError]]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[typing.List[~TSource], ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[List[TSource], TError]&#34;:
+    return ResultModule.traverse(identity, lst)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.ResultModule.traverse"><code class="name flex">
+<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], ForwardRef('<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, TError]')], lst: List[<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[TSource, TError]]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[typing.List[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>], ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def traverse(
+    fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: &#34;List[Result[TSource, TError]]&#34;
+) -&gt; &#34;Result[List[TResult], TError]&#34;:
+    from fslash.collections.seq import SeqModule
+
+    def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Result[List[TResult], TError]:
+        # print(f&#34;head: {head}, tail: {tail}&#34;)
+        return fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+
+    return SeqModule.fold_back(folder, lst)(Ok([]))</code></pre>
 </details>
 </dd>
 </dl>
@@ -1485,6 +1538,8 @@ def value(self):
 <ul class="">
 <li><code><a title="fslash.core.ResultModule.bind" href="#fslash.core.ResultModule.bind">bind</a></code></li>
 <li><code><a title="fslash.core.ResultModule.map" href="#fslash.core.ResultModule.map">map</a></code></li>
+<li><code><a title="fslash.core.ResultModule.sequence" href="#fslash.core.ResultModule.sequence">sequence</a></code></li>
+<li><code><a title="fslash.core.ResultModule.traverse" href="#fslash.core.ResultModule.traverse">traverse</a></code></li>
 </ul>
 </li>
 <li>

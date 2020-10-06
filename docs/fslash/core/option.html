@@ -65,6 +65,7 @@ class OptionModule(Generic[TSource]):
     @staticmethod
     def or_else(if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Callable[[Option[TSource]], Option[TSource]]&#39;:
         &#34;&#34;&#34;Returns option if it is Some, otherwise returns ifNone.&#34;&#34;&#34;
+
         def _or_else(option: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:
             return option.or_else(if_none)
         return _or_else
@@ -538,6 +539,7 @@ sequence as the only argument.</p></div>
     @staticmethod
     def or_else(if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Callable[[Option[TSource]], Option[TSource]]&#39;:
         &#34;&#34;&#34;Returns option if it is Some, otherwise returns ifNone.&#34;&#34;&#34;
+
         def _or_else(option: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:
             return option.or_else(if_none)
         return _or_else
@@ -772,6 +774,7 @@ def of_optional(value: Optional[TSource]) -&gt; &#39;Option[TSource]&#39;:
 <pre><code class="python">@staticmethod
 def or_else(if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Callable[[Option[TSource]], Option[TSource]]&#39;:
     &#34;&#34;&#34;Returns option if it is Some, otherwise returns ifNone.&#34;&#34;&#34;
+
     def _or_else(option: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:
         return option.or_else(if_none)
     return _or_else</code></pre>

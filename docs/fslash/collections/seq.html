@@ -144,6 +144,29 @@ class SeqModule(Generic[TSource]):
         return _fold
 
     @staticmethod
+    def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -&gt; Callable[[TState], TState]:
+        &#34;&#34;&#34;Applies a function to each element of the collection,
+        starting from the end, threading an accumulator argument through
+        the computation. If the input function is f and the elements are
+        i0...iN then computes f i0 (... (f iN s)...)
+
+        Args:
+            folder: A function that updates the state with each element
+                from the sequence.
+            state: The initial state.
+        Returns:
+            Partially applied fold_back function.
+        &#34;&#34;&#34;
+        def _fold_back(state: TState) -&gt; TState:
+            &#34;&#34;&#34;Partially applied fold_back function.
+            Returns:
+                The state object after the folding function is applied
+                to each element of the sequence.
+            &#34;&#34;&#34;
+            return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+        return _fold_back
+
+    @staticmethod
     def head() -&gt; Callable[[Iterable[TSource]], TSource]:
         &#34;&#34;&#34;Return the first element of the sequence.
 
@@ -740,6 +763,29 @@ sequence as the only argument.</p>
         return _fold
 
     @staticmethod
+    def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -&gt; Callable[[TState], TState]:
+        &#34;&#34;&#34;Applies a function to each element of the collection,
+        starting from the end, threading an accumulator argument through
+        the computation. If the input function is f and the elements are
+        i0...iN then computes f i0 (... (f iN s)...)
+
+        Args:
+            folder: A function that updates the state with each element
+                from the sequence.
+            state: The initial state.
+        Returns:
+            Partially applied fold_back function.
+        &#34;&#34;&#34;
+        def _fold_back(state: TState) -&gt; TState:
+            &#34;&#34;&#34;Partially applied fold_back function.
+            Returns:
+                The state object after the folding function is applied
+                to each element of the sequence.
+            &#34;&#34;&#34;
+            return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+        return _fold_back
+
+    @staticmethod
     def head() -&gt; Callable[[Iterable[TSource]], TSource]:
         &#34;&#34;&#34;Return the first element of the sequence.
 
@@ -1057,6 +1103,52 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Calla
     return _fold</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.seq.SeqModule.fold_back"><code class="name flex">
+<span>def <span class="ident">fold_back</span></span>(<span>folder: Callable[[~TSource, ~TState], ~TState], source: Iterable[~TSource]) ‑> Callable[[~TState], ~TState]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Applies a function to each element of the collection,
+starting from the end, threading an accumulator argument through
+the computation. If the input function is f and the elements are
+i0&hellip;iN then computes f i0 (&hellip; (f iN s)&hellip;)</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>folder</code></strong></dt>
+<dd>A function that updates the state with each element
+from the sequence.</dd>
+<dt><strong><code>state</code></strong></dt>
+<dd>The initial state.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Partially applied fold_back function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -&gt; Callable[[TState], TState]:
+    &#34;&#34;&#34;Applies a function to each element of the collection,
+    starting from the end, threading an accumulator argument through
+    the computation. If the input function is f and the elements are
+    i0...iN then computes f i0 (... (f iN s)...)
+
+    Args:
+        folder: A function that updates the state with each element
+            from the sequence.
+        state: The initial state.
+    Returns:
+        Partially applied fold_back function.
+    &#34;&#34;&#34;
+    def _fold_back(state: TState) -&gt; TState:
+        &#34;&#34;&#34;Partially applied fold_back function.
+        Returns:
+            The state object after the folding function is applied
+            to each element of the sequence.
+        &#34;&#34;&#34;
+        return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+    return _fold_back</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.seq.SeqModule.head"><code class="name flex">
 <span>def <span class="ident">head</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
 </code></dt>
@@ -1358,6 +1450,7 @@ def scan(
 <li><code><a title="fslash.collections.seq.SeqModule.empty" href="#fslash.collections.seq.SeqModule.empty">empty</a></code></li>
 <li><code><a title="fslash.collections.seq.SeqModule.filter" href="#fslash.collections.seq.SeqModule.filter">filter</a></code></li>
 <li><code><a title="fslash.collections.seq.SeqModule.fold" href="#fslash.collections.seq.SeqModule.fold">fold</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.fold_back" href="#fslash.collections.seq.SeqModule.fold_back">fold_back</a></code></li>
 <li><code><a title="fslash.collections.seq.SeqModule.head" href="#fslash.collections.seq.SeqModule.head">head</a></code></li>
 <li><code><a title="fslash.collections.seq.SeqModule.iter" href="#fslash.collections.seq.SeqModule.iter">iter</a></code></li>
 <li><code><a title="fslash.collections.seq.SeqModule.map" href="#fslash.collections.seq.SeqModule.map">map</a></code></li>
