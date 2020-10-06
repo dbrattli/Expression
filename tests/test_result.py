@@ -2,7 +2,7 @@ import pytest
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash import Result, Ok, Error, result, TResult, pipe
+from fslash.core import Result, Ok, Error, result, TResult, pipe
 from .utils import CustomException, throw
 
 

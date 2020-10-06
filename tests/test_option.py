@@ -1,7 +1,7 @@
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash import Option, TOption, Some, Nothing, pipe, option
+from fslash.core import Option, TOption, Some, Nothing, pipe, option
 
 
 def test_option_some():
@@ -42,7 +42,7 @@ def test_option_some_equals_some(a, b):
     assert(xs == ys if a == b else xs != ys)
 
 
-def test_option_piped_some_map():
+def test_option_some_map_piped():
     xs = Some(42)
     ys = pipe(xs, Option.map(lambda x: x + 1))
 
@@ -53,7 +53,7 @@ def test_option_piped_some_map():
     )
 
 
-def test_option_piped_none_map():
+def test_option_none_map_piped():
     xs = Nothing
     map = Option.map(lambda x: x + 1)
     ys = pipe(xs, map)
@@ -64,7 +64,7 @@ def test_option_piped_none_map():
     )
 
 
-def test_option_some_map():
+def test_option_some_map_fluent():
     xs = Some(42)
     ys = xs.map(lambda x: x + 1)
 
@@ -83,6 +83,50 @@ def test_option_none_map():
         ys,
         Some, lambda some: False,
         _, True
+    )
+
+
+def test_option_some_bind_fluent():
+    xs = Some(42)
+    ys = xs.bind(lambda x: Some(x + 1))
+
+    assert match(
+        ys,
+        Some, lambda some: some.value == 43,
+        _, False
+    )
+
+
+def test_option_some_bind_none_fluent():
+    xs = Some(42)
+    ys = xs.bind(lambda x: Nothing)
+
+    assert match(
+        ys,
+        Some, lambda some: False,
+        _, True
+    )
+
+
+def test_option_none_bind_none_fluent():
+    xs = Nothing
+    ys = xs.bind(lambda x: Nothing)
+
+    assert match(
+        ys,
+        Some, lambda some: False,
+        _, True
+    )
+
+
+def test_option_some_bind_piped():
+    xs = Some(42)
+    ys = pipe(xs, Option.bind(lambda x: Some(x + 1)))
+
+    assert match(
+        ys,
+        Some, lambda some: some.value == 43,
+        _, False
     )
 
 

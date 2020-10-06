@@ -2,8 +2,9 @@ from typing import Iterable
 import pytest
 import itertools
 from hypothesis import given, strategies as st
-from fslash import Seq, seq, pipe
-# from pampy import match, _
+
+from fslash.core import pipe
+from fslash.collections import Seq, seq
 
 
 @given(st.lists(st.integers()))

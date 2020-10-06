@@ -1,5 +1,5 @@
 from hypothesis import given, strategies as st
-from fslash import pipe
+from fslash.core import pipe
 
 
 @given(st.integers())

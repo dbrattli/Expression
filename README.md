@@ -120,6 +120,8 @@ overload any Python operators e.g `|` so `pipe` is a plain old function taking
 N-arguments and thus lets you pipe a value though any number of functions.
 
 ```py
+from fslash.core import pipe
+
 gn = lambda g: g * y
 fn = lambda x: x + z
 value = pipe(x, fn, gn)
@@ -134,7 +136,7 @@ value or variable. An option has an underlying type and can hold a value of
 that type `Some(value)`, or it might not have the value `Nothing`.
 
 ```py
-from fslash import Some, Nothing
+from fslash.core import Some, Nothing
 
 def keep_positive(a: int) -> Option[int]:
     if a > 0:
@@ -160,7 +162,7 @@ generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`, `yield fr
 and `return` to consume or generate optional values:
 
 ```py
-from fslash import option
+from fslash.core import option
 
 @option
 def fn():
@@ -180,7 +182,7 @@ result of the expression will be `Nothing`. Thus results from such a option
 decorated function can either be `Ok(value)` or `Error(error_value)`.
 
 ```py
-from fslash import option
+from fslash.core import option
 
 @option
 def fn():

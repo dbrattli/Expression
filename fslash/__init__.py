@@ -1,20 +1,17 @@
 """
-FSlash (F/) is a ...
+FSlash (F/) aims to be a solid library for practical functional programming in
+Python 3.8+ inspired by [F#](https://fsharp.org). By practical we mean that the
+goal of the library if to enable you to do meaningful and productive functional
+programming in Python instead of being a [Monad
+tutorial](https://github.com/dbrattli/OSlash).
 """
 
-from .compose import compose
-from .pipe import pipe
-from .curry import curried
-from .option import Option as TOption, OptionModule as Option, Some, Nothing, option
-from .result import Result as TResult, ResultModule as Result, Ok, Error, result
-from .seq import Seq as TSeq, SeqModule as Seq, seq
+from . import core
+from . import collections
 
 
 __all__ = [
-    'compose', 'pipe', 'curried',
-    'Option', 'TOption', 'Some', 'Nothing', 'option',
-    'Result', 'TResult', 'Ok', 'Error', 'result',
-    'Seq', 'TSeq', 'seq'
+    'core', 'collections'
 ]
 
 from ._version import get_versions
