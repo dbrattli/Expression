@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
-<title>fslash.collections API documentation</title>
-<meta name="description" content="Collection abstractions." />
+<title>fslash.collections.seq API documentation</title>
+<meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -19,34 +19,352 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>fslash.collections</code></h1>
+<h1 class="title">Module <code>fslash.collections.seq</code></h1>
 </header>
 <section id="section-intro">
-<p>Collection abstractions.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">&#34;&#34;&#34;
-Collection abstractions.
-&#34;&#34;&#34;
+<pre><code class="python">from typing import Generic, TypeVar, Callable, Iterable, Iterator, List
+import functools
+import itertools
 
-from .seq import Seq as TSeq, SeqModule as Seq
+TSource = TypeVar(&#34;TSource&#34;)
+TResult = TypeVar(&#34;TResult&#34;)
+TState = TypeVar(&#34;TState&#34;)
 
 
-__all__ = [
-    &#39;Seq&#39;, &#39;TSeq&#39;
-]</code></pre>
+class SeqModule(Generic[TSource]):
+    &#34;&#34;&#34;Sequence module.
+
+    Contains a collection of static methods (functions) for operating on
+    sequences. All functions takes the source as the last curried
+    argument, i.e all functions returns a function that takes the source
+    sequence as the only argument.
+
+    Example:
+        &gt;&gt;&gt; xs = Seq([1, 2, 3])
+        &gt;&gt;&gt; ys = pipe(
+            xs,
+            Seq.map(lambda x: x + 1),
+            Seq.filter(lambda x: x &lt; 3)
+        )
+    &#34;&#34;&#34;
+
+    @staticmethod
+    def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
+        &#34;&#34;&#34;Combines the given variable number of enumerations and/or
+        enumeration-of-enumerations as a single concatenated
+        enumeration.
+
+        Args:
+            iterables: The input enumeration-of-enumerations.
+
+        Returns:
+            A partially applied concat function.
+        &#34;&#34;&#34;
+
+        def _concat(sources: Iterable[Iterable[TSource]]) -&gt; Iterable[TSource]:
+            &#34;&#34;&#34;Partially applied concat function.
+
+            Args:
+                sources: The input iterable-of-iterables.
+
+            Returns:
+                The result sequence.
+            &#34;&#34;&#34;
+            return itertools.chain(*iterables, *sources)
+
+        return _concat
+
+    @classmethod
+    def empty(cls):
+        &#34;&#34;&#34;Creates an empty sequence.
+
+        Returns:
+            An empty sequence.
+        &#34;&#34;&#34;
+        return Seq([])
+
+    @staticmethod
+    def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
+        &#34;&#34;&#34;Filter sequence.
+
+        Filters the sequence to a new sequence containing only the
+        elements of the sequence for which the given predicate returns
+        `True`.
+
+        Args:
+            predicate: A function to test whether each item in the
+                input sequence should be included in the output.
+            source: (curried) The input sequence to to filter.
+
+        Returns:
+            A partially applied filter function.
+        &#34;&#34;&#34;
+
+        def _filter(source: Iterable[TSource]) -&gt; Iterable[TSource]:
+            &#34;&#34;&#34;Filter sequence (partially applied).
+
+            Args:
+                source: The input sequence to to filter.
+
+            Returns:
+                Returns a new collection containing only the elements
+                of the collection for which the given predicate returns
+                `True`.
+            &#34;&#34;&#34;
+            return filter(predicate, source)
+
+        return _filter
+
+    @staticmethod
+    def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Callable[[Iterable[TSource]], TState]:
+        &#34;&#34;&#34;Applies a function to each element of the collection,
+        threading an accumulator argument through the computation. If
+        the input function is f and the elements are i0...iN then
+        computes f (... (f s i0)...) iN
+
+        Args:
+            folder: A function that updates the state with each element
+                from the sequence.
+            state: The initial state.
+        Returns:
+            Partially applied fold function.
+        &#34;&#34;&#34;
+        def _fold(source: Iterable[TSource]) -&gt; TState:
+            &#34;&#34;&#34;Partially applied fold function.
+            Returns:
+                The state object after the folding function is applied
+                to each element of the sequence.
+            &#34;&#34;&#34;
+            return functools.reduce(folder, source, state)  # type: ignore
+
+        return _fold
+
+    @staticmethod
+    def head() -&gt; Callable[[Iterable[TSource]], TSource]:
+        &#34;&#34;&#34;Return the first element of the sequence.
+
+        Returns:
+            A partially applied head function.
+
+        Raises:
+            Raises `ValueError` if the source sequence is empty.
+        &#34;&#34;&#34;
+
+        def _head(source: Iterable[TSource]) -&gt; TSource:
+            &#34;&#34;&#34;A function that takes the source as input.
+
+            Args:
+                source: The input sequence.
+
+            Returns:
+                The first element of the sequence.
+
+            Raises:
+                `ValueError` if the source sequence is empty.
+            &#34;&#34;&#34;
+            for value in source:
+                return value
+            else:
+                raise ValueError(&#34;Sequence contains no elements&#34;)
+
+        return _head
+
+    @staticmethod
+    def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
+        &#34;&#34;&#34;Applies the given function to each element of the collection.
+
+        Args:
+            action: A function to apply to each element of the sequence.
+
+        Returns:
+            A partially applied iter function.
+        &#34;&#34;&#34;
+
+        def _iter(source: Iterable[TSource]) -&gt; None:
+            &#34;&#34;&#34;A partially applied iter function.
+
+            Note that this function is a pure side effect and returns nothing.
+
+            Args:
+                source: The input sequence to apply action to.
+
+            Returns:
+                None
+            &#34;&#34;&#34;
+            for x in source:
+                action(x)
+
+        return _iter
+
+    @staticmethod
+    def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+        &#34;&#34;&#34;Map source sequence.
+
+        Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection.
+
+        Args:
+            mapping: A function to transform items from the input sequence.
+
+        Returns:
+            Partially applied map function.
+        &#34;&#34;&#34;
+
+        def _map(source: Iterable[TSource]) -&gt; Iterable[TResult]:
+            &#34;&#34;&#34;Partially applied map function.
+
+            Args:
+                source: The input sequence.
+            Returns:
+                The result sequence.
+            &#34;&#34;&#34;
+            return (mapper(x) for x in source)
+
+        return _map
+
+    @staticmethod
+    def max() -&gt; Callable[[Iterable[TSource]], TSource]:
+        &#34;&#34;&#34;Returns the greatest of all elements of the sequence,
+        compared via `max()`.&#34;&#34;&#34;
+
+        def _map(source: Iterable[TSource]) -&gt; TSource:
+            return max(source)
+
+        return _map
+
+    @staticmethod
+    def max_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
+        def _max_by(source: Iterable[TSource]) -&gt; TResult:
+            return max(projection(x) for x in source)
+
+        return _max_by
+
+    @staticmethod
+    def min() -&gt; Callable[[Iterable[TSource]], TSource]:
+        &#34;&#34;&#34;Returns the smallest of all elements of the sequence,
+        compared via `max()`.&#34;&#34;&#34;
+
+        def _min(source: Iterable[TSource]) -&gt; TSource:
+            return min(source)
+
+        return _min
+
+    @staticmethod
+    def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
+        def _min_by(source: Iterable[TSource]) -&gt; TResult:
+            return min(projection(x) for x in source)
+
+        return _min_by
+
+    @classmethod
+    def of_list(cls, list: List[TSource]):
+        return Seq(list)
+
+    @staticmethod
+    def scan(
+        scanner: Callable[[TState, TSource], TState], state: TState
+    ) -&gt; Callable[[Iterable[TSource]], Iterable[TState]]:
+        &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
+        intermediary and final results.
+
+        Args:
+            scanner: A function that updates the state with each element
+                from the sequence.
+            state: The initial state.
+        &#34;&#34;&#34;
+        def _scan(source: Iterable[TSource]) -&gt; Iterable[TState]:
+            &#34;&#34;&#34;Partially applied scan function.
+            Args:
+                source: The input sequence.
+            Returns:
+                The resulting sequence of computed states.
+            &#34;&#34;&#34;
+            return itertools.accumulate(source, scanner, initial=state)   # type: ignore
+        return _scan
+
+
+class Seq(Iterable[TSource]):
+    &#34;&#34;&#34;Sequence type.
+
+    Contains instance methods for dot-chaining operators methods on
+    sequences.
+
+    Example:
+        &gt;&gt;&gt; xs = Seq([1, 2, 3])
+        &gt;&gt;&gt; ys = xs.map(lambda x: x + 1).filter(lambda x: x &lt; 3)
+    &#34;&#34;&#34;
+
+    def __init__(self, iterable=[]) -&gt; None:
+        self._value = iterable
+
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
+        return Seq(SeqModule.filter(predicate)(self))
+
+    def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
+        &#34;&#34;&#34;Applies a function to each element of the collection,
+        threading an accumulator argument through the computation. If
+        the input function is f and the elements are i0...iN then
+        computes f (... (f s i0)...) iN
+
+        Args:
+            folder: A function that updates the state with each element
+                from the sequence.
+            state: The initial state.
+        Returns:
+            The state object after the folding function is applied to
+            each element of the sequence.
+            &#34;&#34;&#34;
+        return functools.reduce(folder, self, state)  # type: ignore
+
+    def head(self) -&gt; TSource:
+        &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
+
+        return SeqModule.head()(self)
+
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Seq[TResult]&#34;:
+        &#34;&#34;&#34;Map sequence.
+
+        Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection.
+
+        Args:
+            mapping: A function to transform items from the input sequence.
+
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+
+        return Seq(SeqModule.map(mapper)(self))
+
+    def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -&gt; Iterable[TState]:
+        &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
+        intermediary and final results.
+
+        Args:
+            scanner: A function that updates the state with each element
+                from the sequence.
+            state: The initial state.
+
+        Returns:
+            The resulting sequence of computed states.
+        &#34;&#34;&#34;
+        return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore
+
+    def __iter__(self) -&gt; Iterator[TSource]:
+        &#34;&#34;&#34;Return iterator for sequence.&#34;&#34;&#34;
+        return iter(self._value)
+
+
+__all__ = [&#34;SeqModule&#34;, &#34;Seq&#34;]</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="fslash.collections.seq" href="seq.html">fslash.collections.seq</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -55,8 +373,8 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="fslash.collections.Seq"><code class="flex name class">
-<span>class <span class="ident">TSeq</span></span>
+<dt id="fslash.collections.seq.Seq"><code class="flex name class">
+<span>class <span class="ident">Seq</span></span>
 <span>(</span><span>iterable=[])</span>
 </code></dt>
 <dd>
@@ -150,8 +468,8 @@ sequences.</p>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="fslash.collections.Seq.filter"><code class="name flex">
-<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~TSource], bool]) ‑> <a title="fslash.collections.seq.Seq" href="seq.html#fslash.collections.seq.Seq">Seq</a>[~TSource]</span>
+<dt id="fslash.collections.seq.Seq.filter"><code class="name flex">
+<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~TSource], bool]) ‑> <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -163,7 +481,7 @@ sequences.</p>
     return Seq(SeqModule.filter(predicate)(self))</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.Seq.fold"><code class="name flex">
+<dt id="fslash.collections.seq.Seq.fold"><code class="name flex">
 <span>def <span class="ident">fold</span></span>(<span>self, folder: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> ~TState</span>
 </code></dt>
 <dd>
@@ -203,7 +521,7 @@ each element of the sequence.</p></div>
     return functools.reduce(folder, self, state)  # type: ignore</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.Seq.head"><code class="name flex">
+<dt id="fslash.collections.seq.Seq.head"><code class="name flex">
 <span>def <span class="ident">head</span></span>(<span>self) ‑> ~TSource</span>
 </code></dt>
 <dd>
@@ -218,8 +536,8 @@ each element of the sequence.</p></div>
     return SeqModule.head()(self)</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.Seq.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="fslash.collections.seq.Seq" href="seq.html#fslash.collections.seq.Seq">Seq</a>[~TResult]</span>
+<dt id="fslash.collections.seq.Seq.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Map sequence.</p>
@@ -254,7 +572,7 @@ collection.</p>
     return Seq(SeqModule.map(mapper)(self))</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.Seq.scan"><code class="name flex">
+<dt id="fslash.collections.seq.Seq.scan"><code class="name flex">
 <span>def <span class="ident">scan</span></span>(<span>self, scanner: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> Iterable[~TState]</span>
 </code></dt>
 <dd>
@@ -291,8 +609,8 @@ from the sequence.</dd>
 </dd>
 </dl>
 </dd>
-<dt id="fslash.collections.SeqModule"><code class="flex name class">
-<span>class <span class="ident">Seq</span></span>
+<dt id="fslash.collections.seq.SeqModule"><code class="flex name class">
+<span>class <span class="ident">SeqModule</span></span>
 <span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
@@ -571,7 +889,7 @@ sequence as the only argument.</p>
 </ul>
 <h3>Static methods</h3>
 <dl>
-<dt id="fslash.collections.SeqModule.concat"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.concat"><code class="name flex">
 <span>def <span class="ident">concat</span></span>(<span>*iterables: Iterable[~TSource]) ‑> Callable[[Iterable[Iterable[~TSource]]], Iterable[~TSource]]</span>
 </code></dt>
 <dd>
@@ -616,7 +934,7 @@ def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSou
     return _concat</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.empty"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.empty"><code class="name flex">
 <span>def <span class="ident">empty</span></span>(<span>)</span>
 </code></dt>
 <dd>
@@ -637,7 +955,7 @@ def empty(cls):
     return Seq([])</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.filter"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.filter"><code class="name flex">
 <span>def <span class="ident">filter</span></span>(<span>predicate: Callable[[~TSource], bool]) ‑> Callable[[Iterable[~TSource]], Iterable[~TSource]]</span>
 </code></dt>
 <dd>
@@ -692,7 +1010,7 @@ def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSourc
     return _filter</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.fold"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.fold"><code class="name flex">
 <span>def <span class="ident">fold</span></span>(<span>folder: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> Callable[[Iterable[~TSource]], ~TState]</span>
 </code></dt>
 <dd>
@@ -739,7 +1057,7 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Calla
     return _fold</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.head"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.head"><code class="name flex">
 <span>def <span class="ident">head</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
 </code></dt>
 <dd>
@@ -783,7 +1101,7 @@ def head() -&gt; Callable[[Iterable[TSource]], TSource]:
     return _head</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.iter"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.iter"><code class="name flex">
 <span>def <span class="ident">iter</span></span>(<span>action: Callable[[~TSource], NoneType]) ‑> Callable[[Iterable[~TSource]], NoneType]</span>
 </code></dt>
 <dd>
@@ -827,7 +1145,7 @@ def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], 
     return _iter</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.map"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.map"><code class="name flex">
 <span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
 </code></dt>
 <dd>
@@ -874,7 +1192,7 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]]
     return _map</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.max"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.max"><code class="name flex">
 <span>def <span class="ident">max</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
 </code></dt>
 <dd>
@@ -895,7 +1213,7 @@ def max() -&gt; Callable[[Iterable[TSource]], TSource]:
     return _map</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.max_by"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.max_by"><code class="name flex">
 <span>def <span class="ident">max_by</span></span>(<span>projection: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], ~TResult]</span>
 </code></dt>
 <dd>
@@ -912,7 +1230,7 @@ def max_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TS
     return _max_by</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.min"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.min"><code class="name flex">
 <span>def <span class="ident">min</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
 </code></dt>
 <dd>
@@ -933,7 +1251,7 @@ def min() -&gt; Callable[[Iterable[TSource]], TSource]:
     return _min</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.min_by"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.min_by"><code class="name flex">
 <span>def <span class="ident">min_by</span></span>(<span>projection: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], ~TResult]</span>
 </code></dt>
 <dd>
@@ -950,7 +1268,7 @@ def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TS
     return _min_by</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.of_list"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.of_list"><code class="name flex">
 <span>def <span class="ident">of_list</span></span>(<span>list: List[~TSource])</span>
 </code></dt>
 <dd>
@@ -964,7 +1282,7 @@ def of_list(cls, list: List[TSource]):
     return Seq(list)</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.SeqModule.scan"><code class="name flex">
+<dt id="fslash.collections.seq.SeqModule.scan"><code class="name flex">
 <span>def <span class="ident">scan</span></span>(<span>scanner: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> Callable[[Iterable[~TSource]], Iterable[~TState]]</span>
 </code></dt>
 <dd>
@@ -1018,42 +1336,37 @@ def scan(
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="fslash" href="../index.html">fslash</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="fslash.collections.seq" href="seq.html">fslash.collections.seq</a></code></li>
+<li><code><a title="fslash.collections" href="index.html">fslash.collections</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="fslash.collections.Seq" href="#fslash.collections.Seq">Seq</a></code></h4>
+<h4><code><a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a></code></h4>
 <ul class="">
-<li><code><a title="fslash.collections.Seq.filter" href="#fslash.collections.Seq.filter">filter</a></code></li>
-<li><code><a title="fslash.collections.Seq.fold" href="#fslash.collections.Seq.fold">fold</a></code></li>
-<li><code><a title="fslash.collections.Seq.head" href="#fslash.collections.Seq.head">head</a></code></li>
-<li><code><a title="fslash.collections.Seq.map" href="#fslash.collections.Seq.map">map</a></code></li>
-<li><code><a title="fslash.collections.Seq.scan" href="#fslash.collections.Seq.scan">scan</a></code></li>
+<li><code><a title="fslash.collections.seq.Seq.filter" href="#fslash.collections.seq.Seq.filter">filter</a></code></li>
+<li><code><a title="fslash.collections.seq.Seq.fold" href="#fslash.collections.seq.Seq.fold">fold</a></code></li>
+<li><code><a title="fslash.collections.seq.Seq.head" href="#fslash.collections.seq.Seq.head">head</a></code></li>
+<li><code><a title="fslash.collections.seq.Seq.map" href="#fslash.collections.seq.Seq.map">map</a></code></li>
+<li><code><a title="fslash.collections.seq.Seq.scan" href="#fslash.collections.seq.Seq.scan">scan</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="fslash.collections.SeqModule" href="#fslash.collections.SeqModule">SeqModule</a></code></h4>
+<h4><code><a title="fslash.collections.seq.SeqModule" href="#fslash.collections.seq.SeqModule">SeqModule</a></code></h4>
 <ul class="two-column">
-<li><code><a title="fslash.collections.SeqModule.concat" href="#fslash.collections.SeqModule.concat">concat</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.empty" href="#fslash.collections.SeqModule.empty">empty</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.filter" href="#fslash.collections.SeqModule.filter">filter</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.fold" href="#fslash.collections.SeqModule.fold">fold</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.head" href="#fslash.collections.SeqModule.head">head</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.iter" href="#fslash.collections.SeqModule.iter">iter</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.map" href="#fslash.collections.SeqModule.map">map</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.max" href="#fslash.collections.SeqModule.max">max</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.max_by" href="#fslash.collections.SeqModule.max_by">max_by</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.min" href="#fslash.collections.SeqModule.min">min</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.min_by" href="#fslash.collections.SeqModule.min_by">min_by</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.of_list" href="#fslash.collections.SeqModule.of_list">of_list</a></code></li>
-<li><code><a title="fslash.collections.SeqModule.scan" href="#fslash.collections.SeqModule.scan">scan</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.concat" href="#fslash.collections.seq.SeqModule.concat">concat</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.empty" href="#fslash.collections.seq.SeqModule.empty">empty</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.filter" href="#fslash.collections.seq.SeqModule.filter">filter</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.fold" href="#fslash.collections.seq.SeqModule.fold">fold</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.head" href="#fslash.collections.seq.SeqModule.head">head</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.iter" href="#fslash.collections.seq.SeqModule.iter">iter</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.map" href="#fslash.collections.seq.SeqModule.map">map</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.max" href="#fslash.collections.seq.SeqModule.max">max</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.max_by" href="#fslash.collections.seq.SeqModule.max_by">max_by</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.min" href="#fslash.collections.seq.SeqModule.min">min</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.min_by" href="#fslash.collections.seq.SeqModule.min_by">min_by</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.of_list" href="#fslash.collections.seq.SeqModule.of_list">of_list</a></code></li>
+<li><code><a title="fslash.collections.seq.SeqModule.scan" href="#fslash.collections.seq.SeqModule.scan">scan</a></code></li>
 </ul>
 </li>
 </ul>

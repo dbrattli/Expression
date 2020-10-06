@@ -2,14 +2,19 @@ import pytest
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash.core import Result, Ok, Error, result, TResult, pipe
+from fslash.core import Result, Ok, Error, TResult, pipe
+from fslash.builders import result
 from .utils import CustomException, throw
 
 
 def test_result_ok():
     xs = Ok(42)
 
-    assert(isinstance(xs, TResult))
+    assert isinstance(xs, TResult)
+    assert xs.is_ok()
+    assert not xs.is_error(
+
+    )
     res = match(xs,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
@@ -19,7 +24,10 @@ def test_result_ok():
 def test_result_error():
     xs = Error(CustomException("d'oh!"))
 
-    assert(isinstance(xs, TResult))
+    assert isinstance(xs, TResult)
+    assert not xs.is_ok()
+    assert xs.is_error()
+
     with pytest.raises(CustomException):
         match(xs,
               Ok, lambda ok: ok.value,
@@ -39,7 +47,7 @@ def test_result_map_piped(x, y):
 
 
 @given(st.integers(), st.integers())
-def test_result_map_fluent(x, y):
+def test_result_map_ok_fluent(x, y):
     xs = Ok(x)
     mapper = lambda x: x + y
 
@@ -51,7 +59,7 @@ def test_result_map_fluent(x, y):
 
 
 @given(st.integers(), st.integers())
-def test_result_chained_map(x, y):
+def test_result_ok_chained_map(x, y):
     xs = Ok(x)
     mapper1 = lambda x: x + y
     mapper2 = lambda x: x * 10
@@ -61,6 +69,47 @@ def test_result_chained_map(x, y):
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
     assert(res == mapper2(mapper1(x)))
+
+
+@given(st.text(), st.integers())
+def test_result_map_error_piped(msg, y):
+    xs = Error(msg)
+    mapper = lambda x: x + y
+
+    ys = pipe(xs, Result.map(mapper))
+
+    with pytest.raises(CustomException) as ex:
+        match(ys,
+              Ok, lambda ok: ok.value,
+              Error, lambda error: throw(CustomException(error.error)))
+    assert(ex.value.message == msg)
+
+
+@given(st.text(), st.integers())
+def test_result_map_error_fluent(msg, y):
+    xs = Error(msg)
+    mapper = lambda x: x + y
+
+    ys = xs.map(mapper)
+    with pytest.raises(CustomException) as ex:
+        match(ys,
+              Ok, lambda ok: ok.value,
+              Error, lambda error: throw(CustomException(error.error)))
+    assert(ex.value.message == msg)
+
+
+@given(st.text(), st.integers())
+def test_result_error_chained_map(msg, y):
+    xs = Error(msg)
+    mapper1 = lambda x: x + y
+    mapper2 = lambda x: x * 10
+
+    ys = xs.map(mapper1).map(mapper2)
+    with pytest.raises(CustomException) as ex:
+        match(ys,
+              Ok, lambda ok: ok.value,
+              Error, lambda error: throw(CustomException(error.error)))
+    assert(ex.value.message == msg)
 
 
 @given(st.integers(), st.integers())

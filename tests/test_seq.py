@@ -4,7 +4,8 @@ import itertools
 from hypothesis import given, strategies as st
 
 from fslash.core import pipe
-from fslash.collections import Seq, seq
+from fslash.collections import Seq
+from fslash.builders import seq
 
 
 @given(st.lists(st.integers()))
@@ -75,3 +76,24 @@ def test_seq_scan_fluent(xs, s):
     value = Seq.of_list(xs).scan(func, s)
 
     assert list(value) == list(itertools.accumulate(xs, func, initial=s))
+
+
+@given(st.lists(st.integers()), st.lists(st.integers()))
+def test_seq_concat_pipe(xs, ys):
+    value = pipe((xs, ys), Seq.concat())
+
+    assert list(value) == xs + ys
+
+
+@given(st.lists(st.integers()), st.lists(st.integers()))
+def test_seq_concat_pipe2(xs, ys):
+    value = pipe([xs], Seq.concat(ys))
+
+    assert list(value) == ys + xs
+
+
+@given(st.lists(st.integers()), st.lists(st.integers()), st.lists(st.integers()))
+def test_seq_concat_pipe3(xs, ys, zs):
+    value = pipe([xs, ys], Seq.concat(zs))
+
+    assert list(value) == zs + xs + ys

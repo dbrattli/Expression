@@ -1,7 +1,8 @@
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash.core import Option, TOption, Some, Nothing, pipe, option
+from fslash.core import Option, TOption, Some, Nothing, pipe
+from fslash.builders import option
 
 
 def test_option_some():

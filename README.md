@@ -49,7 +49,7 @@ You can install the latest `fslash` from PyPI by running `pip` (or `pip3`).
 Note that `fslash` only works for Python 3.8+.
 
 ```sh
-pip install fslash
+$ pip3 install fslash
 ```
 
 ## Why
@@ -149,11 +149,11 @@ def keep_positive(a: int) -> Option[int]:
 from pampy import match
 
 def exists (x : Option[int]) -> bool:
-     return match(
-          x,
-          Some, lambda some: True
-          Nothing, False
-     )
+    return match(
+        x,
+        Some, lambda some: True
+        Nothing, False
+    )
 ```
 
 Options as decorators for computational expressions. Computational expressions
@@ -162,14 +162,15 @@ generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`, `yield fr
 and `return` to consume or generate optional values:
 
 ```py
-from fslash.core import option
+from fslash.core import Some
+from fslash.builders import option
 
 @option
 def fn():
-     x = yield 42
-     y = yield from Some(43)
+    x = yield 42
+    y = yield from Some(43)
 
-     return x + y
+    return x + y
 
 xs = fn()
 ```
@@ -182,16 +183,17 @@ result of the expression will be `Nothing`. Thus results from such a option
 decorated function can either be `Ok(value)` or `Error(error_value)`.
 
 ```py
-from fslash.core import option
+from fslash.core import Some, Nothing
+from fslash.builders import option
 
 @option
 def fn():
-     x = yield from Nothing # or a function returning Nothing
+    x = yield from Nothing # or a function returning Nothing
 
-     # -- The rest of the function will never be executed --
-     y = yield from Some(43)
+    # -- The rest of the function will never be executed --
+    y = yield from Some(43)
 
-     return x + y
+    return x + y
 
 xs = fn()
 assert xs is Nothing

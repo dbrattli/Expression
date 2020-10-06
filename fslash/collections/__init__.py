@@ -1,7 +1,10 @@
-from . import seq as seq_module
-from .seq import Seq as TSeq, SeqModule as Seq, seq
+"""
+Collection abstractions.
+"""
+
+from .seq import Seq as TSeq, SeqModule as Seq
 
 
 __all__ = [
-    'Seq', 'TSeq', 'seq', 'seq_module'
+    'Seq', 'TSeq'
 ]

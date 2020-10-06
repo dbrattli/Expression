@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Callable, Iterable, Iterator, Generator, List, Union, Coroutine, Optional, cast
+from typing import Generic, TypeVar, Callable, Iterable, Iterator, List
 import functools
 import itertools
 
@@ -25,9 +25,10 @@ class SeqModule(Generic[TSource]):
     """
 
     @staticmethod
-    def concat(*iterables: Iterable[TSource]) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
-        """Combines the given enumeration-of-enumerations as a single
-        concatenated enumeration.
+    def concat(*iterables: Iterable[TSource]) -> Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
+        """Combines the given variable number of enumerations and/or
+        enumeration-of-enumerations as a single concatenated
+        enumeration.
 
         Args:
             iterables: The input enumeration-of-enumerations.
@@ -36,11 +37,11 @@ class SeqModule(Generic[TSource]):
             A partially applied concat function.
         """
 
-        def _concat(*sources: Iterable[TSource]) -> Iterable[TSource]:
+        def _concat(sources: Iterable[Iterable[TSource]]) -> Iterable[TSource]:
             """Partially applied concat function.
 
             Args:
-                sources: The input enumeration-of-enumerations.
+                sources: The input iterable-of-iterables.
 
             Returns:
                 The result sequence.
@@ -332,28 +333,4 @@ class Seq(Iterable[TSource]):
         return iter(self._value)
 
 
-def seq(
-    fn: Callable[  # Function
-        ...,
-        Union[
-            Coroutine[TSource, Optional[TSource], Optional[Iterable[TSource]]],
-            # Generator that yields or returns an option
-            Generator[TSource, Optional[TSource], Optional[Iterable[TSource]]],
-            # or simply just an Iterable
-            Iterable[TSource]
-        ]
-    ]
-) -> Callable[..., Seq[TSource]]:
-    """Sequence builder.
-
-    Enables the use of sequences as computational expressions using
-    generators and coroutines Note that this is exactly the same as just
-    using generators. But we define it for completeness.
-    """
-
-    def wrapper(*args, **kw) -> Seq[TSource]:
-        return Seq(cast(Callable, fn)(*args, **kw))
-    return wrapper
-
-
-__all__ = ["SeqModule", "Seq", "seq"]
+__all__ = ["SeqModule", "Seq"]

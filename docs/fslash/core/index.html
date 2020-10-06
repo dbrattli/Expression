@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
 <title>fslash.core API documentation</title>
-<meta name="description" content="" />
+<meta name="description" content="Core abstractions such as pipes, options and results." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,21 +22,26 @@
 <h1 class="title">Module <code>fslash.core</code></h1>
 </header>
 <section id="section-intro">
+<p>Core abstractions such as pipes, options and results.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from .compose import compose
+<pre><code class="python">&#34;&#34;&#34;
+Core abstractions such as pipes, options and results.
+&#34;&#34;&#34;
+
+from .compose import compose
 from .pipe import pipe
 from .curry import curried
-from .option import Option as TOption, OptionModule as Option, Some, Nothing, option
-from .result import Result as TResult, ResultModule as Result, Ok, Error, result
+from .option import Option as TOption, OptionModule as Option, Some, Nothing
+from .result import Result as TResult, ResultModule as Result, Ok, Error
 
 
 __all__ = [
     &#39;compose&#39;, &#39;pipe&#39;, &#39;curried&#39;,
-    &#39;Option&#39;, &#39;TOption&#39;, &#39;Some&#39;, &#39;Nothing&#39;, &#39;option&#39;,
-    &#39;Result&#39;, &#39;TResult&#39;, &#39;Ok&#39;, &#39;Error&#39;, &#39;result&#39;,
+    &#39;Option&#39;, &#39;TOption&#39;, &#39;Some&#39;, &#39;Nothing&#39;,
+    &#39;Result&#39;, &#39;TResult&#39;, &#39;Ok&#39;, &#39;Error&#39;,
 ]</code></pre>
 </details>
 </section>
@@ -46,6 +51,14 @@ __all__ = [
 <dt><code class="name"><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></dt>
 <dd>
 <div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="fslash.core.option" href="option.html">fslash.core.option</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="fslash.core.result" href="result.html">fslash.core.result</a></code></dt>
+<dd>
+<div class="desc"><p>Result module.</p></div>
 </dd>
 </dl>
 </section>
@@ -138,67 +151,6 @@ completeness.</p>
     return wrapper</code></pre>
 </details>
 </dd>
-<dt id="fslash.core.option"><code class="name flex">
-<span>def <span class="ident">option</span></span>(<span>fn: Callable[..., Union[Coroutine[~TSource, Union[~TSource, NoneType], Union[fslash.core.option.Option[~TSource], NoneType]], Generator[~TSource, Union[~TSource, NoneType], Union[fslash.core.option.Option[~TSource], NoneType]], fslash.core.option.Option[~TSource]]]) ‑> Callable[..., fslash.core.option.Option[~TSource]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Option builder.</p>
-<p>Enables the use of options as computational expressions using
-coroutines. Thus inside the coroutine the keywords <code>yield</code> and
-<code>yield from</code> reasembles <code>yield</code> and <code>yield!</code> from F#.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>fn</code></strong></dt>
-<dd>A function that contains a computational expression and</dd>
-</dl>
-<p>returns either a coroutine, generator or an option.</p>
-<h2 id="returns">Returns</h2>
-<p>An <code><a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a></code> object.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def option(
-    fn: Callable[  # Function
-        ...,       # ... that takes anything
-        Union[     # ... and returns
-            # Coroutine that yields or returns an option
-            Coroutine[TSource, Optional[TSource], Optional[Option[TSource]]],
-            # Generator that yields or returns an option
-            Generator[TSource, Optional[TSource], Optional[Option[TSource]]],
-            # or simply just an Option
-            Option[TSource]
-        ]
-    ]
-) -&gt; Callable[..., Option[TSource]]:
-    &#34;&#34;&#34;Option builder.
-
-    Enables the use of options as computational expressions using
-    coroutines. Thus inside the coroutine the keywords `yield` and
-    `yield from` reasembles `yield` and `yield!` from F#.
-
-    Args:
-        fn: A function that contains a computational expression and
-        returns either a coroutine, generator or an option.
-
-    Returns:
-        An `Option` object.
-    &#34;&#34;&#34;
-
-    # This is a mess, but we basically just want to convert plain functions with a return statement into coroutines.
-    gen = iter(cast(Iterable[TSource], fn()))
-
-    def wrapper(*args, **kw) -&gt; Option[TSource]:
-        done: List[bool] = []
-        result: Option[TSource] = send(gen, done)
-
-        while result != Nothing and not done:
-            result = result.bind(lambda value: send(gen, done, value))
-
-        return result
-    return wrapper</code></pre>
-</details>
-</dd>
 <dt id="fslash.core.pipe"><code class="name flex">
 <span>def <span class="ident">pipe</span></span>(<span>x, *fns)</span>
 </code></dt>
@@ -227,65 +179,6 @@ pipe(x, fn, gn) == gn(fn(x))
     &#34;&#34;&#34;
 
     return compose(*fns)(x)  # type: ignore</code></pre>
-</details>
-</dd>
-<dt id="fslash.core.result"><code class="name flex">
-<span>def <span class="ident">result</span></span>(<span>fn: Callable[..., Union[Coroutine[~TSource, Union[~TSource, NoneType], Union[fslash.core.result.Result[~TSource, ~TError], NoneType]], Generator[~TSource, Union[~TSource, NoneType], Union[fslash.core.result.Result[~TSource, ~TError], NoneType]], fslash.core.result.Result[~TSource, ~TError]]]) ‑> Callable[..., fslash.core.result.Result[~TSource, ~TError]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Result builder.</p>
-<p>Enables the use of options as computational expressions using
-coroutines. Thus inside the coroutine the keywords <code>yield</code> and
-<code>yield from</code> reasembles <code>yield</code> and <code>yield!</code> from F#.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>fn</code></strong></dt>
-<dd>A function that contains a computational expression and</dd>
-</dl>
-<p>returns either a coroutine, generator or a result.</p>
-<h2 id="returns">Returns</h2>
-<p>A Result object.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def result(
-    fn: Callable[
-        ...,
-        Union[
-            Coroutine[TSource, Optional[TSource], Optional[Result[TSource, TError]]],
-            Generator[TSource, Optional[TSource], Optional[Result[TSource, TError]]],
-            Result[TSource, TError],
-        ],
-    ]
-) -&gt; Callable[..., Result[TSource, TError]]:
-    &#34;&#34;&#34;Result builder.
-
-    Enables the use of options as computational expressions using
-    coroutines. Thus inside the coroutine the keywords `yield` and
-    `yield from` reasembles `yield` and `yield!` from F#.
-
-    Args:
-        fn: A function that contains a computational expression and
-        returns either a coroutine, generator or a result.
-
-    Returns:
-        A Result object.
-    &#34;&#34;&#34;
-
-    # This is a mess, but we basically just want to convert plain functions with a return statement into coroutines.
-    gen = iter(cast(Iterable[TSource], fn()))
-
-    def wrapper(*args, **kw) -&gt; Result[TSource, TError]:
-        done: List[bool] = []
-        result: Result[TSource, TError] = send(gen, done)
-
-        while not isinstance(result, Error) and not done:
-            result = result.bind(lambda value: send(gen, done, value))
-            print(&#34;Result: &#34;, result)
-
-        return result
-    return wrapper</code></pre>
 </details>
 </dd>
 </dl>
@@ -322,6 +215,12 @@ coroutines. Thus inside the coroutine the keywords <code>yield</code> and
     def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
         return Error(mapper(self._error))
 
+    def is_error(self) -&gt; bool:
+        return True
+
+    def is_ok(self) -&gt; bool:
+        return False
+
     def __eq__(self, other):
         if isinstance(other, Error):
             return self.error == other.error
@@ -329,7 +228,6 @@ coroutines. Thus inside the coroutine the keywords <code>yield</code> and
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for Error case.&#34;&#34;&#34;
-        print(&#34;Error:iter&#34;)
         raise ResultException(self._error)
         yield
 
@@ -338,7 +236,7 @@ coroutines. Thus inside the coroutine the keywords <code>yield</code> and
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>fslash.core.result.Result</li>
+<li><a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
 </ul>
@@ -360,7 +258,7 @@ def error(self) -&gt; TError:
 <h3>Methods</h3>
 <dl>
 <dt id="fslash.core.Error.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]]) ‑> fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -372,8 +270,34 @@ def error(self) -&gt; TError:
     return Error(self._error)</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.Error.is_error"><code class="name flex">
+<span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_error(self) -&gt; bool:
+    return True</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Error.is_ok"><code class="name flex">
+<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_ok(self) -&gt; bool:
+    return False</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.Error.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -386,7 +310,7 @@ def error(self) -&gt; TError:
 </details>
 </dd>
 <dt id="fslash.core.Error.map_error"><code class="name flex">
-<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> fslash.core.result.Result[~TSource, ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
+<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~TSource, ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -429,6 +353,12 @@ def error(self) -&gt; TError:
     def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
         return Ok(self._value)
 
+    def is_error(self) -&gt; bool:
+        return False
+
+    def is_ok(self) -&gt; bool:
+        return True
+
     def __eq__(self, other):
         if isinstance(other, Ok):
             return self.value == other.value
@@ -443,7 +373,7 @@ def error(self) -&gt; TError:
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>fslash.core.result.Result</li>
+<li><a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
 </ul>
@@ -465,7 +395,7 @@ def value(self):
 <h3>Methods</h3>
 <dl>
 <dt id="fslash.core.Ok.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]]) ‑> fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -477,8 +407,34 @@ def value(self):
     return mapper(self._value)</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.Ok.is_error"><code class="name flex">
+<span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_error(self) -&gt; bool:
+    return False</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Ok.is_ok"><code class="name flex">
+<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_ok(self) -&gt; bool:
+    return True</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.Ok.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -491,7 +447,7 @@ def value(self):
 </details>
 </dd>
 <dt id="fslash.core.Ok.map_error"><code class="name flex">
-<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> fslash.core.result.Result[~TSource, ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
+<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~TSource, ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -527,7 +483,8 @@ def value(self):
         raise NotImplementedError
 
     @abstractmethod
-    def or_else(self, if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:  # noqa: T484
+    def or_else(self, if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:
+        &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -540,10 +497,12 @@ def value(self):
 
     @abstractmethod
     def is_some(cls) -&gt; bool:
+        &#34;&#34;&#34;Returns true if the option is not Nothing.&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
     def is_none(cls) -&gt; bool:
+        &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -560,13 +519,13 @@ def value(self):
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li>fslash.core.option.Some</li>
-<li>fslash.core.option._None</li>
+<li><a title="fslash.core.option.Some" href="option.html#fslash.core.option.Some">Some</a></li>
+<li><a title="fslash.core.option._None" href="option.html#fslash.core.option._None">_None</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
 <dt id="fslash.core.Option.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]')]) ‑> fslash.core.option.Option[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]')]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -583,13 +542,14 @@ def bind(self, mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#3
 <span>def <span class="ident">is_none</span></span>(<span>cls) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns true if the option is Nothing.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def is_none(cls) -&gt; bool:
+    &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -597,18 +557,19 @@ def is_none(cls) -&gt; bool:
 <span>def <span class="ident">is_some</span></span>(<span>cls) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns true if the option is not Nothing.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def is_some(cls) -&gt; bool:
+    &#34;&#34;&#34;Returns true if the option is not Nothing.&#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Option.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> fslash.core.option.Option[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -622,16 +583,17 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;Option[TResult]&#
 </details>
 </dd>
 <dt id="fslash.core.Option.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[TSource]) ‑> fslash.core.option.Option[~TSource]</span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[TSource]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns option if it is Some, otherwise returns <code>if_one</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def or_else(self, if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:  # noqa: T484
+def or_else(self, if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Option[TSource]&#39;:
+    &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -727,9 +689,45 @@ sequence as the only argument.</p></div>
 
     @staticmethod
     def is_none() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
+        &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
+
         def _is_none(option: &#34;Option[TSource]&#34;) -&gt; bool:
             return option.is_none()
-        return _is_none</code></pre>
+        return _is_none
+
+    @staticmethod
+    def of_optional(value: Optional[TSource]) -&gt; &#39;Option[TSource]&#39;:
+        &#34;&#34;&#34;Convert an optional value to an option.
+
+        Convert a value that could be `None` into an `Option` value.
+
+        Args:
+            value: The input optional value.
+
+        Return:
+            The result option.
+        &#34;&#34;&#34;
+        if value is None:
+            return Nothing
+        else:
+            return Some(value)
+
+    @staticmethod
+    def of_obj(value: Any) -&gt; &#39;Option[TSource]&#39;:
+        &#34;&#34;&#34;Convert object to an option.
+
+        Convert a value that could be `None` into an `Option` value.
+
+        Args:
+            value: The input object.
+
+        Return:
+            The result option.
+        &#34;&#34;&#34;
+        if value is None:
+            return Nothing
+        else:
+            return Some(value)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -738,7 +736,7 @@ sequence as the only argument.</p></div>
 <h3>Static methods</h3>
 <dl>
 <dt id="fslash.core.OptionModule.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]')]) ‑> Callable[[fslash.core.option.Option[~TSource]], fslash.core.option.Option[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]')]) ‑> Callable[[<a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]], <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -754,23 +752,25 @@ def bind(mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Call
 </details>
 </dd>
 <dt id="fslash.core.OptionModule.is_none"><code class="name flex">
-<span>def <span class="ident">is_none</span></span>(<span>) ‑> Callable[[fslash.core.option.Option[~TSource]], bool]</span>
+<span>def <span class="ident">is_none</span></span>(<span>) ‑> Callable[[<a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]], bool]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns true if the option is Nothing.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
 def is_none() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
+    &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
+
     def _is_none(option: &#34;Option[TSource]&#34;) -&gt; bool:
         return option.is_none()
     return _is_none</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.OptionModule.is_some"><code class="name flex">
-<span>def <span class="ident">is_some</span></span>(<span>) ‑> Callable[[fslash.core.option.Option[~TSource]], bool]</span>
+<span>def <span class="ident">is_some</span></span>(<span>) ‑> Callable[[<a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]], bool]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -786,7 +786,7 @@ def is_some() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
 </details>
 </dd>
 <dt id="fslash.core.OptionModule.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> Callable[[fslash.core.option.Option[~TSource]], fslash.core.option.Option[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> Callable[[<a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]], <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -801,8 +801,78 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Option[TSourc
     return _map</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.OptionModule.of_obj"><code class="name flex">
+<span>def <span class="ident">of_obj</span></span>(<span>value: Any) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert object to an option.</p>
+<p>Convert a value that could be <code>None</code> into an <code><a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a></code> value.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>value</code></strong></dt>
+<dd>The input object.</dd>
+</dl>
+<h2 id="return">Return</h2>
+<p>The result option.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of_obj(value: Any) -&gt; &#39;Option[TSource]&#39;:
+    &#34;&#34;&#34;Convert object to an option.
+
+    Convert a value that could be `None` into an `Option` value.
+
+    Args:
+        value: The input object.
+
+    Return:
+        The result option.
+    &#34;&#34;&#34;
+    if value is None:
+        return Nothing
+    else:
+        return Some(value)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.OptionModule.of_optional"><code class="name flex">
+<span>def <span class="ident">of_optional</span></span>(<span>value: Union[~TSource, NoneType]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert an optional value to an option.</p>
+<p>Convert a value that could be <code>None</code> into an <code><a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a></code> value.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>value</code></strong></dt>
+<dd>The input optional value.</dd>
+</dl>
+<h2 id="return">Return</h2>
+<p>The result option.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of_optional(value: Optional[TSource]) -&gt; &#39;Option[TSource]&#39;:
+    &#34;&#34;&#34;Convert an optional value to an option.
+
+    Convert a value that could be `None` into an `Option` value.
+
+    Args:
+        value: The input optional value.
+
+    Return:
+        The result option.
+    &#34;&#34;&#34;
+    if value is None:
+        return Nothing
+    else:
+        return Some(value)</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.OptionModule.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>if_none: <a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[TSource]) ‑> Callable[[fslash.core.option.Option[~TSource]], fslash.core.option.Option[~TSource]]</span>
+<span>def <span class="ident">or_else</span></span>(<span>if_none: <a title="fslash.core.OptionModule" href="#fslash.core.OptionModule">OptionModule</a>[TSource]) ‑> Callable[[<a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]], <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns option if it is Some, otherwise returns ifNone.</p></div>
@@ -819,7 +889,7 @@ def or_else(if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Callable[[Option[TSou
 </details>
 </dd>
 <dt id="fslash.core.OptionModule.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>) ‑> Callable[[fslash.core.option.Option[~TSource]], List[~TSource]]</span>
+<span>def <span class="ident">to_list</span></span>(<span>) ‑> Callable[[<a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]], List[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -835,7 +905,7 @@ def to_list() -&gt; &#39;Callable[[Option[TSource]], List[TSource]]&#39;:
 </details>
 </dd>
 <dt id="fslash.core.OptionModule.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>) ‑> Callable[[fslash.core.option.Option[~TSource]], Iterable[~TSource]]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>) ‑> Callable[[<a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]], Iterable[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -873,6 +943,14 @@ def to_seq() -&gt; &#39;Callable[[Option[TSource]], Iterable[TSource]]&#39;:
     def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
         raise NotImplementedError
 
+    @abstractmethod
+    def is_error(self) -&gt; bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    def is_ok(self) -&gt; bool:
+        raise NotImplementedError
+
     def __eq__(self, other):
         raise NotImplementedError
 
@@ -890,13 +968,13 @@ def to_seq() -&gt; &#39;Callable[[Option[TSource]], Iterable[TSource]]&#39;:
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li>fslash.core.result.Error</li>
-<li>fslash.core.result.Ok</li>
+<li><a title="fslash.core.result.Error" href="result.html#fslash.core.result.Error">Error</a></li>
+<li><a title="fslash.core.result.Ok" href="result.html#fslash.core.result.Ok">Ok</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
 <dt id="fslash.core.Result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, TError]')]) ‑> fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, TError]')]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -909,8 +987,36 @@ def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.Result.is_error"><code class="name flex">
+<span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def is_error(self) -&gt; bool:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Result.is_ok"><code class="name flex">
+<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def is_ok(self) -&gt; bool:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.Result.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -972,7 +1078,7 @@ return default</p></div>
 <h3>Static methods</h3>
 <dl>
 <dt id="fslash.core.ResultModule.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, TError]')]) ‑> Callable[[fslash.core.result.Result[~TSource, ~TError]], fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.ResultModule" href="#fslash.core.ResultModule">ResultModule</a>[<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, TError]')]) ‑> Callable[[<a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~TSource, ~TError]], <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -991,7 +1097,7 @@ def bind(
 </details>
 </dd>
 <dt id="fslash.core.ResultModule.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> Callable[[fslash.core.result.Result[~TSource, ~TError]], fslash.core.result.Result[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]) ‑> Callable[[<a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~TSource, ~TError]], <a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>, ~TError]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1026,9 +1132,11 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSourc
         self._value = value
 
     def is_some(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
         return True
 
     def is_none(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
         return False
 
     def map(self, mapper: Callable[[TSource], TResult]):
@@ -1038,6 +1146,7 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSourc
         return mapper(self._value)
 
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
         return self
 
     def to_list(self) -&gt; List[TSource]:
@@ -1067,7 +1176,7 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSourc
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>fslash.core.option.Option</li>
+<li><a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
 </ul>
@@ -1094,7 +1203,7 @@ def value(self):
 <h3>Methods</h3>
 <dl>
 <dt id="fslash.core.Some.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], fslash.core.option.Option[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]]) ‑> fslash.core.option.Option[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~<a title="fslash.core.Result" href="#fslash.core.Result">Result</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1110,12 +1219,13 @@ def value(self):
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>False</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def is_none(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
     return False</code></pre>
 </details>
 </dd>
@@ -1123,12 +1233,13 @@ def value(self):
 <span>def <span class="ident">is_some</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>True</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def is_some(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
     return True</code></pre>
 </details>
 </dd>
@@ -1146,15 +1257,16 @@ def value(self):
 </details>
 </dd>
 <dt id="fslash.core.Some.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: fslash.core.option.Option[~TSource]) ‑> fslash.core.option.Option[~TSource]</span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]) ‑> <a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a>[~TSource]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>self</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
     return self</code></pre>
 </details>
 </dd>
@@ -1203,32 +1315,36 @@ def value(self):
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></li>
+<li><code><a title="fslash.core.option" href="option.html">fslash.core.option</a></code></li>
+<li><code><a title="fslash.core.result" href="result.html">fslash.core.result</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="fslash.core.compose" href="#fslash.core.compose">compose</a></code></li>
 <li><code><a title="fslash.core.curried" href="#fslash.core.curried">curried</a></code></li>
-<li><code><a title="fslash.core.option" href="#fslash.core.option">option</a></code></li>
 <li><code><a title="fslash.core.pipe" href="#fslash.core.pipe">pipe</a></code></li>
-<li><code><a title="fslash.core.result" href="#fslash.core.result">result</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
 <h4><code><a title="fslash.core.Error" href="#fslash.core.Error">Error</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="fslash.core.Error.bind" href="#fslash.core.Error.bind">bind</a></code></li>
 <li><code><a title="fslash.core.Error.error" href="#fslash.core.Error.error">error</a></code></li>
+<li><code><a title="fslash.core.Error.is_error" href="#fslash.core.Error.is_error">is_error</a></code></li>
+<li><code><a title="fslash.core.Error.is_ok" href="#fslash.core.Error.is_ok">is_ok</a></code></li>
 <li><code><a title="fslash.core.Error.map" href="#fslash.core.Error.map">map</a></code></li>
 <li><code><a title="fslash.core.Error.map_error" href="#fslash.core.Error.map_error">map_error</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="fslash.core.Ok" href="#fslash.core.Ok">Ok</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="fslash.core.Ok.bind" href="#fslash.core.Ok.bind">bind</a></code></li>
+<li><code><a title="fslash.core.Ok.is_error" href="#fslash.core.Ok.is_error">is_error</a></code></li>
+<li><code><a title="fslash.core.Ok.is_ok" href="#fslash.core.Ok.is_ok">is_ok</a></code></li>
 <li><code><a title="fslash.core.Ok.map" href="#fslash.core.Ok.map">map</a></code></li>
 <li><code><a title="fslash.core.Ok.map_error" href="#fslash.core.Ok.map_error">map_error</a></code></li>
 <li><code><a title="fslash.core.Ok.value" href="#fslash.core.Ok.value">value</a></code></li>
@@ -1253,6 +1369,8 @@ def value(self):
 <li><code><a title="fslash.core.OptionModule.is_none" href="#fslash.core.OptionModule.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.OptionModule.is_some" href="#fslash.core.OptionModule.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.OptionModule.map" href="#fslash.core.OptionModule.map">map</a></code></li>
+<li><code><a title="fslash.core.OptionModule.of_obj" href="#fslash.core.OptionModule.of_obj">of_obj</a></code></li>
+<li><code><a title="fslash.core.OptionModule.of_optional" href="#fslash.core.OptionModule.of_optional">of_optional</a></code></li>
 <li><code><a title="fslash.core.OptionModule.or_else" href="#fslash.core.OptionModule.or_else">or_else</a></code></li>
 <li><code><a title="fslash.core.OptionModule.to_list" href="#fslash.core.OptionModule.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.OptionModule.to_seq" href="#fslash.core.OptionModule.to_seq">to_seq</a></code></li>
@@ -1262,6 +1380,8 @@ def value(self):
 <h4><code><a title="fslash.core.Result" href="#fslash.core.Result">Result</a></code></h4>
 <ul class="">
 <li><code><a title="fslash.core.Result.bind" href="#fslash.core.Result.bind">bind</a></code></li>
+<li><code><a title="fslash.core.Result.is_error" href="#fslash.core.Result.is_error">is_error</a></code></li>
+<li><code><a title="fslash.core.Result.is_ok" href="#fslash.core.Result.is_ok">is_ok</a></code></li>
 <li><code><a title="fslash.core.Result.map" href="#fslash.core.Result.map">map</a></code></li>
 </ul>
 </li>

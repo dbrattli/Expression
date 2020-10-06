@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Generic, Generator, Optional, TypeVar, Callable, List, Iterable, Iterator, Coroutine, cast, Union
+from typing import Generic, Optional, TypeVar, Callable, List, Iterable, Iterator, Any
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -53,9 +53,45 @@ class OptionModule(Generic[TSource]):
 
     @staticmethod
     def is_none() -> 'Callable[[Option[TSource]], bool]':
+        """Returns true if the option is Nothing."""
+
         def _is_none(option: "Option[TSource]") -> bool:
             return option.is_none()
         return _is_none
+
+    @staticmethod
+    def of_optional(value: Optional[TSource]) -> 'Option[TSource]':
+        """Convert an optional value to an option.
+
+        Convert a value that could be `None` into an `Option` value.
+
+        Args:
+            value: The input optional value.
+
+        Return:
+            The result option.
+        """
+        if value is None:
+            return Nothing
+        else:
+            return Some(value)
+
+    @staticmethod
+    def of_obj(value: Any) -> 'Option[TSource]':
+        """Convert object to an option.
+
+        Convert a value that could be `None` into an `Option` value.
+
+        Args:
+            value: The input object.
+
+        Return:
+            The result option.
+        """
+        if value is None:
+            return Nothing
+        else:
+            return Some(value)
 
 
 class Option(Iterable[TSource]):
@@ -70,7 +106,8 @@ class Option(Iterable[TSource]):
         raise NotImplementedError
 
     @abstractmethod
-    def or_else(self, if_none: 'Option[TSource]') -> 'Option[TSource]':  # noqa: T484
+    def or_else(self, if_none: 'Option[TSource]') -> 'Option[TSource]':
+        """Returns option if it is Some, otherwise returns `if_one`. """
         raise NotImplementedError
 
     @abstractmethod
@@ -83,10 +120,12 @@ class Option(Iterable[TSource]):
 
     @abstractmethod
     def is_some(cls) -> bool:
+        """Returns true if the option is not Nothing."""
         raise NotImplementedError
 
     @abstractmethod
     def is_none(cls) -> bool:
+        """Returns true if the option is Nothing."""
         raise NotImplementedError
 
     @abstractmethod
@@ -104,9 +143,11 @@ class Some(Option[TSource]):
         self._value = value
 
     def is_some(self) -> bool:
+        """Returns `True`."""
         return True
 
     def is_none(self) -> bool:
+        """Returns `False`."""
         return False
 
     def map(self, mapper: Callable[[TSource], TResult]):
@@ -116,6 +157,7 @@ class Some(Option[TSource]):
         return mapper(self._value)
 
     def or_else(self, if_none: Option[TSource]) -> Option[TSource]:
+        """Returns `self`."""
         return self
 
     def to_list(self) -> List[TSource]:
@@ -145,15 +187,17 @@ class Some(Option[TSource]):
 
 
 class _None(Option[TSource]):
-    """The Some option case class.
+    """The None option case class.
 
-    Do not use. Use the singleton None_ instead.
+    Do not use. Use the singleton `Nothing` instead.
     """
 
     def is_some(self) -> bool:
+        """Returns `False`."""
         return False
 
     def is_none(self) -> bool:
+        """Returns `True`."""
         return True
 
     def map(self, mapper: Callable[[TSource], TResult]):
@@ -163,6 +207,7 @@ class _None(Option[TSource]):
         return Nothing
 
     def or_else(self, if_none: Option[TSource]) -> Option[TSource]:
+        """Returns `if_none`."""
         return if_none
 
     def to_list(self) -> List[TSource]:
@@ -172,11 +217,14 @@ class _None(Option[TSource]):
         return []
 
     def __iter__(self) -> Iterator[TSource]:
-        """Return iterator for None_().
+        """Return iterator for the `Nothing` case.
 
-        We basically want to return nothing, but we have to return something to signal fail
+        We basically want to return nothing, but we have to return
+        something to signal fail
+
+        Raises:
+            GeneratorExit
         """
-        print("None:iter")
         raise GeneratorExit
         yield  # Just to make it a generator
 
@@ -192,66 +240,7 @@ class _None(Option[TSource]):
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
 # avoid conflicts with the builtin `None` value.
 Nothing: _None = _None()
+"""Singleton `Nothing` object."""
 
 
-def send(gen, done: List[bool], value: Optional[TSource] = None) -> Option[TSource]:
-    try:
-        yielded = gen.send(value)
-        return Some(yielded) if yielded else Nothing
-    except GeneratorExit:
-        done.append(True)
-        return Nothing
-    except StopIteration as ex:
-        done.append(True)
-        if ex.value is not None:
-            return Some(ex.value)
-        elif value is not None:
-            return Some(value)
-        return Nothing
-    except Exception:
-        done.append(True)
-        return Nothing
-
-
-def option(
-    fn: Callable[  # Function
-        ...,       # ... that takes anything
-        Union[     # ... and returns
-            # Coroutine that yields or returns an option
-            Coroutine[TSource, Optional[TSource], Optional[Option[TSource]]],
-            # Generator that yields or returns an option
-            Generator[TSource, Optional[TSource], Optional[Option[TSource]]],
-            # or simply just an Option
-            Option[TSource]
-        ]
-    ]
-) -> Callable[..., Option[TSource]]:
-    """Option builder.
-
-    Enables the use of options as computational expressions using
-    coroutines. Thus inside the coroutine the keywords `yield` and
-    `yield from` reasembles `yield` and `yield!` from F#.
-
-    Args:
-        fn: A function that contains a computational expression and
-        returns either a coroutine, generator or an option.
-
-    Returns:
-        An `Option` object.
-    """
-
-    # This is a mess, but we basically just want to convert plain functions with a return statement into coroutines.
-    gen = iter(cast(Iterable[TSource], fn()))
-
-    def wrapper(*args, **kw) -> Option[TSource]:
-        done: List[bool] = []
-        result: Option[TSource] = send(gen, done)
-
-        while result != Nothing and not done:
-            result = result.bind(lambda value: send(gen, done, value))
-
-        return result
-    return wrapper
-
-
-__all__ = ["OptionModule", "Option", "Some", "Nothing", "option"]
+__all__ = ["OptionModule", "Option", "Some", "Nothing", "_None"]
