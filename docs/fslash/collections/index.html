@@ -32,16 +32,22 @@ Collection abstractions.
 &#34;&#34;&#34;
 
 from .seq import Seq as TSeq, SeqModule as Seq
+from .list import List as TList, ListModule as List, Cons, Nil
 
 
 __all__ = [
-    &#39;Seq&#39;, &#39;TSeq&#39;
+    &#39;Seq&#39;, &#39;TSeq&#39;,
+    &#39;List&#39;, &#39;TList&#39;, &#39;Cons&#39;, &#39;Nil&#39;
 ]</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="fslash.collections.list" href="list.html">fslash.collections.list</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt><code class="name"><a title="fslash.collections.seq" href="seq.html">fslash.collections.seq</a></code></dt>
 <dd>
 <div class="desc"></div>
@@ -55,6 +61,555 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="fslash.collections.Cons"><code class="flex name class">
+<span>class <span class="ident">Cons</span></span>
+<span>(</span><span>head: ~TSource, tail: <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Immutable list type.</p>
+<p>This is not the most space efficient implementation of a list. If
+that is the goal then use the builin mutable list or array types
+instead. Use this list if you need an immutable list for prepend
+operations mostly (<code>O(1)</code>).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Cons(List[TSource]):
+    def __init__(self, head: TSource, tail: List[TSource]):
+        self._value = (head, tail)
+
+    def append(self, other: &#39;List[TSource]&#39;) -&gt; &#39;List[TSource]&#39;:
+        head, tail = self._value
+        return Cons(head, tail.append(other))
+
+    def collect(self, mapping: Callable[[TSource], &#39;List[TResult]&#39;]) -&gt; &#39;List[TResult]&#39;:
+        head, tail = self._value
+        return mapping(head).append(tail.collect(mapping))
+
+    def cons(self, element: TSource) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;Add element to front of List.&#34;&#34;&#34;
+
+        return Cons(element, self)
+
+    def head(self) -&gt; TSource:
+        &#34;&#34;&#34;Retrive first element in List.&#34;&#34;&#34;
+
+        head, _ = self._value
+        return head
+
+    def is_empty(self) -&gt; bool:
+        &#34;&#34;&#34;Return `True` if list is empty.&#34;&#34;&#34;
+        return False
+
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; List[TResult]:
+        head, tail = self._value
+        return Cons(mapper(head), tail.map(mapper))
+
+    def tail(self) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;Return tail of List.&#34;&#34;&#34;
+
+        _, tail = self._value
+        return tail
+
+    def __add__(self, other) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;Append list with other list.&#34;&#34;&#34;
+
+        return self.append(other)
+
+    def __eq__(self, other) -&gt; bool:
+        &#34;&#34;&#34;Return true if list equals other list.&#34;&#34;&#34;
+
+        if other is Nil:
+            return False
+
+        head, tail = self._value
+        return head == other.head() and tail == other.tail()
+
+    def __iter__(self):
+        head, tail = self._value
+        yield head
+        yield from tail
+
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Return length of List.&#34;&#34;&#34;
+
+        _, tail = self._value
+        return 1 + len(tail)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a></li>
+<li>collections.abc.Iterable</li>
+<li>collections.abc.Sized</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="fslash.collections.Cons.append"><code class="name flex">
+<span>def <span class="ident">append</span></span>(<span>self, other: <a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a>[TSource]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def append(self, other: &#39;List[TSource]&#39;) -&gt; &#39;List[TSource]&#39;:
+    head, tail = self._value
+    return Cons(head, tail.append(other))</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.Cons.collect"><code class="name flex">
+<span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], ForwardRef('<a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a>[TResult]')]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collect(self, mapping: Callable[[TSource], &#39;List[TResult]&#39;]) -&gt; &#39;List[TResult]&#39;:
+    head, tail = self._value
+    return mapping(head).append(tail.collect(mapping))</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.Cons.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]) -&gt; List[TResult]:
+    head, tail = self._value
+    return Cons(mapper(head), tail.map(mapper))</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a></b></code>:
+<ul class="hlist">
+<li><code><a title="fslash.collections.list.List.cons" href="list.html#fslash.collections.list.List.cons">cons</a></code></li>
+<li><code><a title="fslash.collections.list.List.head" href="list.html#fslash.collections.list.List.head">head</a></code></li>
+<li><code><a title="fslash.collections.list.List.is_empty" href="list.html#fslash.collections.list.List.is_empty">is_empty</a></code></li>
+<li><code><a title="fslash.collections.list.List.tail" href="list.html#fslash.collections.list.List.tail">tail</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="fslash.collections.List"><code class="flex name class">
+<span>class <span class="ident">TList</span></span>
+<span>(</span><span>*args, **kwds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Immutable list type.</p>
+<p>This is not the most space efficient implementation of a list. If
+that is the goal then use the builin mutable list or array types
+instead. Use this list if you need an immutable list for prepend
+operations mostly (<code>O(1)</code>).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class List(Iterable[TSource], Sized):
+    &#34;&#34;&#34;Immutable list type.
+
+    This is not the most space efficient implementation of a list. If
+    that is the goal then use the builin mutable list or array types
+    instead. Use this list if you need an immutable list for prepend
+    operations mostly (`O(1)`).
+    &#34;&#34;&#34;
+
+    @abstractmethod
+    def append(self, other: &#39;List[TSource]&#39;) -&gt; &#39;List[TSource]&#39;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def collect(self, mapping: Callable[[TSource], &#39;List[TResult]&#39;]) -&gt; &#39;List[TResult]&#39;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def cons(self, element: TSource) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;Add element to front of List.&#34;&#34;&#34;
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def head(self) -&gt; TSource:
+        &#34;&#34;&#34;Retrive first element in List.&#34;&#34;&#34;
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def tail(self) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;Return tail of List.&#34;&#34;&#34;
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def is_empty(self) -&gt; bool:
+        &#34;&#34;&#34;Return `True` if list is empty.&#34;&#34;&#34;
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;List[TResult]&#39;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def __iter__(self) -&gt; Iterator:
+        &#34;&#34;&#34;Return iterator for List.&#34;&#34;&#34;
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def __add__(self, other) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;Append list with other list.&#34;&#34;&#34;
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def __eq__(self, other) -&gt; bool:
+        &#34;&#34;&#34;Return true if list equals other list.&#34;&#34;&#34;
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Return length of List.&#34;&#34;&#34;
+
+        raise NotImplementedError</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>collections.abc.Iterable</li>
+<li>collections.abc.Sized</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="fslash.collections.list.Cons" href="list.html#fslash.collections.list.Cons">Cons</a></li>
+<li>fslash.collections.list._Nil</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="fslash.collections.List.append"><code class="name flex">
+<span>def <span class="ident">append</span></span>(<span>self, other: <a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a>[TSource]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def append(self, other: &#39;List[TSource]&#39;) -&gt; &#39;List[TSource]&#39;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.collect"><code class="name flex">
+<span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], ForwardRef('<a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a>[TResult]')]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def collect(self, mapping: Callable[[TSource], &#39;List[TResult]&#39;]) -&gt; &#39;List[TResult]&#39;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.cons"><code class="name flex">
+<span>def <span class="ident">cons</span></span>(<span>self, element: ~TSource) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add element to front of List.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def cons(self, element: TSource) -&gt; &#39;List[TSource]&#39;:
+    &#34;&#34;&#34;Add element to front of List.&#34;&#34;&#34;
+
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.head"><code class="name flex">
+<span>def <span class="ident">head</span></span>(<span>self) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Retrive first element in List.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def head(self) -&gt; TSource:
+    &#34;&#34;&#34;Retrive first element in List.&#34;&#34;&#34;
+
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.is_empty"><code class="name flex">
+<span>def <span class="ident">is_empty</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return <code>True</code> if list is empty.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def is_empty(self) -&gt; bool:
+    &#34;&#34;&#34;Return `True` if list is empty.&#34;&#34;&#34;
+
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#39;List[TResult]&#39;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.tail"><code class="name flex">
+<span>def <span class="ident">tail</span></span>(<span>self) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return tail of List.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def tail(self) -&gt; &#39;List[TSource]&#39;:
+    &#34;&#34;&#34;Return tail of List.&#34;&#34;&#34;
+
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="fslash.collections.ListModule"><code class="flex name class">
+<span>class <span class="ident">List</span></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ListModule:
+    @staticmethod
+    def append(source: &#39;List[TSource]&#39;) -&gt; &#39;Callable[[List[TSource]], List[TSource]]&#39;:
+        def _append(other: List[TSource]) -&gt; List[TSource]:
+            return source.append(other)
+        return _append
+
+    @staticmethod
+    def collect(mapping: &#39;Callable[[TSource], List[TResult]]&#39;) -&gt; &#39;Callable[[List[TSource]], List[TResult]]&#39;:
+        def _collect(source: List[TSource]) -&gt; List[TResult]:
+            return source.collect(mapping)
+        return _collect
+
+    @staticmethod
+    def concat(sources: &#39;Iterable[List[TSource]]&#39;) -&gt; &#39;List[TSource]&#39;:
+        def folder(xs: List[TSource], acc: List[TSource]) -&gt; List[TSource]:
+            return xs + acc
+        return Seq.fold_back(folder, sources)(Nil)
+
+    empty = Nil
+
+    @staticmethod
+    def head(source: List[TSource]) -&gt; TSource:
+        return source.head()
+
+    @staticmethod
+    def is_empty(source: List[TSource]) -&gt; bool:
+        return source.is_empty()
+
+    @staticmethod
+    def map(mapper: Callable[[TSource], TResult]) -&gt; &#39;Callable[[List[TSource]], List[TResult]]&#39;:
+        def _map(source: List[TSource]) -&gt; List[TResult]:
+            return source.map(mapper)
+        return _map
+
+    @staticmethod
+    def of_seq(xs: Iterable[TSource]) -&gt; &#39;List[TSource]&#39;:
+        def folder(value: TSource, acc: List[TSource]) -&gt; List[TSource]:
+            return Cons(value, acc)
+        return Seq.fold_back(folder, xs)(Nil)
+
+    @staticmethod
+    def singleton(value: TSource) -&gt; &#39;List[TSource]&#39;:
+        return Cons(value, Nil)
+
+    @staticmethod
+    def tail(source: List[TSource]) -&gt; List[TSource]:
+        return source.tail()</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="fslash.collections.ListModule.empty"><code class="name">var <span class="ident">empty</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="fslash.collections.ListModule.append"><code class="name flex">
+<span>def <span class="ident">append</span></span>(<span>source: <a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a>[TSource]) ‑> Callable[[<a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]], <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def append(source: &#39;List[TSource]&#39;) -&gt; &#39;Callable[[List[TSource]], List[TSource]]&#39;:
+    def _append(other: List[TSource]) -&gt; List[TSource]:
+        return source.append(other)
+    return _append</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.ListModule.collect"><code class="name flex">
+<span>def <span class="ident">collect</span></span>(<span>mapping: Callable[[TSource], <a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a>[TResult]]) ‑> Callable[[<a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]], <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def collect(mapping: &#39;Callable[[TSource], List[TResult]]&#39;) -&gt; &#39;Callable[[List[TSource]], List[TResult]]&#39;:
+    def _collect(source: List[TSource]) -&gt; List[TResult]:
+        return source.collect(mapping)
+    return _collect</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.ListModule.concat"><code class="name flex">
+<span>def <span class="ident">concat</span></span>(<span>sources: Iterable[<a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a>[TSource]]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def concat(sources: &#39;Iterable[List[TSource]]&#39;) -&gt; &#39;List[TSource]&#39;:
+    def folder(xs: List[TSource], acc: List[TSource]) -&gt; List[TSource]:
+        return xs + acc
+    return Seq.fold_back(folder, sources)(Nil)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.ListModule.head"><code class="name flex">
+<span>def <span class="ident">head</span></span>(<span>source: <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def head(source: List[TSource]) -&gt; TSource:
+    return source.head()</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.ListModule.is_empty"><code class="name flex">
+<span>def <span class="ident">is_empty</span></span>(<span>source: <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def is_empty(source: List[TSource]) -&gt; bool:
+    return source.is_empty()</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.ListModule.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[<a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]], <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def map(mapper: Callable[[TSource], TResult]) -&gt; &#39;Callable[[List[TSource]], List[TResult]]&#39;:
+    def _map(source: List[TSource]) -&gt; List[TResult]:
+        return source.map(mapper)
+    return _map</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.ListModule.of_seq"><code class="name flex">
+<span>def <span class="ident">of_seq</span></span>(<span>xs: Iterable[~TSource]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of_seq(xs: Iterable[TSource]) -&gt; &#39;List[TSource]&#39;:
+    def folder(value: TSource, acc: List[TSource]) -&gt; List[TSource]:
+        return Cons(value, acc)
+    return Seq.fold_back(folder, xs)(Nil)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.ListModule.singleton"><code class="name flex">
+<span>def <span class="ident">singleton</span></span>(<span>value: ~TSource) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def singleton(value: TSource) -&gt; &#39;List[TSource]&#39;:
+    return Cons(value, Nil)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.ListModule.tail"><code class="name flex">
+<span>def <span class="ident">tail</span></span>(<span>source: <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def tail(source: List[TSource]) -&gt; List[TSource]:
+    return source.tail()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="fslash.collections.Seq"><code class="flex name class">
 <span>class <span class="ident">TSeq</span></span>
 <span>(</span><span>iterable=[])</span>
@@ -107,7 +662,7 @@ sequences.</p>
     def head(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
 
-        return SeqModule.head()(self)
+        return SeqModule.head(self)
 
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Seq[TResult]&#34;:
         &#34;&#34;&#34;Map sequence.
@@ -215,7 +770,7 @@ each element of the sequence.</p></div>
 <pre><code class="python">def head(self) -&gt; TSource:
     &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
 
-    return SeqModule.head()(self)</code></pre>
+    return SeqModule.head(self)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.Seq.map"><code class="name flex">
@@ -298,7 +853,9 @@ from the sequence.</dd>
 <dd>
 <div class="desc"><p>Sequence module.</p>
 <p>Contains a collection of static methods (functions) for operating on
-sequences. All functions takes the source as the last curried
+sequences. A sequence is a thin wrapper around <code>Iterable</code> so all
+functions take (and return) Python iterables.</p>
+<p>All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.</p>
 <h2 id="example">Example</h2>
@@ -317,7 +874,10 @@ sequence as the only argument.</p>
     &#34;&#34;&#34;Sequence module.
 
     Contains a collection of static methods (functions) for operating on
-    sequences. All functions takes the source as the last curried
+    sequences. A sequence is a thin wrapper around `Iterable` so all
+    functions take (and return) Python iterables.
+
+    All functions takes the source as the last curried
     argument, i.e all functions returns a function that takes the source
     sequence as the only argument.
 
@@ -445,34 +1005,23 @@ sequence as the only argument.</p>
         return _fold_back
 
     @staticmethod
-    def head() -&gt; Callable[[Iterable[TSource]], TSource]:
+    def head(source: Iterable[TSource]) -&gt; TSource:
         &#34;&#34;&#34;Return the first element of the sequence.
 
+        Args:
+            source: The input sequence.
+
         Returns:
-            A partially applied head function.
+            The first element of the sequence.
 
         Raises:
             Raises `ValueError` if the source sequence is empty.
         &#34;&#34;&#34;
 
-        def _head(source: Iterable[TSource]) -&gt; TSource:
-            &#34;&#34;&#34;A function that takes the source as input.
-
-            Args:
-                source: The input sequence.
-
-            Returns:
-                The first element of the sequence.
-
-            Raises:
-                `ValueError` if the source sequence is empty.
-            &#34;&#34;&#34;
-            for value in source:
-                return value
-            else:
-                raise ValueError(&#34;Sequence contains no elements&#34;)
-
-        return _head
+        for value in source:
+            return value
+        else:
+            raise ValueError(&#34;Sequence contains no elements&#34;)
 
     @staticmethod
     def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
@@ -809,12 +1358,17 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
 </details>
 </dd>
 <dt id="fslash.collections.SeqModule.head"><code class="name flex">
-<span>def <span class="ident">head</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
+<span>def <span class="ident">head</span></span>(<span>source: Iterable[~TSource]) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return the first element of the sequence.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>source</code></strong></dt>
+<dd>The input sequence.</dd>
+</dl>
 <h2 id="returns">Returns</h2>
-<p>A partially applied head function.</p>
+<p>The first element of the sequence.</p>
 <h2 id="raises">Raises</h2>
 <p>Raises <code>ValueError</code> if the source sequence is empty.</p></div>
 <details class="source">
@@ -822,34 +1376,23 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def head() -&gt; Callable[[Iterable[TSource]], TSource]:
+def head(source: Iterable[TSource]) -&gt; TSource:
     &#34;&#34;&#34;Return the first element of the sequence.
 
+    Args:
+        source: The input sequence.
+
     Returns:
-        A partially applied head function.
+        The first element of the sequence.
 
     Raises:
         Raises `ValueError` if the source sequence is empty.
     &#34;&#34;&#34;
 
-    def _head(source: Iterable[TSource]) -&gt; TSource:
-        &#34;&#34;&#34;A function that takes the source as input.
-
-        Args:
-            source: The input sequence.
-
-        Returns:
-            The first element of the sequence.
-
-        Raises:
-            `ValueError` if the source sequence is empty.
-        &#34;&#34;&#34;
-        for value in source:
-            return value
-        else:
-            raise ValueError(&#34;Sequence contains no elements&#34;)
-
-    return _head</code></pre>
+    for value in source:
+        return value
+    else:
+        raise ValueError(&#34;Sequence contains no elements&#34;)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.SeqModule.iter"><code class="name flex">
@@ -1020,7 +1563,7 @@ def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TS
 </details>
 </dd>
 <dt id="fslash.collections.SeqModule.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>list: List[~TSource])</span>
+<span>def <span class="ident">of_list</span></span>(<span>list: <a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a>[~TSource])</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1092,11 +1635,47 @@ def scan(
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="fslash.collections.list" href="list.html">fslash.collections.list</a></code></li>
 <li><code><a title="fslash.collections.seq" href="seq.html">fslash.collections.seq</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
+<li>
+<h4><code><a title="fslash.collections.Cons" href="#fslash.collections.Cons">Cons</a></code></h4>
+<ul class="">
+<li><code><a title="fslash.collections.Cons.append" href="#fslash.collections.Cons.append">append</a></code></li>
+<li><code><a title="fslash.collections.Cons.collect" href="#fslash.collections.Cons.collect">collect</a></code></li>
+<li><code><a title="fslash.collections.Cons.map" href="#fslash.collections.Cons.map">map</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="fslash.collections.List" href="#fslash.collections.List">List</a></code></h4>
+<ul class="two-column">
+<li><code><a title="fslash.collections.List.append" href="#fslash.collections.List.append">append</a></code></li>
+<li><code><a title="fslash.collections.List.collect" href="#fslash.collections.List.collect">collect</a></code></li>
+<li><code><a title="fslash.collections.List.cons" href="#fslash.collections.List.cons">cons</a></code></li>
+<li><code><a title="fslash.collections.List.head" href="#fslash.collections.List.head">head</a></code></li>
+<li><code><a title="fslash.collections.List.is_empty" href="#fslash.collections.List.is_empty">is_empty</a></code></li>
+<li><code><a title="fslash.collections.List.map" href="#fslash.collections.List.map">map</a></code></li>
+<li><code><a title="fslash.collections.List.tail" href="#fslash.collections.List.tail">tail</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="fslash.collections.ListModule" href="#fslash.collections.ListModule">ListModule</a></code></h4>
+<ul class="two-column">
+<li><code><a title="fslash.collections.ListModule.append" href="#fslash.collections.ListModule.append">append</a></code></li>
+<li><code><a title="fslash.collections.ListModule.collect" href="#fslash.collections.ListModule.collect">collect</a></code></li>
+<li><code><a title="fslash.collections.ListModule.concat" href="#fslash.collections.ListModule.concat">concat</a></code></li>
+<li><code><a title="fslash.collections.ListModule.empty" href="#fslash.collections.ListModule.empty">empty</a></code></li>
+<li><code><a title="fslash.collections.ListModule.head" href="#fslash.collections.ListModule.head">head</a></code></li>
+<li><code><a title="fslash.collections.ListModule.is_empty" href="#fslash.collections.ListModule.is_empty">is_empty</a></code></li>
+<li><code><a title="fslash.collections.ListModule.map" href="#fslash.collections.ListModule.map">map</a></code></li>
+<li><code><a title="fslash.collections.ListModule.of_seq" href="#fslash.collections.ListModule.of_seq">of_seq</a></code></li>
+<li><code><a title="fslash.collections.ListModule.singleton" href="#fslash.collections.ListModule.singleton">singleton</a></code></li>
+<li><code><a title="fslash.collections.ListModule.tail" href="#fslash.collections.ListModule.tail">tail</a></code></li>
+</ul>
+</li>
 <li>
 <h4><code><a title="fslash.collections.Seq" href="#fslash.collections.Seq">Seq</a></code></h4>
 <ul class="">

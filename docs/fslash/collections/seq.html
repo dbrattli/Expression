@@ -39,7 +39,10 @@ class SeqModule(Generic[TSource]):
     &#34;&#34;&#34;Sequence module.
 
     Contains a collection of static methods (functions) for operating on
-    sequences. All functions takes the source as the last curried
+    sequences. A sequence is a thin wrapper around `Iterable` so all
+    functions take (and return) Python iterables.
+
+    All functions takes the source as the last curried
     argument, i.e all functions returns a function that takes the source
     sequence as the only argument.
 
@@ -167,34 +170,23 @@ class SeqModule(Generic[TSource]):
         return _fold_back
 
     @staticmethod
-    def head() -&gt; Callable[[Iterable[TSource]], TSource]:
+    def head(source: Iterable[TSource]) -&gt; TSource:
         &#34;&#34;&#34;Return the first element of the sequence.
 
+        Args:
+            source: The input sequence.
+
         Returns:
-            A partially applied head function.
+            The first element of the sequence.
 
         Raises:
             Raises `ValueError` if the source sequence is empty.
         &#34;&#34;&#34;
 
-        def _head(source: Iterable[TSource]) -&gt; TSource:
-            &#34;&#34;&#34;A function that takes the source as input.
-
-            Args:
-                source: The input sequence.
-
-            Returns:
-                The first element of the sequence.
-
-            Raises:
-                `ValueError` if the source sequence is empty.
-            &#34;&#34;&#34;
-            for value in source:
-                return value
-            else:
-                raise ValueError(&#34;Sequence contains no elements&#34;)
-
-        return _head
+        for value in source:
+            return value
+        else:
+            raise ValueError(&#34;Sequence contains no elements&#34;)
 
     @staticmethod
     def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
@@ -347,7 +339,7 @@ class Seq(Iterable[TSource]):
     def head(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
 
-        return SeqModule.head()(self)
+        return SeqModule.head(self)
 
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Seq[TResult]&#34;:
         &#34;&#34;&#34;Map sequence.
@@ -448,7 +440,7 @@ sequences.</p>
     def head(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
 
-        return SeqModule.head()(self)
+        return SeqModule.head(self)
 
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Seq[TResult]&#34;:
         &#34;&#34;&#34;Map sequence.
@@ -556,7 +548,7 @@ each element of the sequence.</p></div>
 <pre><code class="python">def head(self) -&gt; TSource:
     &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
 
-    return SeqModule.head()(self)</code></pre>
+    return SeqModule.head(self)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.Seq.map"><code class="name flex">
@@ -639,7 +631,9 @@ from the sequence.</dd>
 <dd>
 <div class="desc"><p>Sequence module.</p>
 <p>Contains a collection of static methods (functions) for operating on
-sequences. All functions takes the source as the last curried
+sequences. A sequence is a thin wrapper around <code>Iterable</code> so all
+functions take (and return) Python iterables.</p>
+<p>All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.</p>
 <h2 id="example">Example</h2>
@@ -658,7 +652,10 @@ sequence as the only argument.</p>
     &#34;&#34;&#34;Sequence module.
 
     Contains a collection of static methods (functions) for operating on
-    sequences. All functions takes the source as the last curried
+    sequences. A sequence is a thin wrapper around `Iterable` so all
+    functions take (and return) Python iterables.
+
+    All functions takes the source as the last curried
     argument, i.e all functions returns a function that takes the source
     sequence as the only argument.
 
@@ -786,34 +783,23 @@ sequence as the only argument.</p>
         return _fold_back
 
     @staticmethod
-    def head() -&gt; Callable[[Iterable[TSource]], TSource]:
+    def head(source: Iterable[TSource]) -&gt; TSource:
         &#34;&#34;&#34;Return the first element of the sequence.
 
+        Args:
+            source: The input sequence.
+
         Returns:
-            A partially applied head function.
+            The first element of the sequence.
 
         Raises:
             Raises `ValueError` if the source sequence is empty.
         &#34;&#34;&#34;
 
-        def _head(source: Iterable[TSource]) -&gt; TSource:
-            &#34;&#34;&#34;A function that takes the source as input.
-
-            Args:
-                source: The input sequence.
-
-            Returns:
-                The first element of the sequence.
-
-            Raises:
-                `ValueError` if the source sequence is empty.
-            &#34;&#34;&#34;
-            for value in source:
-                return value
-            else:
-                raise ValueError(&#34;Sequence contains no elements&#34;)
-
-        return _head
+        for value in source:
+            return value
+        else:
+            raise ValueError(&#34;Sequence contains no elements&#34;)
 
     @staticmethod
     def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
@@ -1150,12 +1136,17 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
 </details>
 </dd>
 <dt id="fslash.collections.seq.SeqModule.head"><code class="name flex">
-<span>def <span class="ident">head</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
+<span>def <span class="ident">head</span></span>(<span>source: Iterable[~TSource]) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return the first element of the sequence.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>source</code></strong></dt>
+<dd>The input sequence.</dd>
+</dl>
 <h2 id="returns">Returns</h2>
-<p>A partially applied head function.</p>
+<p>The first element of the sequence.</p>
 <h2 id="raises">Raises</h2>
 <p>Raises <code>ValueError</code> if the source sequence is empty.</p></div>
 <details class="source">
@@ -1163,34 +1154,23 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def head() -&gt; Callable[[Iterable[TSource]], TSource]:
+def head(source: Iterable[TSource]) -&gt; TSource:
     &#34;&#34;&#34;Return the first element of the sequence.
 
+    Args:
+        source: The input sequence.
+
     Returns:
-        A partially applied head function.
+        The first element of the sequence.
 
     Raises:
         Raises `ValueError` if the source sequence is empty.
     &#34;&#34;&#34;
 
-    def _head(source: Iterable[TSource]) -&gt; TSource:
-        &#34;&#34;&#34;A function that takes the source as input.
-
-        Args:
-            source: The input sequence.
-
-        Returns:
-            The first element of the sequence.
-
-        Raises:
-            `ValueError` if the source sequence is empty.
-        &#34;&#34;&#34;
-        for value in source:
-            return value
-        else:
-            raise ValueError(&#34;Sequence contains no elements&#34;)
-
-    return _head</code></pre>
+    for value in source:
+        return value
+    else:
+        raise ValueError(&#34;Sequence contains no elements&#34;)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.SeqModule.iter"><code class="name flex">

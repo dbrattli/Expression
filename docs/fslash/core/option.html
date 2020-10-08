@@ -71,30 +71,20 @@ class OptionModule(Generic[TSource]):
         return _or_else
 
     @staticmethod
-    def to_list() -&gt; &#39;Callable[[Option[TSource]], List[TSource]]&#39;:
-        def _to_list(option: Option[TSource]) -&gt; List[TSource]:
-            return option.to_list()
-        return _to_list
+    def to_list(option: &#39;Option[TSource]&#39;) -&gt; List[TSource]:
+        return option.to_list()
 
     @staticmethod
-    def to_seq() -&gt; &#39;Callable[[Option[TSource]], Iterable[TSource]]&#39;:
-        def _to_seq(option: Option[TSource]) -&gt; Iterable[TSource]:
-            return option.to_list()
-        return _to_seq
+    def to_seq(option: &#39;Option[TSource]&#39;) -&gt; Iterable[TSource]:
+        return option.to_list()
 
     @staticmethod
-    def is_some() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
-        def _is_some(option: &#34;Option[TSource]&#34;) -&gt; bool:
-            return option.is_some()
-        return _is_some
+    def is_some(option: &#34;Option[TSource]&#34;) -&gt; bool:
+        return option.is_some()
 
     @staticmethod
-    def is_none() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
-        &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
-
-        def _is_none(option: &#34;Option[TSource]&#34;) -&gt; bool:
-            return option.is_none()
-        return _is_none
+    def is_none(option: &#34;Option[TSource]&#34;) -&gt; bool:
+        return option.is_none()
 
     @staticmethod
     def of_optional(value: Optional[TSource]) -&gt; &#39;Option[TSource]&#39;:
@@ -545,30 +535,20 @@ sequence as the only argument.</p></div>
         return _or_else
 
     @staticmethod
-    def to_list() -&gt; &#39;Callable[[Option[TSource]], List[TSource]]&#39;:
-        def _to_list(option: Option[TSource]) -&gt; List[TSource]:
-            return option.to_list()
-        return _to_list
+    def to_list(option: &#39;Option[TSource]&#39;) -&gt; List[TSource]:
+        return option.to_list()
 
     @staticmethod
-    def to_seq() -&gt; &#39;Callable[[Option[TSource]], Iterable[TSource]]&#39;:
-        def _to_seq(option: Option[TSource]) -&gt; Iterable[TSource]:
-            return option.to_list()
-        return _to_seq
+    def to_seq(option: &#39;Option[TSource]&#39;) -&gt; Iterable[TSource]:
+        return option.to_list()
 
     @staticmethod
-    def is_some() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
-        def _is_some(option: &#34;Option[TSource]&#34;) -&gt; bool:
-            return option.is_some()
-        return _is_some
+    def is_some(option: &#34;Option[TSource]&#34;) -&gt; bool:
+        return option.is_some()
 
     @staticmethod
-    def is_none() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
-        &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
-
-        def _is_none(option: &#34;Option[TSource]&#34;) -&gt; bool:
-            return option.is_none()
-        return _is_none
+    def is_none(option: &#34;Option[TSource]&#34;) -&gt; bool:
+        return option.is_none()
 
     @staticmethod
     def of_optional(value: Optional[TSource]) -&gt; &#39;Option[TSource]&#39;:
@@ -627,25 +607,7 @@ def bind(mapper: Callable[[TSource], &#39;Option[TResult]&#39;]) -&gt; &#39;Call
 </details>
 </dd>
 <dt id="fslash.core.option.OptionModule.is_none"><code class="name flex">
-<span>def <span class="ident">is_none</span></span>(<span>) ‑> Callable[[<a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]], bool]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Returns true if the option is Nothing.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def is_none() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
-    &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
-
-    def _is_none(option: &#34;Option[TSource]&#34;) -&gt; bool:
-        return option.is_none()
-    return _is_none</code></pre>
-</details>
-</dd>
-<dt id="fslash.core.option.OptionModule.is_some"><code class="name flex">
-<span>def <span class="ident">is_some</span></span>(<span>) ‑> Callable[[<a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]], bool]</span>
+<span>def <span class="ident">is_none</span></span>(<span>option: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[TSource]) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -654,10 +616,22 @@ def is_none() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def is_some() -&gt; &#39;Callable[[Option[TSource]], bool]&#39;:
-    def _is_some(option: &#34;Option[TSource]&#34;) -&gt; bool:
-        return option.is_some()
-    return _is_some</code></pre>
+def is_none(option: &#34;Option[TSource]&#34;) -&gt; bool:
+    return option.is_none()</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.option.OptionModule.is_some"><code class="name flex">
+<span>def <span class="ident">is_some</span></span>(<span>option: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[TSource]) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def is_some(option: &#34;Option[TSource]&#34;) -&gt; bool:
+    return option.is_some()</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.option.OptionModule.map"><code class="name flex">
@@ -781,7 +755,7 @@ def or_else(if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Callable[[Option[TSou
 </details>
 </dd>
 <dt id="fslash.core.option.OptionModule.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>) ‑> Callable[[<a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]], List[~TSource]]</span>
+<span>def <span class="ident">to_list</span></span>(<span>option: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[TSource]) ‑> List[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -790,14 +764,12 @@ def or_else(if_none: &#39;Option[TSource]&#39;) -&gt; &#39;Callable[[Option[TSou
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def to_list() -&gt; &#39;Callable[[Option[TSource]], List[TSource]]&#39;:
-    def _to_list(option: Option[TSource]) -&gt; List[TSource]:
-        return option.to_list()
-    return _to_list</code></pre>
+def to_list(option: &#39;Option[TSource]&#39;) -&gt; List[TSource]:
+    return option.to_list()</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.option.OptionModule.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>) ‑> Callable[[<a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]], Iterable[~TSource]]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>option: <a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[TSource]) ‑> Iterable[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -806,10 +778,8 @@ def to_list() -&gt; &#39;Callable[[Option[TSource]], List[TSource]]&#39;:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def to_seq() -&gt; &#39;Callable[[Option[TSource]], Iterable[TSource]]&#39;:
-    def _to_seq(option: Option[TSource]) -&gt; Iterable[TSource]:
-        return option.to_list()
-    return _to_seq</code></pre>
+def to_seq(option: &#39;Option[TSource]&#39;) -&gt; Iterable[TSource]:
+    return option.to_list()</code></pre>
 </details>
 </dd>
 </dl>
