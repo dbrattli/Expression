@@ -31,14 +31,14 @@ def test_seq_pipe_map(xs):
 
 @given(st.lists(st.integers(), min_size=1))
 def test_seq_head_pipe(xs):
-    value = pipe(xs, Seq.head())
+    value = pipe(xs, Seq.head)
 
     assert value == xs[0]
 
 
 def test_seq_head_empty_source():
     with pytest.raises(ValueError):
-        pipe([], Seq.head())
+        pipe([], Seq.head)
 
 
 @given(st.lists(st.integers(), min_size=1))

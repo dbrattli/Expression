@@ -9,30 +9,30 @@ def test_option_some():
     xs = Some(42)
 
     assert isinstance(xs, TOption)
-    assert pipe(xs, Option.is_some()) is True
-    assert pipe(xs, Option.is_none()) is False
+    assert pipe(xs, Option.is_some) is True
+    assert pipe(xs, Option.is_none) is False
 
 
 def test_option_none():
     xs = Nothing
 
     assert isinstance(xs, TOption)
-    assert pipe(xs, Option.is_some()) is False
-    assert pipe(xs, Option.is_none()) is True
+    assert pipe(xs, Option.is_some) is False
+    assert pipe(xs, Option.is_none) is True
 
 
 def test_option_none_equals_none():
     xs = Nothing
     ys = Nothing
 
-    assert(xs == ys)
+    assert xs == ys
 
 
 def test_option_none_not_equals_some():
     xs = Some(42)
     ys = Nothing
 
-    assert(xs != ys)
+    assert xs != ys
 
 
 @given(st.one_of(st.integers(), st.text(), st.floats()), st.one_of(st.integers(), st.text(), st.floats()))
@@ -40,7 +40,7 @@ def test_option_some_equals_some(a, b):
     xs = Some(a)
     ys = Some(b)
 
-    assert(xs == ys if a == b else xs != ys)
+    assert xs == ys if a == b else xs != ys
 
 
 def test_option_some_map_piped():

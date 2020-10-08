@@ -10,5 +10,7 @@ def identity(value: A) -> A:
 def starid(*value: Any) -> Tuple:
     return value
 
+#def flip(a, b):
+
 
 __all__ = ["identity", "starid"]

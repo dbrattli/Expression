@@ -19,7 +19,7 @@ def test_result_ok():
     res = match(xs,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
-    assert(res == 42)
+    assert res == 42
 
 
 def test_result_error():
@@ -44,7 +44,7 @@ def test_result_map_piped(x, y):
     res = match(ys,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
-    assert(res == mapper(x))
+    assert res == mapper(x)
 
 
 @given(st.integers(), st.integers())
@@ -56,7 +56,7 @@ def test_result_map_ok_fluent(x, y):
     res = match(ys,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
-    assert(res == mapper(x))
+    assert res == mapper(x)
 
 
 @given(st.integers(), st.integers())
@@ -69,7 +69,7 @@ def test_result_ok_chained_map(x, y):
     res = match(ys,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
-    assert(res == mapper2(mapper1(x)))
+    assert res == mapper2(mapper1(x))
 
 
 @given(st.text(), st.integers())
@@ -83,7 +83,7 @@ def test_result_map_error_piped(msg, y):
         match(ys,
               Ok, lambda ok: ok.value,
               Error, lambda error: throw(CustomException(error.error)))
-    assert(ex.value.message == msg)
+    assert ex.value.message == msg
 
 
 @given(st.text(), st.integers())
@@ -96,7 +96,7 @@ def test_result_map_error_fluent(msg, y):
         match(ys,
               Ok, lambda ok: ok.value,
               Error, lambda error: throw(CustomException(error.error)))
-    assert(ex.value.message == msg)
+    assert ex.value.message == msg
 
 
 @given(st.text(), st.integers())
@@ -110,7 +110,7 @@ def test_result_error_chained_map(msg, y):
         match(ys,
               Ok, lambda ok: ok.value,
               Error, lambda error: throw(CustomException(error.error)))
-    assert(ex.value.message == msg)
+    assert ex.value.message == msg
 
 
 @given(st.integers(), st.integers())
@@ -122,7 +122,7 @@ def test_result_bind_piped(x, y):
     res = match(ys,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
-    assert(Ok(res) == mapper(x))
+    assert Ok(res) == mapper(x)
 
 
 @given(st.lists(st.integers()))

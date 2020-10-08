@@ -11,7 +11,10 @@ class SeqModule(Generic[TSource]):
     """Sequence module.
 
     Contains a collection of static methods (functions) for operating on
-    sequences. All functions takes the source as the last curried
+    sequences. A sequence is a thin wrapper around `Iterable` so all
+    functions take (and return) Python iterables.
+
+    All functions takes the source as the last curried
     argument, i.e all functions returns a function that takes the source
     sequence as the only argument.
 
@@ -139,34 +142,23 @@ class SeqModule(Generic[TSource]):
         return _fold_back
 
     @staticmethod
-    def head() -> Callable[[Iterable[TSource]], TSource]:
+    def head(source: Iterable[TSource]) -> TSource:
         """Return the first element of the sequence.
 
+        Args:
+            source: The input sequence.
+
         Returns:
-            A partially applied head function.
+            The first element of the sequence.
 
         Raises:
             Raises `ValueError` if the source sequence is empty.
         """
 
-        def _head(source: Iterable[TSource]) -> TSource:
-            """A function that takes the source as input.
-
-            Args:
-                source: The input sequence.
-
-            Returns:
-                The first element of the sequence.
-
-            Raises:
-                `ValueError` if the source sequence is empty.
-            """
-            for value in source:
-                return value
-            else:
-                raise ValueError("Sequence contains no elements")
-
-        return _head
+        for value in source:
+            return value
+        else:
+            raise ValueError("Sequence contains no elements")
 
     @staticmethod
     def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], None]:
@@ -319,7 +311,7 @@ class Seq(Iterable[TSource]):
     def head(self) -> TSource:
         """Returns the first element of the sequence."""
 
-        return SeqModule.head()(self)
+        return SeqModule.head(self)
 
     def map(self, mapper: Callable[[TSource], TResult]) -> "Seq[TResult]":
         """Map sequence.

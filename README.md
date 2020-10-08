@@ -108,6 +108,7 @@ on-demand as we go along.
 - Result - for better error handling and enables railway-oriented programming
   in Python.
 - Sequences - a better [itertools](https://docs.python.org/3/library/itertools.html)
+- List - an immutable list type.
 - Computational Expressions:
   - option - an optional world for working with optional values
   - result - an error handling world for working with result values

@@ -43,30 +43,20 @@ class OptionModule(Generic[TSource]):
         return _or_else
 
     @staticmethod
-    def to_list() -> 'Callable[[Option[TSource]], List[TSource]]':
-        def _to_list(option: Option[TSource]) -> List[TSource]:
-            return option.to_list()
-        return _to_list
+    def to_list(option: 'Option[TSource]') -> List[TSource]:
+        return option.to_list()
 
     @staticmethod
-    def to_seq() -> 'Callable[[Option[TSource]], Iterable[TSource]]':
-        def _to_seq(option: Option[TSource]) -> Iterable[TSource]:
-            return option.to_list()
-        return _to_seq
+    def to_seq(option: 'Option[TSource]') -> Iterable[TSource]:
+        return option.to_list()
 
     @staticmethod
-    def is_some() -> 'Callable[[Option[TSource]], bool]':
-        def _is_some(option: "Option[TSource]") -> bool:
-            return option.is_some()
-        return _is_some
+    def is_some(option: "Option[TSource]") -> bool:
+        return option.is_some()
 
     @staticmethod
-    def is_none() -> 'Callable[[Option[TSource]], bool]':
-        """Returns true if the option is Nothing."""
-
-        def _is_none(option: "Option[TSource]") -> bool:
-            return option.is_none()
-        return _is_none
+    def is_none(option: "Option[TSource]") -> bool:
+        return option.is_none()
 
     @staticmethod
     def of_optional(value: Optional[TSource]) -> 'Option[TSource]':
