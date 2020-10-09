@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Iterable, Iterator, Sized, TypeVar, Callable, cast
 
-from fslash.core import Option_, Some
+from fslash.core import Option_, Some, Nothing
 from . import seq as Seq
 
 TSource = TypeVar("TSource")
@@ -60,6 +60,25 @@ class List(Iterable[TSource], Sized):
     def tail(self) -> "List[TSource]":
         """Return tail of List."""
 
+        raise NotImplementedError
+
+    @abstractmethod
+    def take(self, count: int) -> "List[TSource]":
+        """Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def try_head(self) -> Option_[TSource]:
+        """Returns the first element of the list, or None if the list is
+        empty.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -135,6 +154,29 @@ class Cons(List[TSource]):
         _, tail = self._value
         return tail
 
+    def take(self, count: int) -> "List[TSource]":
+        """Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        """
+
+        if not count:
+            return Nil
+        head, tail = self._value
+        return Cons(head, tail.take(count - 1))
+
+    def try_head(self) -> Option_[TSource]:
+        """Returns the first element of the list, or None if the list is
+        empty.
+        """
+
+        head, _ = self._value
+        return Some(head)
+
     def __add__(self, other) -> List[TSource]:
         """Append list with other list."""
 
@@ -200,6 +242,23 @@ class _Nil(List[TSource]):
         """Return tail of List."""
 
         raise IndexError("List is empty")
+
+    def take(self, count: int) -> "List[TSource]":
+        """Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        """
+        return Nil
+
+    def try_head(self) -> Option_[TSource]:
+        """Returns the first element of the list, or None if the list is
+        empty.
+        """
+        return Nothing
 
     def __add__(self, other) -> List[TSource]:
         """Append list with other list."""
@@ -296,6 +355,31 @@ def singleton(value: TSource) -> List[TSource]:
 
 def tail(source: List[TSource]) -> List[TSource]:
     return source.tail()
+
+
+def take(count: int) -> Callable[[List[TSource]], List[TSource]]:
+    """Returns the first N elements of the list.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result list.
+    """
+    def _take(source: List[TSource]) -> List[TSource]:
+        return source.take(count)
+
+    return _take
+
+
+def try_head(self) -> Callable[[List[TSource]], Option_[TSource]]:
+    """Returns the first element of the list, or None if the list is
+    empty.
+    """
+    def _try_head(source: List[TSource]) -> Option_[TSource]:
+        return source.try_head()
+
+    return _try_head
 
 
 __all__ = [
