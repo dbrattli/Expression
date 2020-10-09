@@ -21,6 +21,10 @@ class Option(Iterable[TSource]):
     def map(self, mapper: Callable[[TSource], TResult]) -> "Option[TResult]":
         raise NotImplementedError
 
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
     @abstractmethod
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: "Option[T2]") -> "Option[TResult]":
         raise NotImplementedError
@@ -118,7 +122,10 @@ class Some(Option[TSource]):
 class _None(Option[TSource]):
     """The None option case class.
 
-    Do not use. Use the singleton `Nothing` instead.
+    Do not use. Use the singleton `Nothing` instead. Since Nothing is a
+    singleton it can be tested e.g using `is`:
+        >>> if xs is Nothing:
+        ...     return True
     """
 
     def is_some(self) -> bool:
@@ -172,7 +179,12 @@ class _None(Option[TSource]):
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
 # avoid conflicts with the builtin `None` value.
 Nothing: _None = _None()
-"""Singleton `Nothing` object."""
+"""Singleton `Nothing` object.
+
+Since Nothing is a singleton it can be tested e.g using `is`:
+    >>> if xs is Nothing:
+    ...     return True
+"""
 
 
 def map(mapper: Callable[[TSource], TResult]) -> Callable[[Option[TSource]], Option[TResult]]:
@@ -207,7 +219,7 @@ def is_some(option: Option[TSource]) -> bool:
 def or_else(if_none: Option[TSource]) -> Callable[[Option[TSource]], Option[TSource]]:
     """Returns option if it is Some, otherwise returns ifNone."""
 
-    def _or_else(option: "Option[TSource]") -> "Option[TSource]":
+    def _or_else(option: Option[TSource]) -> Option[TSource]:
         return option.or_else(if_none)
 
     return _or_else

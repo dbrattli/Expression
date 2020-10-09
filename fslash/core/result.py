@@ -131,23 +131,23 @@ class ResultException(Exception):
         self.error = error
 
 
-def map(mapper: Callable[[TSource], TResult]) -> "Callable[[Result[TSource, TError]], Result[TResult, TError]]":
-    def _map(result: Result[TSource, TError]) -> "Result[TResult, TError]":
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+    def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.map(mapper)
 
     return _map
 
 
 def bind(
-    mapper: Callable[[TSource], "Result[TResult, TError]"]
-) -> "Callable[[Result[TSource, TError]], Result[TResult, TError]]":
+    mapper: Callable[[TSource], Result[TResult, TError]]
+) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _bind(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.bind(mapper)
 
     return _bind
 
 
-def traverse(fn: Callable[[TSource], "Result[TResult, TError]"], lst: List[TSource]) -> "Result[List[TResult], TError]":
+def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -> Result[List[TResult], TError]:
     from fslash.builders import result
     from fslash.collections import Seq
 
@@ -164,7 +164,7 @@ def traverse(fn: Callable[[TSource], "Result[TResult, TError]"], lst: List[TSour
     return Seq.fold_back(folder, lst)(Ok([]))  # type: ignore
 
 
-def sequence(lst: "List[Result[TSource, TError]]") -> "Result[List[TSource], TError]":
+def sequence(lst: List[Result[TSource, TError]]) -> Result[List[TSource], TError]:
     return traverse(identity, lst)
 
 

@@ -98,8 +98,7 @@ class Cons(List[TSource]):
     def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -> List[TResult]:
         head, tail = self._value
         filtered: List[TResult] = tail.choose(chooser)
-        res: Option_[TResult] = chooser(head)
-        return cast(List[TResult], of_option(res)).append(filtered)
+        return cast(List[TResult], of_option(chooser(head))).append(filtered)
 
     def collect(self, mapping: Callable[[TSource], List[TResult]]) -> List[TResult]:
         head, tail = self._value
