@@ -29,7 +29,7 @@
 <pre><code class="python">from abc import abstractmethod
 from typing import Iterable, Iterator, Sized, TypeVar, Callable, cast
 
-from fslash.core import Option_, Some
+from fslash.core import Option_, Some, Nothing
 from . import seq as Seq
 
 TSource = TypeVar(&#34;TSource&#34;)
@@ -91,6 +91,25 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
+    def take(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def try_head(self) -&gt; Option_[TSource]:
+        &#34;&#34;&#34;Returns the first element of the list, or None if the list is
+        empty.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
     def __iter__(self) -&gt; Iterator:
         &#34;&#34;&#34;Return iterator for List.&#34;&#34;&#34;
 
@@ -126,8 +145,7 @@ class Cons(List[TSource]):
     def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -&gt; List[TResult]:
         head, tail = self._value
         filtered: List[TResult] = tail.choose(chooser)
-        res: Option_[TResult] = chooser(head)
-        return cast(List[TResult], of_option(res)).append(filtered)
+        return cast(List[TResult], of_option(chooser(head))).append(filtered)
 
     def collect(self, mapping: Callable[[TSource], List[TResult]]) -&gt; List[TResult]:
         head, tail = self._value
@@ -163,6 +181,29 @@ class Cons(List[TSource]):
 
         _, tail = self._value
         return tail
+
+    def take(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        &#34;&#34;&#34;
+
+        if not count:
+            return Nil
+        head, tail = self._value
+        return Cons(head, tail.take(count - 1))
+
+    def try_head(self) -&gt; Option_[TSource]:
+        &#34;&#34;&#34;Returns the first element of the list, or None if the list is
+        empty.
+        &#34;&#34;&#34;
+
+        head, _ = self._value
+        return Some(head)
 
     def __add__(self, other) -&gt; List[TSource]:
         &#34;&#34;&#34;Append list with other list.&#34;&#34;&#34;
@@ -229,6 +270,23 @@ class _Nil(List[TSource]):
         &#34;&#34;&#34;Return tail of List.&#34;&#34;&#34;
 
         raise IndexError(&#34;List is empty&#34;)
+
+    def take(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        &#34;&#34;&#34;
+        return Nil
+
+    def try_head(self) -&gt; Option_[TSource]:
+        &#34;&#34;&#34;Returns the first element of the list, or None if the list is
+        empty.
+        &#34;&#34;&#34;
+        return Nothing
 
     def __add__(self, other) -&gt; List[TSource]:
         &#34;&#34;&#34;Append list with other list.&#34;&#34;&#34;
@@ -325,6 +383,31 @@ def singleton(value: TSource) -&gt; List[TSource]:
 
 def tail(source: List[TSource]) -&gt; List[TSource]:
     return source.tail()
+
+
+def take(count: int) -&gt; Callable[[List[TSource]], List[TSource]]:
+    &#34;&#34;&#34;Returns the first N elements of the list.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result list.
+    &#34;&#34;&#34;
+    def _take(source: List[TSource]) -&gt; List[TSource]:
+        return source.take(count)
+
+    return _take
+
+
+def try_head(self) -&gt; Callable[[List[TSource]], Option_[TSource]]:
+    &#34;&#34;&#34;Returns the first element of the list, or None if the list is
+    empty.
+    &#34;&#34;&#34;
+    def _try_head(source: List[TSource]) -&gt; Option_[TSource]:
+        return source.try_head()
+
+    return _try_head
 
 
 __all__ = [
@@ -563,8 +646,7 @@ operations mostly (<code>O(1)</code>).</p></div>
     def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -&gt; List[TResult]:
         head, tail = self._value
         filtered: List[TResult] = tail.choose(chooser)
-        res: Option_[TResult] = chooser(head)
-        return cast(List[TResult], of_option(res)).append(filtered)
+        return cast(List[TResult], of_option(chooser(head))).append(filtered)
 
     def collect(self, mapping: Callable[[TSource], List[TResult]]) -&gt; List[TResult]:
         head, tail = self._value
@@ -600,6 +682,29 @@ operations mostly (<code>O(1)</code>).</p></div>
 
         _, tail = self._value
         return tail
+
+    def take(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        &#34;&#34;&#34;
+
+        if not count:
+            return Nil
+        head, tail = self._value
+        return Cons(head, tail.take(count - 1))
+
+    def try_head(self) -&gt; Option_[TSource]:
+        &#34;&#34;&#34;Returns the first element of the list, or None if the list is
+        empty.
+        &#34;&#34;&#34;
+
+        head, _ = self._value
+        return Some(head)
 
     def __add__(self, other) -&gt; List[TSource]:
         &#34;&#34;&#34;Append list with other list.&#34;&#34;&#34;
@@ -661,8 +766,7 @@ operations mostly (<code>O(1)</code>).</p></div>
 <pre><code class="python">def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -&gt; List[TResult]:
     head, tail = self._value
     filtered: List[TResult] = tail.choose(chooser)
-    res: Option_[TResult] = chooser(head)
-    return cast(List[TResult], of_option(res)).append(filtered)</code></pre>
+    return cast(List[TResult], of_option(chooser(head))).append(filtered)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.list.Cons.collect"><code class="name flex">
@@ -718,6 +822,8 @@ operations mostly (<code>O(1)</code>).</p></div>
 <li><code><a title="fslash.collections.list.List.head" href="#fslash.collections.list.List.head">head</a></code></li>
 <li><code><a title="fslash.collections.list.List.is_empty" href="#fslash.collections.list.List.is_empty">is_empty</a></code></li>
 <li><code><a title="fslash.collections.list.List.tail" href="#fslash.collections.list.List.tail">tail</a></code></li>
+<li><code><a title="fslash.collections.list.List.take" href="#fslash.collections.list.List.take">take</a></code></li>
+<li><code><a title="fslash.collections.list.List.try_head" href="#fslash.collections.list.List.try_head">try_head</a></code></li>
 </ul>
 </li>
 </ul>
@@ -787,6 +893,25 @@ operations mostly (<code>O(1)</code>).</p></div>
     def tail(self) -&gt; &#34;List[TSource]&#34;:
         &#34;&#34;&#34;Return tail of List.&#34;&#34;&#34;
 
+        raise NotImplementedError
+
+    @abstractmethod
+    def take(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def try_head(self) -&gt; Option_[TSource]:
+        &#34;&#34;&#34;Returns the first element of the list, or None if the list is
+        empty.
+        &#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -960,6 +1085,53 @@ def tail(self) -&gt; &#34;List[TSource]&#34;:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.list.List.take"><code class="name flex">
+<span>def <span class="ident">take</span></span>(<span>self, count: int) ‑> <a title="fslash.collections.list.List" href="#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the first N elements of the list.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>count</code></strong></dt>
+<dd>The number of items to take.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The result list.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def take(self, count: int) -&gt; &#34;List[TSource]&#34;:
+    &#34;&#34;&#34;Returns the first N elements of the list.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result list.
+    &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.list.List.try_head"><code class="name flex">
+<span>def <span class="ident">try_head</span></span>(<span>self) ‑> <a title="fslash.core.option.Option" href="../core/option.html#fslash.core.option.Option">Option</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the first element of the list, or None if the list is
+empty.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def try_head(self) -&gt; Option_[TSource]:
+    &#34;&#34;&#34;Returns the first element of the list, or None if the list is
+    empty.
+    &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1016,6 +1188,8 @@ def tail(self) -&gt; &#34;List[TSource]&#34;:
 <li><code><a title="fslash.collections.list.List.is_empty" href="#fslash.collections.list.List.is_empty">is_empty</a></code></li>
 <li><code><a title="fslash.collections.list.List.map" href="#fslash.collections.list.List.map">map</a></code></li>
 <li><code><a title="fslash.collections.list.List.tail" href="#fslash.collections.list.List.tail">tail</a></code></li>
+<li><code><a title="fslash.collections.list.List.take" href="#fslash.collections.list.List.take">take</a></code></li>
+<li><code><a title="fslash.collections.list.List.try_head" href="#fslash.collections.list.List.try_head">try_head</a></code></li>
 </ul>
 </li>
 </ul>

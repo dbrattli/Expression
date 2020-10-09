@@ -207,6 +207,20 @@ composed. Result works similar to `Option` but lets you define the value used
 for errors, e.g an exception type or similar. This is great when you want to
 know why some operation failed (not just `Nothing`).
 
+```py
+from fslash.core import Result, Ok, Error, pipe
+from fslash.builders import result
+
+@result
+def fn():
+    x = yield from Ok(42)
+    y = yield from OK(10)
+    return x + y
+
+xs = fn()
+assert isinstance(xs, Some)
+```
+
 ### Sequences
 
 Contains operations for working with iterables.

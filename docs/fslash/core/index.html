@@ -510,6 +510,10 @@ def value(self):
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
         raise NotImplementedError
 
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
     @abstractmethod
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
         raise NotImplementedError
@@ -630,6 +634,20 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#
 <pre><code class="python">@abstractmethod
 def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
     raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Option.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args, **kw):
+    from pampy import match
+    return match(self, *args, **kw)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Option.or_else"><code class="name flex">
@@ -1052,6 +1070,7 @@ def value(self):
 <li><code><a title="fslash.core.Option.is_some" href="#fslash.core.Option.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.Option.map" href="#fslash.core.Option.map">map</a></code></li>
 <li><code><a title="fslash.core.Option.map2" href="#fslash.core.Option.map2">map2</a></code></li>
+<li><code><a title="fslash.core.Option.match" href="#fslash.core.Option.match">match</a></code></li>
 <li><code><a title="fslash.core.Option.or_else" href="#fslash.core.Option.or_else">or_else</a></code></li>
 <li><code><a title="fslash.core.Option.to_list" href="#fslash.core.Option.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.Option.to_seq" href="#fslash.core.Option.to_seq">to_seq</a></code></li>

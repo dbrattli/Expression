@@ -164,23 +164,23 @@ class ResultException(Exception):
         self.error = error
 
 
-def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSource, TError]], Result[TResult, TError]]&#34;:
-    def _map(result: Result[TSource, TError]) -&gt; &#34;Result[TResult, TError]&#34;:
+def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+    def _map(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.map(mapper)
 
     return _map
 
 
 def bind(
-    mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]
-) -&gt; &#34;Callable[[Result[TSource, TError]], Result[TResult, TError]]&#34;:
+    mapper: Callable[[TSource], Result[TResult, TError]]
+) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.bind(mapper)
 
     return _bind
 
 
-def traverse(fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: List[TSource]) -&gt; &#34;Result[List[TResult], TError]&#34;:
+def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -&gt; Result[List[TResult], TError]:
     from fslash.builders import result
     from fslash.collections import Seq
 
@@ -197,7 +197,7 @@ def traverse(fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: Li
     return Seq.fold_back(folder, lst)(Ok([]))  # type: ignore
 
 
-def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[List[TSource], TError]&#34;:
+def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TError]:
     return traverse(identity, lst)
 
 
@@ -212,7 +212,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;ResultException
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="fslash.core.result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], ForwardRef('<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[TResult, TError]')]) ‑> Callable[[<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TSource, ~TError]], <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TResult, ~TError]]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TResult, ~TError]]) ‑> Callable[[<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TSource, ~TError]], <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TResult, ~TError]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -221,8 +221,8 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;ResultException
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def bind(
-    mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]
-) -&gt; &#34;Callable[[Result[TSource, TError]], Result[TResult, TError]]&#34;:
+    mapper: Callable[[TSource], Result[TResult, TError]]
+) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.bind(mapper)
 
@@ -238,15 +238,15 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;ResultException
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; &#34;Callable[[Result[TSource, TError]], Result[TResult, TError]]&#34;:
-    def _map(result: Result[TSource, TError]) -&gt; &#34;Result[TResult, TError]&#34;:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+    def _map(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.map(mapper)
 
     return _map</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.result.sequence"><code class="name flex">
-<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[TSource, TError]]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TSource], ~TError]</span>
+<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TSource, ~TError]]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TSource], ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -254,12 +254,12 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;ResultException
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def sequence(lst: &#34;List[Result[TSource, TError]]&#34;) -&gt; &#34;Result[List[TSource], TError]&#34;:
+<pre><code class="python">def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TError]:
     return traverse(identity, lst)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.result.traverse"><code class="name flex">
-<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], ForwardRef('<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[TResult, TError]')], lst: List[~TSource]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TResult], ~TError]</span>
+<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TResult, ~TError]], lst: List[~TSource]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TResult], ~TError]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -267,7 +267,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;ResultException
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def traverse(fn: Callable[[TSource], &#34;Result[TResult, TError]&#34;], lst: List[TSource]) -&gt; &#34;Result[List[TResult], TError]&#34;:
+<pre><code class="python">def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -&gt; Result[List[TResult], TError]:
     from fslash.builders import result
     from fslash.collections import Seq
 

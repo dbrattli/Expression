@@ -32,16 +32,27 @@ A = TypeVar(&#34;A&#34;)
 
 
 def identity(value: A) -&gt; A:
+    &#34;&#34;&#34;Identity function.
+
+    Returns value given as argument.
+    &#34;&#34;&#34;
     return value
 
 
 def starid(*value: Any) -&gt; Tuple:
     return value
 
-#def flip(a, b):
+
+def flip(fn):
+    &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
+
+    Example:
+        &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
+    &#34;&#34;&#34;
+    lambda a, b: fn(b, a)
 
 
-__all__ = [&#34;identity&#34;, &#34;starid&#34;]</code></pre>
+__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -51,16 +62,42 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;]</code></pre>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="fslash.core.misc.flip"><code class="name flex">
+<span>def <span class="ident">flip</span></span>(<span>fn)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Flips the arguments for a function taking two arguments.</p>
+<h2 id="example">Example</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def flip(fn):
+    &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
+
+    Example:
+        &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
+    &#34;&#34;&#34;
+    lambda a, b: fn(b, a)</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.misc.identity"><code class="name flex">
 <span>def <span class="ident">identity</span></span>(<span>value: ~A) ‑> ~A</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Identity function.</p>
+<p>Returns value given as argument.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def identity(value: A) -&gt; A:
+    &#34;&#34;&#34;Identity function.
+
+    Returns value given as argument.
+    &#34;&#34;&#34;
     return value</code></pre>
 </details>
 </dd>
@@ -95,6 +132,7 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;]</code></pre>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="fslash.core.misc.flip" href="#fslash.core.misc.flip">flip</a></code></li>
 <li><code><a title="fslash.core.misc.identity" href="#fslash.core.misc.identity">identity</a></code></li>
 <li><code><a title="fslash.core.misc.starid" href="#fslash.core.misc.starid">starid</a></code></li>
 </ul>

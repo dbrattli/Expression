@@ -54,6 +54,10 @@ class Option(Iterable[TSource]):
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
         raise NotImplementedError
 
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
     @abstractmethod
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
         raise NotImplementedError
@@ -151,7 +155,10 @@ class Some(Option[TSource]):
 class _None(Option[TSource]):
     &#34;&#34;&#34;The None option case class.
 
-    Do not use. Use the singleton `Nothing` instead.
+    Do not use. Use the singleton `Nothing` instead. Since Nothing is a
+    singleton it can be tested e.g using `is`:
+        &gt;&gt;&gt; if xs is Nothing:
+        ...     return True
     &#34;&#34;&#34;
 
     def is_some(self) -&gt; bool:
@@ -205,7 +212,12 @@ class _None(Option[TSource]):
 # The singleton None class. We use the name &#39;Nothing&#39; here instead of `None` to
 # avoid conflicts with the builtin `None` value.
 Nothing: _None = _None()
-&#34;&#34;&#34;Singleton `Nothing` object.&#34;&#34;&#34;
+&#34;&#34;&#34;Singleton `Nothing` object.
+
+Since Nothing is a singleton it can be tested e.g using `is`:
+    &gt;&gt;&gt; if xs is Nothing:
+    ...     return True
+&#34;&#34;&#34;
 
 
 def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
@@ -240,7 +252,7 @@ def is_some(option: Option[TSource]) -&gt; bool:
 def or_else(if_none: Option[TSource]) -&gt; Callable[[Option[TSource]], Option[TSource]]:
     &#34;&#34;&#34;Returns option if it is Some, otherwise returns ifNone.&#34;&#34;&#34;
 
-    def _or_else(option: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+    def _or_else(option: Option[TSource]) -&gt; Option[TSource]:
         return option.or_else(if_none)
 
     return _or_else
@@ -314,7 +326,11 @@ __all__ = [
 <dl>
 <dt id="fslash.core.option.Nothing"><code class="name">var <span class="ident">Nothing</span> : <a title="fslash.core.option._None" href="#fslash.core.option._None">_None</a></code></dt>
 <dd>
-<div class="desc"><p>Singleton <code><a title="fslash.core.option.Nothing" href="#fslash.core.option.Nothing">Nothing</a></code> object.</p></div>
+<div class="desc"><p>Singleton <code><a title="fslash.core.option.Nothing" href="#fslash.core.option.Nothing">Nothing</a></code> object.</p>
+<p>Since Nothing is a singleton it can be tested e.g using <code>is</code>:
+&gt;&gt;&gt; if xs is Nothing:
+&hellip;
+return True</p></div>
 </dd>
 </dl>
 </section>
@@ -477,7 +493,7 @@ __all__ = [
 <pre><code class="python">def or_else(if_none: Option[TSource]) -&gt; Callable[[Option[TSource]], Option[TSource]]:
     &#34;&#34;&#34;Returns option if it is Some, otherwise returns ifNone.&#34;&#34;&#34;
 
-    def _or_else(option: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+    def _or_else(option: Option[TSource]) -&gt; Option[TSource]:
         return option.or_else(if_none)
 
     return _or_else</code></pre>
@@ -530,6 +546,10 @@ __all__ = [
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
         raise NotImplementedError
+
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
 
     @abstractmethod
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
@@ -651,6 +671,20 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#
 <pre><code class="python">@abstractmethod
 def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
     raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.option.Option.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args, **kw):
+    from pampy import match
+    return match(self, *args, **kw)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.option.Option.or_else"><code class="name flex">
@@ -907,7 +941,11 @@ def value(self):
 </code></dt>
 <dd>
 <div class="desc"><p>The None option case class.</p>
-<p>Do not use. Use the singleton <code><a title="fslash.core.option.Nothing" href="#fslash.core.option.Nothing">Nothing</a></code> instead.</p></div>
+<p>Do not use. Use the singleton <code><a title="fslash.core.option.Nothing" href="#fslash.core.option.Nothing">Nothing</a></code> instead. Since Nothing is a
+singleton it can be tested e.g using <code>is</code>:
+&gt;&gt;&gt; if xs is Nothing:
+&hellip;
+return True</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -915,7 +953,10 @@ def value(self):
 <pre><code class="python">class _None(Option[TSource]):
     &#34;&#34;&#34;The None option case class.
 
-    Do not use. Use the singleton `Nothing` instead.
+    Do not use. Use the singleton `Nothing` instead. Since Nothing is a
+    singleton it can be tested e.g using `is`:
+        &gt;&gt;&gt; if xs is Nothing:
+        ...     return True
     &#34;&#34;&#34;
 
     def is_some(self) -&gt; bool:
@@ -1125,6 +1166,7 @@ def value(self):
 <li><code><a title="fslash.core.option.Option.is_some" href="#fslash.core.option.Option.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.option.Option.map" href="#fslash.core.option.Option.map">map</a></code></li>
 <li><code><a title="fslash.core.option.Option.map2" href="#fslash.core.option.Option.map2">map2</a></code></li>
+<li><code><a title="fslash.core.option.Option.match" href="#fslash.core.option.Option.match">match</a></code></li>
 <li><code><a title="fslash.core.option.Option.or_else" href="#fslash.core.option.Option.or_else">or_else</a></code></li>
 <li><code><a title="fslash.core.option.Option.to_list" href="#fslash.core.option.Option.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.option.Option.to_seq" href="#fslash.core.option.Option.to_seq">to_seq</a></code></li>
