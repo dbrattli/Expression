@@ -1,14 +1,14 @@
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash.core import Option, TOption, Some, Nothing, pipe, pipe2
+from fslash.core import Option, Option_, Some, Nothing, pipe, pipe2
 from fslash.builders import option
 
 
 def test_option_some():
     xs = Some(42)
 
-    assert isinstance(xs, TOption)
+    assert isinstance(xs, Option_)
     assert pipe(xs, Option.is_some) is True
     assert pipe(xs, Option.is_none) is False
 
@@ -16,7 +16,7 @@ def test_option_some():
 def test_option_none():
     xs = Nothing
 
-    assert isinstance(xs, TOption)
+    assert isinstance(xs, Option_)
     assert pipe(xs, Option.is_some) is False
     assert pipe(xs, Option.is_none) is True
 

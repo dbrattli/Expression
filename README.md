@@ -163,8 +163,8 @@ generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`, `yield fr
 and `return` to consume or generate optional values:
 
 ```py
-from fslash.core import Some
 from fslash.builders import option
+from fslash.core import Some
 
 @option
 def fn():

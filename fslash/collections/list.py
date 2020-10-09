@@ -1,6 +1,8 @@
 from abc import abstractmethod
-from typing import Iterable, Iterator, Sized, TypeVar, Callable
-from .seq import SeqModule as Seq
+from typing import Iterable, Iterator, Sized, TypeVar, Callable, cast
+
+from fslash.core import Option_, Some
+from . import seq as Seq
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -17,28 +19,30 @@ class List(Iterable[TSource], Sized):
     """
 
     @abstractmethod
-    def append(self, other: 'List[TSource]') -> 'List[TSource]':
+    def append(self, other: "List[TSource]") -> "List[TSource]":
         raise NotImplementedError
 
     @abstractmethod
-    def collect(self, mapping: Callable[[TSource], 'List[TResult]']) -> 'List[TResult]':
+    def choose(sef, chooser: Callable[[TSource], Option_[TResult]]) -> "List[TResult]":
         raise NotImplementedError
 
     @abstractmethod
-    def cons(self, element: TSource) -> 'List[TSource]':
+    def collect(self, mapping: Callable[[TSource], "List[TResult]"]) -> "List[TResult]":
+        raise NotImplementedError
+
+    @abstractmethod
+    def cons(self, element: TSource) -> "List[TSource]":
         """Add element to front of List."""
 
         raise NotImplementedError
 
     @abstractmethod
-    def head(self) -> TSource:
-        """Retrive first element in List."""
-
+    def filter(self, predicate: Callable[[TSource], bool]) -> "List[TSource]":
         raise NotImplementedError
 
     @abstractmethod
-    def tail(self) -> 'List[TSource]':
-        """Return tail of List."""
+    def head(self) -> TSource:
+        """Retrive first element in List."""
 
         raise NotImplementedError
 
@@ -49,7 +53,13 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -> 'List[TResult]':
+    def map(self, mapper: Callable[[TSource], TResult]) -> "List[TResult]":
+        raise NotImplementedError
+
+    @abstractmethod
+    def tail(self) -> "List[TSource]":
+        """Return tail of List."""
+
         raise NotImplementedError
 
     @abstractmethod
@@ -59,7 +69,7 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def __add__(self, other) -> 'List[TSource]':
+    def __add__(self, other) -> "List[TSource]":
         """Append list with other list."""
 
         raise NotImplementedError
@@ -81,18 +91,30 @@ class Cons(List[TSource]):
     def __init__(self, head: TSource, tail: List[TSource]):
         self._value = (head, tail)
 
-    def append(self, other: 'List[TSource]') -> 'List[TSource]':
+    def append(self, other: List[TSource]) -> List[TSource]:
         head, tail = self._value
         return Cons(head, tail.append(other))
 
-    def collect(self, mapping: Callable[[TSource], 'List[TResult]']) -> 'List[TResult]':
+    def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -> List[TResult]:
+        head, tail = self._value
+        filtered: List[TResult] = tail.choose(chooser)
+        res: Option_[TResult] = chooser(head)
+        return cast(List[TResult], of_option(res)).append(filtered)
+
+    def collect(self, mapping: Callable[[TSource], List[TResult]]) -> List[TResult]:
         head, tail = self._value
         return mapping(head).append(tail.collect(mapping))
 
-    def cons(self, element: TSource) -> 'List[TSource]':
+    def cons(self, element: TSource) -> List[TSource]:
         """Add element to front of List."""
 
         return Cons(element, self)
+
+    def filter(self, predicate: Callable[[TSource], bool]) -> List[TSource]:
+        head, tail = self._value
+
+        filtered = tail.filter(predicate)
+        return Cons(head, filtered) if predicate(head) else filtered
 
     def head(self) -> TSource:
         """Retrive first element in List."""
@@ -108,13 +130,13 @@ class Cons(List[TSource]):
         head, tail = self._value
         return Cons(mapper(head), tail.map(mapper))
 
-    def tail(self) -> 'List[TSource]':
+    def tail(self) -> List[TSource]:
         """Return tail of List."""
 
         _, tail = self._value
         return tail
 
-    def __add__(self, other) -> 'List[TSource]':
+    def __add__(self, other) -> List[TSource]:
         """Append list with other list."""
 
         return self.append(other)
@@ -146,20 +168,26 @@ class _Nil(List[TSource]):
     Do not use. Use the singleton Nil instead.
     """
 
-    def append(self, other: 'List[TSource]') -> 'List[TSource]':
+    def append(self, other: List[TSource]) -> List[TSource]:
         return other
 
-    def collect(self, mapping: Callable[[TSource], 'List[TResult]']) -> 'List[TResult]':
+    def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -> List[TResult]:
+        return Nil
+
+    def collect(self, mapping: Callable[[TSource], List[TResult]]) -> List[TResult]:
         return Nil
 
     def is_empty(self) -> bool:
         """Return `True` if list is empty."""
         return True
 
-    def cons(self, element: TSource) -> 'List[TSource]':
+    def cons(self, element: TSource) -> List[TSource]:
         """Add element to front of List."""
 
         return Cons(element, self)
+
+    def filter(self, predicate: Callable[[TSource], bool]) -> List[TSource]:
+        return Nil
 
     def head(self) -> TSource:
         """Retrive first element in List."""
@@ -169,12 +197,12 @@ class _Nil(List[TSource]):
     def map(self, mapping: Callable[[TSource], TResult]) -> List[TResult]:
         return Nil
 
-    def tail(self) -> 'List[TSource]':
+    def tail(self) -> List[TSource]:
         """Return tail of List."""
 
         raise IndexError("List is empty")
 
-    def __add__(self, other) -> 'List[TSource]':
+    def __add__(self, other) -> List[TSource]:
         """Append list with other list."""
 
         return other
@@ -197,54 +225,95 @@ class _Nil(List[TSource]):
 Nil: _Nil = _Nil()
 
 
-class ListModule:
-    @staticmethod
-    def append(source: 'List[TSource]') -> 'Callable[[List[TSource]], List[TSource]]':
-        def _append(other: List[TSource]) -> List[TSource]:
-            return source.append(other)
-        return _append
+def append(source: List[TSource]) -> Callable[[List[TSource]], List[TSource]]:
+    def _append(other: List[TSource]) -> List[TSource]:
+        return source.append(other)
 
-    @staticmethod
-    def collect(mapping: 'Callable[[TSource], List[TResult]]') -> 'Callable[[List[TSource]], List[TResult]]':
-        def _collect(source: List[TSource]) -> List[TResult]:
-            return source.collect(mapping)
-        return _collect
-
-    @staticmethod
-    def concat(sources: 'Iterable[List[TSource]]') -> 'List[TSource]':
-        def folder(xs: List[TSource], acc: List[TSource]) -> List[TSource]:
-            return xs + acc
-        return Seq.fold_back(folder, sources)(Nil)
-
-    empty = Nil
-
-    @staticmethod
-    def head(source: List[TSource]) -> TSource:
-        return source.head()
-
-    @staticmethod
-    def is_empty(source: List[TSource]) -> bool:
-        return source.is_empty()
-
-    @staticmethod
-    def map(mapper: Callable[[TSource], TResult]) -> 'Callable[[List[TSource]], List[TResult]]':
-        def _map(source: List[TSource]) -> List[TResult]:
-            return source.map(mapper)
-        return _map
-
-    @staticmethod
-    def of_seq(xs: Iterable[TSource]) -> 'List[TSource]':
-        def folder(value: TSource, acc: List[TSource]) -> List[TSource]:
-            return Cons(value, acc)
-        return Seq.fold_back(folder, xs)(Nil)
-
-    @staticmethod
-    def singleton(value: TSource) -> 'List[TSource]':
-        return Cons(value, Nil)
-
-    @staticmethod
-    def tail(source: List[TSource]) -> List[TSource]:
-        return source.tail()
+    return _append
 
 
-__all__ = ['ListModule', 'List', 'Cons', 'Nil']
+def choose(sef, chooser: Callable[[TSource], Option_[TResult]]) -> Callable[[List[TSource]], List[TResult]]:
+    def _choose(source: List[TSource]) -> List[TResult]:
+        return source.choose(chooser)
+
+    return _choose
+
+
+def collect(mapping: Callable[[TSource], List[TResult]]) -> Callable[[List[TSource]], List[TResult]]:
+    def _collect(source: List[TSource]) -> List[TResult]:
+        return source.collect(mapping)
+
+    return _collect
+
+
+def concat(sources: Iterable[List[TSource]]) -> List[TSource]:
+    def folder(xs: List[TSource], acc: List[TSource]) -> List[TSource]:
+        return xs + acc
+
+    return Seq.fold_back(folder, sources)(Nil)
+
+
+empty = Nil
+
+
+def filter(predicate: Callable[[TSource], bool]) -> Callable[[List[TSource]], List[TSource]]:
+    def _filter(source: List[TSource]) -> List[TSource]:
+        return source.filter(predicate)
+
+    return _filter
+
+
+def head(source: List[TSource]) -> TSource:
+    return source.head()
+
+
+def is_empty(source: List[TSource]) -> bool:
+    return source.is_empty()
+
+
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[List[TSource]], List[TResult]]:
+    def _map(source: List[TSource]) -> List[TResult]:
+        return source.map(mapper)
+
+    return _map
+
+
+def of_seq(xs: Iterable[TSource]) -> List[TSource]:
+    def folder(value: TSource, acc: List[TSource]) -> List[TSource]:
+        return Cons(value, acc)
+
+    return Seq.fold_back(folder, xs)(Nil)
+
+
+def of_option(option: Option_[TSource]) -> List[TSource]:
+    if isinstance(option, Some):
+        return singleton(option.value)
+    return empty
+
+
+def singleton(value: TSource) -> List[TSource]:
+    return Cons(value, Nil)
+
+
+def tail(source: List[TSource]) -> List[TSource]:
+    return source.tail()
+
+
+__all__ = [
+    "List",
+    "Cons",
+    "Nil",
+    "append",
+    "choose",
+    "collect",
+    "concat",
+    "empty",
+    "filter",
+    "head",
+    "is_empty",
+    "map",
+    "of_seq",
+    "of_option",
+    "singleton",
+    "tail",
+]

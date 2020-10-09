@@ -1,16 +1,16 @@
 from hypothesis import given, strategies as st
 
 from fslash.core import pipe
-from fslash.collections import List, TList, Nil, Cons
+from fslash.collections import List_, list as List, Nil, Cons
 
 
 def test_list_nil():
-    assert isinstance(Nil, TList)
+    assert isinstance(Nil, List_)
 
 
 def test_list_cons():
     xs = Cons(42, Nil)
-    assert isinstance(xs, TList)
+    assert isinstance(xs, List_)
 
 
 @given(st.one_of(st.integers(), st.text()))
@@ -30,7 +30,7 @@ def test_list_pipe_map(xs):
     ys = List.of_seq(xs)
     zs = pipe(ys, List.map(mapper))
 
-    assert isinstance(zs, TList)
+    assert isinstance(zs, List_)
     assert [y for y in zs] == [mapper(x) for x in xs]
 
 

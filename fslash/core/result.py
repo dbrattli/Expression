@@ -11,50 +11,9 @@ from abc import abstractmethod
 from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List, Generator
 from .misc import identity
 
-from fslash.collections.seq import SeqModule
-
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TError = TypeVar("TError")
-
-
-class ResultModule(Generic[TSource, TError]):
-    @staticmethod
-    def map(mapper: Callable[[TSource], TResult]) -> "Callable[[Result[TSource, TError]], Result[TResult, TError]]":
-        def _map(result: Result[TSource, TError]) -> "Result[TResult, TError]":
-            return result.map(mapper)
-
-        return _map
-
-    @staticmethod
-    def bind(
-        mapper: Callable[[TSource], "Result[TResult, TError]"]
-    ) -> "Callable[[Result[TSource, TError]], Result[TResult, TError]]":
-        def _bind(result: Result[TSource, TError]) -> Result[TResult, TError]:
-            return result.bind(mapper)
-
-        return _bind
-
-    @staticmethod
-    def traverse(
-        fn: Callable[[TSource], 'Result[TResult, TError]'], lst: List[TSource]
-    ) -> 'Result[List[TResult], TError]':
-
-        # flake8: noqa: T484
-        @result
-        def folder(head: TSource, tail: Result[List[TResult], TError]):
-            """Same as:
-            >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
-            """
-            h = yield from fn(head)
-            t = yield from tail
-            return [h] + t
-
-        return SeqModule.fold_back(folder, lst)(Ok([]))  # type: ignore
-
-    @staticmethod
-    def sequence(lst: "List[Result[TSource, TError]]") -> "Result[List[TSource], TError]":
-        return ResultModule.traverse(identity, lst)
 
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
@@ -172,6 +131,41 @@ class ResultException(Exception):
         self.error = error
 
 
-__all__ = ["ResultModule", "Result", "Ok", "Error", "ResultException"]
+def map(mapper: Callable[[TSource], TResult]) -> "Callable[[Result[TSource, TError]], Result[TResult, TError]]":
+    def _map(result: Result[TSource, TError]) -> "Result[TResult, TError]":
+        return result.map(mapper)
 
-from fslash.builders import result
+    return _map
+
+
+def bind(
+    mapper: Callable[[TSource], "Result[TResult, TError]"]
+) -> "Callable[[Result[TSource, TError]], Result[TResult, TError]]":
+    def _bind(result: Result[TSource, TError]) -> Result[TResult, TError]:
+        return result.bind(mapper)
+
+    return _bind
+
+
+def traverse(fn: Callable[[TSource], "Result[TResult, TError]"], lst: List[TSource]) -> "Result[List[TResult], TError]":
+    from fslash.builders import result
+    from fslash.collections import Seq
+
+    # flake8: noqa: T484
+    @result
+    def folder(head: TSource, tail: Result[List[TResult], TError]):
+        """Same as:
+        >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+        """
+        h = yield from fn(head)
+        t = yield from tail
+        return [h] + t
+
+    return Seq.fold_back(folder, lst)(Ok([]))  # type: ignore
+
+
+def sequence(lst: "List[Result[TSource, TError]]") -> "Result[List[TSource], TError]":
+    return traverse(identity, lst)
+
+
+__all__ = ["Result", "Ok", "Error", "ResultException", "map", "bind", "traverse", "sequence"]

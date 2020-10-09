@@ -1,5 +1,12 @@
+"""Option module.
+
+Contains a collection of static methods (functions) for operating on
+options. All functions takes the source as the last curried
+argument, i.e all functions returns a function that takes the source
+sequence as the only argument.
+"""
 from abc import abstractmethod
-from typing import Generic, Optional, TypeVar, Callable, List, Iterable, Iterator, Any
+from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -7,109 +14,23 @@ T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 
 
-class OptionModule(Generic[TSource]):
-    """Option module.
-
-    Contains a collection of static methods (functions) for operating on
-    options. All functions takes the source as the last curried
-    argument, i.e all functions returns a function that takes the source
-    sequence as the only argument.
-    """
-
-    @staticmethod
-    def map(mapper: Callable[[TSource], TResult]) -> "Callable[[Option[TSource]], Option[TResult]]":
-        def _map(option: Option[TSource]) -> "Option[TResult]":
-            return option.map(mapper)
-        return _map
-
-    @staticmethod
-    def map2(mapper: Callable[[T1, T2], TResult]) -> "Callable[[Option[T1], Option[T2]], Option[TResult]]":
-        def _map2(opt1: Option[T1], opt2: Option[T2]) -> "Option[TResult]":
-            return opt1.map2(mapper, opt2)
-        return _map2
-
-    @staticmethod
-    def bind(mapper: Callable[[TSource], 'Option[TResult]']) -> 'Callable[[Option[TSource]], Option[TResult]]':
-        def _bind(option: "Option[TSource]") -> "Option[TResult]":
-            return option.bind(mapper)
-        return _bind
-
-    @staticmethod
-    def or_else(if_none: 'Option[TSource]') -> 'Callable[[Option[TSource]], Option[TSource]]':
-        """Returns option if it is Some, otherwise returns ifNone."""
-
-        def _or_else(option: 'Option[TSource]') -> 'Option[TSource]':
-            return option.or_else(if_none)
-        return _or_else
-
-    @staticmethod
-    def to_list(option: 'Option[TSource]') -> List[TSource]:
-        return option.to_list()
-
-    @staticmethod
-    def to_seq(option: 'Option[TSource]') -> Iterable[TSource]:
-        return option.to_list()
-
-    @staticmethod
-    def is_some(option: "Option[TSource]") -> bool:
-        return option.is_some()
-
-    @staticmethod
-    def is_none(option: "Option[TSource]") -> bool:
-        return option.is_none()
-
-    @staticmethod
-    def of_optional(value: Optional[TSource]) -> 'Option[TSource]':
-        """Convert an optional value to an option.
-
-        Convert a value that could be `None` into an `Option` value.
-
-        Args:
-            value: The input optional value.
-
-        Return:
-            The result option.
-        """
-        if value is None:
-            return Nothing
-        else:
-            return Some(value)
-
-    @staticmethod
-    def of_obj(value: Any) -> 'Option[TSource]':
-        """Convert object to an option.
-
-        Convert a value that could be `None` into an `Option` value.
-
-        Args:
-            value: The input object.
-
-        Return:
-            The result option.
-        """
-        if value is None:
-            return Nothing
-        else:
-            return Some(value)
-
-
 class Option(Iterable[TSource]):
     """Option abstract base class."""
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -> 'Option[TResult]':
+    def map(self, mapper: Callable[[TSource], TResult]) -> "Option[TResult]":
         raise NotImplementedError
 
     @abstractmethod
-    def map2(self, mapper: Callable[[TSource, T2], TResult], other: 'Option[T2]') -> 'Option[TResult]':
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: "Option[T2]") -> "Option[TResult]":
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], 'Option[TResult]']) -> 'Option[TResult]':
+    def bind(self, mapper: Callable[[TSource], "Option[TResult]"]) -> "Option[TResult]":
         raise NotImplementedError
 
     @abstractmethod
-    def or_else(self, if_none: 'Option[TSource]') -> 'Option[TSource]':
+    def or_else(self, if_none: "Option[TSource]") -> "Option[TSource]":
         """Returns option if it is Some, otherwise returns `if_one`. """
         raise NotImplementedError
 
@@ -254,4 +175,100 @@ Nothing: _None = _None()
 """Singleton `Nothing` object."""
 
 
-__all__ = ["OptionModule", "Option", "Some", "Nothing", "_None"]
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[Option[TSource]], Option[TResult]]:
+    def _map(option: Option[TSource]) -> Option[TResult]:
+        return option.map(mapper)
+
+    return _map
+
+
+def map2(mapper: Callable[[T1, T2], TResult]) -> Callable[[Option[T1], Option[T2]], Option[TResult]]:
+    def _map2(opt1: Option[T1], opt2: Option[T2]) -> Option[TResult]:
+        return opt1.map2(mapper, opt2)
+
+    return _map2
+
+
+def bind(mapper: Callable[[TSource], Option[TResult]]) -> Callable[[Option[TSource]], Option[TResult]]:
+    def _bind(option: Option[TSource]) -> Option[TResult]:
+        return option.bind(mapper)
+
+    return _bind
+
+
+def is_none(option: Option[TSource]) -> bool:
+    return option.is_none()
+
+
+def is_some(option: Option[TSource]) -> bool:
+    return option.is_some()
+
+
+def or_else(if_none: Option[TSource]) -> Callable[[Option[TSource]], Option[TSource]]:
+    """Returns option if it is Some, otherwise returns ifNone."""
+
+    def _or_else(option: "Option[TSource]") -> "Option[TSource]":
+        return option.or_else(if_none)
+
+    return _or_else
+
+
+def to_list(option: Option[TSource]) -> List[TSource]:
+    return option.to_list()
+
+
+def to_seq(option: Option[TSource]) -> Iterable[TSource]:
+    return option.to_list()
+
+
+def of_optional(value: Optional[TSource]) -> Option[TSource]:
+    """Convert an optional value to an option.
+
+    Convert a value that could be `None` into an `Option` value. Same as
+    `of_obj` but with typed values.
+
+    Args:
+        value: The input optional value.
+
+    Return:
+        The result option.
+    """
+    if value is None:
+        return Nothing
+    else:
+        return Some(value)
+
+
+def of_obj(value: Any) -> Option[TSource]:
+    """Convert object to an option.
+
+    Convert a value that could be `None` into an `Option` value.
+
+    Args:
+        value: The input object.
+
+    Return:
+        The result option.
+    """
+    if value is None:
+        return Nothing
+    else:
+        return Some(value)
+
+
+__all__ = [
+    "Option",
+    "Some",
+    "Nothing",
+    "_None",
+    "map",
+    "map2",
+    "bind",
+    "is_none",
+    "is_some",
+    "or_else",
+    "to_list",
+    "to_seq",
+    "of_optional",
+    "of_obj",
+]

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
 <title>fslash.collections.seq API documentation</title>
-<meta name="description" content="" />
+<meta name="description" content="Sequence module …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,285 +22,52 @@
 <h1 class="title">Module <code>fslash.collections.seq</code></h1>
 </header>
 <section id="section-intro">
+<p>Sequence module.</p>
+<p>Contains a collection of static methods (functions) for operating on
+sequences. A sequence is a thin wrapper around <code>Iterable</code> so all
+functions take (and return) Python iterables.</p>
+<p>All functions takes the source as the last curried
+argument, i.e all functions returns a function that takes the source
+sequence as the only argument.</p>
+<h2 id="example">Example</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; xs = Seq([1, 2, 3])
+&gt;&gt;&gt; ys = pipe(
+    xs,
+    Seq.map(lambda x: x + 1),
+    Seq.filter(lambda x: x &lt; 3)
+)
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import Generic, TypeVar, Callable, Iterable, Iterator, List
+<pre><code class="python">&#34;&#34;&#34;Sequence module.
+
+Contains a collection of static methods (functions) for operating on
+sequences. A sequence is a thin wrapper around `Iterable` so all
+functions take (and return) Python iterables.
+
+All functions takes the source as the last curried
+argument, i.e all functions returns a function that takes the source
+sequence as the only argument.
+
+Example:
+    &gt;&gt;&gt; xs = Seq([1, 2, 3])
+    &gt;&gt;&gt; ys = pipe(
+        xs,
+        Seq.map(lambda x: x + 1),
+        Seq.filter(lambda x: x &lt; 3)
+    )
+&#34;&#34;&#34;
+
+import builtins
+from typing import TypeVar, Callable, Iterable, Iterator, List
 import functools
 import itertools
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
 TState = TypeVar(&#34;TState&#34;)
-
-
-class SeqModule(Generic[TSource]):
-    &#34;&#34;&#34;Sequence module.
-
-    Contains a collection of static methods (functions) for operating on
-    sequences. A sequence is a thin wrapper around `Iterable` so all
-    functions take (and return) Python iterables.
-
-    All functions takes the source as the last curried
-    argument, i.e all functions returns a function that takes the source
-    sequence as the only argument.
-
-    Example:
-        &gt;&gt;&gt; xs = Seq([1, 2, 3])
-        &gt;&gt;&gt; ys = pipe(
-            xs,
-            Seq.map(lambda x: x + 1),
-            Seq.filter(lambda x: x &lt; 3)
-        )
-    &#34;&#34;&#34;
-
-    @staticmethod
-    def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
-        &#34;&#34;&#34;Combines the given variable number of enumerations and/or
-        enumeration-of-enumerations as a single concatenated
-        enumeration.
-
-        Args:
-            iterables: The input enumeration-of-enumerations.
-
-        Returns:
-            A partially applied concat function.
-        &#34;&#34;&#34;
-
-        def _concat(sources: Iterable[Iterable[TSource]]) -&gt; Iterable[TSource]:
-            &#34;&#34;&#34;Partially applied concat function.
-
-            Args:
-                sources: The input iterable-of-iterables.
-
-            Returns:
-                The result sequence.
-            &#34;&#34;&#34;
-            return itertools.chain(*iterables, *sources)
-
-        return _concat
-
-    @classmethod
-    def empty(cls):
-        &#34;&#34;&#34;Creates an empty sequence.
-
-        Returns:
-            An empty sequence.
-        &#34;&#34;&#34;
-        return Seq([])
-
-    @staticmethod
-    def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
-        &#34;&#34;&#34;Filter sequence.
-
-        Filters the sequence to a new sequence containing only the
-        elements of the sequence for which the given predicate returns
-        `True`.
-
-        Args:
-            predicate: A function to test whether each item in the
-                input sequence should be included in the output.
-            source: (curried) The input sequence to to filter.
-
-        Returns:
-            A partially applied filter function.
-        &#34;&#34;&#34;
-
-        def _filter(source: Iterable[TSource]) -&gt; Iterable[TSource]:
-            &#34;&#34;&#34;Filter sequence (partially applied).
-
-            Args:
-                source: The input sequence to to filter.
-
-            Returns:
-                Returns a new collection containing only the elements
-                of the collection for which the given predicate returns
-                `True`.
-            &#34;&#34;&#34;
-            return filter(predicate, source)
-
-        return _filter
-
-    @staticmethod
-    def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Callable[[Iterable[TSource]], TState]:
-        &#34;&#34;&#34;Applies a function to each element of the collection,
-        threading an accumulator argument through the computation. If
-        the input function is f and the elements are i0...iN then
-        computes f (... (f s i0)...) iN
-
-        Args:
-            folder: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-        Returns:
-            Partially applied fold function.
-        &#34;&#34;&#34;
-        def _fold(source: Iterable[TSource]) -&gt; TState:
-            &#34;&#34;&#34;Partially applied fold function.
-            Returns:
-                The state object after the folding function is applied
-                to each element of the sequence.
-            &#34;&#34;&#34;
-            return functools.reduce(folder, source, state)  # type: ignore
-
-        return _fold
-
-    @staticmethod
-    def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -&gt; Callable[[TState], TState]:
-        &#34;&#34;&#34;Applies a function to each element of the collection,
-        starting from the end, threading an accumulator argument through
-        the computation. If the input function is f and the elements are
-        i0...iN then computes f i0 (... (f iN s)...)
-
-        Args:
-            folder: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-        Returns:
-            Partially applied fold_back function.
-        &#34;&#34;&#34;
-        def _fold_back(state: TState) -&gt; TState:
-            &#34;&#34;&#34;Partially applied fold_back function.
-            Returns:
-                The state object after the folding function is applied
-                to each element of the sequence.
-            &#34;&#34;&#34;
-            return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
-        return _fold_back
-
-    @staticmethod
-    def head(source: Iterable[TSource]) -&gt; TSource:
-        &#34;&#34;&#34;Return the first element of the sequence.
-
-        Args:
-            source: The input sequence.
-
-        Returns:
-            The first element of the sequence.
-
-        Raises:
-            Raises `ValueError` if the source sequence is empty.
-        &#34;&#34;&#34;
-
-        for value in source:
-            return value
-        else:
-            raise ValueError(&#34;Sequence contains no elements&#34;)
-
-    @staticmethod
-    def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
-        &#34;&#34;&#34;Applies the given function to each element of the collection.
-
-        Args:
-            action: A function to apply to each element of the sequence.
-
-        Returns:
-            A partially applied iter function.
-        &#34;&#34;&#34;
-
-        def _iter(source: Iterable[TSource]) -&gt; None:
-            &#34;&#34;&#34;A partially applied iter function.
-
-            Note that this function is a pure side effect and returns nothing.
-
-            Args:
-                source: The input sequence to apply action to.
-
-            Returns:
-                None
-            &#34;&#34;&#34;
-            for x in source:
-                action(x)
-
-        return _iter
-
-    @staticmethod
-    def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
-        &#34;&#34;&#34;Map source sequence.
-
-        Builds a new collection whose elements are the results of
-        applying the given function to each of the elements of the
-        collection.
-
-        Args:
-            mapping: A function to transform items from the input sequence.
-
-        Returns:
-            Partially applied map function.
-        &#34;&#34;&#34;
-
-        def _map(source: Iterable[TSource]) -&gt; Iterable[TResult]:
-            &#34;&#34;&#34;Partially applied map function.
-
-            Args:
-                source: The input sequence.
-            Returns:
-                The result sequence.
-            &#34;&#34;&#34;
-            return (mapper(x) for x in source)
-
-        return _map
-
-    @staticmethod
-    def max() -&gt; Callable[[Iterable[TSource]], TSource]:
-        &#34;&#34;&#34;Returns the greatest of all elements of the sequence,
-        compared via `max()`.&#34;&#34;&#34;
-
-        def _map(source: Iterable[TSource]) -&gt; TSource:
-            return max(source)
-
-        return _map
-
-    @staticmethod
-    def max_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
-        def _max_by(source: Iterable[TSource]) -&gt; TResult:
-            return max(projection(x) for x in source)
-
-        return _max_by
-
-    @staticmethod
-    def min() -&gt; Callable[[Iterable[TSource]], TSource]:
-        &#34;&#34;&#34;Returns the smallest of all elements of the sequence,
-        compared via `max()`.&#34;&#34;&#34;
-
-        def _min(source: Iterable[TSource]) -&gt; TSource:
-            return min(source)
-
-        return _min
-
-    @staticmethod
-    def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
-        def _min_by(source: Iterable[TSource]) -&gt; TResult:
-            return min(projection(x) for x in source)
-
-        return _min_by
-
-    @classmethod
-    def of_list(cls, list: List[TSource]):
-        return Seq(list)
-
-    @staticmethod
-    def scan(
-        scanner: Callable[[TState, TSource], TState], state: TState
-    ) -&gt; Callable[[Iterable[TSource]], Iterable[TState]]:
-        &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
-        intermediary and final results.
-
-        Args:
-            scanner: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-        &#34;&#34;&#34;
-        def _scan(source: Iterable[TSource]) -&gt; Iterable[TState]:
-            &#34;&#34;&#34;Partially applied scan function.
-            Args:
-                source: The input sequence.
-            Returns:
-                The resulting sequence of computed states.
-            &#34;&#34;&#34;
-            return itertools.accumulate(source, scanner, initial=state)   # type: ignore
-        return _scan
 
 
 class Seq(Iterable[TSource]):
@@ -318,7 +85,7 @@ class Seq(Iterable[TSource]):
         self._value = iterable
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
-        return Seq(SeqModule.filter(predicate)(self))
+        return Seq(filter(predicate)(self))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
         &#34;&#34;&#34;Applies a function to each element of the collection,
@@ -339,7 +106,7 @@ class Seq(Iterable[TSource]):
     def head(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
 
-        return SeqModule.head(self)
+        return head(self)
 
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Seq[TResult]&#34;:
         &#34;&#34;&#34;Map sequence.
@@ -355,7 +122,7 @@ class Seq(Iterable[TSource]):
             The result sequence.
         &#34;&#34;&#34;
 
-        return Seq(SeqModule.map(mapper)(self))
+        return Seq(map(mapper)(self))
 
     def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -&gt; Iterable[TState]:
         &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
@@ -373,17 +140,708 @@ class Seq(Iterable[TSource]):
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for sequence.&#34;&#34;&#34;
-        return iter(self._value)
+        return builtins.iter(self._value)
 
 
-__all__ = [&#34;SeqModule&#34;, &#34;Seq&#34;]</code></pre>
+def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
+    &#34;&#34;&#34;Combines the given variable number of enumerations and/or
+    enumeration-of-enumerations as a single concatenated
+    enumeration.
+
+    Args:
+        iterables: The input enumeration-of-enumerations.
+
+    Returns:
+        A partially applied concat function.
+    &#34;&#34;&#34;
+
+    def _concat(sources: Iterable[Iterable[TSource]]) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Partially applied concat function.
+
+        Args:
+            sources: The input iterable-of-iterables.
+
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return itertools.chain(*iterables, *sources)
+
+    return _concat
+
+
+empty = Seq([])
+&#34;&#34;&#34;Creates an empty sequence.&#34;&#34;&#34;
+
+
+def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
+    &#34;&#34;&#34;Filter sequence.
+
+    Filters the sequence to a new sequence containing only the
+    elements of the sequence for which the given predicate returns
+    `True`.
+
+    Args:
+        predicate: A function to test whether each item in the
+            input sequence should be included in the output.
+        source: (curried) The input sequence to to filter.
+
+    Returns:
+        A partially applied filter function.
+    &#34;&#34;&#34;
+
+    def _filter(source: Iterable[TSource]) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Filter sequence (partially applied).
+
+        Args:
+            source: The input sequence to to filter.
+
+        Returns:
+            Returns a new collection containing only the elements
+            of the collection for which the given predicate returns
+            `True`.
+        &#34;&#34;&#34;
+        return builtins.filter(predicate, source)
+
+    return _filter
+
+
+def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Callable[[Iterable[TSource]], TState]:
+    &#34;&#34;&#34;Applies a function to each element of the collection,
+    threading an accumulator argument through the computation. If
+    the input function is f and the elements are i0...iN then
+    computes f (... (f s i0)...) iN
+
+    Args:
+        folder: A function that updates the state with each element
+            from the sequence.
+        state: The initial state.
+    Returns:
+        Partially applied fold function.
+    &#34;&#34;&#34;
+    def _fold(source: Iterable[TSource]) -&gt; TState:
+        &#34;&#34;&#34;Partially applied fold function.
+        Returns:
+            The state object after the folding function is applied
+            to each element of the sequence.
+        &#34;&#34;&#34;
+        return functools.reduce(folder, source, state)  # type: ignore
+
+    return _fold
+
+
+def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -&gt; Callable[[TState], TState]:
+    &#34;&#34;&#34;Applies a function to each element of the collection,
+    starting from the end, threading an accumulator argument through
+    the computation. If the input function is f and the elements are
+    i0...iN then computes f i0 (... (f iN s)...)
+
+    Args:
+        folder: A function that updates the state with each element
+            from the sequence.
+        state: The initial state.
+    Returns:
+        Partially applied fold_back function.
+    &#34;&#34;&#34;
+    def _fold_back(state: TState) -&gt; TState:
+        &#34;&#34;&#34;Partially applied fold_back function.
+        Returns:
+            The state object after the folding function is applied
+            to each element of the sequence.
+        &#34;&#34;&#34;
+        return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+    return _fold_back
+
+
+def head(source: Iterable[TSource]) -&gt; TSource:
+    &#34;&#34;&#34;Return the first element of the sequence.
+
+    Args:
+        source: The input sequence.
+
+    Returns:
+        The first element of the sequence.
+
+    Raises:
+        Raises `ValueError` if the source sequence is empty.
+    &#34;&#34;&#34;
+
+    for value in source:
+        return value
+    else:
+        raise ValueError(&#34;Sequence contains no elements&#34;)
+
+
+def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
+    &#34;&#34;&#34;Applies the given function to each element of the collection.
+
+    Args:
+        action: A function to apply to each element of the sequence.
+
+    Returns:
+        A partially applied iter function.
+    &#34;&#34;&#34;
+
+    def _iter(source: Iterable[TSource]) -&gt; None:
+        &#34;&#34;&#34;A partially applied iter function.
+
+        Note that this function is a pure side effect and returns nothing.
+
+        Args:
+            source: The input sequence to apply action to.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+        for x in source:
+            action(x)
+
+    return _iter
+
+
+def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+    &#34;&#34;&#34;Map source sequence.
+
+    Builds a new collection whose elements are the results of
+    applying the given function to each of the elements of the
+    collection.
+
+    Args:
+        mapping: A function to transform items from the input sequence.
+
+    Returns:
+        Partially applied map function.
+    &#34;&#34;&#34;
+
+    def _map(source: Iterable[TSource]) -&gt; Iterable[TResult]:
+        &#34;&#34;&#34;Partially applied map function.
+
+        Args:
+            source: The input sequence.
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return (mapper(x) for x in source)
+
+    return _map
+
+
+def max() -&gt; Callable[[Iterable[TSource]], TSource]:
+    &#34;&#34;&#34;Returns the greatest of all elements of the sequence,
+    compared via `max()`.&#34;&#34;&#34;
+
+    def _map(source: Iterable[TSource]) -&gt; TSource:
+        return builtins.max(source)
+
+    return _map
+
+
+def max_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
+    def _max_by(source: Iterable[TSource]) -&gt; TResult:
+        return builtins.max(projection(x) for x in source)
+
+    return _max_by
+
+
+def min() -&gt; Callable[[Iterable[TSource]], TSource]:
+    &#34;&#34;&#34;Returns the smallest of all elements of the sequence,
+    compared via `max()`.&#34;&#34;&#34;
+
+    def _min(source: Iterable[TSource]) -&gt; TSource:
+        return builtins.min(source)
+
+    return _min
+
+
+def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
+    def _min_by(source: Iterable[TSource]) -&gt; TResult:
+        return builtins.min(projection(x) for x in source)
+
+    return _min_by
+
+
+def of_list(list: List[TSource]):
+    return Seq(list)
+
+
+def scan(
+    scanner: Callable[[TState, TSource], TState], state: TState
+) -&gt; Callable[[Iterable[TSource]], Iterable[TState]]:
+    &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
+    intermediary and final results.
+
+    Args:
+        scanner: A function that updates the state with each element
+            from the sequence.
+        state: The initial state.
+    &#34;&#34;&#34;
+    def _scan(source: Iterable[TSource]) -&gt; Iterable[TState]:
+        &#34;&#34;&#34;Partially applied scan function.
+        Args:
+            source: The input sequence.
+        Returns:
+            The resulting sequence of computed states.
+        &#34;&#34;&#34;
+        return itertools.accumulate(source, scanner, initial=state)   # type: ignore
+    return _scan
+
+
+__all__ = [
+    &#34;Seq&#34;,
+    &#34;concat&#34;,
+    &#34;empty&#34;,
+    &#34;filter&#34;,
+    &#34;fold&#34;,
+    &#34;fold_back&#34;,
+    &#34;head&#34;,
+    &#34;iter&#34;,
+    &#34;map&#34;,
+    &#34;max&#34;,
+    &#34;min&#34;,
+    &#34;min_by&#34;,
+    &#34;of_list&#34;,
+    &#34;scan&#34;
+]</code></pre>
 </details>
 </section>
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-variables">Global variables</h2>
+<dl>
+<dt id="fslash.collections.seq.empty"><code class="name">var <span class="ident">empty</span></code></dt>
+<dd>
+<div class="desc"><p>Creates an empty sequence.</p></div>
+</dd>
+</dl>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="fslash.collections.seq.concat"><code class="name flex">
+<span>def <span class="ident">concat</span></span>(<span>*iterables: Iterable[~TSource]) ‑> Callable[[Iterable[Iterable[~TSource]]], Iterable[~TSource]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Combines the given variable number of enumerations and/or
+enumeration-of-enumerations as a single concatenated
+enumeration.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>iterables</code></strong></dt>
+<dd>The input enumeration-of-enumerations.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A partially applied concat function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
+    &#34;&#34;&#34;Combines the given variable number of enumerations and/or
+    enumeration-of-enumerations as a single concatenated
+    enumeration.
+
+    Args:
+        iterables: The input enumeration-of-enumerations.
+
+    Returns:
+        A partially applied concat function.
+    &#34;&#34;&#34;
+
+    def _concat(sources: Iterable[Iterable[TSource]]) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Partially applied concat function.
+
+        Args:
+            sources: The input iterable-of-iterables.
+
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return itertools.chain(*iterables, *sources)
+
+    return _concat</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.filter"><code class="name flex">
+<span>def <span class="ident">filter</span></span>(<span>predicate: Callable[[~TSource], bool]) ‑> Callable[[Iterable[~TSource]], Iterable[~TSource]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Filter sequence.</p>
+<p>Filters the sequence to a new sequence containing only the
+elements of the sequence for which the given predicate returns
+<code>True</code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>predicate</code></strong></dt>
+<dd>A function to test whether each item in the
+input sequence should be included in the output.</dd>
+<dt><strong><code>source</code></strong></dt>
+<dd>(curried) The input sequence to to filter.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A partially applied filter function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
+    &#34;&#34;&#34;Filter sequence.
+
+    Filters the sequence to a new sequence containing only the
+    elements of the sequence for which the given predicate returns
+    `True`.
+
+    Args:
+        predicate: A function to test whether each item in the
+            input sequence should be included in the output.
+        source: (curried) The input sequence to to filter.
+
+    Returns:
+        A partially applied filter function.
+    &#34;&#34;&#34;
+
+    def _filter(source: Iterable[TSource]) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Filter sequence (partially applied).
+
+        Args:
+            source: The input sequence to to filter.
+
+        Returns:
+            Returns a new collection containing only the elements
+            of the collection for which the given predicate returns
+            `True`.
+        &#34;&#34;&#34;
+        return builtins.filter(predicate, source)
+
+    return _filter</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.fold"><code class="name flex">
+<span>def <span class="ident">fold</span></span>(<span>folder: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> Callable[[Iterable[~TSource]], ~TState]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Applies a function to each element of the collection,
+threading an accumulator argument through the computation. If
+the input function is f and the elements are i0&hellip;iN then
+computes f (&hellip; (f s i0)&hellip;) iN</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>folder</code></strong></dt>
+<dd>A function that updates the state with each element
+from the sequence.</dd>
+<dt><strong><code>state</code></strong></dt>
+<dd>The initial state.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Partially applied fold function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Callable[[Iterable[TSource]], TState]:
+    &#34;&#34;&#34;Applies a function to each element of the collection,
+    threading an accumulator argument through the computation. If
+    the input function is f and the elements are i0...iN then
+    computes f (... (f s i0)...) iN
+
+    Args:
+        folder: A function that updates the state with each element
+            from the sequence.
+        state: The initial state.
+    Returns:
+        Partially applied fold function.
+    &#34;&#34;&#34;
+    def _fold(source: Iterable[TSource]) -&gt; TState:
+        &#34;&#34;&#34;Partially applied fold function.
+        Returns:
+            The state object after the folding function is applied
+            to each element of the sequence.
+        &#34;&#34;&#34;
+        return functools.reduce(folder, source, state)  # type: ignore
+
+    return _fold</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.fold_back"><code class="name flex">
+<span>def <span class="ident">fold_back</span></span>(<span>folder: Callable[[~TSource, ~TState], ~TState], source: Iterable[~TSource]) ‑> Callable[[~TState], ~TState]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Applies a function to each element of the collection,
+starting from the end, threading an accumulator argument through
+the computation. If the input function is f and the elements are
+i0&hellip;iN then computes f i0 (&hellip; (f iN s)&hellip;)</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>folder</code></strong></dt>
+<dd>A function that updates the state with each element
+from the sequence.</dd>
+<dt><strong><code>state</code></strong></dt>
+<dd>The initial state.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Partially applied fold_back function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -&gt; Callable[[TState], TState]:
+    &#34;&#34;&#34;Applies a function to each element of the collection,
+    starting from the end, threading an accumulator argument through
+    the computation. If the input function is f and the elements are
+    i0...iN then computes f i0 (... (f iN s)...)
+
+    Args:
+        folder: A function that updates the state with each element
+            from the sequence.
+        state: The initial state.
+    Returns:
+        Partially applied fold_back function.
+    &#34;&#34;&#34;
+    def _fold_back(state: TState) -&gt; TState:
+        &#34;&#34;&#34;Partially applied fold_back function.
+        Returns:
+            The state object after the folding function is applied
+            to each element of the sequence.
+        &#34;&#34;&#34;
+        return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+    return _fold_back</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.head"><code class="name flex">
+<span>def <span class="ident">head</span></span>(<span>source: Iterable[~TSource]) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return the first element of the sequence.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>source</code></strong></dt>
+<dd>The input sequence.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The first element of the sequence.</p>
+<h2 id="raises">Raises</h2>
+<p>Raises <code>ValueError</code> if the source sequence is empty.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def head(source: Iterable[TSource]) -&gt; TSource:
+    &#34;&#34;&#34;Return the first element of the sequence.
+
+    Args:
+        source: The input sequence.
+
+    Returns:
+        The first element of the sequence.
+
+    Raises:
+        Raises `ValueError` if the source sequence is empty.
+    &#34;&#34;&#34;
+
+    for value in source:
+        return value
+    else:
+        raise ValueError(&#34;Sequence contains no elements&#34;)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.iter"><code class="name flex">
+<span>def <span class="ident">iter</span></span>(<span>action: Callable[[~TSource], NoneType]) ‑> Callable[[Iterable[~TSource]], NoneType]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Applies the given function to each element of the collection.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>action</code></strong></dt>
+<dd>A function to apply to each element of the sequence.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A partially applied iter function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
+    &#34;&#34;&#34;Applies the given function to each element of the collection.
+
+    Args:
+        action: A function to apply to each element of the sequence.
+
+    Returns:
+        A partially applied iter function.
+    &#34;&#34;&#34;
+
+    def _iter(source: Iterable[TSource]) -&gt; None:
+        &#34;&#34;&#34;A partially applied iter function.
+
+        Note that this function is a pure side effect and returns nothing.
+
+        Args:
+            source: The input sequence to apply action to.
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+        for x in source:
+            action(x)
+
+    return _iter</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Map source sequence.</p>
+<p>Builds a new collection whose elements are the results of
+applying the given function to each of the elements of the
+collection.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mapping</code></strong></dt>
+<dd>A function to transform items from the input sequence.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Partially applied map function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+    &#34;&#34;&#34;Map source sequence.
+
+    Builds a new collection whose elements are the results of
+    applying the given function to each of the elements of the
+    collection.
+
+    Args:
+        mapping: A function to transform items from the input sequence.
+
+    Returns:
+        Partially applied map function.
+    &#34;&#34;&#34;
+
+    def _map(source: Iterable[TSource]) -&gt; Iterable[TResult]:
+        &#34;&#34;&#34;Partially applied map function.
+
+        Args:
+            source: The input sequence.
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return (mapper(x) for x in source)
+
+    return _map</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.max"><code class="name flex">
+<span>def <span class="ident">max</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the greatest of all elements of the sequence,
+compared via <code><a title="fslash.collections.seq.max" href="#fslash.collections.seq.max">max()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def max() -&gt; Callable[[Iterable[TSource]], TSource]:
+    &#34;&#34;&#34;Returns the greatest of all elements of the sequence,
+    compared via `max()`.&#34;&#34;&#34;
+
+    def _map(source: Iterable[TSource]) -&gt; TSource:
+        return builtins.max(source)
+
+    return _map</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.min"><code class="name flex">
+<span>def <span class="ident">min</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the smallest of all elements of the sequence,
+compared via <code><a title="fslash.collections.seq.max" href="#fslash.collections.seq.max">max()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def min() -&gt; Callable[[Iterable[TSource]], TSource]:
+    &#34;&#34;&#34;Returns the smallest of all elements of the sequence,
+    compared via `max()`.&#34;&#34;&#34;
+
+    def _min(source: Iterable[TSource]) -&gt; TSource:
+        return builtins.min(source)
+
+    return _min</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.min_by"><code class="name flex">
+<span>def <span class="ident">min_by</span></span>(<span>projection: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], ~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
+    def _min_by(source: Iterable[TSource]) -&gt; TResult:
+        return builtins.min(projection(x) for x in source)
+
+    return _min_by</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.of_list"><code class="name flex">
+<span>def <span class="ident">of_list</span></span>(<span>list: List[~TSource])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def of_list(list: List[TSource]):
+    return Seq(list)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.scan"><code class="name flex">
+<span>def <span class="ident">scan</span></span>(<span>scanner: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> Callable[[Iterable[~TSource]], Iterable[~TState]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Like fold, but computes on-demand and returns the sequence of
+intermediary and final results.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>scanner</code></strong></dt>
+<dd>A function that updates the state with each element
+from the sequence.</dd>
+<dt><strong><code>state</code></strong></dt>
+<dd>The initial state.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def scan(
+    scanner: Callable[[TState, TSource], TState], state: TState
+) -&gt; Callable[[Iterable[TSource]], Iterable[TState]]:
+    &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
+    intermediary and final results.
+
+    Args:
+        scanner: A function that updates the state with each element
+            from the sequence.
+        state: The initial state.
+    &#34;&#34;&#34;
+    def _scan(source: Iterable[TSource]) -&gt; Iterable[TState]:
+        &#34;&#34;&#34;Partially applied scan function.
+        Args:
+            source: The input sequence.
+        Returns:
+            The resulting sequence of computed states.
+        &#34;&#34;&#34;
+        return itertools.accumulate(source, scanner, initial=state)   # type: ignore
+    return _scan</code></pre>
+</details>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
@@ -419,7 +877,7 @@ sequences.</p>
         self._value = iterable
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
-        return Seq(SeqModule.filter(predicate)(self))
+        return Seq(filter(predicate)(self))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
         &#34;&#34;&#34;Applies a function to each element of the collection,
@@ -440,7 +898,7 @@ sequences.</p>
     def head(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
 
-        return SeqModule.head(self)
+        return head(self)
 
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Seq[TResult]&#34;:
         &#34;&#34;&#34;Map sequence.
@@ -456,7 +914,7 @@ sequences.</p>
             The result sequence.
         &#34;&#34;&#34;
 
-        return Seq(SeqModule.map(mapper)(self))
+        return Seq(map(mapper)(self))
 
     def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -&gt; Iterable[TState]:
         &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
@@ -474,7 +932,7 @@ sequences.</p>
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for sequence.&#34;&#34;&#34;
-        return iter(self._value)</code></pre>
+        return builtins.iter(self._value)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -493,7 +951,7 @@ sequences.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
-    return Seq(SeqModule.filter(predicate)(self))</code></pre>
+    return Seq(filter(predicate)(self))</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.Seq.fold"><code class="name flex">
@@ -548,7 +1006,7 @@ each element of the sequence.</p></div>
 <pre><code class="python">def head(self) -&gt; TSource:
     &#34;&#34;&#34;Returns the first element of the sequence.&#34;&#34;&#34;
 
-    return SeqModule.head(self)</code></pre>
+    return head(self)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.Seq.map"><code class="name flex">
@@ -584,7 +1042,7 @@ collection.</p>
         The result sequence.
     &#34;&#34;&#34;
 
-    return Seq(SeqModule.map(mapper)(self))</code></pre>
+    return Seq(map(mapper)(self))</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.Seq.scan"><code class="name flex">
@@ -624,779 +1082,6 @@ from the sequence.</dd>
 </dd>
 </dl>
 </dd>
-<dt id="fslash.collections.seq.SeqModule"><code class="flex name class">
-<span>class <span class="ident">SeqModule</span></span>
-<span>(</span><span>*args, **kwds)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Sequence module.</p>
-<p>Contains a collection of static methods (functions) for operating on
-sequences. A sequence is a thin wrapper around <code>Iterable</code> so all
-functions take (and return) Python iterables.</p>
-<p>All functions takes the source as the last curried
-argument, i.e all functions returns a function that takes the source
-sequence as the only argument.</p>
-<h2 id="example">Example</h2>
-<pre><code class="python-repl">&gt;&gt;&gt; xs = Seq([1, 2, 3])
-&gt;&gt;&gt; ys = pipe(
-    xs,
-    Seq.map(lambda x: x + 1),
-    Seq.filter(lambda x: x &lt; 3)
-)
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class SeqModule(Generic[TSource]):
-    &#34;&#34;&#34;Sequence module.
-
-    Contains a collection of static methods (functions) for operating on
-    sequences. A sequence is a thin wrapper around `Iterable` so all
-    functions take (and return) Python iterables.
-
-    All functions takes the source as the last curried
-    argument, i.e all functions returns a function that takes the source
-    sequence as the only argument.
-
-    Example:
-        &gt;&gt;&gt; xs = Seq([1, 2, 3])
-        &gt;&gt;&gt; ys = pipe(
-            xs,
-            Seq.map(lambda x: x + 1),
-            Seq.filter(lambda x: x &lt; 3)
-        )
-    &#34;&#34;&#34;
-
-    @staticmethod
-    def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
-        &#34;&#34;&#34;Combines the given variable number of enumerations and/or
-        enumeration-of-enumerations as a single concatenated
-        enumeration.
-
-        Args:
-            iterables: The input enumeration-of-enumerations.
-
-        Returns:
-            A partially applied concat function.
-        &#34;&#34;&#34;
-
-        def _concat(sources: Iterable[Iterable[TSource]]) -&gt; Iterable[TSource]:
-            &#34;&#34;&#34;Partially applied concat function.
-
-            Args:
-                sources: The input iterable-of-iterables.
-
-            Returns:
-                The result sequence.
-            &#34;&#34;&#34;
-            return itertools.chain(*iterables, *sources)
-
-        return _concat
-
-    @classmethod
-    def empty(cls):
-        &#34;&#34;&#34;Creates an empty sequence.
-
-        Returns:
-            An empty sequence.
-        &#34;&#34;&#34;
-        return Seq([])
-
-    @staticmethod
-    def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
-        &#34;&#34;&#34;Filter sequence.
-
-        Filters the sequence to a new sequence containing only the
-        elements of the sequence for which the given predicate returns
-        `True`.
-
-        Args:
-            predicate: A function to test whether each item in the
-                input sequence should be included in the output.
-            source: (curried) The input sequence to to filter.
-
-        Returns:
-            A partially applied filter function.
-        &#34;&#34;&#34;
-
-        def _filter(source: Iterable[TSource]) -&gt; Iterable[TSource]:
-            &#34;&#34;&#34;Filter sequence (partially applied).
-
-            Args:
-                source: The input sequence to to filter.
-
-            Returns:
-                Returns a new collection containing only the elements
-                of the collection for which the given predicate returns
-                `True`.
-            &#34;&#34;&#34;
-            return filter(predicate, source)
-
-        return _filter
-
-    @staticmethod
-    def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Callable[[Iterable[TSource]], TState]:
-        &#34;&#34;&#34;Applies a function to each element of the collection,
-        threading an accumulator argument through the computation. If
-        the input function is f and the elements are i0...iN then
-        computes f (... (f s i0)...) iN
-
-        Args:
-            folder: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-        Returns:
-            Partially applied fold function.
-        &#34;&#34;&#34;
-        def _fold(source: Iterable[TSource]) -&gt; TState:
-            &#34;&#34;&#34;Partially applied fold function.
-            Returns:
-                The state object after the folding function is applied
-                to each element of the sequence.
-            &#34;&#34;&#34;
-            return functools.reduce(folder, source, state)  # type: ignore
-
-        return _fold
-
-    @staticmethod
-    def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -&gt; Callable[[TState], TState]:
-        &#34;&#34;&#34;Applies a function to each element of the collection,
-        starting from the end, threading an accumulator argument through
-        the computation. If the input function is f and the elements are
-        i0...iN then computes f i0 (... (f iN s)...)
-
-        Args:
-            folder: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-        Returns:
-            Partially applied fold_back function.
-        &#34;&#34;&#34;
-        def _fold_back(state: TState) -&gt; TState:
-            &#34;&#34;&#34;Partially applied fold_back function.
-            Returns:
-                The state object after the folding function is applied
-                to each element of the sequence.
-            &#34;&#34;&#34;
-            return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
-        return _fold_back
-
-    @staticmethod
-    def head(source: Iterable[TSource]) -&gt; TSource:
-        &#34;&#34;&#34;Return the first element of the sequence.
-
-        Args:
-            source: The input sequence.
-
-        Returns:
-            The first element of the sequence.
-
-        Raises:
-            Raises `ValueError` if the source sequence is empty.
-        &#34;&#34;&#34;
-
-        for value in source:
-            return value
-        else:
-            raise ValueError(&#34;Sequence contains no elements&#34;)
-
-    @staticmethod
-    def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
-        &#34;&#34;&#34;Applies the given function to each element of the collection.
-
-        Args:
-            action: A function to apply to each element of the sequence.
-
-        Returns:
-            A partially applied iter function.
-        &#34;&#34;&#34;
-
-        def _iter(source: Iterable[TSource]) -&gt; None:
-            &#34;&#34;&#34;A partially applied iter function.
-
-            Note that this function is a pure side effect and returns nothing.
-
-            Args:
-                source: The input sequence to apply action to.
-
-            Returns:
-                None
-            &#34;&#34;&#34;
-            for x in source:
-                action(x)
-
-        return _iter
-
-    @staticmethod
-    def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
-        &#34;&#34;&#34;Map source sequence.
-
-        Builds a new collection whose elements are the results of
-        applying the given function to each of the elements of the
-        collection.
-
-        Args:
-            mapping: A function to transform items from the input sequence.
-
-        Returns:
-            Partially applied map function.
-        &#34;&#34;&#34;
-
-        def _map(source: Iterable[TSource]) -&gt; Iterable[TResult]:
-            &#34;&#34;&#34;Partially applied map function.
-
-            Args:
-                source: The input sequence.
-            Returns:
-                The result sequence.
-            &#34;&#34;&#34;
-            return (mapper(x) for x in source)
-
-        return _map
-
-    @staticmethod
-    def max() -&gt; Callable[[Iterable[TSource]], TSource]:
-        &#34;&#34;&#34;Returns the greatest of all elements of the sequence,
-        compared via `max()`.&#34;&#34;&#34;
-
-        def _map(source: Iterable[TSource]) -&gt; TSource:
-            return max(source)
-
-        return _map
-
-    @staticmethod
-    def max_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
-        def _max_by(source: Iterable[TSource]) -&gt; TResult:
-            return max(projection(x) for x in source)
-
-        return _max_by
-
-    @staticmethod
-    def min() -&gt; Callable[[Iterable[TSource]], TSource]:
-        &#34;&#34;&#34;Returns the smallest of all elements of the sequence,
-        compared via `max()`.&#34;&#34;&#34;
-
-        def _min(source: Iterable[TSource]) -&gt; TSource:
-            return min(source)
-
-        return _min
-
-    @staticmethod
-    def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
-        def _min_by(source: Iterable[TSource]) -&gt; TResult:
-            return min(projection(x) for x in source)
-
-        return _min_by
-
-    @classmethod
-    def of_list(cls, list: List[TSource]):
-        return Seq(list)
-
-    @staticmethod
-    def scan(
-        scanner: Callable[[TState, TSource], TState], state: TState
-    ) -&gt; Callable[[Iterable[TSource]], Iterable[TState]]:
-        &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
-        intermediary and final results.
-
-        Args:
-            scanner: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-        &#34;&#34;&#34;
-        def _scan(source: Iterable[TSource]) -&gt; Iterable[TState]:
-            &#34;&#34;&#34;Partially applied scan function.
-            Args:
-                source: The input sequence.
-            Returns:
-                The resulting sequence of computed states.
-            &#34;&#34;&#34;
-            return itertools.accumulate(source, scanner, initial=state)   # type: ignore
-        return _scan</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>typing.Generic</li>
-</ul>
-<h3>Static methods</h3>
-<dl>
-<dt id="fslash.collections.seq.SeqModule.concat"><code class="name flex">
-<span>def <span class="ident">concat</span></span>(<span>*iterables: Iterable[~TSource]) ‑> Callable[[Iterable[Iterable[~TSource]]], Iterable[~TSource]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Combines the given variable number of enumerations and/or
-enumeration-of-enumerations as a single concatenated
-enumeration.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>iterables</code></strong></dt>
-<dd>The input enumeration-of-enumerations.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>A partially applied concat function.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
-    &#34;&#34;&#34;Combines the given variable number of enumerations and/or
-    enumeration-of-enumerations as a single concatenated
-    enumeration.
-
-    Args:
-        iterables: The input enumeration-of-enumerations.
-
-    Returns:
-        A partially applied concat function.
-    &#34;&#34;&#34;
-
-    def _concat(sources: Iterable[Iterable[TSource]]) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Partially applied concat function.
-
-        Args:
-            sources: The input iterable-of-iterables.
-
-        Returns:
-            The result sequence.
-        &#34;&#34;&#34;
-        return itertools.chain(*iterables, *sources)
-
-    return _concat</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.empty"><code class="name flex">
-<span>def <span class="ident">empty</span></span>(<span>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Creates an empty sequence.</p>
-<h2 id="returns">Returns</h2>
-<p>An empty sequence.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@classmethod
-def empty(cls):
-    &#34;&#34;&#34;Creates an empty sequence.
-
-    Returns:
-        An empty sequence.
-    &#34;&#34;&#34;
-    return Seq([])</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.filter"><code class="name flex">
-<span>def <span class="ident">filter</span></span>(<span>predicate: Callable[[~TSource], bool]) ‑> Callable[[Iterable[~TSource]], Iterable[~TSource]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Filter sequence.</p>
-<p>Filters the sequence to a new sequence containing only the
-elements of the sequence for which the given predicate returns
-<code>True</code>.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>predicate</code></strong></dt>
-<dd>A function to test whether each item in the
-input sequence should be included in the output.</dd>
-<dt><strong><code>source</code></strong></dt>
-<dd>(curried) The input sequence to to filter.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>A partially applied filter function.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
-    &#34;&#34;&#34;Filter sequence.
-
-    Filters the sequence to a new sequence containing only the
-    elements of the sequence for which the given predicate returns
-    `True`.
-
-    Args:
-        predicate: A function to test whether each item in the
-            input sequence should be included in the output.
-        source: (curried) The input sequence to to filter.
-
-    Returns:
-        A partially applied filter function.
-    &#34;&#34;&#34;
-
-    def _filter(source: Iterable[TSource]) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Filter sequence (partially applied).
-
-        Args:
-            source: The input sequence to to filter.
-
-        Returns:
-            Returns a new collection containing only the elements
-            of the collection for which the given predicate returns
-            `True`.
-        &#34;&#34;&#34;
-        return filter(predicate, source)
-
-    return _filter</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.fold"><code class="name flex">
-<span>def <span class="ident">fold</span></span>(<span>folder: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> Callable[[Iterable[~TSource]], ~TState]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Applies a function to each element of the collection,
-threading an accumulator argument through the computation. If
-the input function is f and the elements are i0&hellip;iN then
-computes f (&hellip; (f s i0)&hellip;) iN</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>folder</code></strong></dt>
-<dd>A function that updates the state with each element
-from the sequence.</dd>
-<dt><strong><code>state</code></strong></dt>
-<dd>The initial state.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Partially applied fold function.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Callable[[Iterable[TSource]], TState]:
-    &#34;&#34;&#34;Applies a function to each element of the collection,
-    threading an accumulator argument through the computation. If
-    the input function is f and the elements are i0...iN then
-    computes f (... (f s i0)...) iN
-
-    Args:
-        folder: A function that updates the state with each element
-            from the sequence.
-        state: The initial state.
-    Returns:
-        Partially applied fold function.
-    &#34;&#34;&#34;
-    def _fold(source: Iterable[TSource]) -&gt; TState:
-        &#34;&#34;&#34;Partially applied fold function.
-        Returns:
-            The state object after the folding function is applied
-            to each element of the sequence.
-        &#34;&#34;&#34;
-        return functools.reduce(folder, source, state)  # type: ignore
-
-    return _fold</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.fold_back"><code class="name flex">
-<span>def <span class="ident">fold_back</span></span>(<span>folder: Callable[[~TSource, ~TState], ~TState], source: Iterable[~TSource]) ‑> Callable[[~TState], ~TState]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Applies a function to each element of the collection,
-starting from the end, threading an accumulator argument through
-the computation. If the input function is f and the elements are
-i0&hellip;iN then computes f i0 (&hellip; (f iN s)&hellip;)</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>folder</code></strong></dt>
-<dd>A function that updates the state with each element
-from the sequence.</dd>
-<dt><strong><code>state</code></strong></dt>
-<dd>The initial state.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Partially applied fold_back function.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -&gt; Callable[[TState], TState]:
-    &#34;&#34;&#34;Applies a function to each element of the collection,
-    starting from the end, threading an accumulator argument through
-    the computation. If the input function is f and the elements are
-    i0...iN then computes f i0 (... (f iN s)...)
-
-    Args:
-        folder: A function that updates the state with each element
-            from the sequence.
-        state: The initial state.
-    Returns:
-        Partially applied fold_back function.
-    &#34;&#34;&#34;
-    def _fold_back(state: TState) -&gt; TState:
-        &#34;&#34;&#34;Partially applied fold_back function.
-        Returns:
-            The state object after the folding function is applied
-            to each element of the sequence.
-        &#34;&#34;&#34;
-        return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
-    return _fold_back</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.head"><code class="name flex">
-<span>def <span class="ident">head</span></span>(<span>source: Iterable[~TSource]) ‑> ~TSource</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return the first element of the sequence.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>source</code></strong></dt>
-<dd>The input sequence.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>The first element of the sequence.</p>
-<h2 id="raises">Raises</h2>
-<p>Raises <code>ValueError</code> if the source sequence is empty.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def head(source: Iterable[TSource]) -&gt; TSource:
-    &#34;&#34;&#34;Return the first element of the sequence.
-
-    Args:
-        source: The input sequence.
-
-    Returns:
-        The first element of the sequence.
-
-    Raises:
-        Raises `ValueError` if the source sequence is empty.
-    &#34;&#34;&#34;
-
-    for value in source:
-        return value
-    else:
-        raise ValueError(&#34;Sequence contains no elements&#34;)</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.iter"><code class="name flex">
-<span>def <span class="ident">iter</span></span>(<span>action: Callable[[~TSource], NoneType]) ‑> Callable[[Iterable[~TSource]], NoneType]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Applies the given function to each element of the collection.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>action</code></strong></dt>
-<dd>A function to apply to each element of the sequence.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>A partially applied iter function.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
-    &#34;&#34;&#34;Applies the given function to each element of the collection.
-
-    Args:
-        action: A function to apply to each element of the sequence.
-
-    Returns:
-        A partially applied iter function.
-    &#34;&#34;&#34;
-
-    def _iter(source: Iterable[TSource]) -&gt; None:
-        &#34;&#34;&#34;A partially applied iter function.
-
-        Note that this function is a pure side effect and returns nothing.
-
-        Args:
-            source: The input sequence to apply action to.
-
-        Returns:
-            None
-        &#34;&#34;&#34;
-        for x in source:
-            action(x)
-
-    return _iter</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Map source sequence.</p>
-<p>Builds a new collection whose elements are the results of
-applying the given function to each of the elements of the
-collection.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mapping</code></strong></dt>
-<dd>A function to transform items from the input sequence.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Partially applied map function.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
-    &#34;&#34;&#34;Map source sequence.
-
-    Builds a new collection whose elements are the results of
-    applying the given function to each of the elements of the
-    collection.
-
-    Args:
-        mapping: A function to transform items from the input sequence.
-
-    Returns:
-        Partially applied map function.
-    &#34;&#34;&#34;
-
-    def _map(source: Iterable[TSource]) -&gt; Iterable[TResult]:
-        &#34;&#34;&#34;Partially applied map function.
-
-        Args:
-            source: The input sequence.
-        Returns:
-            The result sequence.
-        &#34;&#34;&#34;
-        return (mapper(x) for x in source)
-
-    return _map</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.max"><code class="name flex">
-<span>def <span class="ident">max</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Returns the greatest of all elements of the sequence,
-compared via <code>max()</code>.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def max() -&gt; Callable[[Iterable[TSource]], TSource]:
-    &#34;&#34;&#34;Returns the greatest of all elements of the sequence,
-    compared via `max()`.&#34;&#34;&#34;
-
-    def _map(source: Iterable[TSource]) -&gt; TSource:
-        return max(source)
-
-    return _map</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.max_by"><code class="name flex">
-<span>def <span class="ident">max_by</span></span>(<span>projection: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], ~TResult]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def max_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
-    def _max_by(source: Iterable[TSource]) -&gt; TResult:
-        return max(projection(x) for x in source)
-
-    return _max_by</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.min"><code class="name flex">
-<span>def <span class="ident">min</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Returns the smallest of all elements of the sequence,
-compared via <code>max()</code>.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def min() -&gt; Callable[[Iterable[TSource]], TSource]:
-    &#34;&#34;&#34;Returns the smallest of all elements of the sequence,
-    compared via `max()`.&#34;&#34;&#34;
-
-    def _min(source: Iterable[TSource]) -&gt; TSource:
-        return min(source)
-
-    return _min</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.min_by"><code class="name flex">
-<span>def <span class="ident">min_by</span></span>(<span>projection: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], ~TResult]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
-    def _min_by(source: Iterable[TSource]) -&gt; TResult:
-        return min(projection(x) for x in source)
-
-    return _min_by</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>list: List[~TSource])</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@classmethod
-def of_list(cls, list: List[TSource]):
-    return Seq(list)</code></pre>
-</details>
-</dd>
-<dt id="fslash.collections.seq.SeqModule.scan"><code class="name flex">
-<span>def <span class="ident">scan</span></span>(<span>scanner: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> Callable[[Iterable[~TSource]], Iterable[~TState]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Like fold, but computes on-demand and returns the sequence of
-intermediary and final results.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>scanner</code></strong></dt>
-<dd>A function that updates the state with each element
-from the sequence.</dd>
-<dt><strong><code>state</code></strong></dt>
-<dd>The initial state.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def scan(
-    scanner: Callable[[TState, TSource], TState], state: TState
-) -&gt; Callable[[Iterable[TSource]], Iterable[TState]]:
-    &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
-    intermediary and final results.
-
-    Args:
-        scanner: A function that updates the state with each element
-            from the sequence.
-        state: The initial state.
-    &#34;&#34;&#34;
-    def _scan(source: Iterable[TSource]) -&gt; Iterable[TState]:
-        &#34;&#34;&#34;Partially applied scan function.
-        Args:
-            source: The input sequence.
-        Returns:
-            The resulting sequence of computed states.
-        &#34;&#34;&#34;
-        return itertools.accumulate(source, scanner, initial=state)   # type: ignore
-    return _scan</code></pre>
-</details>
-</dd>
-</dl>
-</dd>
 </dl>
 </section>
 </article>
@@ -1411,6 +1096,27 @@ def scan(
 <li><code><a title="fslash.collections" href="index.html">fslash.collections</a></code></li>
 </ul>
 </li>
+<li><h3><a href="#header-variables">Global variables</a></h3>
+<ul class="">
+<li><code><a title="fslash.collections.seq.empty" href="#fslash.collections.seq.empty">empty</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="two-column">
+<li><code><a title="fslash.collections.seq.concat" href="#fslash.collections.seq.concat">concat</a></code></li>
+<li><code><a title="fslash.collections.seq.filter" href="#fslash.collections.seq.filter">filter</a></code></li>
+<li><code><a title="fslash.collections.seq.fold" href="#fslash.collections.seq.fold">fold</a></code></li>
+<li><code><a title="fslash.collections.seq.fold_back" href="#fslash.collections.seq.fold_back">fold_back</a></code></li>
+<li><code><a title="fslash.collections.seq.head" href="#fslash.collections.seq.head">head</a></code></li>
+<li><code><a title="fslash.collections.seq.iter" href="#fslash.collections.seq.iter">iter</a></code></li>
+<li><code><a title="fslash.collections.seq.map" href="#fslash.collections.seq.map">map</a></code></li>
+<li><code><a title="fslash.collections.seq.max" href="#fslash.collections.seq.max">max</a></code></li>
+<li><code><a title="fslash.collections.seq.min" href="#fslash.collections.seq.min">min</a></code></li>
+<li><code><a title="fslash.collections.seq.min_by" href="#fslash.collections.seq.min_by">min_by</a></code></li>
+<li><code><a title="fslash.collections.seq.of_list" href="#fslash.collections.seq.of_list">of_list</a></code></li>
+<li><code><a title="fslash.collections.seq.scan" href="#fslash.collections.seq.scan">scan</a></code></li>
+</ul>
+</li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
@@ -1421,25 +1127,6 @@ def scan(
 <li><code><a title="fslash.collections.seq.Seq.head" href="#fslash.collections.seq.Seq.head">head</a></code></li>
 <li><code><a title="fslash.collections.seq.Seq.map" href="#fslash.collections.seq.Seq.map">map</a></code></li>
 <li><code><a title="fslash.collections.seq.Seq.scan" href="#fslash.collections.seq.Seq.scan">scan</a></code></li>
-</ul>
-</li>
-<li>
-<h4><code><a title="fslash.collections.seq.SeqModule" href="#fslash.collections.seq.SeqModule">SeqModule</a></code></h4>
-<ul class="two-column">
-<li><code><a title="fslash.collections.seq.SeqModule.concat" href="#fslash.collections.seq.SeqModule.concat">concat</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.empty" href="#fslash.collections.seq.SeqModule.empty">empty</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.filter" href="#fslash.collections.seq.SeqModule.filter">filter</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.fold" href="#fslash.collections.seq.SeqModule.fold">fold</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.fold_back" href="#fslash.collections.seq.SeqModule.fold_back">fold_back</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.head" href="#fslash.collections.seq.SeqModule.head">head</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.iter" href="#fslash.collections.seq.SeqModule.iter">iter</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.map" href="#fslash.collections.seq.SeqModule.map">map</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.max" href="#fslash.collections.seq.SeqModule.max">max</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.max_by" href="#fslash.collections.seq.SeqModule.max_by">max_by</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.min" href="#fslash.collections.seq.SeqModule.min">min</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.min_by" href="#fslash.collections.seq.SeqModule.min_by">min_by</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.of_list" href="#fslash.collections.seq.SeqModule.of_list">of_list</a></code></li>
-<li><code><a title="fslash.collections.seq.SeqModule.scan" href="#fslash.collections.seq.SeqModule.scan">scan</a></code></li>
 </ul>
 </li>
 </ul>

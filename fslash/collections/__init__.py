@@ -1,12 +1,14 @@
 """
 Collection abstractions.
 """
+from . import seq as Seq
+from . import list as List
 
-from .seq import Seq as TSeq, SeqModule as Seq
-from .list import List as TList, ListModule as List, Cons, Nil
+from .seq import Seq as Seq_
+from .list import List as List_, Cons, Nil
 
 
 __all__ = [
-    'Seq', 'TSeq',
-    'List', 'TList', 'Cons', 'Nil'
+    'Seq', 'Seq_',
+    'List', 'List_', 'Cons', 'Nil'
 ]
