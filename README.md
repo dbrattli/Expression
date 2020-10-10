@@ -1,5 +1,6 @@
-# FSlash
+# F/
 
+[![PyPI](https://img.shields.io/pypi/v/fslash.svg)](https://pypi.python.org/pypi/FSlash)
 ![Python package](https://github.com/dbrattli/fslash/workflows/Python%20package/badge.svg)
 ![Upload Python Package](https://github.com/dbrattli/fslash/workflows/Upload%20Python%20Package/badge.svg)
 [![codecov](https://codecov.io/gh/dbrattli/FSlash/branch/master/graph/badge.svg)](https://codecov.io/gh/dbrattli/FSlash)
@@ -223,7 +224,25 @@ assert isinstance(xs, Some)
 
 ### Sequences
 
-Contains operations for working with iterables.
+Contains operations for working with iterables. Thus all the functions
+in this module will work on normal Python iterables. Iterables are
+already immutable by design, so they are already perfectly suited for
+using with functional programming.
+
+```py
+# Normal python way. Nested functions are hard to read since you need to
+# start reading from the end of the expression.
+ys = functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
+
+# With F/ you pipe the result flows from one operator to the next:
+zs = pipe(
+    xs,
+    Seq.map(lambda x: x * 10),
+    Seq.filter(lambda x: x > 100),
+    Seq.fold(lambda s, x: s + x, 0)
+)
+assert ys == zs
+```
 
 ## Resources
 
