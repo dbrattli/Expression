@@ -31,8 +31,7 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.</p>
 <h2 id="example">Example</h2>
 <pre><code class="python-repl">&gt;&gt;&gt; xs = Seq([1, 2, 3])
-&gt;&gt;&gt; ys = pipe(
-    xs,
+&gt;&gt;&gt; ys = xs.pipe(
     Seq.map(lambda x: x + 1),
     Seq.filter(lambda x: x &lt; 3)
 )
@@ -53,15 +52,14 @@ sequence as the only argument.
 
 Example:
     &gt;&gt;&gt; xs = Seq([1, 2, 3])
-    &gt;&gt;&gt; ys = pipe(
-        xs,
+    &gt;&gt;&gt; ys = xs.pipe(
         Seq.map(lambda x: x + 1),
         Seq.filter(lambda x: x &lt; 3)
     )
 &#34;&#34;&#34;
 
 import builtins
-from typing import TypeVar, Callable, Iterable, Iterator, List
+from typing import TypeVar, Callable, Iterable, Iterator
 import functools
 import itertools
 from fslash.core import pipe
@@ -368,8 +366,11 @@ def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TS
     return _min_by
 
 
-def of_list(list: List[TSource]):
-    return Seq(list)
+def of(value: Iterable[TSource]):
+    return Seq(value)
+
+
+of_list = of_iterable = of
 
 
 def scan(
@@ -407,7 +408,9 @@ __all__ = [
     &#34;max&#34;,
     &#34;min&#34;,
     &#34;min_by&#34;,
+    &#34;of&#34;,
     &#34;of_list&#34;,
+    &#34;of_iterable&#34;,
     &#34;scan&#34;
 ]</code></pre>
 </details>
@@ -797,8 +800,8 @@ compared via <code><a title="fslash.collections.seq.max" href="#fslash.collectio
     return _min_by</code></pre>
 </details>
 </dd>
-<dt id="fslash.collections.seq.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>list: List[~TSource])</span>
+<dt id="fslash.collections.seq.of"><code class="name flex">
+<span>def <span class="ident">of</span></span>(<span>value: Iterable[~TSource])</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -806,8 +809,34 @@ compared via <code><a title="fslash.collections.seq.max" href="#fslash.collectio
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def of_list(list: List[TSource]):
-    return Seq(list)</code></pre>
+<pre><code class="python">def of(value: Iterable[TSource]):
+    return Seq(value)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.of_iterable"><code class="name flex">
+<span>def <span class="ident">of_iterable</span></span>(<span>value: Iterable[~TSource])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def of(value: Iterable[TSource]):
+    return Seq(value)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.seq.of_list"><code class="name flex">
+<span>def <span class="ident">of_list</span></span>(<span>value: Iterable[~TSource])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def of(value: Iterable[TSource]):
+    return Seq(value)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.scan"><code class="name flex">
@@ -1158,6 +1187,8 @@ from the sequence.</dd>
 <li><code><a title="fslash.collections.seq.max" href="#fslash.collections.seq.max">max</a></code></li>
 <li><code><a title="fslash.collections.seq.min" href="#fslash.collections.seq.min">min</a></code></li>
 <li><code><a title="fslash.collections.seq.min_by" href="#fslash.collections.seq.min_by">min_by</a></code></li>
+<li><code><a title="fslash.collections.seq.of" href="#fslash.collections.seq.of">of</a></code></li>
+<li><code><a title="fslash.collections.seq.of_iterable" href="#fslash.collections.seq.of_iterable">of_iterable</a></code></li>
 <li><code><a title="fslash.collections.seq.of_list" href="#fslash.collections.seq.of_list">of_list</a></code></li>
 <li><code><a title="fslash.collections.seq.scan" href="#fslash.collections.seq.scan">scan</a></code></li>
 </ul>

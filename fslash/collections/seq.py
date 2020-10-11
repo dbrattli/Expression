@@ -10,15 +10,14 @@ sequence as the only argument.
 
 Example:
     >>> xs = Seq([1, 2, 3])
-    >>> ys = pipe(
-        xs,
+    >>> ys = xs.pipe(
         Seq.map(lambda x: x + 1),
         Seq.filter(lambda x: x < 3)
     )
 """
 
 import builtins
-from typing import TypeVar, Callable, Iterable, Iterator, List
+from typing import TypeVar, Callable, Iterable, Iterator
 import functools
 import itertools
 from fslash.core import pipe
@@ -325,8 +324,11 @@ def min_by(projection: Callable[[TSource], TResult]) -> Callable[[Iterable[TSour
     return _min_by
 
 
-def of_list(list: List[TSource]):
-    return Seq(list)
+def of(value: Iterable[TSource]):
+    return Seq(value)
+
+
+of_list = of_iterable = of
 
 
 def scan(
@@ -364,6 +366,8 @@ __all__ = [
     "max",
     "min",
     "min_by",
+    "of",
     "of_list",
+    "of_iterable",
     "scan"
 ]

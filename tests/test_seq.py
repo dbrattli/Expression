@@ -1,6 +1,6 @@
 from typing import Iterable
 import pytest
-import itertools
+import itertools, functools
 from hypothesis import given, strategies as st
 
 from fslash.core import pipe
@@ -43,21 +43,21 @@ def test_seq_head_empty_source():
 
 @given(st.lists(st.integers(), min_size=1))
 def test_seq_head_fluent(xs):
-    value = Seq.of_list(xs).head()
+    value = Seq.of(xs).head()
 
     assert value == xs[0]
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_fold_pipe(xs, s):
-    value = pipe(Seq.of_list(xs), Seq.fold(lambda s, v: s + v, s))
+    value = pipe(Seq.of(xs), Seq.fold(lambda s, v: s + v, s))
 
     assert value == sum(xs) + s
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_fold_fluent(xs, s):
-    value = Seq.of_list(xs).fold(lambda s, v: s + v, s)
+    value = Seq.of(xs).fold(lambda s, v: s + v, s)
 
     assert value == sum(xs) + s
 
@@ -65,7 +65,7 @@ def test_seq_fold_fluent(xs, s):
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_scan_pipe(xs, s):
     func = lambda s, v: s + v
-    value = pipe(Seq.of_list(xs), Seq.scan(func, s))
+    value = pipe(Seq.of(xs), Seq.scan(func, s))
 
     assert list(value) == list(itertools.accumulate(xs, func, initial=s))
 
@@ -73,7 +73,7 @@ def test_seq_scan_pipe(xs, s):
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_scan_fluent(xs, s):
     func = lambda s, v: s + v
-    value = Seq.of_list(xs).scan(func, s)
+    value = Seq.of(xs).scan(func, s)
 
     assert list(value) == list(itertools.accumulate(xs, func, initial=s))
 
@@ -97,3 +97,13 @@ def test_seq_concat_pipe3(xs, ys, zs):
     value = pipe([xs, ys], Seq.concat(zs))
 
     assert list(value) == zs + xs + ys
+
+
+@given(st.lists(st.integers()))
+def test_seq_pipeline(xs):
+    ys = Seq.of(xs).pipe(
+        Seq.map(lambda x: x * 10),
+        Seq.filter(lambda x: x > 100),
+        Seq.fold(lambda s, x: s + x, 0)
+    )
+    assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)

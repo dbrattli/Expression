@@ -112,7 +112,10 @@ on-demand as we go along.
 - **Computational Expressions**: this is actually amazing stuff
   - **option** - an optional world for working with optional values
   - **result** - an error handling world for working with result values
-- Pattern matching - provided by [Pampy](https://github.com/santinic/pampy).
+- Pattern matching - provided by
+  [Pampy](https://github.com/santinic/pampy), while we wait for [PEP
+  634](https://www.python.org/dev/peps/pep-0634/), structural pattern
+  matching for Python.
 
 ### Pipelining
 
@@ -259,8 +262,7 @@ using with functional programming.
 ys = functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
 # With F/ you pipe the result flows from one operator to the next:
-zs = pipe(
-    xs,
+zs = Seq.of(xs).pipe(
     Seq.map(lambda x: x * 10),
     Seq.filter(lambda x: x > 100),
     Seq.fold(lambda s, x: s + x, 0)
@@ -279,7 +281,7 @@ instead we use `Option` as the module to access module functions such as
 
 A list of common problems and how you may solve it:
 
-### / The FSlash List type has the same name as the builtin List type in Python
+### - The FSlash List type has the same name as the builtin List type in Python
 
 You can import the FSlash list module with e.g a different name:
 
@@ -287,14 +289,14 @@ You can import the FSlash list module with e.g a different name:
 from fslash.collections import List as FList
 ```
 
-## / Why are types primed with `_`?
+## - Why are types primed with `_`?
 
 This is because e.g `Option` and `Result` are imported as modules in
 order to easily access module functions e.g `Option.map`. We cannot have
 types with the same name as modules in Python, so that's why the types
 are available as primed `_` names e.g `Option_` and `Result_`.
 
-### / FSlash is missing the function / operator I need
+### - FSlash is missing the function / operator I need
 
 Remember that everything is a function, so you can easily implement the
 function yourself and use it with FSlash. If you think the function is

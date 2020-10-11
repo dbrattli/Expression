@@ -8,7 +8,7 @@ from . import result as Result
 from .compose import compose
 from .pipe import pipe, pipe2, pipe3
 from .curry import curried
-from .option import Option as Option_, Some, Nothing
+from .option import Option as Option_, Some, Nothing, Nothing_
 from .result import Result as TResult, Ok, Error
 
 
