@@ -62,8 +62,7 @@ $ pip3 install fslash
 - I love Python, and know Python really well. I'm the creator of both
   [RxPY](https://github.com/ReactiveX/RxPY) and
   [OSlash](https://github.com/dbrattli/OSlash), two functional style libraries
-  for Python. So I already know that Python can do anything that F# can. The
-  challenge is how to make it look nice (syntactic sugar).
+  for Python.
 
 For a long time I'm been wanting to make a "bridge" between these two languages
 and got inspired to write this library after watching "[F# as a Better
@@ -105,14 +104,14 @@ FSlash will never provide you with all the features of F# and .NET. We are
 providing a few of the features we think are useful, and will add more
 on-demand as we go along.
 
-- Options - for optional stuff and better `None` handling.
-- Result - for better error handling and enables railway-oriented programming
+- **Option** - for optional stuff and better `None` handling.
+- **Result** - for better error handling and enables railway-oriented programming
   in Python.
-- Sequences - a better [itertools](https://docs.python.org/3/library/itertools.html)
-- List - an immutable list type.
-- Computational Expressions:
-  - option - an optional world for working with optional values
-  - result - an error handling world for working with result values
+- **Sequence** - a better [itertools](https://docs.python.org/3/library/itertools.html) and fully compatible with Python iterables.
+- **List** - an immutable list type.
+- **Computational Expressions**: this is actually amazing stuff
+  - **option** - an optional world for working with optional values
+  - **result** - an error handling world for working with result values
 - Pattern matching - provided by [Pampy](https://github.com/santinic/pampy).
 
 ### Pipelining
@@ -244,6 +243,29 @@ zs = pipe(
 assert ys == zs
 ```
 
+## Notable Differences
+
+In F# you can have a type and a module with the same name, e.g `Option`
+is both a module and a type. This is not possible with Python, so
+instead we use `Option` as the module to access module functions such as
+`Option.map` and the primed `Option_`for the type itself.
+
+## Common Gotchas and Pitfalls
+
+A list of common problems and how you may solve it:
+
+### / The FSlash List type has the same name as the builtin List type in Python
+
+You can import the FSlash list module with e.g a different name:
+
+```py
+from fslash.collections import List as FList
+```
+
+### / FSlash is missing the function / operator I need
+
+Remember that everything is a function, so you can easily implement the function yourself and use it with FSlash. If you think the function is also usable for others, you can open a PR to include it with FSlash.
+
 ## Resources
 
 - F# (http://fsharp.org)
@@ -257,10 +279,11 @@ assert ys == zs
 
 ## How-to Contribute
 
-You are welcome to contribute with PRs. Any code should be aligned with F#
-modules, functions and documentation. Code, doc-strings and comments should also
-follow the [Google Python Style
-Guide](https://google.github.io/styleguide/pyguide.html).
+You are very welcome to contribute with PRs :heart_eyes: It is nice if you can try
+to align the code with F# modules, functions and documentation.
+
+Code, doc-strings and comments should also follow the [Google Python
+Style Guide](https://google.github.io/styleguide/pyguide.html).
 
 ## License
 
