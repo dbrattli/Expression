@@ -20,6 +20,10 @@ TError = TypeVar("TError")
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     """The result abstract base class."""
 
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
     def pipe(self, *args):
         """Pipe result through the given functions."""
         return pipe(self, *args)

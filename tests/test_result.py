@@ -107,9 +107,10 @@ def test_result_error_chained_map(msg, y):
 
     ys = xs.map(mapper1).map(mapper2)
     with pytest.raises(CustomException) as ex:
-        match(ys,
-              Ok, lambda ok: ok.value,
-              Error, lambda error: throw(CustomException(error.error)))
+        ys.match(
+            Ok, lambda ok: ok.value,
+            Error, lambda error: throw(CustomException(error.error))
+        )
     assert ex.value.message == msg
 
 
@@ -119,9 +120,10 @@ def test_result_bind_piped(x, y):
     mapper = lambda x: Ok(x + y)
 
     ys = xs.pipe(Result.bind(mapper))
-    res = match(ys,
-                Ok, lambda ok: ok.value,
-                Error, lambda error: throw(error.error))
+    res = ys.match(
+        Ok, lambda ok: ok.value,
+        Error, lambda error: throw(error.error)
+    )
     assert Ok(res) == mapper(x)
 
 
@@ -129,9 +131,10 @@ def test_result_bind_piped(x, y):
 def test_result_traverse_ok(xs):
     ys: List[TResult[int, str]] = [Ok(x) for x in xs]
     zs = Result.sequence(ys)
-    res = match(zs,
-                Ok, lambda ok: sum(ok.value),
-                Error, lambda error: throw(error.error))
+    res = zs.match(
+        Ok, lambda ok: sum(ok.value),
+        Error, lambda error: throw(error.error)
+    )
 
     assert res == sum(xs)
 
@@ -142,9 +145,10 @@ def test_result_traverse_error(xs):
     ys: List[TResult[int, str]] = [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
 
     zs = Result.sequence(ys)
-    res = match(zs,
-                Ok, lambda ok: "",
-                Error, lambda error: error.error)
+    res = zs.match(
+        Ok, lambda ok: "",
+        Error, lambda error: error.error
+    )
 
     assert res == error
 
@@ -168,8 +172,7 @@ def test_result_builder_yield_ok():
         yield 42
 
     xs = fn()
-    assert 42 == match(
-        xs,
+    assert 42 == xs.match(
         Ok, lambda ok: ok.value,
         _, None
     )
@@ -182,8 +185,7 @@ def test_result_builder_return_ok():
         return x
 
     xs = fn()
-    assert 42 == match(
-        xs,
+    assert 42 == xs.match(
         Ok, lambda ok: ok.value,
         _, None
     )
@@ -196,8 +198,7 @@ def test_result_builder_yield_from_ok():
         return x + 1
 
     xs = fn()
-    assert 43 == match(
-        xs,
+    assert 43 == xs.match(
         Ok, lambda some: some.value,
         _, None
     )
@@ -212,8 +213,7 @@ def test_result_builder_yield_from_error():
         return x
 
     xs = fn()
-    assert match(
-        xs,
+    assert xs.match(
         Ok, lambda some: some.value,
         Error, lambda error: error.error
     ) == error
@@ -228,8 +228,7 @@ def test_result_builder_multiple_ok():
         return x + y
 
     xs = fn()
-    assert 85 == match(
-        xs,
+    assert 85 == xs.match(
         Ok, lambda ok: ok.value,
         _, None
     )

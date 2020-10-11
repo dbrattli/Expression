@@ -82,6 +82,10 @@ class Seq(Iterable[TSource]):
 
         return Seq(map(mapper)(self))
 
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
     def pipe(self, *args):
         """Pipe sequence through the given functions."""
         return pipe(self, *args)

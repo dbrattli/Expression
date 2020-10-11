@@ -9,23 +9,23 @@ TError = TypeVar("TError")
 
 def send(gen, done: List[bool], value: Optional[TSource] = None) -> Result[TSource, TError]:
     try:
-        print("Sending: ", value)
+        # print("Sending: ", value)
         yielded = gen.send(value)
-        print("Yielded: ", yielded)
+        # print("Yielded: ", yielded)
         return Ok(yielded)
     except GeneratorExit:
-        print("Generator exit")
+        # print("Generator exit")
         done.append(True)
         return Error(cast(TError, None))
     except StopIteration as ex:
-        print("StopIteration of: ", ex.value)
+        # print("StopIteration of: ", ex.value)
         done.append(True)
         if ex.value is not None:
             return Ok(ex.value)
 
         return Ok(cast(TSource, value))
     except ResultException as ex:
-        print("Got result exception: ", [ex])
+        # print("Got result exception: ", [ex])
         done.append(True)
         return Error(ex.error)
 

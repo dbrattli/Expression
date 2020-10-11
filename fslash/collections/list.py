@@ -18,10 +18,13 @@ class List(Iterable[TSource], Sized):
     operations mostly (`O(1)`).
     """
 
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
     def pipe(self, *args):
         """Pipe list through the given functions."""
         return pipe(self, *args)
-
 
     @abstractmethod
     def append(self, other: "List[TSource]") -> "List[TSource]":
