@@ -29,7 +29,7 @@
 <pre><code class="python">from abc import abstractmethod
 from typing import Iterable, Iterator, Sized, TypeVar, Callable, cast
 
-from fslash.core import Option_, Some, Nothing
+from fslash.core import Option_, Some, Nothing, pipe
 from . import seq as Seq
 
 TSource = TypeVar(&#34;TSource&#34;)
@@ -45,6 +45,14 @@ class List(Iterable[TSource], Sized):
     instead. Use this list if you need an immutable list for prepend
     operations mostly (`O(1)`).
     &#34;&#34;&#34;
+
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
+    def pipe(self, *args):
+        &#34;&#34;&#34;Pipe list through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     @abstractmethod
     def append(self, other: &#34;List[TSource]&#34;) -&gt; &#34;List[TSource]&#34;:
@@ -821,6 +829,7 @@ operations mostly (<code>O(1)</code>).</p></div>
 <li><code><a title="fslash.collections.list.List.cons" href="#fslash.collections.list.List.cons">cons</a></code></li>
 <li><code><a title="fslash.collections.list.List.head" href="#fslash.collections.list.List.head">head</a></code></li>
 <li><code><a title="fslash.collections.list.List.is_empty" href="#fslash.collections.list.List.is_empty">is_empty</a></code></li>
+<li><code><a title="fslash.collections.list.List.pipe" href="#fslash.collections.list.List.pipe">pipe</a></code></li>
 <li><code><a title="fslash.collections.list.List.tail" href="#fslash.collections.list.List.tail">tail</a></code></li>
 <li><code><a title="fslash.collections.list.List.take" href="#fslash.collections.list.List.take">take</a></code></li>
 <li><code><a title="fslash.collections.list.List.try_head" href="#fslash.collections.list.List.try_head">try_head</a></code></li>
@@ -850,6 +859,14 @@ operations mostly (<code>O(1)</code>).</p></div>
     instead. Use this list if you need an immutable list for prepend
     operations mostly (`O(1)`).
     &#34;&#34;&#34;
+
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
+    def pipe(self, *args):
+        &#34;&#34;&#34;Pipe list through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     @abstractmethod
     def append(self, other: &#34;List[TSource]&#34;) -&gt; &#34;List[TSource]&#34;:
@@ -1069,6 +1086,34 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;List[TResult]&#34
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.list.List.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args, **kw):
+    from pampy import match
+    return match(self, *args, **kw)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.list.List.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe list through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args):
+    &#34;&#34;&#34;Pipe list through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.list.List.tail"><code class="name flex">
 <span>def <span class="ident">tail</span></span>(<span>self) ‑> <a title="fslash.collections.list.List" href="#fslash.collections.list.List">List</a>[~TSource]</span>
 </code></dt>
@@ -1187,6 +1232,8 @@ def try_head(self) -&gt; Option_[TSource]:
 <li><code><a title="fslash.collections.list.List.head" href="#fslash.collections.list.List.head">head</a></code></li>
 <li><code><a title="fslash.collections.list.List.is_empty" href="#fslash.collections.list.List.is_empty">is_empty</a></code></li>
 <li><code><a title="fslash.collections.list.List.map" href="#fslash.collections.list.List.map">map</a></code></li>
+<li><code><a title="fslash.collections.list.List.match" href="#fslash.collections.list.List.match">match</a></code></li>
+<li><code><a title="fslash.collections.list.List.pipe" href="#fslash.collections.list.List.pipe">pipe</a></code></li>
 <li><code><a title="fslash.collections.list.List.tail" href="#fslash.collections.list.List.tail">tail</a></code></li>
 <li><code><a title="fslash.collections.list.List.take" href="#fslash.collections.list.List.take">take</a></code></li>
 <li><code><a title="fslash.collections.list.List.try_head" href="#fslash.collections.list.List.try_head">try_head</a></code></li>

@@ -41,8 +41,9 @@ Programming.
 &#34;&#34;&#34;
 
 from abc import abstractmethod
-from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List, Generator
+from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
 from .misc import identity
+from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -51,6 +52,14 @@ TError = TypeVar(&#34;TError&#34;)
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
+
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
+    def pipe(self, *args):
+        &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
@@ -181,6 +190,11 @@ def bind(
 
 
 def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -&gt; Result[List[TResult], TError]:
+    &#34;&#34;&#34;Traverses a list of items.
+
+    Threads an applicative computation though a list of items.
+    &#34;&#34;&#34;
+
     from fslash.builders import result
     from fslash.collections import Seq
 
@@ -198,6 +212,9 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
 
 
 def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TError]:
+    &#34;&#34;&#34;Execute a sequence of result returning commands and collect the
+    sequence of their response.&#34;&#34;&#34;
+
     return traverse(identity, lst)
 
 
@@ -249,12 +266,16 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;ResultException
 <span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TSource, ~TError]]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TSource], ~TError]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Execute a sequence of result returning commands and collect the
+sequence of their response.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TError]:
+    &#34;&#34;&#34;Execute a sequence of result returning commands and collect the
+    sequence of their response.&#34;&#34;&#34;
+
     return traverse(identity, lst)</code></pre>
 </details>
 </dd>
@@ -262,12 +283,18 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;ResultException
 <span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TResult, ~TError]], lst: List[~TSource]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TResult], ~TError]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Traverses a list of items.</p>
+<p>Threads an applicative computation though a list of items.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -&gt; Result[List[TResult], TError]:
+    &#34;&#34;&#34;Traverses a list of items.
+
+    Threads an applicative computation though a list of items.
+    &#34;&#34;&#34;
+
     from fslash.builders import result
     from fslash.collections import Seq
 
@@ -426,6 +453,14 @@ def error(self) -&gt; TError:
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></b></code>:
+<ul class="hlist">
+<li><code><a title="fslash.core.result.Result.pipe" href="#fslash.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="fslash.core.result.Ok"><code class="flex name class">
 <span>class <span class="ident">Ok</span></span>
@@ -563,6 +598,14 @@ def value(self):
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></b></code>:
+<ul class="hlist">
+<li><code><a title="fslash.core.result.Result.pipe" href="#fslash.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="fslash.core.result.Result"><code class="flex name class">
 <span>class <span class="ident">Result</span></span>
@@ -576,6 +619,14 @@ def value(self):
 </summary>
 <pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
+
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
+    def pipe(self, *args):
+        &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
@@ -671,6 +722,34 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.result.Result.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args, **kw):
+    from pampy import match
+    return match(self, *args, **kw)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.result.Result.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe result through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args):
+    &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 <dt id="fslash.core.result.ResultException"><code class="flex name class">
@@ -745,11 +824,13 @@ iterated.</p></div>
 </li>
 <li>
 <h4><code><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="fslash.core.result.Result.bind" href="#fslash.core.result.Result.bind">bind</a></code></li>
 <li><code><a title="fslash.core.result.Result.is_error" href="#fslash.core.result.Result.is_error">is_error</a></code></li>
 <li><code><a title="fslash.core.result.Result.is_ok" href="#fslash.core.result.Result.is_ok">is_ok</a></code></li>
 <li><code><a title="fslash.core.result.Result.map" href="#fslash.core.result.Result.map">map</a></code></li>
+<li><code><a title="fslash.core.result.Result.match" href="#fslash.core.result.Result.match">match</a></code></li>
+<li><code><a title="fslash.core.result.Result.pipe" href="#fslash.core.result.Result.pipe">pipe</a></code></li>
 </ul>
 </li>
 <li>

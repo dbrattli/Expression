@@ -43,7 +43,7 @@ from .result import Result as TResult, Ok, Error
 
 __all__ = [
     &#39;compose&#39;, &#39;pipe&#39;, &#39;pipe2&#39;, &#39;pipe3&#39;, &#39;curried&#39;,
-    &#39;Option&#39;, &#39;Option_&#39;, &#39;Some&#39;, &#39;Nothing&#39;,
+    &#39;Option&#39;, &#39;Option_&#39;, &#39;Some&#39;, &#39;Nothing&#39;, &#34;Nothing_&#34;,
     &#39;Result&#39;, &#39;TResult&#39;, &#39;Ok&#39;, &#39;Error&#39;,
 ]</code></pre>
 </details>
@@ -355,6 +355,14 @@ def error(self) -&gt; TError:
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a></b></code>:
+<ul class="hlist">
+<li><code><a title="fslash.core.result.Result.pipe" href="result.html#fslash.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="fslash.core.Ok"><code class="flex name class">
 <span>class <span class="ident">Ok</span></span>
@@ -492,6 +500,14 @@ def value(self):
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a></b></code>:
+<ul class="hlist">
+<li><code><a title="fslash.core.result.Result.pipe" href="result.html#fslash.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="fslash.core.Option"><code class="flex name class">
 <span>class <span class="ident">Option_</span></span>
@@ -506,13 +522,17 @@ def value(self):
 <pre><code class="python">class Option(Iterable[TSource]):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
-    @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
-        raise NotImplementedError
+    def pipe(self, *args):
+        &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     def match(self, *args, **kw):
         from pampy import match
         return match(self, *args, **kw)
+
+    @abstractmethod
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
+        raise NotImplementedError
 
     @abstractmethod
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
@@ -528,20 +548,20 @@ def value(self):
         raise NotImplementedError
 
     @abstractmethod
-    def to_list(cls) -&gt; List[TSource]:
+    def to_list(self) -&gt; List[TSource]:
         raise NotImplementedError
 
     @abstractmethod
-    def to_seq(cls) -&gt; Iterable[TSource]:
+    def to_seq(self) -&gt; Iterable[TSource]:
         raise NotImplementedError
 
     @abstractmethod
-    def is_some(cls) -&gt; bool:
+    def is_some(self) -&gt; bool:
         &#34;&#34;&#34;Returns true if the option is not Nothing.&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
-    def is_none(cls) -&gt; bool:
+    def is_none(self) -&gt; bool:
         &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
         raise NotImplementedError
 
@@ -559,8 +579,8 @@ def value(self):
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="fslash.core.option.Nothing_" href="option.html#fslash.core.option.Nothing_">Nothing_</a></li>
 <li><a title="fslash.core.option.Some" href="option.html#fslash.core.option.Some">Some</a></li>
-<li><a title="fslash.core.option._None" href="option.html#fslash.core.option._None">_None</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -579,7 +599,7 @@ def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#3
 </details>
 </dd>
 <dt id="fslash.core.Option.is_none"><code class="name flex">
-<span>def <span class="ident">is_none</span></span>(<span>cls) ‑> bool</span>
+<span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns true if the option is Nothing.</p></div>
@@ -588,13 +608,13 @@ def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#3
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def is_none(cls) -&gt; bool:
+def is_none(self) -&gt; bool:
     &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Option.is_some"><code class="name flex">
-<span>def <span class="ident">is_some</span></span>(<span>cls) ‑> bool</span>
+<span>def <span class="ident">is_some</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns true if the option is not Nothing.</p></div>
@@ -603,7 +623,7 @@ def is_none(cls) -&gt; bool:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def is_some(cls) -&gt; bool:
+def is_some(self) -&gt; bool:
     &#34;&#34;&#34;Returns true if the option is not Nothing.&#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
@@ -665,8 +685,22 @@ def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.Option.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe option through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args):
+    &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.Option.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>cls) ‑> List[~TSource]</span>
+<span>def <span class="ident">to_list</span></span>(<span>self) ‑> List[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -675,12 +709,12 @@ def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def to_list(cls) -&gt; List[TSource]:
+def to_list(self) -&gt; List[TSource]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Option.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>cls) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -689,7 +723,7 @@ def to_list(cls) -&gt; List[TSource]:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def to_seq(cls) -&gt; Iterable[TSource]:
+def to_seq(self) -&gt; Iterable[TSource]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -707,6 +741,14 @@ def to_seq(cls) -&gt; Iterable[TSource]:
 </summary>
 <pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
+
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
+    def pipe(self, *args):
+        &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
@@ -800,6 +842,34 @@ def is_ok(self) -&gt; bool:
 <pre><code class="python">@abstractmethod
 def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
     raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Result.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args, **kw):
+    from pampy import match
+    return match(self, *args, **kw)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Result.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe result through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args):
+    &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1006,6 +1076,14 @@ def value(self):
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a></b></code>:
+<ul class="hlist">
+<li><code><a title="fslash.core.option.Option.pipe" href="option.html#fslash.core.option.Option.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 </dl>
 </section>
@@ -1072,17 +1150,20 @@ def value(self):
 <li><code><a title="fslash.core.Option.map2" href="#fslash.core.Option.map2">map2</a></code></li>
 <li><code><a title="fslash.core.Option.match" href="#fslash.core.Option.match">match</a></code></li>
 <li><code><a title="fslash.core.Option.or_else" href="#fslash.core.Option.or_else">or_else</a></code></li>
+<li><code><a title="fslash.core.Option.pipe" href="#fslash.core.Option.pipe">pipe</a></code></li>
 <li><code><a title="fslash.core.Option.to_list" href="#fslash.core.Option.to_list">to_list</a></code></li>
 <li><code><a title="fslash.core.Option.to_seq" href="#fslash.core.Option.to_seq">to_seq</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="fslash.core.Result" href="#fslash.core.Result">Result</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="fslash.core.Result.bind" href="#fslash.core.Result.bind">bind</a></code></li>
 <li><code><a title="fslash.core.Result.is_error" href="#fslash.core.Result.is_error">is_error</a></code></li>
 <li><code><a title="fslash.core.Result.is_ok" href="#fslash.core.Result.is_ok">is_ok</a></code></li>
 <li><code><a title="fslash.core.Result.map" href="#fslash.core.Result.map">map</a></code></li>
+<li><code><a title="fslash.core.Result.match" href="#fslash.core.Result.match">match</a></code></li>
+<li><code><a title="fslash.core.Result.pipe" href="#fslash.core.Result.pipe">pipe</a></code></li>
 </ul>
 </li>
 <li>

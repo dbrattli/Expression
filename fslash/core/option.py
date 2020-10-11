@@ -124,7 +124,7 @@ class Some(Option[TSource]):
         return f"Some {self._value}"
 
 
-class _None(Option[TSource]):
+class Nothing_(Option[TSource]):
     """The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -170,7 +170,7 @@ class _None(Option[TSource]):
             GeneratorExit
         """
         while False:
-            yield  # Just to make it a generator
+            yield
 
     def __eq__(self, other):
         if other is Nothing:
@@ -183,7 +183,7 @@ class _None(Option[TSource]):
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
 # avoid conflicts with the builtin `None` value.
-Nothing: _None = _None()
+Nothing: Nothing_ = Nothing_()
 """Singleton `Nothing` object.
 
 Since Nothing is a singleton it can be tested e.g using `is`:
@@ -277,7 +277,7 @@ __all__ = [
     "Option",
     "Some",
     "Nothing",
-    "_None",
+    "Nothing_",
     "map",
     "map2",
     "bind",

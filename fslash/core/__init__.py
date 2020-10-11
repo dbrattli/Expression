@@ -14,6 +14,6 @@ from .result import Result as TResult, Ok, Error
 
 __all__ = [
     'compose', 'pipe', 'pipe2', 'pipe3', 'curried',
-    'Option', 'Option_', 'Some', 'Nothing',
+    'Option', 'Option_', 'Some', 'Nothing', "Nothing_",
     'Result', 'TResult', 'Ok', 'Error',
 ]

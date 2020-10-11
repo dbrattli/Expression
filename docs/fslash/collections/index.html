@@ -263,6 +263,7 @@ operations mostly (<code>O(1)</code>).</p></div>
 <li><code><a title="fslash.collections.list.List.cons" href="list.html#fslash.collections.list.List.cons">cons</a></code></li>
 <li><code><a title="fslash.collections.list.List.head" href="list.html#fslash.collections.list.List.head">head</a></code></li>
 <li><code><a title="fslash.collections.list.List.is_empty" href="list.html#fslash.collections.list.List.is_empty">is_empty</a></code></li>
+<li><code><a title="fslash.collections.list.List.pipe" href="list.html#fslash.collections.list.List.pipe">pipe</a></code></li>
 <li><code><a title="fslash.collections.list.List.tail" href="list.html#fslash.collections.list.List.tail">tail</a></code></li>
 <li><code><a title="fslash.collections.list.List.take" href="list.html#fslash.collections.list.List.take">take</a></code></li>
 <li><code><a title="fslash.collections.list.List.try_head" href="list.html#fslash.collections.list.List.try_head">try_head</a></code></li>
@@ -292,6 +293,14 @@ operations mostly (<code>O(1)</code>).</p></div>
     instead. Use this list if you need an immutable list for prepend
     operations mostly (`O(1)`).
     &#34;&#34;&#34;
+
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
+    def pipe(self, *args):
+        &#34;&#34;&#34;Pipe list through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     @abstractmethod
     def append(self, other: &#34;List[TSource]&#34;) -&gt; &#34;List[TSource]&#34;:
@@ -511,6 +520,34 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;List[TResult]&#34
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.List.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args, **kw):
+    from pampy import match
+    return match(self, *args, **kw)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe list through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args):
+    &#34;&#34;&#34;Pipe list through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.List.tail"><code class="name flex">
 <span>def <span class="ident">tail</span></span>(<span>self) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
 </code></dt>
@@ -646,6 +683,14 @@ sequences.</p>
 
         return Seq(map(mapper)(self))
 
+    def match(self, *args, **kw):
+        from pampy import match
+        return match(self, *args, **kw)
+
+    def pipe(self, *args):
+        &#34;&#34;&#34;Pipe sequence through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
+
     def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -&gt; Iterable[TState]:
         &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
         intermediary and final results.
@@ -775,6 +820,34 @@ collection.</p>
     return Seq(map(mapper)(self))</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.Seq.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args, **kw):
+    from pampy import match
+    return match(self, *args, **kw)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.Seq.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe sequence through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args):
+    &#34;&#34;&#34;Pipe sequence through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.Seq.scan"><code class="name flex">
 <span>def <span class="ident">scan</span></span>(<span>self, scanner: Callable[[~TState, ~TSource], ~TState], state: ~TState) ‑> Iterable[~TState]</span>
 </code></dt>
@@ -855,6 +928,8 @@ from the sequence.</dd>
 <li><code><a title="fslash.collections.List.head" href="#fslash.collections.List.head">head</a></code></li>
 <li><code><a title="fslash.collections.List.is_empty" href="#fslash.collections.List.is_empty">is_empty</a></code></li>
 <li><code><a title="fslash.collections.List.map" href="#fslash.collections.List.map">map</a></code></li>
+<li><code><a title="fslash.collections.List.match" href="#fslash.collections.List.match">match</a></code></li>
+<li><code><a title="fslash.collections.List.pipe" href="#fslash.collections.List.pipe">pipe</a></code></li>
 <li><code><a title="fslash.collections.List.tail" href="#fslash.collections.List.tail">tail</a></code></li>
 <li><code><a title="fslash.collections.List.take" href="#fslash.collections.List.take">take</a></code></li>
 <li><code><a title="fslash.collections.List.try_head" href="#fslash.collections.List.try_head">try_head</a></code></li>
@@ -862,11 +937,13 @@ from the sequence.</dd>
 </li>
 <li>
 <h4><code><a title="fslash.collections.Seq" href="#fslash.collections.Seq">Seq</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="fslash.collections.Seq.filter" href="#fslash.collections.Seq.filter">filter</a></code></li>
 <li><code><a title="fslash.collections.Seq.fold" href="#fslash.collections.Seq.fold">fold</a></code></li>
 <li><code><a title="fslash.collections.Seq.head" href="#fslash.collections.Seq.head">head</a></code></li>
 <li><code><a title="fslash.collections.Seq.map" href="#fslash.collections.Seq.map">map</a></code></li>
+<li><code><a title="fslash.collections.Seq.match" href="#fslash.collections.Seq.match">match</a></code></li>
+<li><code><a title="fslash.collections.Seq.pipe" href="#fslash.collections.Seq.pipe">pipe</a></code></li>
 <li><code><a title="fslash.collections.Seq.scan" href="#fslash.collections.Seq.scan">scan</a></code></li>
 </ul>
 </li>

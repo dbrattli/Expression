@@ -168,11 +168,10 @@ def keep_positive(a: int) -> Option_[int]:
 ```
 
 ```py
-from pampy import match, _
+from pampy import _
 
 def exists (x : Option_[int]) -> bool:
-    return match(
-        x,
+    return x.match(
         Some, lambda some: True,
         _, False
     )
