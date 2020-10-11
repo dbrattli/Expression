@@ -7,6 +7,7 @@ sequence as the only argument.
 """
 from abc import abstractmethod
 from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any
+from .pipe import pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -17,13 +18,17 @@ T2 = TypeVar("T2")
 class Option(Iterable[TSource]):
     """Option abstract base class."""
 
-    @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -> "Option[TResult]":
-        raise NotImplementedError
+    def pipe(self, *args):
+        """Pipe option through the given functions."""
+        return pipe(self, *args)
 
     def match(self, *args, **kw):
         from pampy import match
         return match(self, *args, **kw)
+
+    @abstractmethod
+    def map(self, mapper: Callable[[TSource], TResult]) -> "Option[TResult]":
+        raise NotImplementedError
 
     @abstractmethod
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: "Option[T2]") -> "Option[TResult]":
@@ -39,20 +44,20 @@ class Option(Iterable[TSource]):
         raise NotImplementedError
 
     @abstractmethod
-    def to_list(cls) -> List[TSource]:
+    def to_list(self) -> List[TSource]:
         raise NotImplementedError
 
     @abstractmethod
-    def to_seq(cls) -> Iterable[TSource]:
+    def to_seq(self) -> Iterable[TSource]:
         raise NotImplementedError
 
     @abstractmethod
-    def is_some(cls) -> bool:
+    def is_some(self) -> bool:
         """Returns true if the option is not Nothing."""
         raise NotImplementedError
 
     @abstractmethod
-    def is_none(cls) -> bool:
+    def is_none(self) -> bool:
         """Returns true if the option is Nothing."""
         raise NotImplementedError
 
@@ -164,8 +169,8 @@ class _None(Option[TSource]):
         Raises:
             GeneratorExit
         """
-        raise GeneratorExit
-        yield  # Just to make it a generator
+        while False:
+            yield  # Just to make it a generator
 
     def __eq__(self, other):
         if other is Nothing:

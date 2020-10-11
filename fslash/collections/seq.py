@@ -21,6 +21,7 @@ import builtins
 from typing import TypeVar, Callable, Iterable, Iterator, List
 import functools
 import itertools
+from fslash.core import pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -80,6 +81,10 @@ class Seq(Iterable[TSource]):
         """
 
         return Seq(map(mapper)(self))
+
+    def pipe(self, *args):
+        """Pipe sequence through the given functions."""
+        return pipe(self, *args)
 
     def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -> Iterable[TState]:
         """Like fold, but computes on-demand and returns the sequence of

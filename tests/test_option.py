@@ -18,8 +18,8 @@ def test_option_none():
     xs = Nothing
 
     assert isinstance(xs, Option_)
-    assert pipe(xs, Option.is_some) is False
-    assert pipe(xs, Option.is_none) is True
+    assert xs.pipe(Option.is_some) is False
+    assert xs.pipe(Option.is_none) is True
 
 
 def test_option_none_equals_none():
@@ -46,7 +46,7 @@ def test_option_some_equals_some(a, b):
 
 def test_option_some_map_piped():
     xs = Some(42)
-    ys = pipe(xs, Option.map(lambda x: x + 1))
+    ys = xs.pipe(Option.map(lambda x: x + 1))
 
     assert match(ys,
         Some, lambda some: some.value == 43,
@@ -56,7 +56,7 @@ def test_option_some_map_piped():
 def test_option_none_map_piped():
     xs = Nothing
     map = Option.map(lambda x: x + 1)
-    ys = pipe(xs, map)
+    ys = xs.pipe(map)
     assert ys.match(Some, lambda some: False, _, True)
 
 
@@ -106,7 +106,7 @@ def test_option_none_bind_none_fluent():
 
 def test_option_some_bind_piped():
     xs = Some(42)
-    ys = pipe(xs, Option.bind(lambda x: Some(x + 1)))
+    ys = xs.pipe(Option.bind(lambda x: Some(x + 1)))
 
     assert match(ys, Some, lambda some: some.value == 43, _, False)
 

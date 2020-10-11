@@ -125,10 +125,31 @@ from fslash.core import pipe
 
 gn = lambda g: g * y
 fn = lambda x: x + z
-value = pipe(x, fn, gn)
+value = pipe(
+    x,
+    fn,
+    gn
+)
 
 assert value == gn(fn(x))
 ```
+
+F/ objects also have a pipe method so you can dot chain pipelines
+directly on the object:
+
+```py
+from fslash.core import pipe
+
+gn = lambda g: g * y
+fn = lambda x: x + z
+value = x.pipe(
+    fn,
+    gn
+)
+
+assert value == gn(fn(x))
+```
+
 
 ### Options
 
@@ -137,9 +158,9 @@ value or variable. An option has an underlying type and can hold a value of
 that type `Some(value)`, or it might not have the value `Nothing`.
 
 ```py
-from fslash.core import Some, Nothing
+from fslash.core import Some, Nothing, Option_
 
-def keep_positive(a: int) -> Option[int]:
+def keep_positive(a: int) -> Option_[int]:
     if a > 0:
         return Some(a)
     else:
@@ -149,10 +170,10 @@ def keep_positive(a: int) -> Option[int]:
 ```py
 from pampy import match
 
-def exists (x : Option[int]) -> bool:
+def exists (x : Option_[int]) -> bool:
     return match(
         x,
-        Some, lambda some: True
+        Some, lambda some: True,
         Nothing, False
     )
 ```
@@ -199,6 +220,11 @@ def fn():
 xs = fn()
 assert xs is Nothing
 ```
+
+For more information about options:
+
+- [Tutorial](https://github.com/dbrattli/FSlash/blob/master/notebooks/Options.ipynb)
+- [API reference](https://dbrattli.github.io/FSlash/fslash/core/option.html)
 
 ### Results
 
@@ -262,9 +288,18 @@ You can import the FSlash list module with e.g a different name:
 from fslash.collections import List as FList
 ```
 
+## / Why are types primed with `_`?
+
+This is because e.g `Option` and `Result` are imported as modules in
+order to easily access module functions e.g `Option.map`. We cannot have
+types with the same name as modules in Python, so that's why the types
+are available as primed `_` names e.g `Option_` and `Result_`.
+
 ### / FSlash is missing the function / operator I need
 
-Remember that everything is a function, so you can easily implement the function yourself and use it with FSlash. If you think the function is also usable for others, you can open a PR to include it with FSlash.
+Remember that everything is a function, so you can easily implement the
+function yourself and use it with FSlash. If you think the function is
+also usable for others, you can open a PR to include it with FSlash.
 
 ## Resources
 

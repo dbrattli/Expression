@@ -40,7 +40,7 @@ def test_result_map_piped(x, y):
     xs = Ok(x)
     mapper = lambda x: x + y
 
-    ys = pipe(xs, Result.map(mapper))
+    ys = xs.pipe(Result.map(mapper))
     res = match(ys,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
@@ -77,7 +77,7 @@ def test_result_map_error_piped(msg, y):
     xs = Error(msg)
     mapper = lambda x: x + y
 
-    ys = pipe(xs, Result.map(mapper))
+    ys = xs.pipe(Result.map(mapper))
 
     with pytest.raises(CustomException) as ex:
         match(ys,
@@ -118,7 +118,7 @@ def test_result_bind_piped(x, y):
     xs = Ok(x)
     mapper = lambda x: Ok(x + y)
 
-    ys = pipe(xs, Result.bind(mapper))
+    ys = xs.pipe(Result.bind(mapper))
     res = match(ys,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))

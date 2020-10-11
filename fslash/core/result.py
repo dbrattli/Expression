@@ -8,8 +8,9 @@ Programming.
 """
 
 from abc import abstractmethod
-from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List, Generator
+from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
 from .misc import identity
+from .pipe import pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -18,6 +19,10 @@ TError = TypeVar("TError")
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     """The result abstract base class."""
+
+    def pipe(self, *args):
+        """Pipe result through the given functions."""
+        return pipe(self, *args)
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -> "Result[TResult, TError]":
@@ -148,6 +153,11 @@ def bind(
 
 
 def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -> Result[List[TResult], TError]:
+    """Traverses a list of items.
+
+    Threads an applicative computation though a list of items.
+    """
+
     from fslash.builders import result
     from fslash.collections import Seq
 
@@ -165,6 +175,9 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
 
 
 def sequence(lst: List[Result[TSource, TError]]) -> Result[List[TSource], TError]:
+    """Execute a sequence of result returning commands and collect the
+    sequence of their response."""
+
     return traverse(identity, lst)
 
 

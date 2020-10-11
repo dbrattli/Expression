@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Iterable, Iterator, Sized, TypeVar, Callable, cast
 
-from fslash.core import Option_, Some, Nothing
+from fslash.core import Option_, Some, Nothing, pipe
 from . import seq as Seq
 
 TSource = TypeVar("TSource")
@@ -17,6 +17,11 @@ class List(Iterable[TSource], Sized):
     instead. Use this list if you need an immutable list for prepend
     operations mostly (`O(1)`).
     """
+
+    def pipe(self, *args):
+        """Pipe list through the given functions."""
+        return pipe(self, *args)
+
 
     @abstractmethod
     def append(self, other: "List[TSource]") -> "List[TSource]":
