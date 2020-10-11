@@ -91,7 +91,7 @@ by F# instead.
   functions and methods.
 - Code should pass static type checking by tools such as
   [mypy](http://mypy-lang.org/) and
-  [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
+  [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/). Pylance is awesome, use it!
 
 ## Non Goals
 

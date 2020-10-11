@@ -1,5 +1,5 @@
 # coding=utf-8
-from setuptools import setup
+import setuptools
 import versioneer
 
 # read the contents of your README file
@@ -8,7 +8,7 @@ this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-setup(
+setuptools.setup(
     name='FSlash',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
@@ -33,10 +33,13 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
+    python_requires='>=3.8',
     install_requires=[],
     setup_requires=['pytest-runner'],
     tests_require=['pytest', 'pytest-cov', 'hypothesis', 'pampy'],
 
-    packages=['fslash'],
-    package_dir={'fslash': 'fslash'}
+    package_data={'fslash': ['py.typed']},
+    packages=setuptools.find_packages(),
+    package_dir={'fslash': 'fslash'},
+    include_package_data=True
 )
