@@ -230,7 +230,7 @@ For more information about options:
 
 ### Results
 
-The `Result[T,TError]` type lets you write error-tolerant code that can be
+The `Result[T, TError]` type lets you write error-tolerant code that can be
 composed. Result works similar to `Option` but lets you define the value used
 for errors, e.g an exception type or similar. This is great when you want to
 know why some operation failed (not just `Nothing`).
@@ -261,7 +261,7 @@ using with functional programming.
 # start reading from the end of the expression.
 ys = functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
-# With F/ you pipe the result flows from one operator to the next:
+# With F/ you pipe the result so it flows from one operator to the next:
 zs = Seq.of(xs).pipe(
     Seq.map(lambda x: x * 10),
     Seq.filter(lambda x: x > 100),
@@ -283,13 +283,13 @@ A list of common problems and how you may solve it:
 
 ### - The FSlash List type has the same name as the builtin List type in Python
 
-You can import the FSlash list module with e.g a different name:
+You can easily import the FSlash list module with e.g a different name:
 
 ```py
 from fslash.collections import List as FList
 ```
 
-## - Why are types primed with `_`?
+## - Why are types primed with _?
 
 This is because e.g `Option` and `Result` are imported as modules in
 order to easily access module functions e.g `Option.map`. We cannot have

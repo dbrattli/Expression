@@ -16,8 +16,9 @@ Example:
     )
 """
 
+import sys
 import builtins
-from typing import TypeVar, Callable, Iterable, Iterator
+from typing import TypeVar, Callable, Iterable, Iterator, Tuple
 import functools
 import itertools
 from fslash.core import pipe
@@ -103,6 +104,20 @@ class Seq(Iterable[TSource]):
         """
         return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore
 
+    def zip(self, other: Iterable[TResult]) -> Iterable[Tuple[TSource, TResult]]:
+        """Combines the two sequences into a list of pairs. The two
+        sequences need not have equal lengths: when one sequence is
+        exhausted any remaining elements in the other sequence are
+        ignored.
+
+        Args:
+            other: The second input sequence.
+
+        Returns:
+            The result sequence.
+        """
+        return builtins.zip(self, other)
+
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for sequence."""
         return builtins.iter(self._value)
@@ -135,7 +150,7 @@ def concat(*iterables: Iterable[TSource]) -> Callable[[Iterable[Iterable[TSource
 
 
 empty = Seq([])
-"""Creates an empty sequence."""
+"""The empty sequence."""
 
 
 def filter(predicate: Callable[[TSource], bool]) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
@@ -236,6 +251,19 @@ def head(source: Iterable[TSource]) -> TSource:
         raise ValueError("Sequence contains no elements")
 
 
+def init_infinite(initializer: Callable[[int], TSource]) -> Iterable[TSource]:
+    """Generates a new sequence which, when iterated, will return
+    successive elements by calling the given function. The results of
+    calling the function will not be saved, that is the function will be
+    reapplied as necessary to regenerate the elements. The function is
+    passed the index of the item being generated.
+
+    Iteration can continue up to `sys.maxint`.
+    """
+    for i in range(sys.maxsize):
+        yield initializer(i)
+
+
 def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], None]:
     """Applies the given function to each element of the collection.
 
@@ -290,14 +318,11 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
     return _map
 
 
-def max() -> Callable[[Iterable[TSource]], TSource]:
+def max(source: Iterable[TSource]) -> TSource:
     """Returns the greatest of all elements of the sequence,
     compared via `max()`."""
 
-    def _map(source: Iterable[TSource]) -> TSource:
-        return builtins.max(source)
-
-    return _map
+    return builtins.max(source)
 
 
 def max_by(projection: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], TResult]:
@@ -307,14 +332,11 @@ def max_by(projection: Callable[[TSource], TResult]) -> Callable[[Iterable[TSour
     return _max_by
 
 
-def min() -> Callable[[Iterable[TSource]], TSource]:
+def min(source: Iterable[TSource]) -> TSource:
     """Returns the smallest of all elements of the sequence,
     compared via `max()`."""
 
-    def _min(source: Iterable[TSource]) -> TSource:
-        return builtins.min(source)
-
-    return _min
+    return builtins.min(source)
 
 
 def min_by(projection: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], TResult]:
@@ -328,7 +350,11 @@ def of(value: Iterable[TSource]):
     return Seq(value)
 
 
-of_list = of_iterable = of
+of_list = of
+"""Alias to `Seq.of`."""
+
+of_iterable = of
+"""Alias to `Seq.of`."""
 
 
 def scan(
@@ -351,6 +377,34 @@ def scan(
         """
         return itertools.accumulate(source, scanner, initial=state)   # type: ignore
     return _scan
+
+
+def zip(source1: Iterable[TSource]) -> Callable[[Iterable[TResult]], Iterable[Tuple[TSource, TResult]]]:
+    """Combines the two sequences into a list of pairs. The two
+    sequences need not have equal lengths: when one sequence is
+    exhausted any remaining elements in the other sequence are
+    ignored.
+
+    Args:
+        source1: The first input sequence.
+
+    Returns:
+        Partially applied zip function.
+    """
+    def _zip(source2: Iterable[TResult]) -> Iterable[Tuple[TSource, TResult]]:
+        """Combines the two sequences into a list of pairs. The two
+        sequences need not have equal lengths: when one sequence is
+        exhausted any remaining elements in the other sequence are
+        ignored.
+
+        Args:
+            source2: The second input sequence.
+
+        Returns:
+            The result sequence.
+        """
+        return builtins.zip(source1, source2)
+    return _zip
 
 
 __all__ = [

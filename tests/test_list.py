@@ -40,6 +40,63 @@ def test_list_len(xs):
     assert len(xs) == len(ys)
 
 
+@given(st.lists(st.integers()), st.integers(min_value=0))
+def test_list_take(xs, x):
+    ys: List_
+    try:
+        ys = List.of_seq(xs).take(x)
+        assert list(ys) == xs[:x]
+
+    except ValueError:
+        assert x > len(xs)
+
+
+@given(st.lists(st.integers()), st.integers(min_value=0))
+def test_list_take_last(xs, x):
+    expected = xs[-x:] if x else []
+    ys: List_
+    try:
+        ys = List.of_seq(xs).take_last(x)
+        assert list(ys) == expected
+    except ValueError:
+        assert x > len(xs)
+
+
+@given(st.lists(st.integers()), st.integers(min_value=0))
+def test_list_skip(xs, x):
+    ys: List_
+    try:
+        ys = List.of_seq(xs).skip(x)
+        assert list(ys) == xs[x:]
+
+    except ValueError:
+        assert x > len(xs)
+
+
+@given(st.lists(st.integers()), st.integers(min_value=0))
+def test_list_skip_last(xs, x):
+    expected = xs[:-x] if x else xs
+    ys: List_
+    try:
+        ys = List.of_seq(xs).skip_last(x)
+        assert list(ys) == expected
+
+    except ValueError:
+        assert x > len(xs)
+
+
+@given(st.lists(st.integers()), st.integers(), st.integers())
+def test_list_slice(xs, x, y):
+    expected = xs[x:y]
+    ys: List_
+    try:
+        ys = List.of_seq(xs).slice(x, y)
+        assert list(ys) == expected
+    except ValueError:
+        # assert x > len(xs)
+        pass
+
+
 rtn = List.singleton
 empty = List.empty
 

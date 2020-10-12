@@ -1,6 +1,7 @@
 from typing import Iterable
 import pytest
-import itertools, functools
+import itertools
+import functools
 from hypothesis import given, strategies as st
 
 from fslash.core import pipe

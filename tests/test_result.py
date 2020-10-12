@@ -3,7 +3,7 @@ from typing import List
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash.core import Result, Ok, Error, TResult, pipe
+from fslash.core import Result, Ok, Error, TResult
 from fslash.builders import result
 from .utils import CustomException, throw
 
