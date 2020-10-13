@@ -1,8 +1,8 @@
 from abc import abstractmethod
-from typing import Iterable, Iterator, Sized, TypeVar, Callable, Optional, cast
+from typing import Iterable, Iterator, Sized, TypeVar, Callable, Optional, Tuple, cast
 import sys
 
-from fslash.core import Option_, Some, Nothing, pipe, identity, compose
+from fslash.core.option import Option, Some, Nothing, pipe
 from . import seq as Seq
 
 TSource = TypeVar("TSource")
@@ -37,7 +37,7 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def choose(sef, chooser: Callable[[TSource], Option_[TResult]]) -> "List[TResult]":
+    def choose(sef, chooser: Callable[[TSource], Option[TResult]]) -> "List[TResult]":
         raise NotImplementedError
 
     @abstractmethod
@@ -58,6 +58,20 @@ class List(Iterable[TSource], Sized):
     def head(self) -> TSource:
         """Retrive first element in List."""
 
+        raise NotImplementedError
+
+    @abstractmethod
+    def indexed(self, start=0) -> 'List[Tuple[int, TSource]]':
+        """Returns a new list whose elements are the corresponding
+        elements of the input list paired with the index (from `start`)
+        of each element.
+
+        Args:
+            start: Optional index to start from. Defaults to 0.
+
+        Returns:
+            The list of indexed elements.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -118,7 +132,7 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def try_head(self) -> Option_[TSource]:
+    def try_head(self) -> Option[TSource]:
         """Returns the first element of the list, or None if the list is
         empty.
         """
@@ -158,31 +172,45 @@ class List(Iterable[TSource], Sized):
         Returns:
             A sliced list.
         """
-        pipeline = []
+        res = empty
 
         _start: int = 0 if start is None else start
         _stop: int = sys.maxsize if stop is None else stop
         _step: int = 1 if step is None else step
 
         if _stop >= 0:
-            pipeline.append(take(_stop))
+            res = res.take(_stop)
 
         if _start > 0:
-            pipeline.append(skip(_start))
+            res = res.skip(_start)
 
         elif _start < 0:
-            pipeline.append(take_last(-_start))
+            res = res.take_last(-_start)
 
         if _stop < 0:
-            pipeline.append(skip_last(-_stop))
+            res = res.skip_last(-_stop)
 
         if _step > 1:
-            pipeline.append(compose(Seq.zip(Seq.init_infinite(identity)), Seq.filter(lambda t: t[0] % _step == 0)))
+            res = res.indexed().filter(lambda t: t[0] % _step == 0)
+
         elif _step < 0:
             # Reversing events is not supported
             raise TypeError("Negative step not supported.")
 
-        return self.pipe(*pipeline)
+        return res
+
+    def zip(self, other: 'List[TResult]') -> 'List[Tuple[TSource, TResult]]':
+        """Combines the two lists into a list of pairs. The two lists
+        must have equal lengths. .
+
+        Args:
+            other: The second input list.
+
+        Returns:
+            A single list containing pairs of matching elements from the
+            input lists.
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def __iter__(self) -> Iterator:
@@ -208,6 +236,38 @@ class List(Iterable[TSource], Sized):
 
         raise NotImplementedError
 
+    def __getitem__(self, key) -> 'List[TSource]':
+        """
+        Pythonic version of `slice`.
+
+        Slices the given list using Python slice notation. The arguments
+        to slice are `start`, `stop` and `step` given within brackets
+        `[]` and separated by the colons `:`.
+
+        Examples:
+            >>> result = source[1:10]
+            >>> result = source[1:-2]
+            >>> result = source[1:-1:2]
+
+        Args:
+            key: Slice object
+
+        Returns:
+            Sliced observable sequence.
+
+        Raises:
+            TypeError: If key is not of type :code:`int` or :code:`slice`
+        """
+
+        if isinstance(key, slice):
+            start, stop, step = key.start, key.stop, key.step
+        elif isinstance(key, int):
+            start, stop, step = key, key + 1, 1
+        else:
+            raise TypeError('Invalid argument type.')
+
+        return self.slice(start, stop, step)
+
 
 class Cons(List[TSource]):
     def __init__(self, head: TSource, tail: List[TSource]):
@@ -218,7 +278,7 @@ class Cons(List[TSource]):
         head, tail = self._value
         return Cons(head, tail.append(other))
 
-    def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -> List[TResult]:
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> List[TResult]:
         head, tail = self._value
         filtered: List[TResult] = tail.choose(chooser)
         return cast(List[TResult], of_option(chooser(head))).append(filtered)
@@ -243,6 +303,20 @@ class Cons(List[TSource]):
 
         head, _ = self._value
         return head
+
+    def indexed(self, start=0) -> List[Tuple[int, TSource]]:
+        """Returns a new list whose elements are the corresponding
+        elements of the input list paired with the index (from `start`)
+        of each element.
+
+        Args:
+            start: Optional index to start from. Defaults to 0.
+
+        Returns:
+            The list of indexed elements.
+        """
+        head, tail = self._value
+        return Cons((start, head), tail.indexed(start + 1))
 
     def is_empty(self) -> bool:
         """Return `True` if list is empty."""
@@ -307,13 +381,32 @@ class Cons(List[TSource]):
         queue = tail if tail is Nil else tail.take_last(count)
         return Cons(head, queue) if len(queue) < count else queue
 
-    def try_head(self) -> Option_[TSource]:
+    def try_head(self) -> Option[TSource]:
         """Returns the first element of the list, or None if the list is
         empty.
         """
 
         head, _ = self._value
         return Some(head)
+
+    def zip(self, other: List[TResult]) -> List[Tuple[TSource, TResult]]:
+        """Combines the two lists into a list of pairs. The two lists
+        must have equal lengths.
+
+        Args:
+            other: The second input list.
+
+        Returns:
+            A single list containing pairs of matching elements from the
+            input lists.
+        """
+        if other is Nil:
+            raise ValueError("The list must have equal length.")
+
+        head, tail = self._value
+        head_, tail_ = other.head(), other.tail()
+
+        return Cons((head, head_), tail.zip(tail_))
 
     def __add__(self, other) -> List[TSource]:
         """Append list with other list."""
@@ -349,15 +442,11 @@ class _Nil(List[TSource]):
     def append(self, other: List[TSource]) -> List[TSource]:
         return other
 
-    def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -> List[TResult]:
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> List[TResult]:
         return Nil
 
     def collect(self, mapping: Callable[[TSource], List[TResult]]) -> List[TResult]:
         return Nil
-
-    def is_empty(self) -> bool:
-        """Return `True` if list is empty."""
-        return True
 
     def cons(self, element: TSource) -> List[TSource]:
         """Add element to front of List."""
@@ -371,6 +460,23 @@ class _Nil(List[TSource]):
         """Retrive first element in List."""
 
         raise IndexError("List is empty")
+
+    def indexed(self, start=0) -> List[Tuple[int, TSource]]:
+        """Returns a new list whose elements are the corresponding
+        elements of the input list paired with the index (from `start`)
+        of each element.
+
+        Args:
+            start: Optional index to start from. Defaults to 0.
+
+        Returns:
+            The list of indexed elements.
+        """
+        return Nil
+
+    def is_empty(self) -> bool:
+        """Return `True` if list is empty."""
+        return True
 
     def map(self, mapping: Callable[[TSource], TResult]) -> List[TResult]:
         return Nil
@@ -426,11 +532,27 @@ class _Nil(List[TSource]):
             return Nil
         raise ValueError("List is empty.")
 
-    def try_head(self) -> Option_[TSource]:
+    def try_head(self) -> Option[TSource]:
         """Returns the first element of the list, or None if the list is
         empty.
         """
         return Nothing
+
+    def zip(self, other: List[TResult]) -> List[Tuple[TSource, TResult]]:
+        """Combines the two lists into a list of pairs. The two lists
+        must have equal lengths.
+
+        Args:
+            other: The second input list.
+
+        Returns:
+            A single list containing pairs of matching elements from the
+            input lists.
+        """
+        if other is Nil:
+            return Nil
+
+        raise ValueError("The list must have equal length.")
 
     def __add__(self, other) -> List[TSource]:
         """Append list with other list."""
@@ -462,7 +584,7 @@ def append(source: List[TSource]) -> Callable[[List[TSource]], List[TSource]]:
     return _append
 
 
-def choose(sef, chooser: Callable[[TSource], Option_[TResult]]) -> Callable[[List[TSource]], List[TResult]]:
+def choose(sef, chooser: Callable[[TSource], Option[TResult]]) -> Callable[[List[TSource]], List[TResult]]:
     def _choose(source: List[TSource]) -> List[TResult]:
         return source.choose(chooser)
 
@@ -516,6 +638,17 @@ def head(source: List[TSource]) -> TSource:
     return source.head()
 
 
+def indexed(source: List[TSource]) -> List[Tuple[int, TSource]]:
+    """Returns a new list whose elements are the corresponding
+    elements of the input list paired with the index (from 0)
+    of each element.
+
+    Returns:
+        The list of indexed elements.
+    """
+    return source.indexed()
+
+
 def is_empty(source: List[TSource]) -> bool:
     return source.is_empty()
 
@@ -534,7 +667,7 @@ def of_seq(xs: Iterable[TSource]) -> List[TSource]:
     return Seq.fold_back(folder, xs)(Nil)
 
 
-def of_option(option: Option_[TSource]) -> List[TSource]:
+def of_option(option: Option[TSource]) -> List[TSource]:
     if isinstance(option, Some):
         return singleton(option.value)
     return empty
@@ -611,15 +744,42 @@ def take_last(count: int) -> Callable[[List[TSource]], List[TSource]]:
     return _take
 
 
-def try_head(self) -> Callable[[List[TSource]], Option_[TSource]]:
+def try_head(self) -> Callable[[List[TSource]], Option[TSource]]:
     """Returns the first element of the list, or None if the list is
     empty.
     """
 
-    def _try_head(source: List[TSource]) -> Option_[TSource]:
+    def _try_head(source: List[TSource]) -> Option[TSource]:
         return source.try_head()
 
     return _try_head
+
+
+def zip(other: List[TResult]) -> Callable[[List[TSource]], List[Tuple[TSource, TResult]]]:
+    """Combines the two lists into a list of pairs. The two lists
+    must have equal lengths.
+
+    Args:
+        other: The second input list.
+
+    Returns:
+        Paritally applied zip function that takes the source list and
+        returns s single list containing pairs of matching elements from
+        the input lists.
+    """
+    def _zip(source: List[TSource]) -> List[Tuple[TSource, TResult]]:
+        """Combines the two lists into a list of pairs. The two lists
+        must have equal lengths.
+
+        Args:
+            source: The source input list.
+
+        Returns:
+            A single list containing pairs of matching elements from the
+            input lists.
+        """
+        return source.zip(other)
+    return _zip
 
 
 __all__ = [

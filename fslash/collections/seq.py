@@ -18,7 +18,7 @@ Example:
 
 import sys
 import builtins
-from typing import TypeVar, Callable, Iterable, Iterator, Tuple
+from typing import TypeVar, Callable, Iterable, Iterator, Tuple, Any
 import functools
 import itertools
 from fslash.core import pipe
@@ -149,7 +149,7 @@ def concat(*iterables: Iterable[TSource]) -> Callable[[Iterable[Iterable[TSource
     return _concat
 
 
-empty = Seq([])
+empty: Seq[Any] = Seq()
 """The empty sequence."""
 
 
