@@ -96,6 +96,16 @@ operations mostly (<code>O(1)</code>).</p>
         return cast(List[TResult], of_option(chooser(head))).append(filtered)
 
     def collect(self, mapping: Callable[[TSource], List[TResult]]) -&gt; List[TResult]:
+        &#34;&#34;&#34;For each element of the list, applies the given function.
+        Concatenates all the results and return the combined list.
+
+        Args:
+            mapping: he function to transform each input element into
+            a sublist to be concatenated.
+
+        Returns:
+            The concatenation of the transformed sublists.
+        &#34;&#34;&#34;
         head, tail = self._value
         return mapping(head).append(tail.collect(mapping))
 
@@ -111,7 +121,17 @@ operations mostly (<code>O(1)</code>).</p>
         return Cons(head, filtered) if predicate(head) else filtered
 
     def head(self) -&gt; TSource:
-        &#34;&#34;&#34;Retrive first element in List.&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the first element of the list.
+
+        Args:
+            source: The input list.
+
+        Returns:
+            The first element of the list.
+
+        Raises:
+            ValueError: Thrown when the list is empty.
+        &#34;&#34;&#34;
 
         head, _ = self._value
         return head
@@ -144,7 +164,10 @@ operations mostly (<code>O(1)</code>).</p>
             return self
 
         _, tail = self._value
-        return tail.skip(count - 1)
+        try:
+            return tail.skip(count - 1)
+        except ValueError as ex:
+            raise ValueError(f&#34;List has not enough elements to skip {count} items.&#34;) from ex
 
     def skip_last(self, count: int) -&gt; &#39;List[TSource]&#39;:
         &#34;&#34;&#34;Returns the list after removing the last N elements.&#34;&#34;&#34;
@@ -152,7 +175,10 @@ operations mostly (<code>O(1)</code>).</p>
             return self
 
         head, tail = self._value
-        queue = tail if tail is Nil else tail.skip_last(count)
+        try:
+            queue = tail if tail is Nil else tail.skip_last(count)
+        except ValueError as ex:
+            raise ValueError(f&#34;List has not enough elements to skip last {count} items.&#34;) from ex
         return Cons(head, queue) if len(tail) &gt;= count else queue
 
     def tail(self) -&gt; List[TSource]:
@@ -174,7 +200,11 @@ operations mostly (<code>O(1)</code>).</p>
         if not count:
             return Nil
         head, tail = self._value
-        return Cons(head, tail.take(count - 1))
+        try:
+            tail_ = tail.take(count - 1)
+        except ValueError as ex:
+            raise ValueError(f&#34;List has not enough elements to take {count} items.&#34;) from ex
+        return Cons(head, tail_)
 
     def take_last(self, count: int) -&gt; &#34;List[TSource]&#34;:
         &#34;&#34;&#34;Returns a specified number of contiguous elements from the
@@ -190,7 +220,10 @@ operations mostly (<code>O(1)</code>).</p>
             return Nil
 
         head, tail = self._value
-        queue = tail if tail is Nil else tail.take_last(count)
+        try:
+            queue = tail if tail is Nil else tail.take_last(count)
+        except ValueError as ex:
+            raise ValueError(f&#34;List has not enough elements to take last {count} items.&#34;) from ex
         return Cons(head, queue) if len(queue) &lt; count else queue
 
     def try_head(self) -&gt; Option[TSource]:
@@ -286,12 +319,31 @@ operations mostly (<code>O(1)</code>).</p>
 <span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>For each element of the list, applies the given function.
+Concatenates all the results and return the combined list.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mapping</code></strong></dt>
+<dd>he function to transform each input element into</dd>
+</dl>
+<p>a sublist to be concatenated.</p>
+<h2 id="returns">Returns</h2>
+<p>The concatenation of the transformed sublists.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def collect(self, mapping: Callable[[TSource], List[TResult]]) -&gt; List[TResult]:
+    &#34;&#34;&#34;For each element of the list, applies the given function.
+    Concatenates all the results and return the combined list.
+
+    Args:
+        mapping: he function to transform each input element into
+        a sublist to be concatenated.
+
+    Returns:
+        The concatenation of the transformed sublists.
+    &#34;&#34;&#34;
     head, tail = self._value
     return mapping(head).append(tail.collect(mapping))</code></pre>
 </details>
@@ -341,7 +393,10 @@ operations mostly (<code>O(1)</code>).</p>
         return self
 
     _, tail = self._value
-    return tail.skip(count - 1)</code></pre>
+    try:
+        return tail.skip(count - 1)
+    except ValueError as ex:
+        raise ValueError(f&#34;List has not enough elements to skip {count} items.&#34;) from ex</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.Cons.skip_last"><code class="name flex">
@@ -359,7 +414,10 @@ operations mostly (<code>O(1)</code>).</p>
         return self
 
     head, tail = self._value
-    queue = tail if tail is Nil else tail.skip_last(count)
+    try:
+        queue = tail if tail is Nil else tail.skip_last(count)
+    except ValueError as ex:
+        raise ValueError(f&#34;List has not enough elements to skip last {count} items.&#34;) from ex
     return Cons(head, queue) if len(tail) &gt;= count else queue</code></pre>
 </details>
 </dd>
@@ -484,7 +542,17 @@ operations mostly (<code>O(1)</code>).</p>
 
     @abstractmethod
     def head(self) -&gt; TSource:
-        &#34;&#34;&#34;Retrive first element in List.&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the first element of the list.
+
+        Args:
+            source: The input list.
+
+        Returns:
+            The first element of the list.
+
+        Raises:
+            ValueError: Thrown when the list is empty.
+        &#34;&#34;&#34;
 
         raise NotImplementedError
 
@@ -583,11 +651,11 @@ operations mostly (<code>O(1)</code>).</p>
         Positive numbers are relative to the start of the events, while negative
         numbers are relative to the end (close) of the stream.
 
-        .. code::
-
+        ```py
             r---e---a---c---t---i---v---e---!
             0   1   2   3   4   5   6   7   8
-        -8  -7  -6  -5  -4  -3  -2  -1   0
+           -8  -7  -6  -5  -4  -3  -2  -1   0
+        ```
 
         Examples:
             &gt;&gt;&gt; result = xs.slice(1, 10)
@@ -600,23 +668,35 @@ operations mostly (<code>O(1)</code>).</p>
         Returns:
             A sliced list.
         &#34;&#34;&#34;
-        res = empty
+        res = self
 
         _start: int = 0 if start is None else start
         _stop: int = sys.maxsize if stop is None else stop
         _step: int = 1 if step is None else step
 
         if _stop &gt;= 0:
-            res = res.take(_stop)
+            try:
+                res = res.take(_stop)
+            except ValueError:
+                res = res
 
         if _start &gt; 0:
-            res = res.skip(_start)
+            try:
+                res = res.skip(_start)
+            except ValueError:
+                res = empty
 
         elif _start &lt; 0:
-            res = res.take_last(-_start)
+            try:
+                res = res.take_last(-_start)
+            except ValueError:
+                res = empty
 
         if _stop &lt; 0:
-            res = res.skip_last(-_stop)
+            try:
+                res = res.skip_last(-_stop)
+            except ValueError:
+                res = empty
 
         if _step &gt; 1:
             res = res.indexed().filter(lambda t: t[0] % _step == 0)
@@ -785,14 +865,36 @@ def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;List[TSource]&
 <span>def <span class="ident">head</span></span>(<span>self) ‑> ~TSource</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Retrive first element in List.</p></div>
+<div class="desc"><p>Returns the first element of the list.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>source</code></strong></dt>
+<dd>The input list.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The first element of the list.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>Thrown when the list is empty.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def head(self) -&gt; TSource:
-    &#34;&#34;&#34;Retrive first element in List.&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns the first element of the list.
+
+    Args:
+        source: The input list.
+
+    Returns:
+        The first element of the list.
+
+    Raises:
+        ValueError: Thrown when the list is empty.
+    &#34;&#34;&#34;
 
     raise NotImplementedError</code></pre>
 </details>
@@ -946,28 +1048,10 @@ def skip_last(self, count: int) -&gt; &#39;List[TSource]&#39;:
 <p>The following diagram helps you remember how slices works with streams.</p>
 <p>Positive numbers are relative to the start of the events, while negative
 numbers are relative to the end (close) of the stream.</p>
-<div class="admonition code">
-<p class="admonition-title">Code</p>
-<p>r&mdash;e&mdash;a&mdash;c&mdash;t&mdash;i&mdash;v&mdash;e&mdash;!
-0
-1
-2
-3
-4
-5
-6
-7
-8</p>
-</div>
-<p>-8
--7
--6
--5
--4
--3
--2
--1
-0</p>
+<pre><code class="py">    r---e---a---c---t---i---v---e---!
+    0   1   2   3   4   5   6   7   8
+   -8  -7  -6  -5  -4  -3  -2  -1   0
+</code></pre>
 <h2 id="examples">Examples</h2>
 <pre><code class="python-repl">&gt;&gt;&gt; result = xs.slice(1, 10)
 &gt;&gt;&gt; result = xs.slice(1, -2)
@@ -1001,11 +1085,11 @@ numbers are relative to the end (close) of the stream.</p>
     Positive numbers are relative to the start of the events, while negative
     numbers are relative to the end (close) of the stream.
 
-    .. code::
-
+    ```py
         r---e---a---c---t---i---v---e---!
         0   1   2   3   4   5   6   7   8
-    -8  -7  -6  -5  -4  -3  -2  -1   0
+       -8  -7  -6  -5  -4  -3  -2  -1   0
+    ```
 
     Examples:
         &gt;&gt;&gt; result = xs.slice(1, 10)
@@ -1018,23 +1102,35 @@ numbers are relative to the end (close) of the stream.</p>
     Returns:
         A sliced list.
     &#34;&#34;&#34;
-    res = empty
+    res = self
 
     _start: int = 0 if start is None else start
     _stop: int = sys.maxsize if stop is None else stop
     _step: int = 1 if step is None else step
 
     if _stop &gt;= 0:
-        res = res.take(_stop)
+        try:
+            res = res.take(_stop)
+        except ValueError:
+            res = res
 
     if _start &gt; 0:
-        res = res.skip(_start)
+        try:
+            res = res.skip(_start)
+        except ValueError:
+            res = empty
 
     elif _start &lt; 0:
-        res = res.take_last(-_start)
+        try:
+            res = res.take_last(-_start)
+        except ValueError:
+            res = empty
 
     if _stop &lt; 0:
-        res = res.skip_last(-_stop)
+        try:
+            res = res.skip_last(-_stop)
+        except ValueError:
+            res = empty
 
     if _step &gt; 1:
         res = res.indexed().filter(lambda t: t[0] % _step == 0)
