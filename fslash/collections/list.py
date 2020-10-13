@@ -172,23 +172,35 @@ class List(Iterable[TSource], Sized):
         Returns:
             A sliced list.
         """
-        res = empty
+        res = self
 
         _start: int = 0 if start is None else start
         _stop: int = sys.maxsize if stop is None else stop
         _step: int = 1 if step is None else step
 
         if _stop >= 0:
-            res = res.take(_stop)
+            try:
+                res = res.take(_stop)
+            except ValueError:
+                res = res
 
         if _start > 0:
-            res = res.skip(_start)
+            try:
+                res = res.skip(_start)
+            except ValueError:
+                res = empty
 
         elif _start < 0:
-            res = res.take_last(-_start)
+            try:
+                res = res.take_last(-_start)
+            except ValueError:
+                res = empty
 
         if _stop < 0:
-            res = res.skip_last(-_stop)
+            try:
+                res = res.skip_last(-_stop)
+            except ValueError:
+                res = empty
 
         if _step > 1:
             res = res.indexed().filter(lambda t: t[0] % _step == 0)
@@ -362,7 +374,11 @@ class Cons(List[TSource]):
         if not count:
             return Nil
         head, tail = self._value
-        return Cons(head, tail.take(count - 1))
+        try:
+            tail_ = tail.take(count - 1)
+        except ValueError:
+            raise ValueError("Not enougth elements to take")
+        return Cons(head, tail_)
 
     def take_last(self, count: int) -> "List[TSource]":
         """Returns a specified number of contiguous elements from the

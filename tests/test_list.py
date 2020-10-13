@@ -88,13 +88,11 @@ def test_list_skip_last(xs, x):
 @given(st.lists(st.integers()), st.integers(), st.integers())
 def test_list_slice(xs, x, y):
     expected = xs[x:y]
+
     ys: List_
-    try:
-        ys = List.of_seq(xs).slice(x, y)
-        assert list(ys) == expected
-    except ValueError:
-        # assert x > len(xs)
-        pass
+    ys = List.of_seq(xs)[x:y]
+
+    assert list(ys) == expected
 
 
 rtn = List.singleton
@@ -119,7 +117,10 @@ def test_list_monad_empty_bind(value):
 
 @given(st.integers())
 def test_list_monad_law_left_identity(value):
-    # return x >>= f is the same thing as f x
+    """Monad law left identity.
+
+    return x >>= f is the same thing as f x
+    """
 
     f = lambda x: rtn(x + 42)
 
@@ -128,8 +129,10 @@ def test_list_monad_law_left_identity(value):
 
 @given(st.integers())
 def test_list_monad_law_right_identity(value):
-    # m >>= return is no different than just m.
+    r"""Monad law right identit.
 
+    m >>= return is no different than just m.
+    """
     m = rtn(value)
 
     assert m.collect(rtn) == m
@@ -137,7 +140,10 @@ def test_list_monad_law_right_identity(value):
 
 @given(st.integers())
 def test_list_monad_law_associativity(value):
-    # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
+    r"""Monad law associativity.
+
+    (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
+    """
     f = lambda x: rtn(x + 10)
     g = lambda y: rtn(y * 42)
 
