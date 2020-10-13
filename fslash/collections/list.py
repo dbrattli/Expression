@@ -56,7 +56,17 @@ class List(Iterable[TSource], Sized):
 
     @abstractmethod
     def head(self) -> TSource:
-        """Retrive first element in List."""
+        """Returns the first element of the list.
+
+        Args:
+            source: The input list.
+
+        Returns:
+            The first element of the list.
+
+        Raises:
+            ValueError: Thrown when the list is empty.
+        """
 
         raise NotImplementedError
 
@@ -155,11 +165,11 @@ class List(Iterable[TSource], Sized):
         Positive numbers are relative to the start of the events, while negative
         numbers are relative to the end (close) of the stream.
 
-        .. code::
-
+        ```py
             r---e---a---c---t---i---v---e---!
             0   1   2   3   4   5   6   7   8
-        -8  -7  -6  -5  -4  -3  -2  -1   0
+           -8  -7  -6  -5  -4  -3  -2  -1   0
+        ```
 
         Examples:
             >>> result = xs.slice(1, 10)
@@ -296,6 +306,16 @@ class Cons(List[TSource]):
         return cast(List[TResult], of_option(chooser(head))).append(filtered)
 
     def collect(self, mapping: Callable[[TSource], List[TResult]]) -> List[TResult]:
+        """For each element of the list, applies the given function.
+        Concatenates all the results and return the combined list.
+
+        Args:
+            mapping: he function to transform each input element into
+            a sublist to be concatenated.
+
+        Returns:
+            The concatenation of the transformed sublists.
+        """
         head, tail = self._value
         return mapping(head).append(tail.collect(mapping))
 
@@ -311,7 +331,17 @@ class Cons(List[TSource]):
         return Cons(head, filtered) if predicate(head) else filtered
 
     def head(self) -> TSource:
-        """Retrive first element in List."""
+        """Returns the first element of the list.
+
+        Args:
+            source: The input list.
+
+        Returns:
+            The first element of the list.
+
+        Raises:
+            ValueError: Thrown when the list is empty.
+        """
 
         head, _ = self._value
         return head
@@ -344,7 +374,10 @@ class Cons(List[TSource]):
             return self
 
         _, tail = self._value
-        return tail.skip(count - 1)
+        try:
+            return tail.skip(count - 1)
+        except ValueError as ex:
+            raise ValueError(f"List has not enough elements to skip {count} items.") from ex
 
     def skip_last(self, count: int) -> 'List[TSource]':
         """Returns the list after removing the last N elements."""
@@ -352,7 +385,10 @@ class Cons(List[TSource]):
             return self
 
         head, tail = self._value
-        queue = tail if tail is Nil else tail.skip_last(count)
+        try:
+            queue = tail if tail is Nil else tail.skip_last(count)
+        except ValueError as ex:
+            raise ValueError(f"List has not enough elements to skip last {count} items.") from ex
         return Cons(head, queue) if len(tail) >= count else queue
 
     def tail(self) -> List[TSource]:
@@ -376,8 +412,8 @@ class Cons(List[TSource]):
         head, tail = self._value
         try:
             tail_ = tail.take(count - 1)
-        except ValueError:
-            raise ValueError("Not enougth elements to take")
+        except ValueError as ex:
+            raise ValueError(f"List has not enough elements to take {count} items.") from ex
         return Cons(head, tail_)
 
     def take_last(self, count: int) -> "List[TSource]":
@@ -394,7 +430,10 @@ class Cons(List[TSource]):
             return Nil
 
         head, tail = self._value
-        queue = tail if tail is Nil else tail.take_last(count)
+        try:
+            queue = tail if tail is Nil else tail.take_last(count)
+        except ValueError as ex:
+            raise ValueError(f"List has not enough elements to take last {count} items.") from ex
         return Cons(head, queue) if len(queue) < count else queue
 
     def try_head(self) -> Option[TSource]:
@@ -462,6 +501,16 @@ class _Nil(List[TSource]):
         return Nil
 
     def collect(self, mapping: Callable[[TSource], List[TResult]]) -> List[TResult]:
+        """For each element of the list, applies the given function.
+        Concatenates all the results and return the combined list.
+
+        Args:
+            mapping: he function to transform each input element into
+            a sublist to be concatenated.
+
+        Returns:
+            The concatenation of the transformed sublists.
+        """
         return Nil
 
     def cons(self, element: TSource) -> List[TSource]:
@@ -473,9 +522,19 @@ class _Nil(List[TSource]):
         return Nil
 
     def head(self) -> TSource:
-        """Retrive first element in List."""
+        """Returns the first element of the list.
 
-        raise IndexError("List is empty")
+        Args:
+            source: The input list.
+
+        Returns:
+            The first element of the list.
+
+        Raises:
+            ValueError: Thrown when the list is empty.
+        """
+
+        raise ValueError("List is empty")
 
     def indexed(self, start=0) -> List[Tuple[int, TSource]]:
         """Returns a new list whose elements are the corresponding
@@ -502,8 +561,12 @@ class _Nil(List[TSource]):
 
         Args:
             count: The number of elements to skip.
+
         Returns:
             The list after removing the first N elements.
+
+        Raises:
+            ValueError if the list is empty.
         """
         if count == 0:
             return self
@@ -529,6 +592,9 @@ class _Nil(List[TSource]):
 
         Returns:
             The result list.
+
+        Raises:
+            ValueError if the list is empty.
         """
         if not count:
             return Nil
@@ -543,6 +609,9 @@ class _Nil(List[TSource]):
 
         Returns:
             The result list.
+
+        Raises:
+            ValueError if the list is empty.
         """
         if not count:
             return Nil
@@ -564,6 +633,9 @@ class _Nil(List[TSource]):
         Returns:
             A single list containing pairs of matching elements from the
             input lists.
+
+        Raises:
+            ValueError if the list is empty.
         """
         if other is Nil:
             return Nil
@@ -608,7 +680,27 @@ def choose(sef, chooser: Callable[[TSource], Option[TResult]]) -> Callable[[List
 
 
 def collect(mapping: Callable[[TSource], List[TResult]]) -> Callable[[List[TSource]], List[TResult]]:
+    """For each element of the list, applies the given function.
+    Concatenates all the results and return the combined list.
+
+    Args:
+        mapping: he function to transform each input element into
+        a sublist to be concatenated.
+
+    Returns:
+        A partially applied collect function that takes the source
+        list and returns the concatenation of the transformed sublists.
+    """
     def _collect(source: List[TSource]) -> List[TResult]:
+        """For each element of the list, applies the given function.
+        Concatenates all the results and return the combined list.
+
+        Args:
+            source: The input list.
+
+        Returns:
+            The concatenation of the transformed sublists.
+        """
         return source.collect(mapping)
 
     return _collect
@@ -651,6 +743,17 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[List[TSource]], Li
 
 
 def head(source: List[TSource]) -> TSource:
+    """Returns the first element of the list.
+
+    Args:
+        source: The input list.
+
+    Returns:
+        The first element of the list.
+
+    Raises:
+         ValueError: Thrown when the list is empty.
+    """
     return source.head()
 
 

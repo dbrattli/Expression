@@ -13,6 +13,53 @@ def test_list_cons():
     assert isinstance(xs, List_)
 
 
+def test_list_is_null_after_cons_and_tail_fluent():
+    xs = List.empty.cons(42).tail()
+    assert xs.is_empty()
+
+
+def test_list_not_null_after_cons_fluent():
+    xs = List.empty.cons(42)
+    assert not xs.is_empty()
+
+
+def test_list_head_fluent():
+    x = empty.cons(42).head()
+    assert x == 42
+
+
+@given(st.text(), st.text())
+def test_list_tail_head_fluent(a, b):
+    xs = List.empty.cons(b).cons(a)
+    assert a == xs.head()
+
+
+def test_list_tail_tail_null_fluent():
+    xs = empty.cons("b").cons("a")
+    assert xs.tail().tail().is_empty()
+
+
+def test_list_list_fluent():
+    xs = List.empty.cons(empty.cons(42))
+    assert 42 == xs.head().head()
+
+
+def test_list_length_empty():
+    xs = List.empty
+    assert len(xs) == 0
+
+
+def test_list_length_non_empty():
+    xs = List.singleton(42)
+    assert len(xs) == 1
+
+
+@given(st.lists(st.integers()))
+def test_list_length(xs):
+    ys = List.of_seq(xs)
+    assert len(xs) == len(ys)
+
+
 @given(st.one_of(st.integers(), st.text()))
 def test_list_cons_head(value):
     x = pipe(
@@ -28,7 +75,7 @@ def test_list_pipe_map(xs):
         return x + 1
 
     ys = List.of_seq(xs)
-    zs = pipe(ys, List.map(mapper))
+    zs = ys.pipe(List.map(mapper))
 
     assert isinstance(zs, List_)
     assert [y for y in zs] == [mapper(x) for x in xs]
