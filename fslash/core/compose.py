@@ -1,6 +1,5 @@
 from functools import reduce
-
-from typing import Tuple, Callable, Any, TypeVar, overload  # noqa
+from typing import Callable, Any, TypeVar, overload
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -17,51 +16,51 @@ def compose() -> Callable[[A], A]:
 
 
 @overload
-def compose(op1: Callable[[A], B]) -> Callable[[A], B]:
+def compose(fn1: Callable[[A], B]) -> Callable[[A], B]:
     ...
 
 
 @overload
-def compose(op2: Callable[[A], B], op1: Callable[[B], C]) -> Callable[[A], C]:
+def compose(fn1: Callable[[A], B], fn2: Callable[[B], C]) -> Callable[[A], C]:
     ...
 
 
 @overload
 def compose(
-    op3: Callable[[A], B], op2: Callable[[B], C], op1: Callable[[C], D]
+    fn1: Callable[[A], B], fn2: Callable[[B], C], fn3: Callable[[C], D]
 ) -> Callable[[A], D]:
     ...
 
 
 @overload
 def compose(
-    op4: Callable[[A], B],
-    op3: Callable[[B], C],
-    op2: Callable[[C], D],
-    op1: Callable[[D], E],
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
 ) -> Callable[[A], E]:
     ...
 
 
 @overload
 def compose(
-    op5: Callable[[A], B],
-    op4: Callable[[B], C],
-    op3: Callable[[C], D],
-    op2: Callable[[D], E],
-    op1: Callable[[E], F],
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
 ) -> Callable[[A], F]:
     ...
 
 
 @overload
 def compose(
-    op1: Callable[[A], B],
-    op2: Callable[[B], C],
-    op3: Callable[[C], D],
-    op4: Callable[[D], E],
-    op5: Callable[[E], F],
-    op6: Callable[[F], G],
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
 ) -> Callable[[A], G]:
     ...
 

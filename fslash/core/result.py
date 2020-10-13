@@ -33,6 +33,12 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
         raise NotImplementedError
 
     @abstractmethod
+    def map_error(self, mapper: Callable[[TError], TResult]) -> 'Result[TSource, TResult]':
+        """Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok."""
+        raise NotImplementedError
+
+    @abstractmethod
     def bind(self, mapper: Callable[[TSource], "Result[TResult, TError]"]) -> "Result[TResult, TError]":
         raise NotImplementedError
 
@@ -72,6 +78,8 @@ class Ok(Result[TSource, TError]):
         return mapper(self._value)
 
     def map_error(self, mapper: Callable[[TError], TResult]) -> Result[TSource, TResult]:
+        """Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok."""
         return Ok(self._value)
 
     def is_error(self) -> bool:
@@ -110,6 +118,8 @@ class Error(Result[TSource, TError]):
         return Error(self._error)
 
     def map_error(self, mapper: Callable[[TError], TResult]) -> Result[TSource, TResult]:
+        """Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok."""
         return Error(mapper(self._error))
 
     def is_error(self) -> bool:

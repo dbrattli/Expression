@@ -72,7 +72,11 @@ __all__ = [
 <p>This is not the most space efficient implementation of a list. If
 that is the goal then use the builin mutable list or array types
 instead. Use this list if you need an immutable list for prepend
-operations mostly (<code>O(1)</code>).</p></div>
+operations mostly (<code>O(1)</code>).</p>
+<h2 id="example">Example</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
+&gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -80,12 +84,13 @@ operations mostly (<code>O(1)</code>).</p></div>
 <pre><code class="python">class Cons(List[TSource]):
     def __init__(self, head: TSource, tail: List[TSource]):
         self._value = (head, tail)
+        self._len = 1 + len(tail)
 
     def append(self, other: List[TSource]) -&gt; List[TSource]:
         head, tail = self._value
         return Cons(head, tail.append(other))
 
-    def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -&gt; List[TResult]:
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; List[TResult]:
         head, tail = self._value
         filtered: List[TResult] = tail.choose(chooser)
         return cast(List[TResult], of_option(chooser(head))).append(filtered)
@@ -111,6 +116,20 @@ operations mostly (<code>O(1)</code>).</p></div>
         head, _ = self._value
         return head
 
+    def indexed(self, start=0) -&gt; List[Tuple[int, TSource]]:
+        &#34;&#34;&#34;Returns a new list whose elements are the corresponding
+        elements of the input list paired with the index (from `start`)
+        of each element.
+
+        Args:
+            start: Optional index to start from. Defaults to 0.
+
+        Returns:
+            The list of indexed elements.
+        &#34;&#34;&#34;
+        head, tail = self._value
+        return Cons((start, head), tail.indexed(start + 1))
+
     def is_empty(self) -&gt; bool:
         &#34;&#34;&#34;Return `True` if list is empty.&#34;&#34;&#34;
         return False
@@ -118,6 +137,23 @@ operations mostly (<code>O(1)</code>).</p></div>
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; List[TResult]:
         head, tail = self._value
         return Cons(mapper(head), tail.map(mapper))
+
+    def skip(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns the list after removing the first N elements.&#34;&#34;&#34;
+        if count == 0:
+            return self
+
+        _, tail = self._value
+        return tail.skip(count - 1)
+
+    def skip_last(self, count: int) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;Returns the list after removing the last N elements.&#34;&#34;&#34;
+        if count == 0:
+            return self
+
+        head, tail = self._value
+        queue = tail if tail is Nil else tail.skip_last(count)
+        return Cons(head, queue) if len(tail) &gt;= count else queue
 
     def tail(self) -&gt; List[TSource]:
         &#34;&#34;&#34;Return tail of List.&#34;&#34;&#34;
@@ -140,13 +176,49 @@ operations mostly (<code>O(1)</code>).</p></div>
         head, tail = self._value
         return Cons(head, tail.take(count - 1))
 
-    def try_head(self) -&gt; Option_[TSource]:
+    def take_last(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns a specified number of contiguous elements from the
+        end of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        &#34;&#34;&#34;
+        if not count:
+            return Nil
+
+        head, tail = self._value
+        queue = tail if tail is Nil else tail.take_last(count)
+        return Cons(head, queue) if len(queue) &lt; count else queue
+
+    def try_head(self) -&gt; Option[TSource]:
         &#34;&#34;&#34;Returns the first element of the list, or None if the list is
         empty.
         &#34;&#34;&#34;
 
         head, _ = self._value
         return Some(head)
+
+    def zip(self, other: List[TResult]) -&gt; List[Tuple[TSource, TResult]]:
+        &#34;&#34;&#34;Combines the two lists into a list of pairs. The two lists
+        must have equal lengths.
+
+        Args:
+            other: The second input list.
+
+        Returns:
+            A single list containing pairs of matching elements from the
+            input lists.
+        &#34;&#34;&#34;
+        if other is Nil:
+            raise ValueError(&#34;The list must have equal length.&#34;)
+
+        head, tail = self._value
+        head_, tail_ = other.head(), other.tail()
+
+        return Cons((head, head_), tail.zip(tail_))
 
     def __add__(self, other) -&gt; List[TSource]:
         &#34;&#34;&#34;Append list with other list.&#34;&#34;&#34;
@@ -170,8 +242,7 @@ operations mostly (<code>O(1)</code>).</p></div>
     def __len__(self) -&gt; int:
         &#34;&#34;&#34;Return length of List.&#34;&#34;&#34;
 
-        _, tail = self._value
-        return 1 + len(tail)</code></pre>
+        return self._len</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -205,7 +276,7 @@ operations mostly (<code>O(1)</code>).</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def choose(self, chooser: Callable[[TSource], Option_[TResult]]) -&gt; List[TResult]:
+<pre><code class="python">def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; List[TResult]:
     head, tail = self._value
     filtered: List[TResult] = tail.choose(chooser)
     return cast(List[TResult], of_option(chooser(head))).append(filtered)</code></pre>
@@ -255,6 +326,81 @@ operations mostly (<code>O(1)</code>).</p></div>
     return Cons(mapper(head), tail.map(mapper))</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.Cons.skip"><code class="name flex">
+<span>def <span class="ident">skip</span></span>(<span>self, count: int) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the list after removing the first N elements.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def skip(self, count: int) -&gt; &#34;List[TSource]&#34;:
+    &#34;&#34;&#34;Returns the list after removing the first N elements.&#34;&#34;&#34;
+    if count == 0:
+        return self
+
+    _, tail = self._value
+    return tail.skip(count - 1)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.Cons.skip_last"><code class="name flex">
+<span>def <span class="ident">skip_last</span></span>(<span>self, count: int) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the list after removing the last N elements.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def skip_last(self, count: int) -&gt; &#39;List[TSource]&#39;:
+    &#34;&#34;&#34;Returns the list after removing the last N elements.&#34;&#34;&#34;
+    if count == 0:
+        return self
+
+    head, tail = self._value
+    queue = tail if tail is Nil else tail.skip_last(count)
+    return Cons(head, queue) if len(tail) &gt;= count else queue</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.Cons.zip"><code class="name flex">
+<span>def <span class="ident">zip</span></span>(<span>self, other: <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TResult]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[typing.Tuple[~TSource, ~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Combines the two lists into a list of pairs. The two lists
+must have equal lengths.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>other</code></strong></dt>
+<dd>The second input list.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A single list containing pairs of matching elements from the
+input lists.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def zip(self, other: List[TResult]) -&gt; List[Tuple[TSource, TResult]]:
+    &#34;&#34;&#34;Combines the two lists into a list of pairs. The two lists
+    must have equal lengths.
+
+    Args:
+        other: The second input list.
+
+    Returns:
+        A single list containing pairs of matching elements from the
+        input lists.
+    &#34;&#34;&#34;
+    if other is Nil:
+        raise ValueError(&#34;The list must have equal length.&#34;)
+
+    head, tail = self._value
+    head_, tail_ = other.head(), other.tail()
+
+    return Cons((head, head_), tail.zip(tail_))</code></pre>
+</details>
+</dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
@@ -262,10 +408,13 @@ operations mostly (<code>O(1)</code>).</p></div>
 <ul class="hlist">
 <li><code><a title="fslash.collections.list.List.cons" href="list.html#fslash.collections.list.List.cons">cons</a></code></li>
 <li><code><a title="fslash.collections.list.List.head" href="list.html#fslash.collections.list.List.head">head</a></code></li>
+<li><code><a title="fslash.collections.list.List.indexed" href="list.html#fslash.collections.list.List.indexed">indexed</a></code></li>
 <li><code><a title="fslash.collections.list.List.is_empty" href="list.html#fslash.collections.list.List.is_empty">is_empty</a></code></li>
 <li><code><a title="fslash.collections.list.List.pipe" href="list.html#fslash.collections.list.List.pipe">pipe</a></code></li>
+<li><code><a title="fslash.collections.list.List.slice" href="list.html#fslash.collections.list.List.slice">slice</a></code></li>
 <li><code><a title="fslash.collections.list.List.tail" href="list.html#fslash.collections.list.List.tail">tail</a></code></li>
 <li><code><a title="fslash.collections.list.List.take" href="list.html#fslash.collections.list.List.take">take</a></code></li>
+<li><code><a title="fslash.collections.list.List.take_last" href="list.html#fslash.collections.list.List.take_last">take_last</a></code></li>
 <li><code><a title="fslash.collections.list.List.try_head" href="list.html#fslash.collections.list.List.try_head">try_head</a></code></li>
 </ul>
 </li>
@@ -280,7 +429,11 @@ operations mostly (<code>O(1)</code>).</p></div>
 <p>This is not the most space efficient implementation of a list. If
 that is the goal then use the builin mutable list or array types
 instead. Use this list if you need an immutable list for prepend
-operations mostly (<code>O(1)</code>).</p></div>
+operations mostly (<code>O(1)</code>).</p>
+<h2 id="example">Example</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
+&gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -292,10 +445,15 @@ operations mostly (<code>O(1)</code>).</p></div>
     that is the goal then use the builin mutable list or array types
     instead. Use this list if you need an immutable list for prepend
     operations mostly (`O(1)`).
+
+    Example:
+        &gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
+        &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
     def match(self, *args, **kw):
         from pampy import match
+
         return match(self, *args, **kw)
 
     def pipe(self, *args):
@@ -307,7 +465,7 @@ operations mostly (<code>O(1)</code>).</p></div>
         raise NotImplementedError
 
     @abstractmethod
-    def choose(sef, chooser: Callable[[TSource], Option_[TResult]]) -&gt; &#34;List[TResult]&#34;:
+    def choose(sef, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;List[TResult]&#34;:
         raise NotImplementedError
 
     @abstractmethod
@@ -331,6 +489,20 @@ operations mostly (<code>O(1)</code>).</p></div>
         raise NotImplementedError
 
     @abstractmethod
+    def indexed(self, start=0) -&gt; &#39;List[Tuple[int, TSource]]&#39;:
+        &#34;&#34;&#34;Returns a new list whose elements are the corresponding
+        elements of the input list paired with the index (from `start`)
+        of each element.
+
+        Args:
+            start: Optional index to start from. Defaults to 0.
+
+        Returns:
+            The list of indexed elements.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
     def is_empty(self) -&gt; bool:
         &#34;&#34;&#34;Return `True` if list is empty.&#34;&#34;&#34;
 
@@ -338,6 +510,22 @@ operations mostly (<code>O(1)</code>).</p></div>
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;List[TResult]&#34;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def skip(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns the list after removing the first N elements.
+
+        Args:
+            count: The number of elements to skip.
+
+        Returns:
+            The list after removing the first N elements.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def skip_last(self, count: int) -&gt; &#39;List[TSource]&#39;:
         raise NotImplementedError
 
     @abstractmethod
@@ -359,9 +547,96 @@ operations mostly (<code>O(1)</code>).</p></div>
         raise NotImplementedError
 
     @abstractmethod
-    def try_head(self) -&gt; Option_[TSource]:
+    def take_last(self, count: int) -&gt; &#34;List[TSource]&#34;:
+        &#34;&#34;&#34;Returns a specified number of contiguous elements from the
+        end of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def try_head(self) -&gt; Option[TSource]:
         &#34;&#34;&#34;Returns the first element of the list, or None if the list is
         empty.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    def slice(
+        self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
+    ) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;The slice operator.
+
+        Slices the given list. It is basically a wrapper around the operators
+        - skip
+        - skip_last
+        - take
+        - take_last
+        - filter_indexed
+
+        The following diagram helps you remember how slices works with streams.
+
+        Positive numbers are relative to the start of the events, while negative
+        numbers are relative to the end (close) of the stream.
+
+        .. code::
+
+            r---e---a---c---t---i---v---e---!
+            0   1   2   3   4   5   6   7   8
+        -8  -7  -6  -5  -4  -3  -2  -1   0
+
+        Examples:
+            &gt;&gt;&gt; result = xs.slice(1, 10)
+            &gt;&gt;&gt; result = xs.slice(1, -2)
+            &gt;&gt;&gt; result = xs.slice(1, -1, 2)
+
+        Args:
+            source: Observable to slice
+
+        Returns:
+            A sliced list.
+        &#34;&#34;&#34;
+        res = empty
+
+        _start: int = 0 if start is None else start
+        _stop: int = sys.maxsize if stop is None else stop
+        _step: int = 1 if step is None else step
+
+        if _stop &gt;= 0:
+            res = res.take(_stop)
+
+        if _start &gt; 0:
+            res = res.skip(_start)
+
+        elif _start &lt; 0:
+            res = res.take_last(-_start)
+
+        if _stop &lt; 0:
+            res = res.skip_last(-_stop)
+
+        if _step &gt; 1:
+            res = res.indexed().filter(lambda t: t[0] % _step == 0)
+
+        elif _step &lt; 0:
+            # Reversing events is not supported
+            raise TypeError(&#34;Negative step not supported.&#34;)
+
+        return res
+
+    def zip(self, other: &#39;List[TResult]&#39;) -&gt; &#39;List[Tuple[TSource, TResult]]&#39;:
+        &#34;&#34;&#34;Combines the two lists into a list of pairs. The two lists
+        must have equal lengths. .
+
+        Args:
+            other: The second input list.
+
+        Returns:
+            A single list containing pairs of matching elements from the
+            input lists.
         &#34;&#34;&#34;
         raise NotImplementedError
 
@@ -387,7 +662,39 @@ operations mostly (<code>O(1)</code>).</p></div>
     def __len__(self) -&gt; int:
         &#34;&#34;&#34;Return length of List.&#34;&#34;&#34;
 
-        raise NotImplementedError</code></pre>
+        raise NotImplementedError
+
+    def __getitem__(self, key) -&gt; &#39;List[TSource]&#39;:
+        &#34;&#34;&#34;
+        Pythonic version of `slice`.
+
+        Slices the given list using Python slice notation. The arguments
+        to slice are `start`, `stop` and `step` given within brackets
+        `[]` and separated by the colons `:`.
+
+        Examples:
+            &gt;&gt;&gt; result = source[1:10]
+            &gt;&gt;&gt; result = source[1:-2]
+            &gt;&gt;&gt; result = source[1:-1:2]
+
+        Args:
+            key: Slice object
+
+        Returns:
+            Sliced observable sequence.
+
+        Raises:
+            TypeError: If key is not of type :code:`int` or :code:`slice`
+        &#34;&#34;&#34;
+
+        if isinstance(key, slice):
+            start, stop, step = key.start, key.stop, key.step
+        elif isinstance(key, int):
+            start, stop, step = key, key + 1, 1
+        else:
+            raise TypeError(&#39;Invalid argument type.&#39;)
+
+        return self.slice(start, stop, step)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -426,7 +733,7 @@ def append(self, other: &#34;List[TSource]&#34;) -&gt; &#34;List[TSource]&#34;:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def choose(sef, chooser: Callable[[TSource], Option_[TResult]]) -&gt; &#34;List[TResult]&#34;:
+def choose(sef, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;List[TResult]&#34;:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -490,6 +797,39 @@ def head(self) -&gt; TSource:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.List.indexed"><code class="name flex">
+<span>def <span class="ident">indexed</span></span>(<span>self, start=0) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[typing.Tuple[int, ~TSource]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a new list whose elements are the corresponding
+elements of the input list paired with the index (from <code>start</code>)
+of each element.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>start</code></strong></dt>
+<dd>Optional index to start from. Defaults to 0.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The list of indexed elements.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def indexed(self, start=0) -&gt; &#39;List[Tuple[int, TSource]]&#39;:
+    &#34;&#34;&#34;Returns a new list whose elements are the corresponding
+    elements of the input list paired with the index (from `start`)
+    of each element.
+
+    Args:
+        start: Optional index to start from. Defaults to 0.
+
+    Returns:
+        The list of indexed elements.
+    &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.List.is_empty"><code class="name flex">
 <span>def <span class="ident">is_empty</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -531,6 +871,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;List[TResult]&#34
 </summary>
 <pre><code class="python">def match(self, *args, **kw):
     from pampy import match
+
     return match(self, *args, **kw)</code></pre>
 </details>
 </dd>
@@ -546,6 +887,163 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;List[TResult]&#34
 <pre><code class="python">def pipe(self, *args):
     &#34;&#34;&#34;Pipe list through the given functions.&#34;&#34;&#34;
     return pipe(self, *args)</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.skip"><code class="name flex">
+<span>def <span class="ident">skip</span></span>(<span>self, count: int) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the list after removing the first N elements.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>count</code></strong></dt>
+<dd>The number of elements to skip.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The list after removing the first N elements.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def skip(self, count: int) -&gt; &#34;List[TSource]&#34;:
+    &#34;&#34;&#34;Returns the list after removing the first N elements.
+
+    Args:
+        count: The number of elements to skip.
+
+    Returns:
+        The list after removing the first N elements.
+    &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.skip_last"><code class="name flex">
+<span>def <span class="ident">skip_last</span></span>(<span>self, count: int) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def skip_last(self, count: int) -&gt; &#39;List[TSource]&#39;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.slice"><code class="name flex">
+<span>def <span class="ident">slice</span></span>(<span>self, start: Union[int, NoneType] = None, stop: Union[int, NoneType] = None, step: Union[int, NoneType] = None) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The slice operator.</p>
+<p>Slices the given list. It is basically a wrapper around the operators
+- skip
+- skip_last
+- take
+- take_last
+- filter_indexed</p>
+<p>The following diagram helps you remember how slices works with streams.</p>
+<p>Positive numbers are relative to the start of the events, while negative
+numbers are relative to the end (close) of the stream.</p>
+<div class="admonition code">
+<p class="admonition-title">Code</p>
+<p>r&mdash;e&mdash;a&mdash;c&mdash;t&mdash;i&mdash;v&mdash;e&mdash;!
+0
+1
+2
+3
+4
+5
+6
+7
+8</p>
+</div>
+<p>-8
+-7
+-6
+-5
+-4
+-3
+-2
+-1
+0</p>
+<h2 id="examples">Examples</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; result = xs.slice(1, 10)
+&gt;&gt;&gt; result = xs.slice(1, -2)
+&gt;&gt;&gt; result = xs.slice(1, -1, 2)
+</code></pre>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>source</code></strong></dt>
+<dd>Observable to slice</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A sliced list.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def slice(
+    self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
+) -&gt; &#39;List[TSource]&#39;:
+    &#34;&#34;&#34;The slice operator.
+
+    Slices the given list. It is basically a wrapper around the operators
+    - skip
+    - skip_last
+    - take
+    - take_last
+    - filter_indexed
+
+    The following diagram helps you remember how slices works with streams.
+
+    Positive numbers are relative to the start of the events, while negative
+    numbers are relative to the end (close) of the stream.
+
+    .. code::
+
+        r---e---a---c---t---i---v---e---!
+        0   1   2   3   4   5   6   7   8
+    -8  -7  -6  -5  -4  -3  -2  -1   0
+
+    Examples:
+        &gt;&gt;&gt; result = xs.slice(1, 10)
+        &gt;&gt;&gt; result = xs.slice(1, -2)
+        &gt;&gt;&gt; result = xs.slice(1, -1, 2)
+
+    Args:
+        source: Observable to slice
+
+    Returns:
+        A sliced list.
+    &#34;&#34;&#34;
+    res = empty
+
+    _start: int = 0 if start is None else start
+    _stop: int = sys.maxsize if stop is None else stop
+    _step: int = 1 if step is None else step
+
+    if _stop &gt;= 0:
+        res = res.take(_stop)
+
+    if _start &gt; 0:
+        res = res.skip(_start)
+
+    elif _start &lt; 0:
+        res = res.take_last(-_start)
+
+    if _stop &lt; 0:
+        res = res.skip_last(-_stop)
+
+    if _step &gt; 1:
+        res = res.indexed().filter(lambda t: t[0] % _step == 0)
+
+    elif _step &lt; 0:
+        # Reversing events is not supported
+        raise TypeError(&#34;Negative step not supported.&#34;)
+
+    return res</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.List.tail"><code class="name flex">
@@ -593,6 +1091,37 @@ def take(self, count: int) -&gt; &#34;List[TSource]&#34;:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.List.take_last"><code class="name flex">
+<span>def <span class="ident">take_last</span></span>(<span>self, count: int) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a specified number of contiguous elements from the
+end of the list.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>count</code></strong></dt>
+<dd>The number of items to take.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The result list.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def take_last(self, count: int) -&gt; &#34;List[TSource]&#34;:
+    &#34;&#34;&#34;Returns a specified number of contiguous elements from the
+    end of the list.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result list.
+    &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.List.try_head"><code class="name flex">
 <span>def <span class="ident">try_head</span></span>(<span>self) ‑> <a title="fslash.core.option.Option" href="../core/option.html#fslash.core.option.Option">Option</a>[~TSource]</span>
 </code></dt>
@@ -604,9 +1133,41 @@ empty.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def try_head(self) -&gt; Option_[TSource]:
+def try_head(self) -&gt; Option[TSource]:
     &#34;&#34;&#34;Returns the first element of the list, or None if the list is
     empty.
+    &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.collections.List.zip"><code class="name flex">
+<span>def <span class="ident">zip</span></span>(<span>self, other: <a title="fslash.collections.List" href="#fslash.collections.List">List</a>[TResult]) ‑> <a title="fslash.collections.list.List" href="list.html#fslash.collections.list.List">List</a>[typing.Tuple[~TSource, ~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Combines the two lists into a list of pairs. The two lists
+must have equal lengths. .</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>other</code></strong></dt>
+<dd>The second input list.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A single list containing pairs of matching elements from the
+input lists.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def zip(self, other: &#39;List[TResult]&#39;) -&gt; &#39;List[Tuple[TSource, TResult]]&#39;:
+    &#34;&#34;&#34;Combines the two lists into a list of pairs. The two lists
+    must have equal lengths. .
+
+    Args:
+        other: The second input list.
+
+    Returns:
+        A single list containing pairs of matching elements from the
+        input lists.
     &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
@@ -704,6 +1265,20 @@ sequences.</p>
             The resulting sequence of computed states.
         &#34;&#34;&#34;
         return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore
+
+    def zip(self, other: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
+        &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+        sequences need not have equal lengths: when one sequence is
+        exhausted any remaining elements in the other sequence are
+        ignored.
+
+        Args:
+            other: The second input sequence.
+
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return builtins.zip(self, other)
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for sequence.&#34;&#34;&#34;
@@ -883,6 +1458,40 @@ from the sequence.</dd>
     return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.Seq.zip"><code class="name flex">
+<span>def <span class="ident">zip</span></span>(<span>self, other: Iterable[~TResult]) ‑> Iterable[Tuple[~TSource, ~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Combines the two sequences into a list of pairs. The two
+sequences need not have equal lengths: when one sequence is
+exhausted any remaining elements in the other sequence are
+ignored.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>other</code></strong></dt>
+<dd>The second input sequence.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The result sequence.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def zip(self, other: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
+    &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+    sequences need not have equal lengths: when one sequence is
+    exhausted any remaining elements in the other sequence are
+    ignored.
+
+    Args:
+        other: The second input sequence.
+
+    Returns:
+        The result sequence.
+    &#34;&#34;&#34;
+    return builtins.zip(self, other)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -909,12 +1518,15 @@ from the sequence.</dd>
 <ul>
 <li>
 <h4><code><a title="fslash.collections.Cons" href="#fslash.collections.Cons">Cons</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="fslash.collections.Cons.append" href="#fslash.collections.Cons.append">append</a></code></li>
 <li><code><a title="fslash.collections.Cons.choose" href="#fslash.collections.Cons.choose">choose</a></code></li>
 <li><code><a title="fslash.collections.Cons.collect" href="#fslash.collections.Cons.collect">collect</a></code></li>
 <li><code><a title="fslash.collections.Cons.filter" href="#fslash.collections.Cons.filter">filter</a></code></li>
 <li><code><a title="fslash.collections.Cons.map" href="#fslash.collections.Cons.map">map</a></code></li>
+<li><code><a title="fslash.collections.Cons.skip" href="#fslash.collections.Cons.skip">skip</a></code></li>
+<li><code><a title="fslash.collections.Cons.skip_last" href="#fslash.collections.Cons.skip_last">skip_last</a></code></li>
+<li><code><a title="fslash.collections.Cons.zip" href="#fslash.collections.Cons.zip">zip</a></code></li>
 </ul>
 </li>
 <li>
@@ -926,13 +1538,19 @@ from the sequence.</dd>
 <li><code><a title="fslash.collections.List.cons" href="#fslash.collections.List.cons">cons</a></code></li>
 <li><code><a title="fslash.collections.List.filter" href="#fslash.collections.List.filter">filter</a></code></li>
 <li><code><a title="fslash.collections.List.head" href="#fslash.collections.List.head">head</a></code></li>
+<li><code><a title="fslash.collections.List.indexed" href="#fslash.collections.List.indexed">indexed</a></code></li>
 <li><code><a title="fslash.collections.List.is_empty" href="#fslash.collections.List.is_empty">is_empty</a></code></li>
 <li><code><a title="fslash.collections.List.map" href="#fslash.collections.List.map">map</a></code></li>
 <li><code><a title="fslash.collections.List.match" href="#fslash.collections.List.match">match</a></code></li>
 <li><code><a title="fslash.collections.List.pipe" href="#fslash.collections.List.pipe">pipe</a></code></li>
+<li><code><a title="fslash.collections.List.skip" href="#fslash.collections.List.skip">skip</a></code></li>
+<li><code><a title="fslash.collections.List.skip_last" href="#fslash.collections.List.skip_last">skip_last</a></code></li>
+<li><code><a title="fslash.collections.List.slice" href="#fslash.collections.List.slice">slice</a></code></li>
 <li><code><a title="fslash.collections.List.tail" href="#fslash.collections.List.tail">tail</a></code></li>
 <li><code><a title="fslash.collections.List.take" href="#fslash.collections.List.take">take</a></code></li>
+<li><code><a title="fslash.collections.List.take_last" href="#fslash.collections.List.take_last">take_last</a></code></li>
 <li><code><a title="fslash.collections.List.try_head" href="#fslash.collections.List.try_head">try_head</a></code></li>
+<li><code><a title="fslash.collections.List.zip" href="#fslash.collections.List.zip">zip</a></code></li>
 </ul>
 </li>
 <li>
@@ -945,6 +1563,7 @@ from the sequence.</dd>
 <li><code><a title="fslash.collections.Seq.match" href="#fslash.collections.Seq.match">match</a></code></li>
 <li><code><a title="fslash.collections.Seq.pipe" href="#fslash.collections.Seq.pipe">pipe</a></code></li>
 <li><code><a title="fslash.collections.Seq.scan" href="#fslash.collections.Seq.scan">scan</a></code></li>
+<li><code><a title="fslash.collections.Seq.zip" href="#fslash.collections.Seq.zip">zip</a></code></li>
 </ul>
 </li>
 </ul>

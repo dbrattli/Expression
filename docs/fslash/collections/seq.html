@@ -58,8 +58,9 @@ Example:
     )
 &#34;&#34;&#34;
 
+import sys
 import builtins
-from typing import TypeVar, Callable, Iterable, Iterator
+from typing import TypeVar, Callable, Iterable, Iterator, Tuple, Any
 import functools
 import itertools
 from fslash.core import pipe
@@ -145,6 +146,20 @@ class Seq(Iterable[TSource]):
         &#34;&#34;&#34;
         return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore
 
+    def zip(self, other: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
+        &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+        sequences need not have equal lengths: when one sequence is
+        exhausted any remaining elements in the other sequence are
+        ignored.
+
+        Args:
+            other: The second input sequence.
+
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return builtins.zip(self, other)
+
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for sequence.&#34;&#34;&#34;
         return builtins.iter(self._value)
@@ -176,8 +191,8 @@ def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSou
     return _concat
 
 
-empty = Seq([])
-&#34;&#34;&#34;Creates an empty sequence.&#34;&#34;&#34;
+empty: Seq[Any] = Seq()
+&#34;&#34;&#34;The empty sequence.&#34;&#34;&#34;
 
 
 def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
@@ -278,6 +293,19 @@ def head(source: Iterable[TSource]) -&gt; TSource:
         raise ValueError(&#34;Sequence contains no elements&#34;)
 
 
+def init_infinite(initializer: Callable[[int], TSource]) -&gt; Iterable[TSource]:
+    &#34;&#34;&#34;Generates a new sequence which, when iterated, will return
+    successive elements by calling the given function. The results of
+    calling the function will not be saved, that is the function will be
+    reapplied as necessary to regenerate the elements. The function is
+    passed the index of the item being generated.
+
+    Iteration can continue up to `sys.maxint`.
+    &#34;&#34;&#34;
+    for i in range(sys.maxsize):
+        yield initializer(i)
+
+
 def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
     &#34;&#34;&#34;Applies the given function to each element of the collection.
 
@@ -332,14 +360,11 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]]
     return _map
 
 
-def max() -&gt; Callable[[Iterable[TSource]], TSource]:
+def max(source: Iterable[TSource]) -&gt; TSource:
     &#34;&#34;&#34;Returns the greatest of all elements of the sequence,
     compared via `max()`.&#34;&#34;&#34;
 
-    def _map(source: Iterable[TSource]) -&gt; TSource:
-        return builtins.max(source)
-
-    return _map
+    return builtins.max(source)
 
 
 def max_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
@@ -349,14 +374,11 @@ def max_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TS
     return _max_by
 
 
-def min() -&gt; Callable[[Iterable[TSource]], TSource]:
+def min(source: Iterable[TSource]) -&gt; TSource:
     &#34;&#34;&#34;Returns the smallest of all elements of the sequence,
     compared via `max()`.&#34;&#34;&#34;
 
-    def _min(source: Iterable[TSource]) -&gt; TSource:
-        return builtins.min(source)
-
-    return _min
+    return builtins.min(source)
 
 
 def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], TResult]:
@@ -370,7 +392,11 @@ def of(value: Iterable[TSource]):
     return Seq(value)
 
 
-of_list = of_iterable = of
+of_list = of
+&#34;&#34;&#34;Alias to `Seq.of`.&#34;&#34;&#34;
+
+of_iterable = of
+&#34;&#34;&#34;Alias to `Seq.of`.&#34;&#34;&#34;
 
 
 def scan(
@@ -393,6 +419,34 @@ def scan(
         &#34;&#34;&#34;
         return itertools.accumulate(source, scanner, initial=state)   # type: ignore
     return _scan
+
+
+def zip(source1: Iterable[TSource]) -&gt; Callable[[Iterable[TResult]], Iterable[Tuple[TSource, TResult]]]:
+    &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+    sequences need not have equal lengths: when one sequence is
+    exhausted any remaining elements in the other sequence are
+    ignored.
+
+    Args:
+        source1: The first input sequence.
+
+    Returns:
+        Partially applied zip function.
+    &#34;&#34;&#34;
+    def _zip(source2: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
+        &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+        sequences need not have equal lengths: when one sequence is
+        exhausted any remaining elements in the other sequence are
+        ignored.
+
+        Args:
+            source2: The second input sequence.
+
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return builtins.zip(source1, source2)
+    return _zip
 
 
 __all__ = [
@@ -420,9 +474,9 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="fslash.collections.seq.empty"><code class="name">var <span class="ident">empty</span></code></dt>
+<dt id="fslash.collections.seq.empty"><code class="name">var <span class="ident">empty</span> : <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[typing.Any]</code></dt>
 <dd>
-<div class="desc"><p>Creates an empty sequence.</p></div>
+<div class="desc"><p>The empty sequence.</p></div>
 </dd>
 </dl>
 </section>
@@ -745,7 +799,7 @@ collection.</p>
 </details>
 </dd>
 <dt id="fslash.collections.seq.max"><code class="name flex">
-<span>def <span class="ident">max</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
+<span>def <span class="ident">max</span></span>(<span>source: Iterable[~TSource]) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the greatest of all elements of the sequence,
@@ -754,18 +808,15 @@ compared via <code><a title="fslash.collections.seq.max" href="#fslash.collectio
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def max() -&gt; Callable[[Iterable[TSource]], TSource]:
+<pre><code class="python">def max(source: Iterable[TSource]) -&gt; TSource:
     &#34;&#34;&#34;Returns the greatest of all elements of the sequence,
     compared via `max()`.&#34;&#34;&#34;
 
-    def _map(source: Iterable[TSource]) -&gt; TSource:
-        return builtins.max(source)
-
-    return _map</code></pre>
+    return builtins.max(source)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.min"><code class="name flex">
-<span>def <span class="ident">min</span></span>(<span>) ‑> Callable[[Iterable[~TSource]], ~TSource]</span>
+<span>def <span class="ident">min</span></span>(<span>source: Iterable[~TSource]) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the smallest of all elements of the sequence,
@@ -774,14 +825,11 @@ compared via <code><a title="fslash.collections.seq.max" href="#fslash.collectio
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def min() -&gt; Callable[[Iterable[TSource]], TSource]:
+<pre><code class="python">def min(source: Iterable[TSource]) -&gt; TSource:
     &#34;&#34;&#34;Returns the smallest of all elements of the sequence,
     compared via `max()`.&#34;&#34;&#34;
 
-    def _min(source: Iterable[TSource]) -&gt; TSource:
-        return builtins.min(source)
-
-    return _min</code></pre>
+    return builtins.min(source)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.min_by"><code class="name flex">
@@ -976,6 +1024,20 @@ sequences.</p>
         &#34;&#34;&#34;
         return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore
 
+    def zip(self, other: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
+        &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+        sequences need not have equal lengths: when one sequence is
+        exhausted any remaining elements in the other sequence are
+        ignored.
+
+        Args:
+            other: The second input sequence.
+
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return builtins.zip(self, other)
+
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for sequence.&#34;&#34;&#34;
         return builtins.iter(self._value)</code></pre>
@@ -1154,6 +1216,40 @@ from the sequence.</dd>
     return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.seq.Seq.zip"><code class="name flex">
+<span>def <span class="ident">zip</span></span>(<span>self, other: Iterable[~TResult]) ‑> Iterable[Tuple[~TSource, ~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Combines the two sequences into a list of pairs. The two
+sequences need not have equal lengths: when one sequence is
+exhausted any remaining elements in the other sequence are
+ignored.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>other</code></strong></dt>
+<dd>The second input sequence.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The result sequence.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def zip(self, other: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
+    &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+    sequences need not have equal lengths: when one sequence is
+    exhausted any remaining elements in the other sequence are
+    ignored.
+
+    Args:
+        other: The second input sequence.
+
+    Returns:
+        The result sequence.
+    &#34;&#34;&#34;
+    return builtins.zip(self, other)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1205,6 +1301,7 @@ from the sequence.</dd>
 <li><code><a title="fslash.collections.seq.Seq.match" href="#fslash.collections.seq.Seq.match">match</a></code></li>
 <li><code><a title="fslash.collections.seq.Seq.pipe" href="#fslash.collections.seq.Seq.pipe">pipe</a></code></li>
 <li><code><a title="fslash.collections.seq.Seq.scan" href="#fslash.collections.seq.Seq.scan">scan</a></code></li>
+<li><code><a title="fslash.collections.seq.Seq.zip" href="#fslash.collections.seq.Seq.zip">zip</a></code></li>
 </ul>
 </li>
 </ul>

@@ -153,6 +153,33 @@ value = x.pipe(
 assert value == gn(fn(x))
 ```
 
+So for example with sequences you may create sequence transforming
+pipelines:
+
+```py
+ys = xs.pipe(
+    Seq.map(lambda x: x * 10),
+    Seq.filter(lambda x: x > 100),
+    Seq.fold(lambda s, x: s + x, 0)
+)
+```
+
+### Composition
+
+Functions may even be composed directly into custom operators:
+
+```py
+from fslash.core import compose
+
+custom = compose(
+    Seq.map(lambda x: x * 10),
+    Seq.filter(lambda x: x > 100),
+    Seq.fold(lambda s, x: s + x, 0)
+)
+
+ys = custom(xs)
+
+```
 
 ### Options
 
@@ -300,7 +327,7 @@ are available as primed `_` names e.g `Option_` and `Result_`.
 
 Remember that everything is a function, so you can easily implement the
 function yourself and use it with FSlash. If you think the function is
-also usable for others, you can open a PR to include it with FSlash.
+also usable for others, then please open a PR to include it with FSlash.
 
 ## Resources
 

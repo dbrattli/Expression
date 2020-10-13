@@ -66,6 +66,12 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
         raise NotImplementedError
 
     @abstractmethod
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#39;Result[TSource, TResult]&#39;:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
     def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
         raise NotImplementedError
 
@@ -105,6 +111,8 @@ class Ok(Result[TSource, TError]):
         return mapper(self._value)
 
     def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
         return Ok(self._value)
 
     def is_error(self) -&gt; bool:
@@ -143,6 +151,8 @@ class Error(Result[TSource, TError]):
         return Error(self._error)
 
     def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
         return Error(mapper(self._error))
 
     def is_error(self) -&gt; bool:
@@ -343,6 +353,8 @@ sequence of their response.</p></div>
         return Error(self._error)
 
     def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
         return Error(mapper(self._error))
 
     def is_error(self) -&gt; bool:
@@ -439,24 +451,12 @@ def error(self) -&gt; TError:
     return Error(self._error)</code></pre>
 </details>
 </dd>
-<dt id="fslash.core.result.Error.map_error"><code class="name flex">
-<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~TResult]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TSource, ~TResult]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
-    return Error(mapper(self._error))</code></pre>
-</details>
-</dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></b></code>:
 <ul class="hlist">
+<li><code><a title="fslash.core.result.Result.map_error" href="#fslash.core.result.Result.map_error">map_error</a></code></li>
 <li><code><a title="fslash.core.result.Result.pipe" href="#fslash.core.result.Result.pipe">pipe</a></code></li>
 </ul>
 </li>
@@ -489,6 +489,8 @@ def error(self) -&gt; TError:
         return mapper(self._value)
 
     def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
         return Ok(self._value)
 
     def is_error(self) -&gt; bool:
@@ -584,24 +586,12 @@ def value(self):
     return Ok(mapper(self._value))</code></pre>
 </details>
 </dd>
-<dt id="fslash.core.result.Ok.map_error"><code class="name flex">
-<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~TResult]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TSource, ~TResult]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
-    return Ok(self._value)</code></pre>
-</details>
-</dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></b></code>:
 <ul class="hlist">
+<li><code><a title="fslash.core.result.Result.map_error" href="#fslash.core.result.Result.map_error">map_error</a></code></li>
 <li><code><a title="fslash.core.result.Result.pipe" href="#fslash.core.result.Result.pipe">pipe</a></code></li>
 </ul>
 </li>
@@ -630,6 +620,12 @@ def value(self):
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#39;Result[TSource, TResult]&#39;:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -722,6 +718,23 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.result.Result.map_error"><code class="name flex">
+<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~TResult]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TSource, ~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return a result of the error value after applying the mapping
+function, or Ok if the input is Ok.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#39;Result[TSource, TResult]&#39;:
+    &#34;&#34;&#34;Return a result of the error value after applying the mapping
+    function, or Ok if the input is Ok.&#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.result.Result.match"><code class="name flex">
 <span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
 </code></dt>
@@ -802,23 +815,21 @@ iterated.</p></div>
 <ul>
 <li>
 <h4><code><a title="fslash.core.result.Error" href="#fslash.core.result.Error">Error</a></code></h4>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="fslash.core.result.Error.bind" href="#fslash.core.result.Error.bind">bind</a></code></li>
 <li><code><a title="fslash.core.result.Error.error" href="#fslash.core.result.Error.error">error</a></code></li>
 <li><code><a title="fslash.core.result.Error.is_error" href="#fslash.core.result.Error.is_error">is_error</a></code></li>
 <li><code><a title="fslash.core.result.Error.is_ok" href="#fslash.core.result.Error.is_ok">is_ok</a></code></li>
 <li><code><a title="fslash.core.result.Error.map" href="#fslash.core.result.Error.map">map</a></code></li>
-<li><code><a title="fslash.core.result.Error.map_error" href="#fslash.core.result.Error.map_error">map_error</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="fslash.core.result.Ok" href="#fslash.core.result.Ok">Ok</a></code></h4>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="fslash.core.result.Ok.bind" href="#fslash.core.result.Ok.bind">bind</a></code></li>
 <li><code><a title="fslash.core.result.Ok.is_error" href="#fslash.core.result.Ok.is_error">is_error</a></code></li>
 <li><code><a title="fslash.core.result.Ok.is_ok" href="#fslash.core.result.Ok.is_ok">is_ok</a></code></li>
 <li><code><a title="fslash.core.result.Ok.map" href="#fslash.core.result.Ok.map">map</a></code></li>
-<li><code><a title="fslash.core.result.Ok.map_error" href="#fslash.core.result.Ok.map_error">map_error</a></code></li>
 <li><code><a title="fslash.core.result.Ok.value" href="#fslash.core.result.Ok.value">value</a></code></li>
 </ul>
 </li>
@@ -829,6 +840,7 @@ iterated.</p></div>
 <li><code><a title="fslash.core.result.Result.is_error" href="#fslash.core.result.Result.is_error">is_error</a></code></li>
 <li><code><a title="fslash.core.result.Result.is_ok" href="#fslash.core.result.Result.is_ok">is_ok</a></code></li>
 <li><code><a title="fslash.core.result.Result.map" href="#fslash.core.result.Result.map">map</a></code></li>
+<li><code><a title="fslash.core.result.Result.map_error" href="#fslash.core.result.Result.map_error">map_error</a></code></li>
 <li><code><a title="fslash.core.result.Result.match" href="#fslash.core.result.Result.match">match</a></code></li>
 <li><code><a title="fslash.core.result.Result.pipe" href="#fslash.core.result.Result.pipe">pipe</a></code></li>
 </ul>
