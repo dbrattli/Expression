@@ -339,6 +339,8 @@ also usable for others, then please open a PR to include it with FSlash.
 - OSlash (https://github.com/dbrattli/OSlash)
 - RxPY (https://github.com/ReactiveX/RxPY)
 - PEP 342 -- Coroutines via Enhanced Generators (https://www.python.org/dev/peps/pep-0342/)
+- PEP 380 -- Syntax for Delegating to a Subgenerator (https://www.python.org/dev/peps/pep-0380)
+- PEP 479 -- Change StopIteration handling inside generators
 
 ## How-to Contribute
 

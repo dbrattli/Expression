@@ -13,6 +13,12 @@ def test_list_cons():
     assert isinstance(xs, List_)
 
 
+@given(st.integers(min_value=0, max_value=10000))
+def test_list_large_list(x):
+    xs = List.of_seq(range(x))
+    assert len(xs) == x
+
+
 def test_list_is_null_after_cons_and_tail_fluent():
     xs = List.empty.cons(42).tail()
     assert xs.is_empty()

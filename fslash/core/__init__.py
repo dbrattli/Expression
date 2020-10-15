@@ -6,16 +6,16 @@ from . import option as Option
 from . import result as Result
 
 from .compose import compose
-from .misc import identity, flip
+from .misc import identity, flip, ComputationalExpressionError
 from .pipe import pipe, pipe2, pipe3
 from .curry import curried
 from .option import Option as Option_, Some, Nothing, Nothing_
-from .result import Result as TResult, Ok, Error
+from .result import Result as Result_, Ok, Error
 
 
 __all__ = [
-    'identity', 'flip',
+    'identity', 'flip', 'ComputationalExpressionError',
     'compose', 'pipe', 'pipe2', 'pipe3', 'curried',
     'Option', 'Option_', 'Some', 'Nothing', "Nothing_",
-    'Result', 'TResult', 'Ok', 'Error',
+    'Result', 'Result_', 'Ok', 'Error',
 ]

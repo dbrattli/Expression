@@ -1,5 +1,4 @@
-"""
-Result module.
+"""Result module.
 
 The Result[TSource,TError] type lets you write error-tolerant code that
 can be composed. The Result type is typically used in monadic
@@ -9,7 +8,7 @@ Programming.
 
 from abc import abstractmethod
 from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
-from .misc import identity
+from .misc import identity, ComputationalExpressionError
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
@@ -22,6 +21,7 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
 
     def match(self, *args, **kw):
         from pampy import match
+
         return match(self, *args, **kw)
 
     def pipe(self, *args):
@@ -33,7 +33,7 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(self, mapper: Callable[[TError], TResult]) -> 'Result[TSource, TResult]':
+    def map_error(self, mapper: Callable[[TError], TResult]) -> "Result[TSource, TResult]":
         """Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok."""
         raise NotImplementedError
@@ -101,7 +101,7 @@ class Ok(Result[TSource, TError]):
         return f"Ok {self._value}"
 
 
-class Error(Result[TSource, TError]):
+class Error(Result[TSource, TError], ComputationalExpressionError):
     """The Error result case class."""
 
     def __init__(self, error: TError) -> None:
@@ -135,19 +135,11 @@ class Error(Result[TSource, TError]):
 
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for Error case."""
-        raise ResultException(self._error)
+        raise Error(self._error)
         yield
 
     def __str__(self):
         return f"Error {self._error}"
-
-
-class ResultException(Exception):
-    """Used for raising errors when a result `Error` case is
-    iterated."""
-
-    def __init__(self, error):
-        self.error = error
 
 
 def map(mapper: Callable[[TSource], TResult]) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:

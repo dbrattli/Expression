@@ -3,7 +3,7 @@ from typing import List
 from hypothesis import given, strategies as st
 from pampy import match, _
 
-from fslash.core import Result, Ok, Error, TResult
+from fslash.core import Result, Ok, Error, Result_
 from fslash.builders import result
 from .utils import CustomException, throw
 
@@ -11,7 +11,7 @@ from .utils import CustomException, throw
 def test_result_ok():
     xs = Ok(42)
 
-    assert isinstance(xs, TResult)
+    assert isinstance(xs, Result_)
     assert xs.is_ok()
     assert not xs.is_error(
 
@@ -22,10 +22,15 @@ def test_result_ok():
     assert res == 42
 
 
+def test_result_ok_iterate():
+    for x in Ok(42):
+        assert x == 42
+
+
 def test_result_error():
     xs = Error(CustomException("d'oh!"))
 
-    assert isinstance(xs, TResult)
+    assert isinstance(xs, Result_)
     assert not xs.is_ok()
     assert xs.is_error()
 
@@ -33,6 +38,12 @@ def test_result_error():
         match(xs,
               Ok, lambda ok: ok.value,
               Error, lambda error: throw(error.error))
+
+
+def test_result_error_iterate():
+    with pytest.raises(Error):
+        for x in Error("err"):
+            assert x == 42
 
 
 @given(st.integers(), st.integers())
@@ -129,7 +140,7 @@ def test_result_bind_piped(x, y):
 
 @given(st.lists(st.integers()))
 def test_result_traverse_ok(xs):
-    ys: List[TResult[int, str]] = [Ok(x) for x in xs]
+    ys: List[Result_[int, str]] = [Ok(x) for x in xs]
     zs = Result.sequence(ys)
     res = zs.match(
         Ok, lambda ok: sum(ok.value),
@@ -142,7 +153,7 @@ def test_result_traverse_ok(xs):
 @given(st.lists(st.integers(), min_size=5))
 def test_result_traverse_error(xs):
     error = "Do'h"
-    ys: List[TResult[int, str]] = [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
+    ys: List[Result_[int, str]] = [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
 
     zs = Result.sequence(ys)
     res = zs.match(
@@ -158,12 +169,8 @@ def test_result_builder_zero():
     def fn():
         yield
 
-    xs = fn()
-    assert match(
-        xs,
-        Error, lambda error: True,
-        _, True
-    )
+    with pytest.raises(NotImplementedError):
+        fn()
 
 
 def test_result_builder_yield_ok():

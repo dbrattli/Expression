@@ -1,3 +1,17 @@
+"""Immutable list module.
+
+NOTE: Should only for smaller lists, i.e less than 10K elements.
+
+This is not the fastest or most space efficient implementation of a
+list. If that is the goal then use the builin mutable list or array
+types instead. Use this list if you need an immutable list for prepend
+operations mostly (`O(1)`).
+
+Example:
+    >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
+    >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
+"""
+
 from abc import abstractmethod
 from typing import Iterable, Iterator, Sized, TypeVar, Callable, Optional, Tuple, cast
 import sys

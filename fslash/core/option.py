@@ -8,6 +8,7 @@ sequence as the only argument.
 from abc import abstractmethod
 from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any
 from .pipe import pipe
+from .misc import ComputationalExpressionError
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -124,7 +125,7 @@ class Some(Option[TSource]):
         return f"Some {self._value}"
 
 
-class Nothing_(Option[TSource]):
+class Nothing_(Option[TSource], ComputationalExpressionError):
     """The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -160,17 +161,17 @@ class Nothing_(Option[TSource]):
     def to_seq(self) -> Iterable[TSource]:
         return []
 
+    def __next__(self):
+        print("Got here")
+
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for the `Nothing` case.
 
         We basically want to return nothing, but we have to return
-        something to signal fail
-
-        Raises:
-            GeneratorExit
+        something to signal fail.
         """
-        while False:
-            yield
+        raise Nothing
+        yield
 
     def __eq__(self, other):
         if other is Nothing:

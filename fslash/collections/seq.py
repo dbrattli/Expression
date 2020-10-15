@@ -195,8 +195,11 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -> Callable
         folder: A function that updates the state with each element
             from the sequence.
         state: The initial state.
+
     Returns:
-        Partially applied fold function.
+        Partially applied fold function that takes a source sequence and
+        returns the state object after the folding function is applied
+        to each element of the sequence.
     """
     def _fold(source: Iterable[TSource]) -> TState:
         """Partially applied fold function.
@@ -219,11 +222,13 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
         folder: A function that updates the state with each element
             from the sequence.
         state: The initial state.
+
     Returns:
         Partially applied fold_back function.
     """
     def _fold_back(state: TState) -> TState:
         """Partially applied fold_back function.
+
         Returns:
             The state object after the folding function is applied
             to each element of the sequence.

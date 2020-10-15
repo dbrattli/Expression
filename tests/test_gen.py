@@ -112,3 +112,28 @@ def test_generator_with_yield_from():
     gen = fn()
     value = next(gen)
     assert value == 42
+
+
+def test_generator_with_yield_from_gen():
+    def gn():
+        yield 42
+
+    def fn():
+        yield from gn()
+
+    gen = fn()
+    value = next(gen)
+    assert value == 42
+
+
+def test_generator_with_yield_from_gen_empty():
+    def gn():
+        yield from []
+
+    def fn():
+        yield from gn()
+        yield 42
+
+    gen = fn()
+    value = next(gen, 75)
+    assert value == 42

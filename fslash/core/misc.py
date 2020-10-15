@@ -1,6 +1,7 @@
 from typing import TypeVar, Tuple, Any
 
 A = TypeVar("A")
+TSource = TypeVar("TSource")
 
 
 def identity(value: A) -> A:
@@ -24,4 +25,12 @@ def flip(fn):
     lambda a, b: fn(b, a)
 
 
-__all__ = ["identity", "starid", "flip"]
+class ComputationalExpressionError(Exception):
+    """An error that will break any computational expression.
+
+    We use this to detect if sub-generators causes an exit, since
+    yielding nothing will be silently ignored.
+    """
+
+
+__all__ = ["identity", "starid", "flip", "ComputationalExpressionError"]
