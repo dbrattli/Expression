@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
 <title>fslash.collections.list API documentation</title>
-<meta name="description" content="" />
+<meta name="description" content="Immutable list module …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,11 +22,35 @@
 <h1 class="title">Module <code>fslash.collections.list</code></h1>
 </header>
 <section id="section-intro">
+<p>Immutable list module.</p>
+<p>NOTE: Should only for smaller lists, i.e less than 10K elements.</p>
+<p>This is not the fastest or most space efficient implementation of a
+list. If that is the goal then use the builin mutable list or array
+types instead. Use this list if you need an immutable list for prepend
+operations mostly (<code>O(1)</code>).</p>
+<h2 id="example">Example</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
+&gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from abc import abstractmethod
+<pre><code class="python">&#34;&#34;&#34;Immutable list module.
+
+NOTE: Should only for smaller lists, i.e less than 10K elements.
+
+This is not the fastest or most space efficient implementation of a
+list. If that is the goal then use the builin mutable list or array
+types instead. Use this list if you need an immutable list for prepend
+operations mostly (`O(1)`).
+
+Example:
+    &gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
+    &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
+&#34;&#34;&#34;
+
+from abc import abstractmethod
 from typing import Iterable, Iterator, Sized, TypeVar, Callable, Optional, Tuple, cast
 import sys
 

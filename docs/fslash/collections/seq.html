@@ -237,8 +237,11 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Calla
         folder: A function that updates the state with each element
             from the sequence.
         state: The initial state.
+
     Returns:
-        Partially applied fold function.
+        Partially applied fold function that takes a source sequence and
+        returns the state object after the folding function is applied
+        to each element of the sequence.
     &#34;&#34;&#34;
     def _fold(source: Iterable[TSource]) -&gt; TState:
         &#34;&#34;&#34;Partially applied fold function.
@@ -261,11 +264,13 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
         folder: A function that updates the state with each element
             from the sequence.
         state: The initial state.
+
     Returns:
         Partially applied fold_back function.
     &#34;&#34;&#34;
     def _fold_back(state: TState) -&gt; TState:
         &#34;&#34;&#34;Partially applied fold_back function.
+
         Returns:
             The state object after the folding function is applied
             to each element of the sequence.
@@ -598,7 +603,9 @@ from the sequence.</dd>
 <dd>The initial state.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
-<p>Partially applied fold function.</p></div>
+<p>Partially applied fold function that takes a source sequence and
+returns the state object after the folding function is applied
+to each element of the sequence.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -613,8 +620,11 @@ from the sequence.</dd>
         folder: A function that updates the state with each element
             from the sequence.
         state: The initial state.
+
     Returns:
-        Partially applied fold function.
+        Partially applied fold function that takes a source sequence and
+        returns the state object after the folding function is applied
+        to each element of the sequence.
     &#34;&#34;&#34;
     def _fold(source: Iterable[TSource]) -&gt; TState:
         &#34;&#34;&#34;Partially applied fold function.
@@ -659,11 +669,13 @@ from the sequence.</dd>
         folder: A function that updates the state with each element
             from the sequence.
         state: The initial state.
+
     Returns:
         Partially applied fold_back function.
     &#34;&#34;&#34;
     def _fold_back(state: TState) -&gt; TState:
         &#34;&#34;&#34;Partially applied fold_back function.
+
         Returns:
             The state object after the folding function is applied
             to each element of the sequence.

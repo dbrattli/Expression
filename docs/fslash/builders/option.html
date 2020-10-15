@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
-<title>fslash.core.misc API documentation</title>
+<title>fslash.builders.option API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,49 +19,40 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>fslash.core.misc</code></h1>
+<h1 class="title">Module <code>fslash.builders.option</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import TypeVar, Tuple, Any
+<pre><code class="python">from typing import TypeVar, Any
+from fslash.core import Option, Nothing, Some, Option_
+from .builder import Builder
 
-A = TypeVar(&#34;A&#34;)
 TSource = TypeVar(&#34;TSource&#34;)
 
 
-def identity(value: A) -&gt; A:
-    &#34;&#34;&#34;Identity function.
+class OptionBuilder(Builder[Option_[TSource], TSource]):
+    def bind(self, xs, fn):
+        return Option.bind(fn)(xs)
 
-    Returns value given as argument.
-    &#34;&#34;&#34;
-    return value
+    def return_(self, x):
+        return Some(x)
 
+    def return_from(self, xs):
+        return xs
 
-def starid(*value: Any) -&gt; Tuple:
-    return value
+    def combine(self, xs, ys):
+        return Option.bind(lambda _: ys)(xs)
 
-
-def flip(fn):
-    &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
-
-    Example:
-        &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
-    &#34;&#34;&#34;
-    lambda a, b: fn(b, a)
+    def zero(self):
+        return Nothing
 
 
-class ComputationalExpressionError(Exception):
-    &#34;&#34;&#34;An error that will break any computational expression.
+option: OptionBuilder[Any] = OptionBuilder()
 
-    We use this to detect if sub-generators causes an exit, since
-    yielding nothing will be silently ignored.
-    &#34;&#34;&#34;
-
-
-__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;ComputationalExpressionError&#34;]</code></pre>
+__all__ = [&#34;option&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -69,96 +60,8 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;Computatio
 <section>
 </section>
 <section>
-<h2 class="section-title" id="header-functions">Functions</h2>
-<dl>
-<dt id="fslash.core.misc.flip"><code class="name flex">
-<span>def <span class="ident">flip</span></span>(<span>fn)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Flips the arguments for a function taking two arguments.</p>
-<h2 id="example">Example</h2>
-<pre><code class="python-repl">&gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def flip(fn):
-    &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
-
-    Example:
-        &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
-    &#34;&#34;&#34;
-    lambda a, b: fn(b, a)</code></pre>
-</details>
-</dd>
-<dt id="fslash.core.misc.identity"><code class="name flex">
-<span>def <span class="ident">identity</span></span>(<span>value: ~A) ‑> ~A</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Identity function.</p>
-<p>Returns value given as argument.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def identity(value: A) -&gt; A:
-    &#34;&#34;&#34;Identity function.
-
-    Returns value given as argument.
-    &#34;&#34;&#34;
-    return value</code></pre>
-</details>
-</dd>
-<dt id="fslash.core.misc.starid"><code class="name flex">
-<span>def <span class="ident">starid</span></span>(<span>*value: Any) ‑> Tuple</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def starid(*value: Any) -&gt; Tuple:
-    return value</code></pre>
-</details>
-</dd>
-</dl>
 </section>
 <section>
-<h2 class="section-title" id="header-classes">Classes</h2>
-<dl>
-<dt id="fslash.core.misc.ComputationalExpressionError"><code class="flex name class">
-<span>class <span class="ident">ComputationalExpressionError</span></span>
-<span>(</span><span>*args, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>An error that will break any computational expression.</p>
-<p>We use this to detect if sub-generators causes an exit, since
-yielding nothing will be silently ignored.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class ComputationalExpressionError(Exception):
-    &#34;&#34;&#34;An error that will break any computational expression.
-
-    We use this to detect if sub-generators causes an exit, since
-    yielding nothing will be silently ignored.
-    &#34;&#34;&#34;</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>builtins.Exception</li>
-<li>builtins.BaseException</li>
-</ul>
-<h3>Subclasses</h3>
-<ul class="hlist">
-<li><a title="fslash.core.option.Nothing_" href="option.html#fslash.core.option.Nothing_">Nothing_</a></li>
-<li><a title="fslash.core.result.Error" href="result.html#fslash.core.result.Error">Error</a></li>
-</ul>
-</dd>
-</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -169,21 +72,7 @@ yielding nothing will be silently ignored.</p></div>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="fslash.core" href="index.html">fslash.core</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
-<li><code><a title="fslash.core.misc.flip" href="#fslash.core.misc.flip">flip</a></code></li>
-<li><code><a title="fslash.core.misc.identity" href="#fslash.core.misc.identity">identity</a></code></li>
-<li><code><a title="fslash.core.misc.starid" href="#fslash.core.misc.starid">starid</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-classes">Classes</a></h3>
-<ul>
-<li>
-<h4><code><a title="fslash.core.misc.ComputationalExpressionError" href="#fslash.core.misc.ComputationalExpressionError">ComputationalExpressionError</a></code></h4>
-</li>
+<li><code><a title="fslash.builders" href="index.html">fslash.builders</a></code></li>
 </ul>
 </li>
 </ul>

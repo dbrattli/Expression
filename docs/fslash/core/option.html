@@ -41,6 +41,7 @@ sequence as the only argument.
 from abc import abstractmethod
 from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any
 from .pipe import pipe
+from .misc import ComputationalExpressionError
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -157,7 +158,7 @@ class Some(Option[TSource]):
         return f&#34;Some {self._value}&#34;
 
 
-class Nothing_(Option[TSource]):
+class Nothing_(Option[TSource], ComputationalExpressionError):
     &#34;&#34;&#34;The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -193,17 +194,17 @@ class Nothing_(Option[TSource]):
     def to_seq(self) -&gt; Iterable[TSource]:
         return []
 
+    def __next__(self):
+        print(&#34;Got here&#34;)
+
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for the `Nothing` case.
 
         We basically want to return nothing, but we have to return
-        something to signal fail
-
-        Raises:
-            GeneratorExit
+        something to signal fail.
         &#34;&#34;&#34;
-        while False:
-            yield
+        raise Nothing
+        yield
 
     def __eq__(self, other):
         if other is Nothing:
@@ -537,7 +538,7 @@ return True</p></div>
 <dl>
 <dt id="fslash.core.option.Nothing_"><code class="flex name class">
 <span>class <span class="ident">Nothing_</span></span>
-<span>(</span><span>*args, **kwds)</span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The None option case class.</p>
@@ -550,7 +551,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Nothing_(Option[TSource]):
+<pre><code class="python">class Nothing_(Option[TSource], ComputationalExpressionError):
     &#34;&#34;&#34;The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -586,17 +587,17 @@ return True</p></div>
     def to_seq(self) -&gt; Iterable[TSource]:
         return []
 
+    def __next__(self):
+        print(&#34;Got here&#34;)
+
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for the `Nothing` case.
 
         We basically want to return nothing, but we have to return
-        something to signal fail
-
-        Raises:
-            GeneratorExit
+        something to signal fail.
         &#34;&#34;&#34;
-        while False:
-            yield
+        raise Nothing
+        yield
 
     def __eq__(self, other):
         if other is Nothing:
@@ -611,6 +612,9 @@ return True</p></div>
 <li><a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
+<li><a title="fslash.core.misc.ComputationalExpressionError" href="misc.html#fslash.core.misc.ComputationalExpressionError">ComputationalExpressionError</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
 </ul>
 <h3>Methods</h3>
 <dl>

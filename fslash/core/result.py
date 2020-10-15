@@ -187,4 +187,4 @@ def sequence(lst: List[Result[TSource, TError]]) -> Result[List[TSource], TError
     return traverse(identity, lst)
 
 
-__all__ = ["Result", "Ok", "Error", "ResultException", "map", "bind", "traverse", "sequence"]
+__all__ = ["Result", "Ok", "Error", "map", "bind", "traverse", "sequence"]

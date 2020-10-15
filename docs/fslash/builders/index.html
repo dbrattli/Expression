@@ -38,130 +38,27 @@ __all__ = [&#34;option&#34;, &#34;result&#34;, &#34;seq&#34;]</code></pre>
 </details>
 </section>
 <section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="fslash.builders.builder" href="builder.html">fslash.builders.builder</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="fslash.builders.option" href="option.html">fslash.builders.option</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="fslash.builders.result" href="result.html">fslash.builders.result</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 </section>
 <section>
 </section>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="fslash.builders.option"><code class="name flex">
-<span>def <span class="ident">option</span></span>(<span>fn: Callable[..., Union[Coroutine[~TSource, Union[~TSource, NoneType], Union[<a title="fslash.core.option.Option" href="../core/option.html#fslash.core.option.Option">Option</a>[~TSource], NoneType]], Generator[~TSource, Union[~TSource, NoneType], Union[<a title="fslash.core.option.Option" href="../core/option.html#fslash.core.option.Option">Option</a>[~TSource], NoneType]], <a title="fslash.core.option.Option" href="../core/option.html#fslash.core.option.Option">Option</a>[~TSource]]]) ‑> Callable[..., <a title="fslash.core.option.Option" href="../core/option.html#fslash.core.option.Option">Option</a>[~TSource]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Option builder.</p>
-<p>Enables the use of options as computational expressions using
-coroutines. Thus inside the coroutine the keywords <code>yield</code> and
-<code>yield from</code> reasembles <code>yield</code> and <code>yield!</code> from F#.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>fn</code></strong></dt>
-<dd>A function that contains a computational expression and</dd>
-</dl>
-<p>returns either a coroutine, generator or an option.</p>
-<h2 id="returns">Returns</h2>
-<p>An <code>Option</code> object.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def option(
-    fn: Callable[  # Function
-        ...,       # ... that takes anything
-        Union[     # ... and returns
-            # Coroutine that yields or returns an option
-            Coroutine[TSource, Optional[TSource], Optional[Option[TSource]]],
-            # Generator that yields or returns an option
-            Generator[TSource, Optional[TSource], Optional[Option[TSource]]],
-            # or simply just an Option
-            Option[TSource]
-        ]
-    ]
-) -&gt; Callable[..., Option[TSource]]:
-    &#34;&#34;&#34;Option builder.
-
-    Enables the use of options as computational expressions using
-    coroutines. Thus inside the coroutine the keywords `yield` and
-    `yield from` reasembles `yield` and `yield!` from F#.
-
-    Args:
-        fn: A function that contains a computational expression and
-        returns either a coroutine, generator or an option.
-
-    Returns:
-        An `Option` object.
-    &#34;&#34;&#34;
-
-    # This is a mess, but we basically just want to convert plain functions with a return statement into coroutines.
-    gen = iter(cast(Iterable[TSource], fn()))
-
-    def wrapper(*args, **kw) -&gt; Option[TSource]:
-        done: List[bool] = []
-        result: Option[TSource] = send(gen, done)
-
-        while result != Nothing and not done:
-            result = result.bind(lambda value: send(gen, done, value))
-
-        return result
-    return wrapper</code></pre>
-</details>
-</dd>
-<dt id="fslash.builders.result"><code class="name flex">
-<span>def <span class="ident">result</span></span>(<span>fn: Callable[..., Union[Coroutine[~TSource, Union[~TSource, NoneType], Union[<a title="fslash.core.result.Result" href="../core/result.html#fslash.core.result.Result">Result</a>[~TSource, ~TError], NoneType]], Generator[~TSource, Union[~TSource, NoneType], Union[<a title="fslash.core.result.Result" href="../core/result.html#fslash.core.result.Result">Result</a>[~TSource, ~TError], NoneType]], <a title="fslash.core.result.Result" href="../core/result.html#fslash.core.result.Result">Result</a>[~TSource, ~TError]]]) ‑> Callable[..., <a title="fslash.core.result.Result" href="../core/result.html#fslash.core.result.Result">Result</a>[~TSource, ~TError]]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Result builder.</p>
-<p>Enables the use of options as computational expressions using
-coroutines. Thus inside the coroutine the keywords <code>yield</code> and
-<code>yield from</code> reasembles <code>yield</code> and <code>yield!</code> from F#.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>fn</code></strong></dt>
-<dd>A function that contains a computational expression and</dd>
-</dl>
-<p>returns either a coroutine, generator or a result.</p>
-<h2 id="returns">Returns</h2>
-<p>A Result object.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def result(
-    fn: Callable[
-        ...,
-        Union[
-            Coroutine[TSource, Optional[TSource], Optional[Result[TSource, TError]]],
-            Generator[TSource, Optional[TSource], Optional[Result[TSource, TError]]],
-            Result[TSource, TError],
-        ],
-    ]
-) -&gt; Callable[..., Result[TSource, TError]]:
-    &#34;&#34;&#34;Result builder.
-
-    Enables the use of options as computational expressions using
-    coroutines. Thus inside the coroutine the keywords `yield` and
-    `yield from` reasembles `yield` and `yield!` from F#.
-
-    Args:
-        fn: A function that contains a computational expression and
-        returns either a coroutine, generator or a result.
-
-    Returns:
-        A Result object.
-    &#34;&#34;&#34;
-
-    def wrapper(*args, **kw) -&gt; Result[TSource, TError]:
-        done: List[bool] = []
-        gen = iter(cast(Iterable[TSource], fn(*args, **kw)))
-        result: Result[TSource, TError] = send(gen, done)
-
-        while not isinstance(result, Error) and not done:
-            result = result.bind(lambda value: send(gen, done, value))
-            # print(&#34;Result: &#34;, result)
-
-        return result
-    return wrapper</code></pre>
-</details>
-</dd>
 <dt id="fslash.builders.seq"><code class="name flex">
 <span>def <span class="ident">seq</span></span>(<span>fn: Callable[..., Union[Coroutine[~TSource, Union[~TSource, NoneType], Union[Iterable[~TSource], NoneType]], Generator[~TSource, Union[~TSource, NoneType], Union[Iterable[~TSource], NoneType]], Iterable[~TSource]]]) ‑> Callable[..., <a title="fslash.collections.seq.Seq" href="../collections/seq.html#fslash.collections.seq.Seq">Seq</a>[~TSource]]</span>
 </code></dt>
@@ -214,10 +111,15 @@ using generators. But we define it for completeness.</p></div>
 <li><code><a title="fslash" href="../index.html">fslash</a></code></li>
 </ul>
 </li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="fslash.builders.builder" href="builder.html">fslash.builders.builder</a></code></li>
+<li><code><a title="fslash.builders.option" href="option.html">fslash.builders.option</a></code></li>
+<li><code><a title="fslash.builders.result" href="result.html">fslash.builders.result</a></code></li>
+</ul>
+</li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="fslash.builders.option" href="#fslash.builders.option">option</a></code></li>
-<li><code><a title="fslash.builders.result" href="#fslash.builders.result">result</a></code></li>
 <li><code><a title="fslash.builders.seq" href="#fslash.builders.seq">seq</a></code></li>
 </ul>
 </li>
