@@ -135,5 +135,5 @@ def test_generator_with_yield_from_gen_empty():
         yield 42
 
     gen = fn()
-    value = next(gen, 75)
+    value = next(gen)
     assert value == 42

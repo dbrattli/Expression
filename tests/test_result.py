@@ -41,9 +41,11 @@ def test_result_error():
 
 
 def test_result_error_iterate():
-    with pytest.raises(Error):
+    with pytest.raises(Error) as excinfo:
         for x in Error("err"):
             assert x == 42
+
+    assert excinfo.value.error == "err"
 
 
 @given(st.integers(), st.integers())

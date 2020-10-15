@@ -68,15 +68,13 @@ class Builder(Generic[TOuter, TInner]):
             A `builder` function that can wrap coroutines into builders.
         """
 
-        rtnCls = self.return_(None).__class__  # Get class of single main object type
-
         def wrapper(*args, **kw) -> TOuter:
             gen = iter(cast(Iterable[TInner], fn(*args, **kw)))
 
             done: List[bool] = []
             result: TOuter = self._send(gen, done)
 
-            while not done and isinstance(result, rtnCls):
+            while not done and not isinstance(result, ComputationalExpressionError):
                 result = self.combine(result, self.bind(result, lambda value: self._send(gen, done, value)))
 
             return result
