@@ -1,3 +1,5 @@
+from fslash.core.option import Nothing_
+import pytest
 from hypothesis import given, strategies as st
 
 from pampy import match, _
@@ -14,12 +16,27 @@ def test_option_some():
     assert pipe(xs, Option.is_none) is False
 
 
+def test_option_some_iterate():
+    xs = Some(42)
+
+    for x in xs:
+        assert x == 42
+
+
 def test_option_none():
     xs = Nothing
 
     assert isinstance(xs, Option_)
     assert xs.pipe(Option.is_some) is False
     assert xs.pipe(Option.is_none) is True
+
+
+def test_option_nothing_iterate():
+    xs = Nothing
+
+    with pytest.raises(Nothing_):
+        for x in xs:
+            pass
 
 
 def test_option_none_equals_none():
@@ -189,7 +206,7 @@ def test_option_builder_zero():
     )
 
 
-def test_option_builder_yield_some():
+def test_option_builder_yield_value():
     @option
     def fn():
         yield 42
@@ -199,6 +216,19 @@ def test_option_builder_yield_some():
         Some, lambda some: some.value,
         _, None
     ) == 42
+
+
+def test_option_builder_yield_some():
+    @option
+    def fn():
+        x = yield Some(42)
+        return x
+
+    xs = fn()
+    assert Some(42) == xs.match(
+        Some, lambda some: some.value,
+        _, None
+    )
 
 
 def test_option_builder_return_some():
