@@ -1,33 +1,32 @@
-from typing import TypeVar, Callable, Iterable, Generator, Union, Coroutine, Optional, cast
-from fslash.collections.seq import Seq
+from typing import TypeVar, Iterable, Callable
+from fslash.core import Builder, identity
+
+from fslash.collections import Seq, Seq_
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TState = TypeVar("TState")
 
 
-def seq(
-    fn: Callable[  # Function
-        ...,
-        Union[
-            Coroutine[TSource, Optional[TSource], Optional[Iterable[TSource]]],
-            # Generator that yields or returns an option
-            Generator[TSource, Optional[TSource], Optional[Iterable[TSource]]],
-            # or simply just an Iterable
-            Iterable[TSource]
-        ]
-    ]
-) -> Callable[..., Seq[TSource]]:
-    """Sequence builder.
+class SeqBuilder(Builder[Seq_[TSource], TSource]):
+    def bind(self, xs: Iterable[TSource], fn: Callable[[TSource], Iterable[TResult]]):
+        return list(Seq.collect(fn)(xs))
 
-    Enables the use of sequences as computational expressions using
-    generators and coroutines Note that this is exactly the same as just
-    using generators. But we define it for completeness.
-    """
+    def return_(self, x: TSource) -> Iterable[TSource]:
+        return Seq.singleton(x)
 
-    def wrapper(*args, **kw) -> Seq[TSource]:
-        return Seq(cast(Callable, fn)(*args, **kw))
-    return wrapper
+    def return_from(self, xs: Iterable[TSource]) -> Iterable[TSource]:
+        return xs
+
+    def combine(self, xs: Iterable[TSource], ys: Iterable[TSource]) -> Iterable[TSource]:
+        return list(Seq.concat(xs, ys))
+
+    def zero(self) -> Iterable[TSource]:
+        return Seq.empty
+
+
+# seq: SeqBuilder[Any] = SeqBuilder()
+seq = identity
 
 
 __all__ = ["seq"]

@@ -1303,6 +1303,9 @@ sequences.</p>
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
         return Seq(filter(predicate)(self))
 
+    def collect(self, mapping: Callable[[TSource], &#39;Seq[TResult]&#39;]) -&gt; &#39;Seq[TResult]&#39;:
+        return Seq(collect(mapping)(self))
+
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
         &#34;&#34;&#34;Applies a function to each element of the collection,
         threading an accumulator argument through the computation. If
@@ -1387,6 +1390,19 @@ sequences.</p>
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="fslash.collections.Seq.collect"><code class="name flex">
+<span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], ForwardRef('<a title="fslash.collections.Seq" href="#fslash.collections.Seq">Seq</a>[TResult]')]) ‑> <a title="fslash.collections.seq.Seq" href="seq.html#fslash.collections.seq.Seq">Seq</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collect(self, mapping: Callable[[TSource], &#39;Seq[TResult]&#39;]) -&gt; &#39;Seq[TResult]&#39;:
+    return Seq(collect(mapping)(self))</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.Seq.filter"><code class="name flex">
 <span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~TSource], bool]) ‑> <a title="fslash.collections.seq.Seq" href="seq.html#fslash.collections.seq.Seq">Seq</a>[~TSource]</span>
 </code></dt>
@@ -1652,6 +1668,7 @@ ignored.</p>
 <li>
 <h4><code><a title="fslash.collections.Seq" href="#fslash.collections.Seq">Seq</a></code></h4>
 <ul class="two-column">
+<li><code><a title="fslash.collections.Seq.collect" href="#fslash.collections.Seq.collect">collect</a></code></li>
 <li><code><a title="fslash.collections.Seq.filter" href="#fslash.collections.Seq.filter">filter</a></code></li>
 <li><code><a title="fslash.collections.Seq.fold" href="#fslash.collections.Seq.fold">fold</a></code></li>
 <li><code><a title="fslash.collections.Seq.head" href="#fslash.collections.Seq.head">head</a></code></li>

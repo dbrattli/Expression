@@ -1,6 +1,5 @@
 from typing import TypeVar, Any
-from fslash.core import Option, Nothing, Some, Option_
-from .builder import Builder
+from fslash.core import Option, Nothing, Some, Option_, Builder
 
 TSource = TypeVar("TSource")
 

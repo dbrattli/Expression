@@ -35,24 +35,30 @@ from . import option as Option
 from . import result as Result
 
 from .compose import compose
-from .misc import identity, flip, ComputationalExpressionError
+from .misc import identity, flip, ComputationalExpressionExit
 from .pipe import pipe, pipe2, pipe3
 from .curry import curried
 from .option import Option as Option_, Some, Nothing, Nothing_
 from .result import Result as Result_, Ok, Error
+from .builder import Builder
 
 
 __all__ = [
-    &#39;identity&#39;, &#39;flip&#39;, &#39;ComputationalExpressionError&#39;,
+    &#39;identity&#39;, &#39;flip&#39;, &#39;ComputationalExpressionExit&#39;,
     &#39;compose&#39;, &#39;pipe&#39;, &#39;pipe2&#39;, &#39;pipe3&#39;, &#39;curried&#39;,
     &#39;Option&#39;, &#39;Option_&#39;, &#39;Some&#39;, &#39;Nothing&#39;, &#34;Nothing_&#34;,
     &#39;Result&#39;, &#39;Result_&#39;, &#39;Ok&#39;, &#39;Error&#39;,
+    &#39;Builder&#39;
 ]</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="fslash.core.builder" href="builder.html">fslash.core.builder</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt><code class="name"><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></dt>
 <dd>
 <div class="desc"></div>
@@ -259,20 +265,202 @@ completeness.</p>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="fslash.core.ComputationalExpressionError"><code class="flex name class">
-<span>class <span class="ident">ComputationalExpressionError</span></span>
+<dt id="fslash.core.Builder"><code class="flex name class">
+<span>class <span class="ident">Builder</span></span>
+<span>(</span><span>*args, **kwds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Abstract base class for generic types.</p>
+<p>A generic type is typically declared by inheriting from
+this class parameterized with one or more type variables.
+For example, a generic mapping type might be defined as::</p>
+<p>class Mapping(Generic[KT, VT]):
+def <strong>getitem</strong>(self, key: KT) -&gt; VT:
+&hellip;
+# Etc.</p>
+<p>This class can then be used as follows::</p>
+<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
+try:
+return mapping[key]
+except KeyError:
+return default</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Builder(Generic[TOuter, TInner]):
+    def bind(self, xs, fn):
+        raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
+
+    def return_(self, x):
+        raise NotImplementedError(&#34;Builder does not implement a return method&#34;)
+
+    def return_from(self, xs):
+        raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)
+
+    def combine(self, xs, ys):
+        raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)
+
+    def zero(self):
+        raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)
+
+    def _send(self, gen, done, value: Optional[TInner] = None) -&gt; TOuter:
+        try:
+            yielded = gen.send(value)
+            return self.return_(yielded)
+        except ComputationalExpressionExit as error:
+            done.append(True)
+            return self.return_from(error)
+        except StopIteration as ex:
+            done.append(True)
+            if ex.value is not None:
+                return self.return_(ex.value)
+
+            raise ComputationalExpressionExit()
+        except Exception:
+            raise
+
+    def __call__(
+        self,  # Ignored self parameter
+        fn: Callable[  # Function
+            ...,  # ... that takes anything
+            Union[  # ... and returns
+                # Coroutine that yields or returns TOuter
+                Coroutine[TInner, Optional[TInner], Optional[TOuter]],
+                # Generator that yields or returns TOuter
+                Generator[TInner, Optional[TInner], Optional[TOuter]],
+                # or simply just an Option
+                TOuter,
+                None
+            ],
+        ],
+    ) -&gt; Callable[..., TOuter]:
+        &#34;&#34;&#34;Option builder.
+
+        Enables the use of computational expressions using coroutines.
+        Thus inside the coroutine the keywords `yield` and `yield from`
+        reasembles `yield` and `yield!` from F#.
+
+        Args:
+            fn: A function that contains a computational expression and
+            returns either a coroutine, generator or an option.
+
+        Returns:
+            A `builder` function that can wrap coroutines into builders.
+        &#34;&#34;&#34;
+
+        def wrapper(*args, **kw) -&gt; TOuter:
+            gen = fn(*args, **kw)
+            done: List[bool] = []
+
+            result: Optional[TOuter] = None
+            try:
+                result = self._send(gen, done)
+                while not done and not isinstance(result, ComputationalExpressionExit):
+                    cont = self.bind(result, lambda value: self._send(gen, done, value))
+                    result = self.combine(result, cont)
+            except ComputationalExpressionExit:
+                pass
+
+            if result is None:
+                result = self.zero()
+
+            return result
+        return wrapper</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>fslash.builders.option.OptionBuilder</li>
+<li>fslash.builders.result.ResultBuilder</li>
+<li>fslash.builders.seq.SeqBuilder</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="fslash.core.Builder.bind"><code class="name flex">
+<span>def <span class="ident">bind</span></span>(<span>self, xs, fn)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def bind(self, xs, fn):
+    raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Builder.combine"><code class="name flex">
+<span>def <span class="ident">combine</span></span>(<span>self, xs, ys)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def combine(self, xs, ys):
+    raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Builder.return_"><code class="name flex">
+<span>def <span class="ident">return_</span></span>(<span>self, x)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def return_(self, x):
+    raise NotImplementedError(&#34;Builder does not implement a return method&#34;)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Builder.return_from"><code class="name flex">
+<span>def <span class="ident">return_from</span></span>(<span>self, xs)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def return_from(self, xs):
+    raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Builder.zero"><code class="name flex">
+<span>def <span class="ident">zero</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def zero(self):
+    raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="fslash.core.ComputationalExpressionExit"><code class="flex name class">
+<span>class <span class="ident">ComputationalExpressionExit</span></span>
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>An error that will break any computational expression.</p>
+<div class="desc"><p>An error that will exit any computational expression.</p>
 <p>We use this to detect if sub-generators causes an exit, since
 yielding nothing will be silently ignored.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class ComputationalExpressionError(Exception):
-    &#34;&#34;&#34;An error that will break any computational expression.
+<pre><code class="python">class ComputationalExpressionExit(Exception):
+    &#34;&#34;&#34;An error that will exit any computational expression.
 
     We use this to detect if sub-generators causes an exit, since
     yielding nothing will be silently ignored.
@@ -299,7 +487,7 @@ yielding nothing will be silently ignored.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Error(Result[TSource, TError], ComputationalExpressionError):
+<pre><code class="python">class Error(Result[TSource, TError], ComputationalExpressionExit):
     &#34;&#34;&#34;The Error result case class.&#34;&#34;&#34;
 
     def __init__(self, error: TError) -&gt; None:
@@ -344,7 +532,7 @@ yielding nothing will be silently ignored.</p></div>
 <li><a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
-<li><a title="fslash.core.misc.ComputationalExpressionError" href="misc.html#fslash.core.misc.ComputationalExpressionError">ComputationalExpressionError</a></li>
+<li><a title="fslash.core.misc.ComputationalExpressionExit" href="misc.html#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
@@ -443,7 +631,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Nothing_(Option[TSource], ComputationalExpressionError):
+<pre><code class="python">class Nothing_(Option[TSource], ComputationalExpressionExit):
     &#34;&#34;&#34;The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -479,9 +667,6 @@ return True</p></div>
     def to_seq(self) -&gt; Iterable[TSource]:
         return []
 
-    def __next__(self):
-        print(&#34;Got here&#34;)
-
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for the `Nothing` case.
 
@@ -504,7 +689,7 @@ return True</p></div>
 <li><a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
-<li><a title="fslash.core.misc.ComputationalExpressionError" href="misc.html#fslash.core.misc.ComputationalExpressionError">ComputationalExpressionError</a></li>
+<li><a title="fslash.core.misc.ComputationalExpressionExit" href="misc.html#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
@@ -1379,6 +1564,7 @@ def value(self):
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="fslash.core.builder" href="builder.html">fslash.core.builder</a></code></li>
 <li><code><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></li>
 <li><code><a title="fslash.core.misc" href="misc.html">fslash.core.misc</a></code></li>
 <li><code><a title="fslash.core.option" href="option.html">fslash.core.option</a></code></li>
@@ -1399,7 +1585,17 @@ def value(self):
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="fslash.core.ComputationalExpressionError" href="#fslash.core.ComputationalExpressionError">ComputationalExpressionError</a></code></h4>
+<h4><code><a title="fslash.core.Builder" href="#fslash.core.Builder">Builder</a></code></h4>
+<ul class="">
+<li><code><a title="fslash.core.Builder.bind" href="#fslash.core.Builder.bind">bind</a></code></li>
+<li><code><a title="fslash.core.Builder.combine" href="#fslash.core.Builder.combine">combine</a></code></li>
+<li><code><a title="fslash.core.Builder.return_" href="#fslash.core.Builder.return_">return_</a></code></li>
+<li><code><a title="fslash.core.Builder.return_from" href="#fslash.core.Builder.return_from">return_from</a></code></li>
+<li><code><a title="fslash.core.Builder.zero" href="#fslash.core.Builder.zero">zero</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="fslash.core.ComputationalExpressionExit" href="#fslash.core.ComputationalExpressionExit">ComputationalExpressionExit</a></code></h4>
 </li>
 <li>
 <h4><code><a title="fslash.core.Error" href="#fslash.core.Error">Error</a></code></h4>

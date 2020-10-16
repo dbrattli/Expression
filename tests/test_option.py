@@ -197,7 +197,8 @@ def test_option_of_object_value():
 def test_option_builder_zero():
     @option
     def fn():
-        yield
+        while False:
+            yield
 
     xs = fn()
     assert xs.match(

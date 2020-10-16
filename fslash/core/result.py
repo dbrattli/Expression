@@ -8,7 +8,7 @@ Programming.
 
 from abc import abstractmethod
 from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
-from .misc import identity, ComputationalExpressionError
+from .misc import identity, ComputationalExpressionExit
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
@@ -101,7 +101,7 @@ class Ok(Result[TSource, TError]):
         return f"Ok {self._value}"
 
 
-class Error(Result[TSource, TError], ComputationalExpressionError):
+class Error(Result[TSource, TError], ComputationalExpressionExit):
     """The Error result case class."""
 
     def __init__(self, error: TError) -> None:

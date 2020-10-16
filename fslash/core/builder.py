@@ -1,5 +1,5 @@
-from typing import Generic, Generator, Optional, TypeVar, Callable, List, Iterable, Coroutine, cast, Union
-from fslash.core.misc import ComputationalExpressionError
+from typing import Generic, Generator, Optional, TypeVar, Callable, Coroutine, Union, List
+from fslash.core.misc import ComputationalExpressionExit
 
 TInner = TypeVar("TInner")
 TOuter = TypeVar("TOuter")
@@ -7,37 +7,34 @@ TOuter = TypeVar("TOuter")
 
 class Builder(Generic[TOuter, TInner]):
     def bind(self, xs, fn):
-        raise NotImplementedError
+        raise NotImplementedError("Builder does not implement a bind method")
 
     def return_(self, x):
-        raise NotImplementedError
+        raise NotImplementedError("Builder does not implement a return method")
 
     def return_from(self, xs):
-        raise NotImplementedError
+        raise NotImplementedError("Builder does not implement a return from method")
 
     def combine(self, xs, ys):
-        raise NotImplementedError
+        raise NotImplementedError("Builder does not implement a combine method")
 
     def zero(self):
-        raise NotImplementedError
+        raise NotImplementedError("Builder does not implement a zero method")
 
-    def _send(self, gen, done: List[bool], value: Optional[TInner] = None) -> TOuter:
+    def _send(self, gen, done, value: Optional[TInner] = None) -> TOuter:
         try:
             yielded = gen.send(value)
             return self.return_(yielded)
-        except ComputationalExpressionError as error:
+        except ComputationalExpressionExit as error:
             done.append(True)
             return self.return_from(error)
         except StopIteration as ex:
             done.append(True)
-
             if ex.value is not None:
                 return self.return_(ex.value)
-            elif value is not None:
-                return self.return_(value)
-            return self.zero()
+
+            raise ComputationalExpressionExit()
         except Exception:
-            done.append(True)
             raise
 
     def __call__(
@@ -51,6 +48,7 @@ class Builder(Generic[TOuter, TInner]):
                 Generator[TInner, Optional[TInner], Optional[TOuter]],
                 # or simply just an Option
                 TOuter,
+                None
             ],
         ],
     ) -> Callable[..., TOuter]:
@@ -69,14 +67,20 @@ class Builder(Generic[TOuter, TInner]):
         """
 
         def wrapper(*args, **kw) -> TOuter:
-            gen = iter(cast(Iterable[TInner], fn(*args, **kw)))
-
+            gen = fn(*args, **kw)
             done: List[bool] = []
-            result: TOuter = self._send(gen, done)
 
-            while not done and not isinstance(result, ComputationalExpressionError):
-                result = self.combine(result, self.bind(result, lambda value: self._send(gen, done, value)))
+            result: Optional[TOuter] = None
+            try:
+                result = self._send(gen, done)
+                while not done and not isinstance(result, ComputationalExpressionExit):
+                    cont = self.bind(result, lambda value: self._send(gen, done, value))
+                    result = self.combine(result, cont)
+            except ComputationalExpressionExit:
+                pass
+
+            if result is None:
+                result = self.zero()
 
             return result
-
         return wrapper

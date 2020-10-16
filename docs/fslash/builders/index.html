@@ -40,10 +40,6 @@ __all__ = [&#34;option&#34;, &#34;result&#34;, &#34;seq&#34;]</code></pre>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="fslash.builders.builder" href="builder.html">fslash.builders.builder</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
 <dt><code class="name"><a title="fslash.builders.option" href="option.html">fslash.builders.option</a></code></dt>
 <dd>
 <div class="desc"></div>
@@ -60,39 +56,21 @@ __all__ = [&#34;option&#34;, &#34;result&#34;, &#34;seq&#34;]</code></pre>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="fslash.builders.seq"><code class="name flex">
-<span>def <span class="ident">seq</span></span>(<span>fn: Callable[..., Union[Coroutine[~TSource, Union[~TSource, NoneType], Union[Iterable[~TSource], NoneType]], Generator[~TSource, Union[~TSource, NoneType], Union[Iterable[~TSource], NoneType]], Iterable[~TSource]]]) ‑> Callable[..., <a title="fslash.collections.seq.Seq" href="../collections/seq.html#fslash.collections.seq.Seq">Seq</a>[~TSource]]</span>
+<span>def <span class="ident">seq</span></span>(<span>value: ~A) ‑> ~A</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sequence builder.</p>
-<p>Enables the use of sequences as computational expressions using
-generators and coroutines Note that this is exactly the same as just
-using generators. But we define it for completeness.</p></div>
+<div class="desc"><p>Identity function.</p>
+<p>Returns value given as argument.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def seq(
-    fn: Callable[  # Function
-        ...,
-        Union[
-            Coroutine[TSource, Optional[TSource], Optional[Iterable[TSource]]],
-            # Generator that yields or returns an option
-            Generator[TSource, Optional[TSource], Optional[Iterable[TSource]]],
-            # or simply just an Iterable
-            Iterable[TSource]
-        ]
-    ]
-) -&gt; Callable[..., Seq[TSource]]:
-    &#34;&#34;&#34;Sequence builder.
+<pre><code class="python">def identity(value: A) -&gt; A:
+    &#34;&#34;&#34;Identity function.
 
-    Enables the use of sequences as computational expressions using
-    generators and coroutines Note that this is exactly the same as just
-    using generators. But we define it for completeness.
+    Returns value given as argument.
     &#34;&#34;&#34;
-
-    def wrapper(*args, **kw) -&gt; Seq[TSource]:
-        return Seq(cast(Callable, fn)(*args, **kw))
-    return wrapper</code></pre>
+    return value</code></pre>
 </details>
 </dd>
 </dl>
@@ -113,7 +91,6 @@ using generators. But we define it for completeness.</p></div>
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="fslash.builders.builder" href="builder.html">fslash.builders.builder</a></code></li>
 <li><code><a title="fslash.builders.option" href="option.html">fslash.builders.option</a></code></li>
 <li><code><a title="fslash.builders.result" href="result.html">fslash.builders.result</a></code></li>
 </ul>

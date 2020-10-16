@@ -120,7 +120,8 @@ def pipe3(args, *fns):
 def starpipe(args, *fns):  # type: ignore
     """Functional pipe_n (`||>`, `||>`, `|||>`, etc)
 
-    Allows the use of function arguments on the left side of the function.
+    Allows the use of function arguments on the left side of the
+    function. Calls the function with tuple arguments unpacked.
 
     Example:
         >>> starpipe((x, y), fn) == fn(x, y)  # Same as (x, y) ||> fn

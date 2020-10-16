@@ -87,6 +87,9 @@ class Seq(Iterable[TSource]):
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
         return Seq(filter(predicate)(self))
 
+    def collect(self, mapping: Callable[[TSource], &#39;Seq[TResult]&#39;]) -&gt; &#39;Seq[TResult]&#39;:
+        return Seq(collect(mapping)(self))
+
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
         &#34;&#34;&#34;Applies a function to each element of the collection,
         threading an accumulator argument through the computation. If
@@ -165,7 +168,15 @@ class Seq(Iterable[TSource]):
         return builtins.iter(self._value)
 
 
-def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
+def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+    def _collect(source: Iterable[TSource]) -&gt; Iterable[TResult]:
+        return (x
+                for xs in source
+                for x in mapping(xs))
+    return _collect
+
+
+def concat(*iterables: Iterable[TSource]) -&gt; Iterable[TSource]:
     &#34;&#34;&#34;Combines the given variable number of enumerations and/or
     enumeration-of-enumerations as a single concatenated
     enumeration.
@@ -174,21 +185,12 @@ def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSou
         iterables: The input enumeration-of-enumerations.
 
     Returns:
-        A partially applied concat function.
+        The result sequence.
     &#34;&#34;&#34;
 
-    def _concat(sources: Iterable[Iterable[TSource]]) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Partially applied concat function.
-
-        Args:
-            sources: The input iterable-of-iterables.
-
-        Returns:
-            The result sequence.
-        &#34;&#34;&#34;
-        return itertools.chain(*iterables, *sources)
-
-    return _concat
+    for it in iterables:
+        for element in it:
+            yield element
 
 
 empty: Seq[Any] = Seq()
@@ -393,7 +395,7 @@ def min_by(projection: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TS
     return _min_by
 
 
-def of(value: Iterable[TSource]):
+def of(value: Iterable[TSource]) -&gt; Seq[TSource]:
     return Seq(value)
 
 
@@ -424,6 +426,18 @@ def scan(
         &#34;&#34;&#34;
         return itertools.accumulate(source, scanner, initial=state)   # type: ignore
     return _scan
+
+
+def singleton(item: TSource) -&gt; Seq[TSource]:
+    &#34;&#34;&#34;Returns a sequence that yields one item only.
+
+    Args:
+        item: The input item.
+
+    Returns:
+        The result sequence of one item.
+    &#34;&#34;&#34;
+    return Seq([item])
 
 
 def zip(source1: Iterable[TSource]) -&gt; Callable[[Iterable[TResult]], Iterable[Tuple[TSource, TResult]]]:
@@ -457,6 +471,7 @@ def zip(source1: Iterable[TSource]) -&gt; Callable[[Iterable[TResult]], Iterable
 __all__ = [
     &#34;Seq&#34;,
     &#34;concat&#34;,
+    &#34;collect&#34;,
     &#34;empty&#34;,
     &#34;filter&#34;,
     &#34;fold&#34;,
@@ -470,7 +485,8 @@ __all__ = [
     &#34;of&#34;,
     &#34;of_list&#34;,
     &#34;of_iterable&#34;,
-    &#34;scan&#34;
+    &#34;scan&#34;,
+    &#34;singleton&#34;
 ]</code></pre>
 </details>
 </section>
@@ -488,8 +504,25 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="fslash.collections.seq.collect"><code class="name flex">
+<span>def <span class="ident">collect</span></span>(<span>mapping: Callable[[~TSource], Iterable[~TResult]]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+    def _collect(source: Iterable[TSource]) -&gt; Iterable[TResult]:
+        return (x
+                for xs in source
+                for x in mapping(xs))
+    return _collect</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.seq.concat"><code class="name flex">
-<span>def <span class="ident">concat</span></span>(<span>*iterables: Iterable[~TSource]) ‑> Callable[[Iterable[Iterable[~TSource]]], Iterable[~TSource]]</span>
+<span>def <span class="ident">concat</span></span>(<span>*iterables: Iterable[~TSource]) ‑> Iterable[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Combines the given variable number of enumerations and/or
@@ -501,12 +534,12 @@ enumeration.</p>
 <dd>The input enumeration-of-enumerations.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
-<p>A partially applied concat function.</p></div>
+<p>The result sequence.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def concat(*iterables: Iterable[TSource]) -&gt; Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
+<pre><code class="python">def concat(*iterables: Iterable[TSource]) -&gt; Iterable[TSource]:
     &#34;&#34;&#34;Combines the given variable number of enumerations and/or
     enumeration-of-enumerations as a single concatenated
     enumeration.
@@ -515,21 +548,12 @@ enumeration.</p>
         iterables: The input enumeration-of-enumerations.
 
     Returns:
-        A partially applied concat function.
+        The result sequence.
     &#34;&#34;&#34;
 
-    def _concat(sources: Iterable[Iterable[TSource]]) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Partially applied concat function.
-
-        Args:
-            sources: The input iterable-of-iterables.
-
-        Returns:
-            The result sequence.
-        &#34;&#34;&#34;
-        return itertools.chain(*iterables, *sources)
-
-    return _concat</code></pre>
+    for it in iterables:
+        for element in it:
+            yield element</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.filter"><code class="name flex">
@@ -861,7 +885,7 @@ compared via <code><a title="fslash.collections.seq.max" href="#fslash.collectio
 </details>
 </dd>
 <dt id="fslash.collections.seq.of"><code class="name flex">
-<span>def <span class="ident">of</span></span>(<span>value: Iterable[~TSource])</span>
+<span>def <span class="ident">of</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -869,12 +893,12 @@ compared via <code><a title="fslash.collections.seq.max" href="#fslash.collectio
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def of(value: Iterable[TSource]):
+<pre><code class="python">def of(value: Iterable[TSource]) -&gt; Seq[TSource]:
     return Seq(value)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.of_iterable"><code class="name flex">
-<span>def <span class="ident">of_iterable</span></span>(<span>value: Iterable[~TSource])</span>
+<span>def <span class="ident">of_iterable</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -882,12 +906,12 @@ compared via <code><a title="fslash.collections.seq.max" href="#fslash.collectio
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def of(value: Iterable[TSource]):
+<pre><code class="python">def of(value: Iterable[TSource]) -&gt; Seq[TSource]:
     return Seq(value)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>value: Iterable[~TSource])</span>
+<span>def <span class="ident">of_list</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -895,7 +919,7 @@ compared via <code><a title="fslash.collections.seq.max" href="#fslash.collectio
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def of(value: Iterable[TSource]):
+<pre><code class="python">def of(value: Iterable[TSource]) -&gt; Seq[TSource]:
     return Seq(value)</code></pre>
 </details>
 </dd>
@@ -939,6 +963,34 @@ from the sequence.</dd>
     return _scan</code></pre>
 </details>
 </dd>
+<dt id="fslash.collections.seq.singleton"><code class="name flex">
+<span>def <span class="ident">singleton</span></span>(<span>item: ~TSource) ‑> <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a sequence that yields one item only.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>item</code></strong></dt>
+<dd>The input item.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The result sequence of one item.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def singleton(item: TSource) -&gt; Seq[TSource]:
+    &#34;&#34;&#34;Returns a sequence that yields one item only.
+
+    Args:
+        item: The input item.
+
+    Returns:
+        The result sequence of one item.
+    &#34;&#34;&#34;
+    return Seq([item])</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -976,6 +1028,9 @@ sequences.</p>
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
         return Seq(filter(predicate)(self))
+
+    def collect(self, mapping: Callable[[TSource], &#39;Seq[TResult]&#39;]) -&gt; &#39;Seq[TResult]&#39;:
+        return Seq(collect(mapping)(self))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
         &#34;&#34;&#34;Applies a function to each element of the collection,
@@ -1061,6 +1116,19 @@ sequences.</p>
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="fslash.collections.seq.Seq.collect"><code class="name flex">
+<span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], ForwardRef('<a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[TResult]')]) ‑> <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collect(self, mapping: Callable[[TSource], &#39;Seq[TResult]&#39;]) -&gt; &#39;Seq[TResult]&#39;:
+    return Seq(collect(mapping)(self))</code></pre>
+</details>
+</dd>
 <dt id="fslash.collections.seq.Seq.filter"><code class="name flex">
 <span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~TSource], bool]) ‑> <a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a>[~TSource]</span>
 </code></dt>
@@ -1285,6 +1353,7 @@ ignored.</p>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="two-column">
+<li><code><a title="fslash.collections.seq.collect" href="#fslash.collections.seq.collect">collect</a></code></li>
 <li><code><a title="fslash.collections.seq.concat" href="#fslash.collections.seq.concat">concat</a></code></li>
 <li><code><a title="fslash.collections.seq.filter" href="#fslash.collections.seq.filter">filter</a></code></li>
 <li><code><a title="fslash.collections.seq.fold" href="#fslash.collections.seq.fold">fold</a></code></li>
@@ -1299,6 +1368,7 @@ ignored.</p>
 <li><code><a title="fslash.collections.seq.of_iterable" href="#fslash.collections.seq.of_iterable">of_iterable</a></code></li>
 <li><code><a title="fslash.collections.seq.of_list" href="#fslash.collections.seq.of_list">of_list</a></code></li>
 <li><code><a title="fslash.collections.seq.scan" href="#fslash.collections.seq.scan">scan</a></code></li>
+<li><code><a title="fslash.collections.seq.singleton" href="#fslash.collections.seq.singleton">singleton</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -1306,6 +1376,7 @@ ignored.</p>
 <li>
 <h4><code><a title="fslash.collections.seq.Seq" href="#fslash.collections.seq.Seq">Seq</a></code></h4>
 <ul class="two-column">
+<li><code><a title="fslash.collections.seq.Seq.collect" href="#fslash.collections.seq.Seq.collect">collect</a></code></li>
 <li><code><a title="fslash.collections.seq.Seq.filter" href="#fslash.collections.seq.Seq.filter">filter</a></code></li>
 <li><code><a title="fslash.collections.seq.Seq.fold" href="#fslash.collections.seq.Seq.fold">fold</a></code></li>
 <li><code><a title="fslash.collections.seq.Seq.head" href="#fslash.collections.seq.Seq.head">head</a></code></li>

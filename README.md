@@ -82,7 +82,7 @@ by F# instead.
 
 - The resulting code should look and feel like Python. We want to make a
   better Python, not some obscure DSL or academic Monad tutorial
-- Provide pipelining and pipe friendly methods.
+- Provide pipelining and pipe friendly methods. Compose all the things!
 - Dot-chaining on objects as an alternative syntax to pipes.
 - Avoid currying, not supported in Python by default and not a well known
   concept by Python programmers.
@@ -92,11 +92,6 @@ by F# instead.
 - Code should pass static type checking by tools such as
   [mypy](http://mypy-lang.org/) and
   [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/). Pylance is awesome, use it!
-
-## Non Goals
-
-- Provide all features of F# and .NET to Python, see [Supported
-  Features](https://github.com/dbrattli/fslash#supported-features).
 
 ## Supported features
 
@@ -114,7 +109,7 @@ on-demand as we go along.
   - **result** - an error handling world for working with result values
 - Pattern matching - provided by
   [Pampy](https://github.com/santinic/pampy), while we wait for [PEP
-  634](https://www.python.org/dev/peps/pep-0634/), structural pattern
+  634](https://www.python.org/dev/peps/pep-0634/) and structural pattern
   matching for Python.
 
 ### Pipelining
@@ -286,10 +281,11 @@ using with functional programming.
 ```py
 # Normal python way. Nested functions are hard to read since you need to
 # start reading from the end of the expression.
+xs = range(100)
 ys = functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
 # With F/ you pipe the result so it flows from one operator to the next:
-zs = Seq.of(xs).pipe(
+ys = Seq.of(xs).pipe(
     Seq.map(lambda x: x * 10),
     Seq.filter(lambda x: x > 100),
     Seq.fold(lambda s, x: s + x, 0)
@@ -302,7 +298,7 @@ assert ys == zs
 In F# you can have a type and a module with the same name, e.g `Option`
 is both a module and a type. This is not possible with Python, so
 instead we use `Option` as the module to access module functions such as
-`Option.map` and the primed `Option_`for the type itself.
+`Option.map` and the primed `Option_`for the type itself. See also [Why are types primed with underscore](https://github.com/dbrattli/fslash#--why-are-types-primed-with-_).
 
 ## Common Gotchas and Pitfalls
 
@@ -316,12 +312,20 @@ You can easily import the FSlash list module with e.g a different name:
 from fslash.collections import List as FList
 ```
 
-## - Why are types primed with _?
+## - Why are types primed with underscore?
 
 This is because e.g `Option` and `Result` are imported as modules in
 order to easily access module functions e.g `Option.map`. We cannot have
 types with the same name as modules in Python, so that's why the types
-are available as primed `_` names e.g `Option_` and `Result_`.
+themselves are available as primed `_` names e.g `Option_` and `Result_`.
+
+```py
+>>> from fslash.core import Option, Option_
+>>> Option
+<module 'fslash.core.option' from '/Users/dbrattli/Developer/Github/FSlash/fslash/core/option.py'>
+>>> Option_
+<class 'fslash.core.option.Option'>
+```
 
 ### - FSlash is missing the function / operator I need
 

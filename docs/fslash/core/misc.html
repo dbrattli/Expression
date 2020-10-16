@@ -53,15 +53,15 @@ def flip(fn):
     lambda a, b: fn(b, a)
 
 
-class ComputationalExpressionError(Exception):
-    &#34;&#34;&#34;An error that will break any computational expression.
+class ComputationalExpressionExit(Exception):
+    &#34;&#34;&#34;An error that will exit any computational expression.
 
     We use this to detect if sub-generators causes an exit, since
     yielding nothing will be silently ignored.
     &#34;&#34;&#34;
 
 
-__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;ComputationalExpressionError&#34;]</code></pre>
+__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;ComputationalExpressionExit&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -128,20 +128,20 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;Computatio
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="fslash.core.misc.ComputationalExpressionError"><code class="flex name class">
-<span>class <span class="ident">ComputationalExpressionError</span></span>
+<dt id="fslash.core.misc.ComputationalExpressionExit"><code class="flex name class">
+<span>class <span class="ident">ComputationalExpressionExit</span></span>
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>An error that will break any computational expression.</p>
+<div class="desc"><p>An error that will exit any computational expression.</p>
 <p>We use this to detect if sub-generators causes an exit, since
 yielding nothing will be silently ignored.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class ComputationalExpressionError(Exception):
-    &#34;&#34;&#34;An error that will break any computational expression.
+<pre><code class="python">class ComputationalExpressionExit(Exception):
+    &#34;&#34;&#34;An error that will exit any computational expression.
 
     We use this to detect if sub-generators causes an exit, since
     yielding nothing will be silently ignored.
@@ -182,7 +182,7 @@ yielding nothing will be silently ignored.</p></div>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="fslash.core.misc.ComputationalExpressionError" href="#fslash.core.misc.ComputationalExpressionError">ComputationalExpressionError</a></code></h4>
+<h4><code><a title="fslash.core.misc.ComputationalExpressionExit" href="#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></code></h4>
 </li>
 </ul>
 </li>

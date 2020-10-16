@@ -41,7 +41,7 @@ sequence as the only argument.
 from abc import abstractmethod
 from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any
 from .pipe import pipe
-from .misc import ComputationalExpressionError
+from .misc import ComputationalExpressionExit
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -158,7 +158,7 @@ class Some(Option[TSource]):
         return f&#34;Some {self._value}&#34;
 
 
-class Nothing_(Option[TSource], ComputationalExpressionError):
+class Nothing_(Option[TSource], ComputationalExpressionExit):
     &#34;&#34;&#34;The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -193,9 +193,6 @@ class Nothing_(Option[TSource], ComputationalExpressionError):
 
     def to_seq(self) -&gt; Iterable[TSource]:
         return []
-
-    def __next__(self):
-        print(&#34;Got here&#34;)
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for the `Nothing` case.
@@ -551,7 +548,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Nothing_(Option[TSource], ComputationalExpressionError):
+<pre><code class="python">class Nothing_(Option[TSource], ComputationalExpressionExit):
     &#34;&#34;&#34;The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -587,9 +584,6 @@ return True</p></div>
     def to_seq(self) -&gt; Iterable[TSource]:
         return []
 
-    def __next__(self):
-        print(&#34;Got here&#34;)
-
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for the `Nothing` case.
 
@@ -612,7 +606,7 @@ return True</p></div>
 <li><a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
-<li><a title="fslash.core.misc.ComputationalExpressionError" href="misc.html#fslash.core.misc.ComputationalExpressionError">ComputationalExpressionError</a></li>
+<li><a title="fslash.core.misc.ComputationalExpressionExit" href="misc.html#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>

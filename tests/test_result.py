@@ -169,7 +169,8 @@ def test_result_traverse_error(xs):
 def test_result_builder_zero():
     @result
     def fn():
-        yield
+        while False:
+            yield
 
     with pytest.raises(NotImplementedError):
         fn()

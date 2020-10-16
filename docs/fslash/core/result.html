@@ -41,7 +41,7 @@ Programming.
 
 from abc import abstractmethod
 from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
-from .misc import identity, ComputationalExpressionError
+from .misc import identity, ComputationalExpressionExit
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
@@ -134,7 +134,7 @@ class Ok(Result[TSource, TError]):
         return f&#34;Ok {self._value}&#34;
 
 
-class Error(Result[TSource, TError], ComputationalExpressionError):
+class Error(Result[TSource, TError], ComputationalExpressionExit):
     &#34;&#34;&#34;The Error result case class.&#34;&#34;&#34;
 
     def __init__(self, error: TError) -&gt; None:
@@ -328,7 +328,7 @@ sequence of their response.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Error(Result[TSource, TError], ComputationalExpressionError):
+<pre><code class="python">class Error(Result[TSource, TError], ComputationalExpressionExit):
     &#34;&#34;&#34;The Error result case class.&#34;&#34;&#34;
 
     def __init__(self, error: TError) -&gt; None:
@@ -373,7 +373,7 @@ sequence of their response.</p></div>
 <li><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
-<li><a title="fslash.core.misc.ComputationalExpressionError" href="misc.html#fslash.core.misc.ComputationalExpressionError">ComputationalExpressionError</a></li>
+<li><a title="fslash.core.misc.ComputationalExpressionExit" href="misc.html#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>

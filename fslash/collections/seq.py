@@ -45,6 +45,9 @@ class Seq(Iterable[TSource]):
     def filter(self, predicate: Callable[[TSource], bool]) -> "Seq[TSource]":
         return Seq(filter(predicate)(self))
 
+    def collect(self, mapping: Callable[[TSource], 'Seq[TResult]']) -> 'Seq[TResult]':
+        return Seq(collect(mapping)(self))
+
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
         """Applies a function to each element of the collection,
         threading an accumulator argument through the computation. If
@@ -123,7 +126,15 @@ class Seq(Iterable[TSource]):
         return builtins.iter(self._value)
 
 
-def concat(*iterables: Iterable[TSource]) -> Callable[[Iterable[Iterable[TSource]]], Iterable[TSource]]:
+def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
+    def _collect(source: Iterable[TSource]) -> Iterable[TResult]:
+        return (x
+                for xs in source
+                for x in mapping(xs))
+    return _collect
+
+
+def concat(*iterables: Iterable[TSource]) -> Iterable[TSource]:
     """Combines the given variable number of enumerations and/or
     enumeration-of-enumerations as a single concatenated
     enumeration.
@@ -132,21 +143,12 @@ def concat(*iterables: Iterable[TSource]) -> Callable[[Iterable[Iterable[TSource
         iterables: The input enumeration-of-enumerations.
 
     Returns:
-        A partially applied concat function.
+        The result sequence.
     """
 
-    def _concat(sources: Iterable[Iterable[TSource]]) -> Iterable[TSource]:
-        """Partially applied concat function.
-
-        Args:
-            sources: The input iterable-of-iterables.
-
-        Returns:
-            The result sequence.
-        """
-        return itertools.chain(*iterables, *sources)
-
-    return _concat
+    for it in iterables:
+        for element in it:
+            yield element
 
 
 empty: Seq[Any] = Seq()
@@ -351,7 +353,7 @@ def min_by(projection: Callable[[TSource], TResult]) -> Callable[[Iterable[TSour
     return _min_by
 
 
-def of(value: Iterable[TSource]):
+def of(value: Iterable[TSource]) -> Seq[TSource]:
     return Seq(value)
 
 
@@ -382,6 +384,18 @@ def scan(
         """
         return itertools.accumulate(source, scanner, initial=state)   # type: ignore
     return _scan
+
+
+def singleton(item: TSource) -> Seq[TSource]:
+    """Returns a sequence that yields one item only.
+
+    Args:
+        item: The input item.
+
+    Returns:
+        The result sequence of one item.
+    """
+    return Seq([item])
 
 
 def zip(source1: Iterable[TSource]) -> Callable[[Iterable[TResult]], Iterable[Tuple[TSource, TResult]]]:
@@ -415,6 +429,7 @@ def zip(source1: Iterable[TSource]) -> Callable[[Iterable[TResult]], Iterable[Tu
 __all__ = [
     "Seq",
     "concat",
+    "collect",
     "empty",
     "filter",
     "fold",
@@ -428,5 +443,6 @@ __all__ = [
     "of",
     "of_list",
     "of_iterable",
-    "scan"
+    "scan",
+    "singleton"
 ]

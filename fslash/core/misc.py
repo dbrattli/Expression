@@ -25,12 +25,12 @@ def flip(fn):
     lambda a, b: fn(b, a)
 
 
-class ComputationalExpressionError(Exception):
-    """An error that will break any computational expression.
+class ComputationalExpressionExit(Exception):
+    """An error that will exit any computational expression.
 
     We use this to detect if sub-generators causes an exit, since
     yielding nothing will be silently ignored.
     """
 
 
-__all__ = ["identity", "starid", "flip", "ComputationalExpressionError"]
+__all__ = ["identity", "starid", "flip", "ComputationalExpressionExit"]

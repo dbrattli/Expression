@@ -1,7 +1,6 @@
 from typing import TypeVar, Any
 
-from fslash.core import Result, Ok, Result_
-from .builder import Builder
+from fslash.core import Result, Ok, Result_, Builder
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
