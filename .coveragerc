@@ -1,8 +1,9 @@
 [report]
 omit =
+    tests/*
     */python?.?/*
     */site-packages/nose/*
-    fslash/version.py
+    fslash/_version.py
 exclude_lines =
     pragma: no cover
     return NotImplemented
