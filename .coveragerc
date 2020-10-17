@@ -1,0 +1,12 @@
+[report]
+omit =
+    */python?.?/*
+    */site-packages/nose/*
+    fslash/version.py
+exclude_lines =
+    pragma: no cover
+    return NotImplemented
+    raise NotImplementedError
+    \.\.\.
+[xml]
+output = coverage.xml
