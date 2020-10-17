@@ -304,7 +304,7 @@ instead we use `Option` as the module to access module functions such as
 
 A list of common problems and how you may solve it:
 
-### - The FSlash List type has the same name as the builtin List type in Python
+### The FSlash List type has the same name as the builtin List type in Python
 
 You can easily import the FSlash list module with e.g a different name:
 
@@ -312,7 +312,7 @@ You can easily import the FSlash list module with e.g a different name:
 from fslash.collections import List as FList
 ```
 
-## - Why are types primed with underscore?
+### Why are types primed with underscore?
 
 This is because e.g `Option` and `Result` are imported as modules in
 order to easily access module functions e.g `Option.map`. We cannot have
@@ -327,7 +327,7 @@ themselves are available as primed `_` names e.g `Option_` and `Result_`.
 <class 'fslash.core.option.Option'>
 ```
 
-### - FSlash is missing the function / operator I need
+### FSlash is missing the function / operator I need
 
 Remember that everything is a function, so you can easily implement the
 function yourself and use it with FSlash. If you think the function is

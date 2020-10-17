@@ -8,6 +8,7 @@ D = TypeVar("D")
 E = TypeVar("E")
 F = TypeVar("F")
 G = TypeVar("G")
+H = TypeVar("H")
 
 
 @overload
@@ -62,6 +63,18 @@ def compose(
     fn5: Callable[[E], F],
     fn6: Callable[[F], G],
 ) -> Callable[[A], G]:
+    ...
+
+@overload
+def compose(
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+) -> Callable[[A], H]:
     ...
 
 
