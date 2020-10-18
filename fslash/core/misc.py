@@ -12,7 +12,7 @@ def identity(value: A) -> A:
     return value
 
 
-def starid(*value: Any) -> Tuple:
+def starid(*value: Any) -> Tuple[Any, ...]:
     return value
 
 

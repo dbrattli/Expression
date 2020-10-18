@@ -1,4 +1,4 @@
-from typing import Generic, Generator, Optional, TypeVar, Callable, Coroutine, Union, List
+from typing import Generic, Generator, Optional, TypeVar, Callable, Coroutine, Union, List, NoReturn
 from fslash.core.misc import ComputationalExpressionExit
 
 TInner = TypeVar("TInner")
@@ -48,7 +48,10 @@ class Builder(Generic[TOuter, TInner]):
                 Generator[TInner, Optional[TInner], Optional[TOuter]],
                 # or simply just an Option
                 TOuter,
-                None
+                # Raises exception
+                NoReturn,
+                # Returns nothing
+                None,
             ],
         ],
     ) -> Callable[..., TOuter]:

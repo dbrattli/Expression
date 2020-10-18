@@ -1,3 +1,4 @@
+from tests.utils import CustomException
 from fslash.core.option import Nothing_
 import pytest
 from hypothesis import given, strategies as st
@@ -51,6 +52,7 @@ def test_option_none_not_equals_some():
     ys = Nothing
 
     assert xs != ys
+    assert ys != xs
 
 
 @given(st.one_of(st.integers(), st.text(), st.floats()), st.one_of(st.integers(), st.text(), st.floats()))
@@ -309,6 +311,19 @@ def test_option_builder_none_short_circuits():
         Some, lambda some: some.value,
         _, None
     ) is None
+
+
+def test_option_builder_throws():
+    error = "do'h"
+    @option
+    def fn():
+        raise CustomException(error)
+        yield
+
+    with pytest.raises(CustomException) as ex:
+        xs = fn()
+
+    assert ex.value.message == error
 
 
 """

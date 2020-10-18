@@ -13,9 +13,9 @@ def test_result_ok():
 
     assert isinstance(xs, Result_)
     assert xs.is_ok()
-    assert not xs.is_error(
+    assert not xs.is_error()
+    assert str(xs) == "Ok 42"
 
-    )
     res = match(xs,
                 Ok, lambda ok: ok.value,
                 Error, lambda error: throw(error.error))
@@ -28,11 +28,13 @@ def test_result_ok_iterate():
 
 
 def test_result_error():
-    xs = Error(CustomException("d'oh!"))
+    error = CustomException("d'oh!")
+    xs = Error(error)
 
     assert isinstance(xs, Result_)
     assert not xs.is_ok()
     assert xs.is_error()
+    assert str(xs) == f"Error {error}"
 
     with pytest.raises(CustomException):
         match(xs,
@@ -46,6 +48,28 @@ def test_result_error_iterate():
             assert x == 42
 
     assert excinfo.value.error == "err"
+
+
+@given(st.integers(), st.integers())
+def test_result_ok_equals_ok(x, y):
+    xs = Ok(x)
+    ys = Ok(y)
+
+    assert xs == ys if x == y else xs != ys
+
+
+@given(st.integers())
+def test_result_ok_not_equals_error(x):
+    assert not Ok(x) == Error(x)
+    assert not Error(x) == Ok(x)
+
+
+@given(st.text(), st.text())
+def test_result_error_equals_error(x, y):
+    xs = Error(x)
+    ys = Error(y)
+
+    assert xs == ys if x == y else xs != ys
 
 
 @given(st.integers(), st.integers())
