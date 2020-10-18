@@ -11,6 +11,7 @@ D = TypeVar("D")
 E = TypeVar("E")
 F = TypeVar("F")
 G = TypeVar("G")
+H = TypeVar("H")
 
 
 @overload
@@ -19,19 +20,19 @@ def pipe(value: A) -> A:
 
 
 @overload
-def pipe(value: A, fn1: Callable[[A], B]) -> B:
+def pipe(value: A, __fn1: Callable[[A], B]) -> B:
     ...
 
 
 @overload
-def pipe(value: A, fn1: Callable[[A], B], fn2: Callable[[B], C]) -> C:
+def pipe(value: A, __fn1: Callable[[A], B], __fn2: Callable[[B], C]) -> C:
     ...
 
 
 @overload
 def pipe(
     value: A,
-    fn1: Callable[[A], B], fn2: Callable[[B], C], fn3: Callable[[C], D]
+    __fn1: Callable[[A], B], __fn2: Callable[[B], C], __fn3: Callable[[C], D]
 ) -> D:
     ...
 
@@ -39,10 +40,10 @@ def pipe(
 @overload
 def pipe(
     value: A,
-    fn1: Callable[[A], B],
-    fn2: Callable[[B], C],
-    fn3: Callable[[C], D],
-    fn4: Callable[[D], E],
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
 ) -> E:
     ...
 
@@ -50,11 +51,11 @@ def pipe(
 @overload
 def pipe(
     value: A,
-    fn1: Callable[[A], B],
-    fn2: Callable[[B], C],
-    fn3: Callable[[C], D],
-    fn4: Callable[[D], E],
-    fn5: Callable[[E], F],
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
 ) -> F:
     ...
 
@@ -62,28 +63,42 @@ def pipe(
 @overload
 def pipe(
     value: A,
-    fn1: Callable[[A], B],
-    fn2: Callable[[B], C],
-    fn3: Callable[[C], D],
-    fn4: Callable[[D], E],
-    fn5: Callable[[E], F],
-    fn6: Callable[[F], G],
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
+    __fn6: Callable[[F], G],
 ) -> G:
     ...
 
 
-def pipe(x, *fns):  # type: ignore
+@overload
+def pipe(
+    value: A,
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
+    __fn6: Callable[[F], G],
+    __fn7: Callable[[G], H],
+) -> H:
+    ...
+
+
+def pipe(value, *fns: Callable):
     """Functional pipe (`|>`)
 
     Allows the use of function argument on the left side of the function.
 
     Example:
-        >>> pipe(x, fn) == fn(x)  # Same as x |> fn
-        >>> pipe(x, fn, gn) == gn(fn(x))  # Same as x |> fn |> gn
+        >>> pipe(x, __fn) == __fn(x)  # Same as x |> __fn
+        >>> pipe(x, __fn, gn) == gn(fn(x))  # Same as x |> __fn |> gn
         ...
     """
 
-    return compose(*fns)(x)  # type: ignore
+    return compose(*fns)(value)
 
 
 @overload
@@ -92,19 +107,19 @@ def pipe2(value: Tuple[A, B]) -> Tuple[A, B]:
 
 
 @overload
-def pipe2(value: Tuple[A, B], fn1: Callable[[A, B], C]) -> C:
+def pipe2(value: Tuple[A, B], __fn1: Callable[[A, B], C]) -> C:
     ...
 
 
 @overload
-def pipe2(value: Tuple[A, B], fn1: Callable[[A, B], C], fn2: Callable[[C], D]) -> D:
+def pipe2(value: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D]) -> D:
     ...
 
 
 @overload
 def pipe2(
     value: Tuple[A, B],
-    fn1: Callable[[A, B], C], fn2: Callable[[C], D], fn3: Callable[[D], E]
+    __fn1: Callable[[A, B], C], __fn2: Callable[[C], D], __fn3: Callable[[D], E]
 ) -> D:
     ...
 
@@ -117,21 +132,21 @@ def pipe3(args, *fns):
     return starpipe(args, *fns)
 
 
-def starpipe(args, *fns):  # type: ignore
+def starpipe(args, *fns):
     """Functional pipe_n (`||>`, `||>`, `|||>`, etc)
 
     Allows the use of function arguments on the left side of the
     function. Calls the function with tuple arguments unpacked.
 
     Example:
-        >>> starpipe((x, y), fn) == fn(x, y)  # Same as (x, y) ||> fn
-        >>> starpipe((x, y), fn, gn) == gn(fn(x))  # Same as (x, y) ||> fn |> gn
+        >>> starpipe((x, y), __fn) == __fn(x, y)  # Same as (x, y) ||> __fn
+        >>> starpipe((x, y), __fn, gn) == gn(fn(x))  # Same as (x, y) ||> __fn |> gn
         ...
     """
 
     fn = fns[0] if len(fns) else starid
 
-    return compose(*fns[1:])(fn(*args))  # type: ignore
+    return compose(*fns[1:])(fn(*args))
 
 
 __all__ = ["pipe", "pipe2", "pipe3", "starpipe"]

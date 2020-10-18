@@ -17,68 +17,69 @@ def compose() -> Callable[[A], A]:
 
 
 @overload
-def compose(fn1: Callable[[A], B]) -> Callable[[A], B]:
+def compose(__fn1: Callable[[A], B]) -> Callable[[A], B]:
     ...
 
 
 @overload
-def compose(fn1: Callable[[A], B], fn2: Callable[[B], C]) -> Callable[[A], C]:
+def compose(__fn1: Callable[[A], B], __fn2: Callable[[B], C]) -> Callable[[A], C]:
     ...
 
 
 @overload
 def compose(
-    fn1: Callable[[A], B], fn2: Callable[[B], C], fn3: Callable[[C], D]
+    __fn1: Callable[[A], B], __fn2: Callable[[B], C], __fn3: Callable[[C], D]
 ) -> Callable[[A], D]:
     ...
 
 
 @overload
 def compose(
-    fn1: Callable[[A], B],
-    fn2: Callable[[B], C],
-    fn3: Callable[[C], D],
-    fn4: Callable[[D], E],
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
 ) -> Callable[[A], E]:
     ...
 
 
 @overload
 def compose(
-    fn1: Callable[[A], B],
-    fn2: Callable[[B], C],
-    fn3: Callable[[C], D],
-    fn4: Callable[[D], E],
-    fn5: Callable[[E], F],
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
 ) -> Callable[[A], F]:
     ...
 
 
 @overload
 def compose(
-    fn1: Callable[[A], B],
-    fn2: Callable[[B], C],
-    fn3: Callable[[C], D],
-    fn4: Callable[[D], E],
-    fn5: Callable[[E], F],
-    fn6: Callable[[F], G],
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
+    __fn6: Callable[[F], G],
 ) -> Callable[[A], G]:
     ...
 
+
 @overload
 def compose(
-    fn1: Callable[[A], B],
-    fn2: Callable[[B], C],
-    fn3: Callable[[C], D],
-    fn4: Callable[[D], E],
-    fn5: Callable[[E], F],
-    fn6: Callable[[F], G],
-    fn7: Callable[[G], H],
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
+    __fn6: Callable[[F], G],
+    __fn7: Callable[[G], H],
 ) -> Callable[[A], H]:
     ...
 
 
-def compose(*fns: Callable) -> Callable:  # type: ignore
+def compose(*fns: Callable) -> Callable:
     """Compose multiple functions left to right.
 
     Composes zero or more functions into a functional composition. The
@@ -95,10 +96,11 @@ def compose(*fns: Callable) -> Callable:  # type: ignore
         The composed function.
     """
 
-    def _compose(source: Any) -> Any:
+    def compose(source: Any) -> Any:
+        """Return a pipeline of composed functions."""
         return reduce(lambda acc, f: f(acc), fns, source)
 
-    return _compose
+    return compose
 
 
 __all__ = ["compose"]
