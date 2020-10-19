@@ -20,58 +20,56 @@ def kleisli() -> Callable[[A], A]:
 
 
 @overload
-def kleisli(fn: Callable[[A], Option[B]]) -> Callable[[A], Option[B]]:
+def kleisli(__fn: Callable[[A], Option[B]]) -> Callable[[A], Option[B]]:
+    ...
+
+
+@overload
+def kleisli(__fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]]) -> Callable[[A], Option[C]]:
     ...
 
 
 @overload
 def kleisli(
-    fn1: Callable[[A], Option[B]], fn2: Callable[[B], Option[C]]
-) -> Callable[[A], Option[C]]:
-    ...
-
-
-@overload
-def kleisli(
-    fn1: Callable[[A], Option[B]], fn2: Callable[[B], Option[C]], fn3: Callable[[C], Option[D]]
+    __fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]], __fn3: Callable[[C], Option[D]]
 ) -> Callable[[A], Option[D]]:
     ...
 
 
 @overload
 def kleisli(
-    fn1: Callable[[A], Option[B]],
-    fn2: Callable[[B], Option[C]],
-    fn3: Callable[[C], Option[D]],
-    fn4: Callable[[D], Option[E]],
+    __fn1: Callable[[A], Option[B]],
+    __fn2: Callable[[B], Option[C]],
+    __fn3: Callable[[C], Option[D]],
+    __fn4: Callable[[D], Option[E]],
 ) -> Callable[[A], Option[E]]:
     ...
 
 
 @overload
 def kleisli(
-    fn1: Callable[[A], Option[B]],
-    fn2: Callable[[B], Option[C]],
-    fn3: Callable[[C], Option[D]],
-    fn4: Callable[[D], Option[E]],
-    fn5: Callable[[E], Option[F]],
+    __fn1: Callable[[A], Option[B]],
+    __fn2: Callable[[B], Option[C]],
+    __fn3: Callable[[C], Option[D]],
+    __fn4: Callable[[D], Option[E]],
+    __fn5: Callable[[E], Option[F]],
 ) -> Callable[[A], Option[F]]:
     ...
 
 
 @overload
 def kleisli(
-    fn1: Callable[[A], Option[B]],
-    fn2: Callable[[B], Option[C]],
-    fn3: Callable[[C], Option[D]],
-    fn4: Callable[[D], Option[E]],
-    fn5: Callable[[E], Option[F]],
-    fn6: Callable[[F], Option[G]],
+    __fn1: Callable[[A], Option[B]],
+    __fn2: Callable[[B], Option[C]],
+    __fn3: Callable[[C], Option[D]],
+    __fn4: Callable[[D], Option[E]],
+    __fn5: Callable[[E], Option[F]],
+    __fn6: Callable[[F], Option[G]],
 ) -> Callable[[A], Option[G]]:
     ...
 
 
-def kleisli(*fns: Callable) -> Callable:  # type: ignore
+def kleisli(*fns: Callable) -> Callable:
     """Kleisli (>=>) compose multiple option returning functions left
     to right.
 
@@ -92,6 +90,7 @@ def kleisli(*fns: Callable) -> Callable:  # type: ignore
     def _kleisli(source: Any) -> Any:
         def reducer(acc, fn):
             return fn(acc.value) if acc.is_some() else acc
+
         return reduce(reducer, fns, source)
 
     return _kleisli

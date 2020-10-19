@@ -27,6 +27,12 @@ class Option(Iterable[TSource]):
         from pampy import match
         return match(self, *args, **kw)
 
+    def default_value(self, value: TSource) -> TSource:
+        """Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -> "Option[TResult]":
         raise NotImplementedError
@@ -75,6 +81,12 @@ class Some(Option[TSource]):
 
     def __init__(self, value: TSource) -> None:
         self._value = value
+
+    def default_value(self, value: TSource) -> TSource:
+        """Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        return self._value
 
     def is_some(self) -> bool:
         """Returns `True`."""
@@ -133,6 +145,12 @@ class Nothing_(Option[TSource], ComputationalExpressionExit):
         >>> if xs is Nothing:
         ...     return True
     """
+
+    def default_value(self, value: TSource) -> TSource:
+        """Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        return value
 
     def is_some(self) -> bool:
         """Returns `False`."""
@@ -209,6 +227,15 @@ def bind(mapper: Callable[[TSource], Option[TResult]]) -> Callable[[Option[TSour
         return option.bind(mapper)
 
     return _bind
+
+
+def default_value(value: TSource) -> Callable[[Option[TSource]], TSource]:
+    """Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    """
+    def _default_value(option: Option[Option[TSource]]) -> TSource:
+        return option.default_value(value)
+    return _default_value
 
 
 def is_none(option: Option[TSource]) -> bool:

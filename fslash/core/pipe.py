@@ -30,10 +30,7 @@ def pipe(value: A, __fn1: Callable[[A], B], __fn2: Callable[[B], C]) -> C:
 
 
 @overload
-def pipe(
-    value: A,
-    __fn1: Callable[[A], B], __fn2: Callable[[B], C], __fn3: Callable[[C], D]
-) -> D:
+def pipe(value: A, __fn1: Callable[[A], B], __fn2: Callable[[B], C], __fn3: Callable[[C], D]) -> D:
     ...
 
 
@@ -117,10 +114,7 @@ def pipe2(value: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D
 
 
 @overload
-def pipe2(
-    value: Tuple[A, B],
-    __fn1: Callable[[A, B], C], __fn2: Callable[[C], D], __fn3: Callable[[D], E]
-) -> D:
+def pipe2(value: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D], __fn3: Callable[[D], E]) -> D:
     ...
 
 
