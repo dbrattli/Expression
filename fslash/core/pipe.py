@@ -1,4 +1,4 @@
-from typing import TypeVar, Callable, Tuple, overload
+from typing import TypeVar, Callable, Tuple, Any, overload
 
 from .compose import compose
 from .misc import starid
@@ -84,7 +84,7 @@ def pipe(
     ...
 
 
-def pipe(value, *fns: Callable):
+def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:
     """Functional pipe (`|>`)
 
     Allows the use of function argument on the left side of the function.

@@ -1,12 +1,14 @@
-from typing import Generic, Generator, Optional, TypeVar, Callable, Coroutine, Union, List, NoReturn
-from fslash.core.misc import ComputationalExpressionExit
+from typing import Generic, Optional, TypeVar, Callable, Coroutine, List, Any, cast
+from fslash.core import EffectError
 
 TInner = TypeVar("TInner")
 TOuter = TypeVar("TOuter")
+TOuter2 = TypeVar("TOuter2")
+TResult = TypeVar("TResult")
 
 
 class Builder(Generic[TOuter, TInner]):
-    def bind(self, xs, fn):
+    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -> TOuter2:
         raise NotImplementedError("Builder does not implement a bind method")
 
     def return_(self, x):
@@ -21,11 +23,16 @@ class Builder(Generic[TOuter, TInner]):
     def zero(self):
         raise NotImplementedError("Builder does not implement a zero method")
 
-    def _send(self, gen, done, value: Optional[TInner] = None) -> TOuter:
+    def _send(
+        self,
+        gen: Coroutine[TInner, Optional[TInner], Optional[TOuter]],
+        done: List[bool],
+        value: Optional[TInner] = None,
+    ) -> TOuter:
         try:
             yielded = gen.send(value)
             return self.return_(yielded)
-        except ComputationalExpressionExit as error:
+        except EffectError as error:
             done.append(True)
             return self.return_from(error)
         except StopIteration as ex:
@@ -33,27 +40,13 @@ class Builder(Generic[TOuter, TInner]):
             if ex.value is not None:
                 return self.return_(ex.value)
 
-            raise ComputationalExpressionExit()
+            raise EffectError()
         except Exception:
             raise
 
     def __call__(
         self,  # Ignored self parameter
-        fn: Callable[  # Function
-            ...,  # ... that takes anything
-            Union[  # ... and returns
-                # Coroutine that yields or returns TOuter
-                Coroutine[TInner, Optional[TInner], Optional[TOuter]],
-                # Generator that yields or returns TOuter
-                Generator[TInner, Optional[TInner], Optional[TOuter]],
-                # or simply just an Option
-                TOuter,
-                # Raises exception
-                NoReturn,
-                # Returns nothing
-                None,
-            ],
-        ],
+        fn: Callable[..., Any],
     ) -> Callable[..., TOuter]:
         """Option builder.
 
@@ -63,27 +56,28 @@ class Builder(Generic[TOuter, TInner]):
 
         Args:
             fn: A function that contains a computational expression and
-            returns either a coroutine, generator or an option.
+                returns either a coroutine, generator or an option.
 
         Returns:
             A `builder` function that can wrap coroutines into builders.
         """
 
-        def wrapper(*args, **kw) -> TOuter:
+        def wrapper(*args: Any, **kw: Any) -> TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
 
             result: Optional[TOuter] = None
             try:
                 result = self._send(gen, done)
-                while not done and not isinstance(result, ComputationalExpressionExit):
-                    cont = self.bind(result, lambda value: self._send(gen, done, value))
+                while not done and not isinstance(result, EffectError):
+                    cont = self.bind(cast(TOuter, result), lambda value: self._send(gen, done, value))
                     result = self.combine(result, cont)
-            except ComputationalExpressionExit:
+            except EffectError:
                 pass
 
             if result is None:
                 result = self.zero()
 
             return result
+
         return wrapper

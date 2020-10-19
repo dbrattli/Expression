@@ -26,9 +26,10 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import TypeVar, Tuple, Any
+<pre><code class="python">from typing import TypeVar, Tuple, Any, Callable
 
 A = TypeVar(&#34;A&#34;)
+B = TypeVar(&#34;B&#34;)
 TSource = TypeVar(&#34;TSource&#34;)
 
 
@@ -40,28 +41,23 @@ def identity(value: A) -&gt; A:
     return value
 
 
-def starid(*value: Any) -&gt; Tuple:
+def starid(*value: Any) -&gt; Tuple[Any, ...]:
     return value
 
 
-def flip(fn):
+def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
     &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
 
     Example:
         &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
     &#34;&#34;&#34;
-    lambda a, b: fn(b, a)
+    def _(b: B, a: A) -&gt; Any:
+        return fn(a, b)
+    return _
 
 
-class ComputationalExpressionExit(Exception):
-    &#34;&#34;&#34;An error that will exit any computational expression.
 
-    We use this to detect if sub-generators causes an exit, since
-    yielding nothing will be silently ignored.
-    &#34;&#34;&#34;
-
-
-__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;ComputationalExpressionExit&#34;]</code></pre>
+__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -72,7 +68,7 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;Computatio
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="fslash.core.misc.flip"><code class="name flex">
-<span>def <span class="ident">flip</span></span>(<span>fn)</span>
+<span>def <span class="ident">flip</span></span>(<span>fn: Callable[[~A, ~B], Any]) ‑> Callable[[~B, ~A], Any]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Flips the arguments for a function taking two arguments.</p>
@@ -83,13 +79,15 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;Computatio
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def flip(fn):
+<pre><code class="python">def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
     &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
 
     Example:
         &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
     &#34;&#34;&#34;
-    lambda a, b: fn(b, a)</code></pre>
+    def _(b: B, a: A) -&gt; Any:
+        return fn(a, b)
+    return _</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.misc.identity"><code class="name flex">
@@ -111,7 +109,7 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;Computatio
 </details>
 </dd>
 <dt id="fslash.core.misc.starid"><code class="name flex">
-<span>def <span class="ident">starid</span></span>(<span>*value: Any) ‑> Tuple</span>
+<span>def <span class="ident">starid</span></span>(<span>*value: Any) ‑> Tuple[Any, ...]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -119,46 +117,13 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;Computatio
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def starid(*value: Any) -&gt; Tuple:
+<pre><code class="python">def starid(*value: Any) -&gt; Tuple[Any, ...]:
     return value</code></pre>
 </details>
 </dd>
 </dl>
 </section>
 <section>
-<h2 class="section-title" id="header-classes">Classes</h2>
-<dl>
-<dt id="fslash.core.misc.ComputationalExpressionExit"><code class="flex name class">
-<span>class <span class="ident">ComputationalExpressionExit</span></span>
-<span>(</span><span>*args, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>An error that will exit any computational expression.</p>
-<p>We use this to detect if sub-generators causes an exit, since
-yielding nothing will be silently ignored.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class ComputationalExpressionExit(Exception):
-    &#34;&#34;&#34;An error that will exit any computational expression.
-
-    We use this to detect if sub-generators causes an exit, since
-    yielding nothing will be silently ignored.
-    &#34;&#34;&#34;</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>builtins.Exception</li>
-<li>builtins.BaseException</li>
-</ul>
-<h3>Subclasses</h3>
-<ul class="hlist">
-<li><a title="fslash.core.option.Nothing_" href="option.html#fslash.core.option.Nothing_">Nothing_</a></li>
-<li><a title="fslash.core.result.Error" href="result.html#fslash.core.result.Error">Error</a></li>
-</ul>
-</dd>
-</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -177,13 +142,6 @@ yielding nothing will be silently ignored.</p></div>
 <li><code><a title="fslash.core.misc.flip" href="#fslash.core.misc.flip">flip</a></code></li>
 <li><code><a title="fslash.core.misc.identity" href="#fslash.core.misc.identity">identity</a></code></li>
 <li><code><a title="fslash.core.misc.starid" href="#fslash.core.misc.starid">starid</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-classes">Classes</a></h3>
-<ul>
-<li>
-<h4><code><a title="fslash.core.misc.ComputationalExpressionExit" href="#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></code></h4>
-</li>
 </ul>
 </li>
 </ul>

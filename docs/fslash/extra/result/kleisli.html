@@ -48,58 +48,60 @@ def kleisli() -&gt; Callable[[A], A]:
 
 
 @overload
-def kleisli(fn: Callable[[A], Result[B, TError]]) -&gt; Callable[[A], Result[B, TError]]:
+def kleisli(__fn: Callable[[A], Result[B, TError]]) -&gt; Callable[[A], Result[B, TError]]:
     ...
 
 
 @overload
 def kleisli(
-    fn1: Callable[[A], Result[B, TError]], fn2: Callable[[B], Result[C, TError]]
+    __fn1: Callable[[A], Result[B, TError]], __fn2: Callable[[B], Result[C, TError]]
 ) -&gt; Callable[[A], Result[C, TError]]:
     ...
 
 
 @overload
 def kleisli(
-    fn1: Callable[[A], Result[B, TError]], fn2: Callable[[B], Result[C, TError]], fn3: Callable[[C], Result[D, TError]]
+    __fn1: Callable[[A], Result[B, TError]],
+    __fn2: Callable[[B], Result[C, TError]],
+    __fn3: Callable[[C], Result[D, TError]],
 ) -&gt; Callable[[A], D]:
     ...
 
 
 @overload
 def kleisli(
-    op4: Callable[[A], Result[B, TError]],
-    op3: Callable[[B], Result[C, TError]],
-    op2: Callable[[C], Result[D, TError]],
-    op1: Callable[[D], Result[E, TError]],
+    __fn1: Callable[[A], Result[B, TError]],
+    __fn2: Callable[[B], Result[C, TError]],
+    __fn3: Callable[[C], Result[D, TError]],
+    __fn4: Callable[[D], Result[E, TError]],
 ) -&gt; Callable[[A], E]:
     ...
 
 
 @overload
 def kleisli(
-    fn1: Callable[[A], Result[B, TError]],
-    fn2: Callable[[B], Result[C, TError]],
-    fn3: Callable[[C], Result[D, TError]],
-    fn4: Callable[[D], Result[E, TError]],
-    fn5: Callable[[E], Result[F, TError]],
+    __fn1: Callable[[A], Result[B, TError]],
+    __fn2: Callable[[B], Result[C, TError]],
+    __fn3: Callable[[C], Result[D, TError]],
+    __fn4: Callable[[D], Result[E, TError]],
+    __fn5: Callable[[E], Result[F, TError]],
 ) -&gt; Callable[[A], F]:
     ...
 
 
 @overload
 def kleisli(
-    fn1: Callable[[A], Result[B, TError]],
-    fn2: Callable[[B], Result[C, TError]],
-    fn3: Callable[[C], Result[D, TError]],
-    fn4: Callable[[D], Result[E, TError]],
-    fn5: Callable[[E], Result[F, TError]],
-    fn6: Callable[[F], Result[G, TError]],
+    __fn1: Callable[[A], Result[B, TError]],
+    __fn2: Callable[[B], Result[C, TError]],
+    __fn3: Callable[[C], Result[D, TError]],
+    __fn4: Callable[[D], Result[E, TError]],
+    __fn5: Callable[[E], Result[F, TError]],
+    __fn6: Callable[[F], Result[G, TError]],
 ) -&gt; Callable[[A], G]:
     ...
 
 
-def kleisli(*fns: Callable) -&gt; Callable:  # type: ignore
+def kleisli(*fns: Callable) -&gt; Callable:
     &#34;&#34;&#34;Kleisli (&gt;=&gt;) compose multiple functions left to right.
 
     Kleisli composes zero or more functions into a functional
@@ -119,6 +121,7 @@ def kleisli(*fns: Callable) -&gt; Callable:  # type: ignore
     def _kleisli(source: Any) -&gt; Any:
         def reducer(acc, fn):
             return fn(acc.value) if acc.is_ok() else acc
+
         return reduce(reducer, fns, source)
 
     return _kleisli
@@ -154,7 +157,7 @@ of zero functions gives back the identity function.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def kleisli(*fns: Callable) -&gt; Callable:  # type: ignore
+<pre><code class="python">def kleisli(*fns: Callable) -&gt; Callable:
     &#34;&#34;&#34;Kleisli (&gt;=&gt;) compose multiple functions left to right.
 
     Kleisli composes zero or more functions into a functional
@@ -174,6 +177,7 @@ of zero functions gives back the identity function.</p>
     def _kleisli(source: Any) -&gt; Any:
         def reducer(acc, fn):
             return fn(acc.value) if acc.is_ok() else acc
+
         return reduce(reducer, fns, source)
 
     return _kleisli</code></pre>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
-<title>fslash.extra.option.kleisli API documentation</title>
+<title>fslash.core.error API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,112 +19,29 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>fslash.extra.option.kleisli</code></h1>
+<h1 class="title">Module <code>fslash.core.error</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import Callable, Any, TypeVar, overload
-from functools import reduce
-
-from fslash.core.option import Option
+<pre><code class="python">from typing import Any, NoReturn
 
 
-A = TypeVar(&#34;A&#34;)
-B = TypeVar(&#34;B&#34;)
-C = TypeVar(&#34;C&#34;)
-D = TypeVar(&#34;D&#34;)
-E = TypeVar(&#34;E&#34;)
-F = TypeVar(&#34;F&#34;)
-G = TypeVar(&#34;G&#34;)
-TError = TypeVar(&#34;TError&#34;)
+class EffectError(Exception):
+    &#34;&#34;&#34;An error that will exit any computational expression.
 
-
-@overload
-def kleisli() -&gt; Callable[[A], A]:
-    ...
-
-
-@overload
-def kleisli(__fn: Callable[[A], Option[B]]) -&gt; Callable[[A], Option[B]]:
-    ...
-
-
-@overload
-def kleisli(__fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]]) -&gt; Callable[[A], Option[C]]:
-    ...
-
-
-@overload
-def kleisli(
-    __fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]], __fn3: Callable[[C], Option[D]]
-) -&gt; Callable[[A], Option[D]]:
-    ...
-
-
-@overload
-def kleisli(
-    __fn1: Callable[[A], Option[B]],
-    __fn2: Callable[[B], Option[C]],
-    __fn3: Callable[[C], Option[D]],
-    __fn4: Callable[[D], Option[E]],
-) -&gt; Callable[[A], Option[E]]:
-    ...
-
-
-@overload
-def kleisli(
-    __fn1: Callable[[A], Option[B]],
-    __fn2: Callable[[B], Option[C]],
-    __fn3: Callable[[C], Option[D]],
-    __fn4: Callable[[D], Option[E]],
-    __fn5: Callable[[E], Option[F]],
-) -&gt; Callable[[A], Option[F]]:
-    ...
-
-
-@overload
-def kleisli(
-    __fn1: Callable[[A], Option[B]],
-    __fn2: Callable[[B], Option[C]],
-    __fn3: Callable[[C], Option[D]],
-    __fn4: Callable[[D], Option[E]],
-    __fn5: Callable[[E], Option[F]],
-    __fn6: Callable[[F], Option[G]],
-) -&gt; Callable[[A], Option[G]]:
-    ...
-
-
-def kleisli(*fns: Callable) -&gt; Callable:
-    &#34;&#34;&#34;Kleisli (&gt;=&gt;) compose multiple option returning functions left
-    to right.
-
-    Kleisli composes zero or more functions into a functional
-    composition. The functions are composed left to right. A composition
-    of zero functions gives back the identity function.
-
-    &gt;&gt;&gt; kleisli()(x) == x
-    &gt;&gt;&gt; kleisli(f)(x) == f(x)
-    &gt;&gt;&gt; kleisli(f, g)(x) == g(f(x))
-    &gt;&gt;&gt; kleisli(f, g, h)(x) == h(g(f(x)))
-    ...
-
-    Returns:
-        The composed functions.
+    We use this to detect if sub-generators causes an exit, since
+    yielding nothing will be silently ignored.
     &#34;&#34;&#34;
 
-    def _kleisli(source: Any) -&gt; Any:
-        def reducer(acc, fn):
-            return fn(acc.value) if acc.is_some() else acc
 
-        return reduce(reducer, fns, source)
-
-    return _kleisli
+def failwith(message: str) -&gt; NoReturn:
+    raise Exception(message)
 
 
-__all__ = [&#34;kleisli&#34;]</code></pre>
+__all__ = [&#34;EffectError&#34;, &#34;failwith&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -134,57 +51,55 @@ __all__ = [&#34;kleisli&#34;]</code></pre>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="fslash.extra.option.kleisli.kleisli"><code class="name flex">
-<span>def <span class="ident">kleisli</span></span>(<span>*fns: Callable) ‑> Callable</span>
+<dt id="fslash.core.error.failwith"><code class="name flex">
+<span>def <span class="ident">failwith</span></span>(<span>message: str) ‑> NoReturn</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Kleisli (&gt;=&gt;) compose multiple option returning functions left
-to right.</p>
-<p>Kleisli composes zero or more functions into a functional
-composition. The functions are composed left to right. A composition
-of zero functions gives back the identity function.</p>
-<pre><code class="python-repl">&gt;&gt;&gt; kleisli()(x) == x
-&gt;&gt;&gt; kleisli(f)(x) == f(x)
-&gt;&gt;&gt; kleisli(f, g)(x) == g(f(x))
-&gt;&gt;&gt; kleisli(f, g, h)(x) == h(g(f(x)))
-...
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>The composed functions.</p></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def kleisli(*fns: Callable) -&gt; Callable:
-    &#34;&#34;&#34;Kleisli (&gt;=&gt;) compose multiple option returning functions left
-    to right.
-
-    Kleisli composes zero or more functions into a functional
-    composition. The functions are composed left to right. A composition
-    of zero functions gives back the identity function.
-
-    &gt;&gt;&gt; kleisli()(x) == x
-    &gt;&gt;&gt; kleisli(f)(x) == f(x)
-    &gt;&gt;&gt; kleisli(f, g)(x) == g(f(x))
-    &gt;&gt;&gt; kleisli(f, g, h)(x) == h(g(f(x)))
-    ...
-
-    Returns:
-        The composed functions.
-    &#34;&#34;&#34;
-
-    def _kleisli(source: Any) -&gt; Any:
-        def reducer(acc, fn):
-            return fn(acc.value) if acc.is_some() else acc
-
-        return reduce(reducer, fns, source)
-
-    return _kleisli</code></pre>
+<pre><code class="python">def failwith(message: str) -&gt; NoReturn:
+    raise Exception(message)</code></pre>
 </details>
 </dd>
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="fslash.core.error.EffectError"><code class="flex name class">
+<span>class <span class="ident">EffectError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An error that will exit any computational expression.</p>
+<p>We use this to detect if sub-generators causes an exit, since
+yielding nothing will be silently ignored.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class EffectError(Exception):
+    &#34;&#34;&#34;An error that will exit any computational expression.
+
+    We use this to detect if sub-generators causes an exit, since
+    yielding nothing will be silently ignored.
+    &#34;&#34;&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="fslash.core.option.Nothing_" href="option.html#fslash.core.option.Nothing_">Nothing_</a></li>
+<li><a title="fslash.core.result.Error" href="result.html#fslash.core.result.Error">Error</a></li>
+</ul>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -195,12 +110,19 @@ of zero functions gives back the identity function.</p>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="fslash.extra.option" href="index.html">fslash.extra.option</a></code></li>
+<li><code><a title="fslash.core" href="index.html">fslash.core</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="fslash.extra.option.kleisli.kleisli" href="#fslash.extra.option.kleisli.kleisli">kleisli</a></code></li>
+<li><code><a title="fslash.core.error.failwith" href="#fslash.core.error.failwith">failwith</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="fslash.core.error.EffectError" href="#fslash.core.error.EffectError">EffectError</a></code></h4>
+</li>
 </ul>
 </li>
 </ul>

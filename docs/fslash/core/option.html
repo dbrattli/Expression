@@ -39,9 +39,9 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 &#34;&#34;&#34;
 from abc import abstractmethod
-from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any
+from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any, cast
 from .pipe import pipe
-from .misc import ComputationalExpressionExit
+from .error import EffectError
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -56,9 +56,16 @@ class Option(Iterable[TSource]):
         &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
-    def match(self, *args, **kw):
+    def match(self, *args, **kw) -&gt; Any:
         from pampy import match
+
         return match(self, *args, **kw)
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        raise NotImplementedError
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
@@ -96,10 +103,10 @@ class Option(Iterable[TSource]):
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         return self.__str__()
 
 
@@ -108,6 +115,12 @@ class Some(Option[TSource]):
 
     def __init__(self, value: TSource) -&gt; None:
         self._value = value
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        return self._value
 
     def is_some(self) -&gt; bool:
         &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
@@ -122,7 +135,7 @@ class Some(Option[TSource]):
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
         if isinstance(other, Some):
-            return Some(mapper(self._value, other.value))
+            return Some(mapper(self._value, cast(Some[T2], other).value))
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
@@ -146,19 +159,19 @@ class Some(Option[TSource]):
         &#34;&#34;&#34;
         return self._value
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
-            return self._value == other._value
+            return self._value == cast(Some[Any], other)._value
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
         return (yield self._value)
 
-    def __str__(self):
+    def __str__(self) -&gt; str:
         return f&#34;Some {self._value}&#34;
 
 
-class Nothing_(Option[TSource], ComputationalExpressionExit):
+class Nothing_(Option[TSource], EffectError):
     &#34;&#34;&#34;The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -166,6 +179,12 @@ class Nothing_(Option[TSource], ComputationalExpressionExit):
         &gt;&gt;&gt; if xs is Nothing:
         ...     return True
     &#34;&#34;&#34;
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        return value
 
     def is_some(self) -&gt; bool:
         &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
@@ -203,7 +222,7 @@ class Nothing_(Option[TSource], ComputationalExpressionExit):
         raise Nothing
         yield
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if other is Nothing:
             return True
         return False
@@ -214,13 +233,39 @@ class Nothing_(Option[TSource], ComputationalExpressionExit):
 
 # The singleton None class. We use the name &#39;Nothing&#39; here instead of `None` to
 # avoid conflicts with the builtin `None` value.
-Nothing: Nothing_ = Nothing_()
+Nothing: Nothing_[Any] = Nothing_()
 &#34;&#34;&#34;Singleton `Nothing` object.
 
 Since Nothing is a singleton it can be tested e.g using `is`:
     &gt;&gt;&gt; if xs is Nothing:
     ...     return True
 &#34;&#34;&#34;
+
+
+def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
+    def _bind(option: Option[TSource]) -&gt; Option[TResult]:
+        return option.bind(mapper)
+
+    return _bind
+
+
+def default_value(value: TSource) -&gt; Callable[[Option[TSource]], TSource]:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
+
+    def _default_value(option: Option[TSource]) -&gt; TSource:
+        return option.default_value(value)
+
+    return _default_value
+
+
+def is_none(option: Option[TSource]) -&gt; bool:
+    return option.is_none()
+
+
+def is_some(option: Option[TSource]) -&gt; bool:
+    return option.is_some()
 
 
 def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
@@ -235,21 +280,6 @@ def map2(mapper: Callable[[T1, T2], TResult]) -&gt; Callable[[Option[T1], Option
         return opt1.map2(mapper, opt2)
 
     return _map2
-
-
-def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
-    def _bind(option: Option[TSource]) -&gt; Option[TResult]:
-        return option.bind(mapper)
-
-    return _bind
-
-
-def is_none(option: Option[TSource]) -&gt; bool:
-    return option.is_none()
-
-
-def is_some(option: Option[TSource]) -&gt; bool:
-    return option.is_some()
 
 
 def or_else(if_none: Option[TSource]) -&gt; Callable[[Option[TSource]], Option[TSource]]:
@@ -309,9 +339,10 @@ __all__ = [
     &#34;Some&#34;,
     &#34;Nothing&#34;,
     &#34;Nothing_&#34;,
+    &#34;bind&#34;,
+    &#34;default_value&#34;,
     &#34;map&#34;,
     &#34;map2&#34;,
-    &#34;bind&#34;,
     &#34;is_none&#34;,
     &#34;is_some&#34;,
     &#34;or_else&#34;,
@@ -327,7 +358,7 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="fslash.core.option.Nothing"><code class="name">var <span class="ident">Nothing</span> : <a title="fslash.core.option.Nothing_" href="#fslash.core.option.Nothing_">Nothing_</a></code></dt>
+<dt id="fslash.core.option.Nothing"><code class="name">var <span class="ident">Nothing</span> : <a title="fslash.core.option.Nothing_" href="#fslash.core.option.Nothing_">Nothing_</a>[typing.Any]</code></dt>
 <dd>
 <div class="desc"><p>Singleton <code><a title="fslash.core.option.Nothing" href="#fslash.core.option.Nothing">Nothing</a></code> object.</p>
 <p>Since Nothing is a singleton it can be tested e.g using <code>is</code>:
@@ -354,6 +385,27 @@ return True</p></div>
         return option.bind(mapper)
 
     return _bind</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.option.default_value"><code class="name flex">
+<span>def <span class="ident">default_value</span></span>(<span>value: ~TSource) ‑> Callable[[<a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a>[~TSource]], ~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+returns the specified default value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_value(value: TSource) -&gt; Callable[[Option[TSource]], TSource]:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
+
+    def _default_value(option: Option[TSource]) -&gt; TSource:
+        return option.default_value(value)
+
+    return _default_value</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.option.is_none"><code class="name flex">
@@ -548,7 +600,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Nothing_(Option[TSource], ComputationalExpressionExit):
+<pre><code class="python">class Nothing_(Option[TSource], EffectError):
     &#34;&#34;&#34;The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -556,6 +608,12 @@ return True</p></div>
         &gt;&gt;&gt; if xs is Nothing:
         ...     return True
     &#34;&#34;&#34;
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        return value
 
     def is_some(self) -&gt; bool:
         &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
@@ -593,7 +651,7 @@ return True</p></div>
         raise Nothing
         yield
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if other is Nothing:
             return True
         return False
@@ -606,7 +664,7 @@ return True</p></div>
 <li><a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
-<li><a title="fslash.core.misc.ComputationalExpressionExit" href="misc.html#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></li>
+<li><a title="fslash.core.error.EffectError" href="error.html#fslash.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
@@ -724,6 +782,7 @@ return True</p></div>
 <ul class="hlist">
 <li><code><b><a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
+<li><code><a title="fslash.core.option.Option.default_value" href="#fslash.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="fslash.core.option.Option.pipe" href="#fslash.core.option.Option.pipe">pipe</a></code></li>
 </ul>
 </li>
@@ -746,9 +805,16 @@ return True</p></div>
         &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
-    def match(self, *args, **kw):
+    def match(self, *args, **kw) -&gt; Any:
         from pampy import match
+
         return match(self, *args, **kw)
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        raise NotImplementedError
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
@@ -786,10 +852,10 @@ return True</p></div>
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         return self.__str__()</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -815,6 +881,23 @@ return True</p></div>
 </summary>
 <pre><code class="python">@abstractmethod
 def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.option.Option.default_value"><code class="name flex">
+<span>def <span class="ident">default_value</span></span>(<span>self, value: ~TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+returns the specified default value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -877,7 +960,7 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 </details>
 </dd>
 <dt id="fslash.core.option.Option.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -885,8 +968,9 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args, **kw):
+<pre><code class="python">def match(self, *args, **kw) -&gt; Any:
     from pampy import match
+
     return match(self, *args, **kw)</code></pre>
 </details>
 </dd>
@@ -965,6 +1049,12 @@ def to_seq(self) -&gt; Iterable[TSource]:
     def __init__(self, value: TSource) -&gt; None:
         self._value = value
 
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        return self._value
+
     def is_some(self) -&gt; bool:
         &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
         return True
@@ -978,7 +1068,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
         if isinstance(other, Some):
-            return Some(mapper(self._value, other.value))
+            return Some(mapper(self._value, cast(Some[T2], other).value))
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
@@ -1002,15 +1092,15 @@ def to_seq(self) -&gt; Iterable[TSource]:
         &#34;&#34;&#34;
         return self._value
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
-            return self._value == other._value
+            return self._value == cast(Some[Any], other)._value
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
         return (yield self._value)
 
-    def __str__(self):
+    def __str__(self) -&gt; str:
         return f&#34;Some {self._value}&#34;</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1106,7 +1196,7 @@ def value(self):
 </summary>
 <pre><code class="python">def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
     if isinstance(other, Some):
-        return Some(mapper(self._value, other.value))
+        return Some(mapper(self._value, cast(Some[T2], other).value))
     return Nothing</code></pre>
 </details>
 </dd>
@@ -1155,6 +1245,7 @@ def value(self):
 <ul class="hlist">
 <li><code><b><a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
+<li><code><a title="fslash.core.option.Option.default_value" href="#fslash.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="fslash.core.option.Option.pipe" href="#fslash.core.option.Option.pipe">pipe</a></code></li>
 </ul>
 </li>
@@ -1182,6 +1273,7 @@ def value(self):
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="two-column">
 <li><code><a title="fslash.core.option.bind" href="#fslash.core.option.bind">bind</a></code></li>
+<li><code><a title="fslash.core.option.default_value" href="#fslash.core.option.default_value">default_value</a></code></li>
 <li><code><a title="fslash.core.option.is_none" href="#fslash.core.option.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.option.is_some" href="#fslash.core.option.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.option.map" href="#fslash.core.option.map">map</a></code></li>
@@ -1212,6 +1304,7 @@ def value(self):
 <h4><code><a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a></code></h4>
 <ul class="two-column">
 <li><code><a title="fslash.core.option.Option.bind" href="#fslash.core.option.Option.bind">bind</a></code></li>
+<li><code><a title="fslash.core.option.Option.default_value" href="#fslash.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="fslash.core.option.Option.is_none" href="#fslash.core.option.Option.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.option.Option.is_some" href="#fslash.core.option.Option.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.option.Option.map" href="#fslash.core.option.Option.map">map</a></code></li>

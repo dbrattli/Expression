@@ -32,7 +32,7 @@ def test_seq_yield():
 
 
 @given(st.lists(st.integers(), max_size=10))
-def test_seq_yield2(xs):
+def test_seq_yield_for_in(xs):
     @seq
     def fn():
         for x in xs:
@@ -41,6 +41,19 @@ def test_seq_yield2(xs):
     ys = fn()
 
     assert list(ys) == xs
+
+
+# @given(st.lists(st.integers(), min_size=1, max_size=10))
+# def test_seq_yield_from(xs):
+#     @seq
+#     def fn():
+#         x = yield from xs
+#         print(x)
+#         return x + 1
+
+#     ys = fn()
+
+#     assert list(ys) == [x + 1 for x in xs]
 
 
 @given(st.lists(st.integers()))

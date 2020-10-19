@@ -6,9 +6,9 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
 from abc import abstractmethod
-from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any
+from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any, cast
 from .pipe import pipe
-from .misc import ComputationalExpressionExit
+from .error import EffectError
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -23,8 +23,9 @@ class Option(Iterable[TSource]):
         """Pipe option through the given functions."""
         return pipe(self, *args)
 
-    def match(self, *args, **kw):
+    def match(self, *args, **kw) -> Any:
         from pampy import match
+
         return match(self, *args, **kw)
 
     def default_value(self, value: TSource) -> TSource:
@@ -69,10 +70,10 @@ class Option(Iterable[TSource]):
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 
@@ -101,7 +102,7 @@ class Some(Option[TSource]):
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -> Option[TResult]:
         if isinstance(other, Some):
-            return Some(mapper(self._value, other.value))
+            return Some(mapper(self._value, cast(Some[T2], other).value))
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
@@ -125,19 +126,19 @@ class Some(Option[TSource]):
         """
         return self._value
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Some):
-            return self._value == other._value
+            return self._value == cast(Some[Any], other)._value
         return False
 
     def __iter__(self) -> Iterator[TSource]:
         return (yield self._value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Some {self._value}"
 
 
-class Nothing_(Option[TSource], ComputationalExpressionExit):
+class Nothing_(Option[TSource], EffectError):
     """The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -188,7 +189,7 @@ class Nothing_(Option[TSource], ComputationalExpressionExit):
         raise Nothing
         yield
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if other is Nothing:
             return True
         return False
@@ -199,13 +200,39 @@ class Nothing_(Option[TSource], ComputationalExpressionExit):
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
 # avoid conflicts with the builtin `None` value.
-Nothing: Nothing_ = Nothing_()
+Nothing: Nothing_[Any] = Nothing_()
 """Singleton `Nothing` object.
 
 Since Nothing is a singleton it can be tested e.g using `is`:
     >>> if xs is Nothing:
     ...     return True
 """
+
+
+def bind(mapper: Callable[[TSource], Option[TResult]]) -> Callable[[Option[TSource]], Option[TResult]]:
+    def _bind(option: Option[TSource]) -> Option[TResult]:
+        return option.bind(mapper)
+
+    return _bind
+
+
+def default_value(value: TSource) -> Callable[[Option[TSource]], TSource]:
+    """Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    """
+
+    def _default_value(option: Option[TSource]) -> TSource:
+        return option.default_value(value)
+
+    return _default_value
+
+
+def is_none(option: Option[TSource]) -> bool:
+    return option.is_none()
+
+
+def is_some(option: Option[TSource]) -> bool:
+    return option.is_some()
 
 
 def map(mapper: Callable[[TSource], TResult]) -> Callable[[Option[TSource]], Option[TResult]]:
@@ -220,30 +247,6 @@ def map2(mapper: Callable[[T1, T2], TResult]) -> Callable[[Option[T1], Option[T2
         return opt1.map2(mapper, opt2)
 
     return _map2
-
-
-def bind(mapper: Callable[[TSource], Option[TResult]]) -> Callable[[Option[TSource]], Option[TResult]]:
-    def _bind(option: Option[TSource]) -> Option[TResult]:
-        return option.bind(mapper)
-
-    return _bind
-
-
-def default_value(value: TSource) -> Callable[[Option[TSource]], TSource]:
-    """Gets the value of the option if the option is Some, otherwise
-    returns the specified default value.
-    """
-    def _default_value(option: Option[Option[TSource]]) -> TSource:
-        return option.default_value(value)
-    return _default_value
-
-
-def is_none(option: Option[TSource]) -> bool:
-    return option.is_none()
-
-
-def is_some(option: Option[TSource]) -> bool:
-    return option.is_some()
 
 
 def or_else(if_none: Option[TSource]) -> Callable[[Option[TSource]], Option[TSource]]:
@@ -303,9 +306,10 @@ __all__ = [
     "Some",
     "Nothing",
     "Nothing_",
+    "bind",
+    "default_value",
     "map",
     "map2",
-    "bind",
     "is_none",
     "is_some",
     "or_else",

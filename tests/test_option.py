@@ -1,12 +1,10 @@
-from tests.utils import CustomException
-from fslash.core.option import Nothing_
 import pytest
 from hypothesis import given, strategies as st
-
 from pampy import match, _
 
-from fslash.core import Option, Option_, Some, Nothing, pipe, pipe2
+from fslash.core import Option, Option_, Some, Nothing, Nothing_, pipe, pipe2
 from fslash.builders import option
+from tests.utils import CustomException
 
 
 def test_option_some():
@@ -20,7 +18,7 @@ def test_option_some():
 def test_option_some_iterate():
     xs = Some(42)
 
-    for x in xs:
+    for x in Option.to_list(xs):
         assert x == 42
 
 
@@ -35,9 +33,8 @@ def test_option_none():
 def test_option_nothing_iterate():
     xs = Nothing
 
-    with pytest.raises(Nothing_):
-        for x in xs:
-            pass
+    for x in Option.to_list(xs):
+        assert False
 
 
 def test_option_none_equals_none():

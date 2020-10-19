@@ -1,6 +1,7 @@
-from typing import TypeVar, Tuple, Any
+from typing import TypeVar, Tuple, Any, Callable
 
 A = TypeVar("A")
+B = TypeVar("B")
 TSource = TypeVar("TSource")
 
 
@@ -16,21 +17,16 @@ def starid(*value: Any) -> Tuple[Any, ...]:
     return value
 
 
-def flip(fn):
+def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
     """Flips the arguments for a function taking two arguments.
 
     Example:
         >>> fn(a, b) == flip(fn(b, a)) ==
     """
-    lambda a, b: fn(b, a)
+    def _(b: B, a: A) -> Any:
+        return fn(a, b)
+    return _
 
 
-class ComputationalExpressionExit(Exception):
-    """An error that will exit any computational expression.
 
-    We use this to detect if sub-generators causes an exit, since
-    yielding nothing will be silently ignored.
-    """
-
-
-__all__ = ["identity", "starid", "flip", "ComputationalExpressionExit"]
+__all__ = ["identity", "starid", "flip"]

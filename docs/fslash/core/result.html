@@ -41,7 +41,8 @@ Programming.
 
 from abc import abstractmethod
 from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
-from .misc import identity, ComputationalExpressionExit
+from .error import EffectError
+from .misc import identity
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
@@ -134,7 +135,7 @@ class Ok(Result[TSource, TError]):
         return f&#34;Ok {self._value}&#34;
 
 
-class Error(Result[TSource, TError], ComputationalExpressionExit):
+class Error(Result[TSource, TError], EffectError):
     &#34;&#34;&#34;The Error result case class.&#34;&#34;&#34;
 
     def __init__(self, error: TError) -&gt; None:
@@ -210,7 +211,7 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
         t = yield from tail
         return [h] + t
 
-    return Seq.fold_back(folder, lst)(Ok([]))  # type: ignore
+    return Seq.fold_back(folder, lst)(Ok([]))
 
 
 def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TError]:
@@ -310,7 +311,7 @@ sequence of their response.</p></div>
         t = yield from tail
         return [h] + t
 
-    return Seq.fold_back(folder, lst)(Ok([]))  # type: ignore</code></pre>
+    return Seq.fold_back(folder, lst)(Ok([]))</code></pre>
 </details>
 </dd>
 </dl>
@@ -328,7 +329,7 @@ sequence of their response.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Error(Result[TSource, TError], ComputationalExpressionExit):
+<pre><code class="python">class Error(Result[TSource, TError], EffectError):
     &#34;&#34;&#34;The Error result case class.&#34;&#34;&#34;
 
     def __init__(self, error: TError) -&gt; None:
@@ -373,7 +374,7 @@ sequence of their response.</p></div>
 <li><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
-<li><a title="fslash.core.misc.ComputationalExpressionExit" href="misc.html#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></li>
+<li><a title="fslash.core.error.EffectError" href="error.html#fslash.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>

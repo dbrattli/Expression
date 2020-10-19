@@ -1,24 +1,25 @@
+from typing import Callable
 from hypothesis import given, strategies as st
 from fslash.core import compose, identity
 
 
 @given(st.integers())
-def test_compose_identity_implicit(x):
+def test_compose_identity_implicit(x: int):
     fn = compose()
 
     assert fn(x) == x
 
 
 @given(st.integers())
-def test_compose_identity(x):
+def test_compose_identity(x: int):
     fn = compose(identity)
 
     assert fn(x) == x
 
 
 @given(st.integers())
-def test_compose_1(x):
-    fn = lambda x: x + 42
+def test_compose_1(x: int):
+    fn: Callable[[int], int] = lambda x: x + 42
     gn = compose(fn)
 
     assert gn(x) == fn(x) == x + 42

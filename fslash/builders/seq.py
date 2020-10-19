@@ -9,7 +9,7 @@ TState = TypeVar("TState")
 
 
 class SeqBuilder(Builder[Seq_[TSource], TSource]):
-    def bind(self, xs: Iterable[TSource], fn: Callable[[TSource], Iterable[TResult]]):
+    def bind(self, xs: Iterable[TSource], fn: Callable[[TSource], Iterable[TResult]]) -> Iterable[TResult]:
         return list(Seq.collect(fn)(xs))
 
     def return_(self, x: TSource) -> Iterable[TSource]:

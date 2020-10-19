@@ -8,7 +8,8 @@ Programming.
 
 from abc import abstractmethod
 from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
-from .misc import identity, ComputationalExpressionExit
+from .error import EffectError
+from .misc import identity
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
@@ -101,7 +102,7 @@ class Ok(Result[TSource, TError]):
         return f"Ok {self._value}"
 
 
-class Error(Result[TSource, TError], ComputationalExpressionExit):
+class Error(Result[TSource, TError], EffectError):
     """The Error result case class."""
 
     def __init__(self, error: TError) -> None:
@@ -177,7 +178,7 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
         t = yield from tail
         return [h] + t
 
-    return Seq.fold_back(folder, lst)(Ok([]))  # type: ignore
+    return Seq.fold_back(folder, lst)(Ok([]))
 
 
 def sequence(lst: List[Result[TSource, TError]]) -> Result[List[TSource], TError]:

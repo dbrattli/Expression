@@ -35,20 +35,22 @@ from . import option as Option
 from . import result as Result
 
 from .compose import compose
-from .misc import identity, flip, ComputationalExpressionExit
+from .misc import identity, flip
 from .pipe import pipe, pipe2, pipe3
 from .curry import curried
 from .option import Option as Option_, Some, Nothing, Nothing_
 from .result import Result as Result_, Ok, Error
+from .error import EffectError, failwith
 from .builder import Builder
 
 
 __all__ = [
-    &#39;identity&#39;, &#39;flip&#39;, &#39;ComputationalExpressionExit&#39;,
+    &#39;identity&#39;, &#39;flip&#39;,
     &#39;compose&#39;, &#39;pipe&#39;, &#39;pipe2&#39;, &#39;pipe3&#39;, &#39;curried&#39;,
     &#39;Option&#39;, &#39;Option_&#39;, &#39;Some&#39;, &#39;Nothing&#39;, &#34;Nothing_&#34;,
     &#39;Result&#39;, &#39;Result_&#39;, &#39;Ok&#39;, &#39;Error&#39;,
-    &#39;Builder&#39;
+    &#39;Builder&#39;,
+    &#39;failwith&#39;, &#39;EffectError&#39;
 ]</code></pre>
 </details>
 </section>
@@ -60,6 +62,10 @@ __all__ = [
 <div class="desc"></div>
 </dd>
 <dt><code class="name"><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="fslash.core.error" href="error.html">fslash.core.error</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -83,7 +89,7 @@ __all__ = [
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="fslash.core.compose"><code class="name flex">
-<span>def <span class="ident">compose</span></span>(<span>*fns: Callable) ‑> Callable</span>
+<span>def <span class="ident">compose</span></span>(<span>*fns: Callable[[Any], Any]) ‑> Callable[[Any], Any]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Compose multiple functions left to right.</p>
@@ -102,7 +108,7 @@ functions gives back the identity function.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def compose(*fns: Callable) -&gt; Callable:  # type: ignore
+<pre><code class="python">def compose(*fns: Callable[[Any], Any]) -&gt; Callable[[Any], Any]:
     &#34;&#34;&#34;Compose multiple functions left to right.
 
     Composes zero or more functions into a functional composition. The
@@ -119,10 +125,11 @@ functions gives back the identity function.</p>
         The composed function.
     &#34;&#34;&#34;
 
-    def _compose(source: Any) -&gt; Any:
+    def compose(source: Any) -&gt; Any:
+        &#34;&#34;&#34;Return a pipeline of composed functions.&#34;&#34;&#34;
         return reduce(lambda acc, f: f(acc), fns, source)
 
-    return _compose</code></pre>
+    return compose</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.curried"><code class="name flex">
@@ -166,8 +173,21 @@ completeness.</p>
     return wrapper</code></pre>
 </details>
 </dd>
+<dt id="fslash.core.failwith"><code class="name flex">
+<span>def <span class="ident">failwith</span></span>(<span>message: str) ‑> NoReturn</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def failwith(message: str) -&gt; NoReturn:
+    raise Exception(message)</code></pre>
+</details>
+</dd>
 <dt id="fslash.core.flip"><code class="name flex">
-<span>def <span class="ident">flip</span></span>(<span>fn)</span>
+<span>def <span class="ident">flip</span></span>(<span>fn: Callable[[~A, ~B], Any]) ‑> Callable[[~B, ~A], Any]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Flips the arguments for a function taking two arguments.</p>
@@ -178,13 +198,15 @@ completeness.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def flip(fn):
+<pre><code class="python">def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
     &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
 
     Example:
         &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
     &#34;&#34;&#34;
-    lambda a, b: fn(b, a)</code></pre>
+    def _(b: B, a: A) -&gt; Any:
+        return fn(a, b)
+    return _</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.identity"><code class="name flex">
@@ -206,32 +228,32 @@ completeness.</p>
 </details>
 </dd>
 <dt id="fslash.core.pipe"><code class="name flex">
-<span>def <span class="ident">pipe</span></span>(<span>x, *fns)</span>
+<span>def <span class="ident">pipe</span></span>(<span>value: Any, *fns: Callable[[Any], Any]) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Functional pipe (<code>|&gt;</code>)</p>
 <p>Allows the use of function argument on the left side of the function.</p>
 <h2 id="example">Example</h2>
-<pre><code class="python-repl">&gt;&gt;&gt; pipe(x, fn) == fn(x)  # Same as x |&gt; fn
-&gt;&gt;&gt; pipe(x, fn, gn) == gn(fn(x))  # Same as x |&gt; fn |&gt; gn
+<pre><code class="python-repl">&gt;&gt;&gt; pipe(x, __fn) == __fn(x)  # Same as x |&gt; __fn
+&gt;&gt;&gt; pipe(x, __fn, gn) == gn(fn(x))  # Same as x |&gt; __fn |&gt; gn
 ...
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe(x, *fns):  # type: ignore
+<pre><code class="python">def pipe(value: Any, *fns: Callable[[Any], Any]) -&gt; Any:
     &#34;&#34;&#34;Functional pipe (`|&gt;`)
 
     Allows the use of function argument on the left side of the function.
 
     Example:
-        &gt;&gt;&gt; pipe(x, fn) == fn(x)  # Same as x |&gt; fn
-        &gt;&gt;&gt; pipe(x, fn, gn) == gn(fn(x))  # Same as x |&gt; fn |&gt; gn
+        &gt;&gt;&gt; pipe(x, __fn) == __fn(x)  # Same as x |&gt; __fn
+        &gt;&gt;&gt; pipe(x, __fn, gn) == gn(fn(x))  # Same as x |&gt; __fn |&gt; gn
         ...
     &#34;&#34;&#34;
 
-    return compose(*fns)(x)  # type: ignore</code></pre>
+    return compose(*fns)(value)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.pipe2"><code class="name flex">
@@ -289,7 +311,7 @@ return default</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Builder(Generic[TOuter, TInner]):
-    def bind(self, xs, fn):
+    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
         raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
 
     def return_(self, x):
@@ -304,11 +326,16 @@ return default</p></div>
     def zero(self):
         raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)
 
-    def _send(self, gen, done, value: Optional[TInner] = None) -&gt; TOuter:
+    def _send(
+        self,
+        gen: Coroutine[TInner, Optional[TInner], Optional[TOuter]],
+        done: List[bool],
+        value: Optional[TInner] = None,
+    ) -&gt; TOuter:
         try:
             yielded = gen.send(value)
             return self.return_(yielded)
-        except ComputationalExpressionExit as error:
+        except EffectError as error:
             done.append(True)
             return self.return_from(error)
         except StopIteration as ex:
@@ -316,24 +343,13 @@ return default</p></div>
             if ex.value is not None:
                 return self.return_(ex.value)
 
-            raise ComputationalExpressionExit()
+            raise EffectError()
         except Exception:
             raise
 
     def __call__(
         self,  # Ignored self parameter
-        fn: Callable[  # Function
-            ...,  # ... that takes anything
-            Union[  # ... and returns
-                # Coroutine that yields or returns TOuter
-                Coroutine[TInner, Optional[TInner], Optional[TOuter]],
-                # Generator that yields or returns TOuter
-                Generator[TInner, Optional[TInner], Optional[TOuter]],
-                # or simply just an Option
-                TOuter,
-                None
-            ],
-        ],
+        fn: Callable[..., Any],
     ) -&gt; Callable[..., TOuter]:
         &#34;&#34;&#34;Option builder.
 
@@ -343,29 +359,30 @@ return default</p></div>
 
         Args:
             fn: A function that contains a computational expression and
-            returns either a coroutine, generator or an option.
+                returns either a coroutine, generator or an option.
 
         Returns:
             A `builder` function that can wrap coroutines into builders.
         &#34;&#34;&#34;
 
-        def wrapper(*args, **kw) -&gt; TOuter:
+        def wrapper(*args: Any, **kw: Any) -&gt; TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
 
             result: Optional[TOuter] = None
             try:
                 result = self._send(gen, done)
-                while not done and not isinstance(result, ComputationalExpressionExit):
-                    cont = self.bind(result, lambda value: self._send(gen, done, value))
+                while not done and not isinstance(result, EffectError):
+                    cont = self.bind(cast(TOuter, result), lambda value: self._send(gen, done, value))
                     result = self.combine(result, cont)
-            except ComputationalExpressionExit:
+            except EffectError:
                 pass
 
             if result is None:
                 result = self.zero()
 
             return result
+
         return wrapper</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -381,7 +398,7 @@ return default</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="fslash.core.Builder.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, xs, fn)</span>
+<span>def <span class="ident">bind</span></span>(<span>self, xs: ~TOuter, fn: Callable[[~TInner], ~TOuter2]) ‑> ~TOuter2</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -389,7 +406,7 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(self, xs, fn):
+<pre><code class="python">def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
     raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)</code></pre>
 </details>
 </dd>
@@ -447,8 +464,8 @@ return default</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="fslash.core.ComputationalExpressionExit"><code class="flex name class">
-<span>class <span class="ident">ComputationalExpressionExit</span></span>
+<dt id="fslash.core.EffectError"><code class="flex name class">
+<span>class <span class="ident">EffectError</span></span>
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
@@ -459,7 +476,7 @@ yielding nothing will be silently ignored.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class ComputationalExpressionExit(Exception):
+<pre><code class="python">class EffectError(Exception):
     &#34;&#34;&#34;An error that will exit any computational expression.
 
     We use this to detect if sub-generators causes an exit, since
@@ -487,7 +504,7 @@ yielding nothing will be silently ignored.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Error(Result[TSource, TError], ComputationalExpressionExit):
+<pre><code class="python">class Error(Result[TSource, TError], EffectError):
     &#34;&#34;&#34;The Error result case class.&#34;&#34;&#34;
 
     def __init__(self, error: TError) -&gt; None:
@@ -532,7 +549,7 @@ yielding nothing will be silently ignored.</p></div>
 <li><a title="fslash.core.result.Result" href="result.html#fslash.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
-<li><a title="fslash.core.misc.ComputationalExpressionExit" href="misc.html#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></li>
+<li><a title="fslash.core.error.EffectError" href="error.html#fslash.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
@@ -631,7 +648,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Nothing_(Option[TSource], ComputationalExpressionExit):
+<pre><code class="python">class Nothing_(Option[TSource], EffectError):
     &#34;&#34;&#34;The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -639,6 +656,12 @@ return True</p></div>
         &gt;&gt;&gt; if xs is Nothing:
         ...     return True
     &#34;&#34;&#34;
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        return value
 
     def is_some(self) -&gt; bool:
         &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
@@ -676,7 +699,7 @@ return True</p></div>
         raise Nothing
         yield
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if other is Nothing:
             return True
         return False
@@ -689,7 +712,7 @@ return True</p></div>
 <li><a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
-<li><a title="fslash.core.misc.ComputationalExpressionExit" href="misc.html#fslash.core.misc.ComputationalExpressionExit">ComputationalExpressionExit</a></li>
+<li><a title="fslash.core.error.EffectError" href="error.html#fslash.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
@@ -807,6 +830,7 @@ return True</p></div>
 <ul class="hlist">
 <li><code><b><a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
+<li><code><a title="fslash.core.option.Option.default_value" href="option.html#fslash.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="fslash.core.option.Option.pipe" href="option.html#fslash.core.option.Option.pipe">pipe</a></code></li>
 </ul>
 </li>
@@ -964,9 +988,16 @@ def value(self):
         &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
-    def match(self, *args, **kw):
+    def match(self, *args, **kw) -&gt; Any:
         from pampy import match
+
         return match(self, *args, **kw)
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        raise NotImplementedError
 
     @abstractmethod
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
@@ -1004,10 +1035,10 @@ def value(self):
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         return self.__str__()</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1033,6 +1064,23 @@ def value(self):
 </summary>
 <pre><code class="python">@abstractmethod
 def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="fslash.core.Option.default_value"><code class="name flex">
+<span>def <span class="ident">default_value</span></span>(<span>self, value: ~TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+returns the specified default value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -1095,7 +1143,7 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 </details>
 </dd>
 <dt id="fslash.core.Option.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+<span>def <span class="ident">match</span></span>(<span>self, *args, **kw) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1103,8 +1151,9 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args, **kw):
+<pre><code class="python">def match(self, *args, **kw) -&gt; Any:
     from pampy import match
+
     return match(self, *args, **kw)</code></pre>
 </details>
 </dd>
@@ -1353,6 +1402,12 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
     def __init__(self, value: TSource) -&gt; None:
         self._value = value
 
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        return self._value
+
     def is_some(self) -&gt; bool:
         &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
         return True
@@ -1366,7 +1421,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
         if isinstance(other, Some):
-            return Some(mapper(self._value, other.value))
+            return Some(mapper(self._value, cast(Some[T2], other).value))
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
@@ -1390,15 +1445,15 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         &#34;&#34;&#34;
         return self._value
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
-            return self._value == other._value
+            return self._value == cast(Some[Any], other)._value
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
         return (yield self._value)
 
-    def __str__(self):
+    def __str__(self) -&gt; str:
         return f&#34;Some {self._value}&#34;</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1494,7 +1549,7 @@ def value(self):
 </summary>
 <pre><code class="python">def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
     if isinstance(other, Some):
-        return Some(mapper(self._value, other.value))
+        return Some(mapper(self._value, cast(Some[T2], other).value))
     return Nothing</code></pre>
 </details>
 </dd>
@@ -1543,6 +1598,7 @@ def value(self):
 <ul class="hlist">
 <li><code><b><a title="fslash.core.option.Option" href="option.html#fslash.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
+<li><code><a title="fslash.core.option.Option.default_value" href="option.html#fslash.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="fslash.core.option.Option.pipe" href="option.html#fslash.core.option.Option.pipe">pipe</a></code></li>
 </ul>
 </li>
@@ -1566,6 +1622,7 @@ def value(self):
 <ul>
 <li><code><a title="fslash.core.builder" href="builder.html">fslash.core.builder</a></code></li>
 <li><code><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></li>
+<li><code><a title="fslash.core.error" href="error.html">fslash.core.error</a></code></li>
 <li><code><a title="fslash.core.misc" href="misc.html">fslash.core.misc</a></code></li>
 <li><code><a title="fslash.core.option" href="option.html">fslash.core.option</a></code></li>
 <li><code><a title="fslash.core.result" href="result.html">fslash.core.result</a></code></li>
@@ -1575,6 +1632,7 @@ def value(self):
 <ul class="two-column">
 <li><code><a title="fslash.core.compose" href="#fslash.core.compose">compose</a></code></li>
 <li><code><a title="fslash.core.curried" href="#fslash.core.curried">curried</a></code></li>
+<li><code><a title="fslash.core.failwith" href="#fslash.core.failwith">failwith</a></code></li>
 <li><code><a title="fslash.core.flip" href="#fslash.core.flip">flip</a></code></li>
 <li><code><a title="fslash.core.identity" href="#fslash.core.identity">identity</a></code></li>
 <li><code><a title="fslash.core.pipe" href="#fslash.core.pipe">pipe</a></code></li>
@@ -1595,7 +1653,7 @@ def value(self):
 </ul>
 </li>
 <li>
-<h4><code><a title="fslash.core.ComputationalExpressionExit" href="#fslash.core.ComputationalExpressionExit">ComputationalExpressionExit</a></code></h4>
+<h4><code><a title="fslash.core.EffectError" href="#fslash.core.EffectError">EffectError</a></code></h4>
 </li>
 <li>
 <h4><code><a title="fslash.core.Error" href="#fslash.core.Error">Error</a></code></h4>
@@ -1634,6 +1692,7 @@ def value(self):
 <h4><code><a title="fslash.core.Option" href="#fslash.core.Option">Option</a></code></h4>
 <ul class="two-column">
 <li><code><a title="fslash.core.Option.bind" href="#fslash.core.Option.bind">bind</a></code></li>
+<li><code><a title="fslash.core.Option.default_value" href="#fslash.core.Option.default_value">default_value</a></code></li>
 <li><code><a title="fslash.core.Option.is_none" href="#fslash.core.Option.is_none">is_none</a></code></li>
 <li><code><a title="fslash.core.Option.is_some" href="#fslash.core.Option.is_some">is_some</a></code></li>
 <li><code><a title="fslash.core.Option.map" href="#fslash.core.Option.map">map</a></code></li>
