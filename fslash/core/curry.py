@@ -7,7 +7,7 @@ def curried(fn: Callable[..., Any]) -> Callable[..., Any]:
 
     Makes a function curryable. Note that the function will loose it's
     typing hints so you will need to provide typed overloads for the
-    inteded uses of the function you are decorating.
+    intended uses of the function you are decorating.
 
     Example:
         @overload

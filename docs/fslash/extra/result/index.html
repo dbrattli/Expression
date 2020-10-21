@@ -22,6 +22,14 @@
 <h1 class="title">Module <code>fslash.extra.result</code></h1>
 </header>
 <section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from .traversable import sequence, traverse
+
+__all__ = [&#34;sequence&#34;, &#34;traverse&#34;]</code></pre>
+</details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
@@ -39,6 +47,55 @@
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="fslash.extra.result.sequence"><code class="name flex">
+<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="fslash.core.result.Result" href="../../core/result.html#fslash.core.result.Result">Result</a>[~TSource, ~TError]]) ‑> <a title="fslash.core.result.Result" href="../../core/result.html#fslash.core.result.Result">Result</a>[typing.List[~TSource], ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Execute a sequence of result returning commands and collect the
+sequence of their response.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sequence(lst: List[Result_[TSource, TError]]) -&gt; Result_[List[TSource], TError]:
+    &#34;&#34;&#34;Execute a sequence of result returning commands and collect the
+    sequence of their response.&#34;&#34;&#34;
+
+    return traverse(identity, lst)</code></pre>
+</details>
+</dd>
+<dt id="fslash.extra.result.traverse"><code class="name flex">
+<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], <a title="fslash.core.result.Result" href="../../core/result.html#fslash.core.result.Result">Result</a>[~TResult, ~TError]], lst: List[~TSource]) ‑> <a title="fslash.core.result.Result" href="../../core/result.html#fslash.core.result.Result">Result</a>[typing.List[~TResult], ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Traverses a list of items.</p>
+<p>Threads an applicative computation though a list of items.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def traverse(fn: Callable[[TSource], Result_[TResult, TError]], lst: List[TSource]) -&gt; Result_[List[TResult], TError]:
+    &#34;&#34;&#34;Traverses a list of items.
+
+    Threads an applicative computation though a list of items.
+    &#34;&#34;&#34;
+
+    # flake8: noqa: T484
+    @result
+    def folder(head: TSource, tail: Result_[List[TResult], TError]) -&gt; Generator[TResult, TResult, List[TResult]]:
+        &#34;&#34;&#34;Same as:
+        &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+        &#34;&#34;&#34;
+        h = yield from fn(head)
+        t = yield from tail
+        return [h] + t
+
+    return Seq.fold_back(folder, lst)(Ok([]))</code></pre>
+</details>
+</dd>
+</dl>
 </section>
 <section>
 </section>
@@ -58,6 +115,12 @@
 <ul>
 <li><code><a title="fslash.extra.result.pipeline" href="pipeline.html">fslash.extra.result.pipeline</a></code></li>
 <li><code><a title="fslash.extra.result.traversable" href="traversable.html">fslash.extra.result.traversable</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="fslash.extra.result.sequence" href="#fslash.extra.result.sequence">sequence</a></code></li>
+<li><code><a title="fslash.extra.result.traverse" href="#fslash.extra.result.traverse">traverse</a></code></li>
 </ul>
 </li>
 </ul>

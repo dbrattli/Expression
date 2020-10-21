@@ -35,7 +35,7 @@ def curried(fn: Callable[..., Any]) -&gt; Callable[..., Any]:
 
     Makes a function curryable. Note that the function will loose it&#39;s
     typing hints so you will need to provide typed overloads for the
-    inteded uses of the function you are decorating.
+    intended uses of the function you are decorating.
 
     Example:
         @overload
@@ -82,7 +82,7 @@ __all__ = [&#34;curried&#34;]</code></pre>
 <div class="desc"><p>A curry decorator.</p>
 <p>Makes a function curryable. Note that the function will loose it's
 typing hints so you will need to provide typed overloads for the
-inteded uses of the function you are decorating.</p>
+intended uses of the function you are decorating.</p>
 <h2 id="example">Example</h2>
 <p>@overload
 def add(a: int, b: int) -&gt; int:
@@ -104,7 +104,7 @@ assert add(3)(4) == 7</p></div>
 
     Makes a function curryable. Note that the function will loose it&#39;s
     typing hints so you will need to provide typed overloads for the
-    inteded uses of the function you are decorating.
+    intended uses of the function you are decorating.
 
     Example:
         @overload
