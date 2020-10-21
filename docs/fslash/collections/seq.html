@@ -58,16 +58,21 @@ Example:
     )
 &#34;&#34;&#34;
 
-import sys
 import builtins
-from typing import TypeVar, Callable, Iterable, Iterator, Tuple, Any
 import functools
 import itertools
+import sys
+from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar, overload
+
 from fslash.core import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
 TState = TypeVar(&#34;TState&#34;)
+T1 = TypeVar(&#34;T1&#34;)
+T2 = TypeVar(&#34;T2&#34;)
+T3 = TypeVar(&#34;T3&#34;)
+T4 = TypeVar(&#34;T4&#34;)
 
 
 class Seq(Iterable[TSource]):
@@ -81,13 +86,13 @@ class Seq(Iterable[TSource]):
         &gt;&gt;&gt; ys = xs.map(lambda x: x + 1).filter(lambda x: x &lt; 3)
     &#34;&#34;&#34;
 
-    def __init__(self, iterable=[]) -&gt; None:
+    def __init__(self, iterable: Iterable[TSource] = []) -&gt; None:
         self._value = iterable
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
         return Seq(filter(predicate)(self))
 
-    def collect(self, mapping: Callable[[TSource], &#39;Seq[TResult]&#39;]) -&gt; &#39;Seq[TResult]&#39;:
+    def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
         return Seq(collect(mapping)(self))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
@@ -103,7 +108,7 @@ class Seq(Iterable[TSource]):
         Returns:
             The state object after the folding function is applied to
             each element of the sequence.
-            &#34;&#34;&#34;
+        &#34;&#34;&#34;
         return functools.reduce(folder, self, state)  # type: ignore
 
     def head(self) -&gt; TSource:
@@ -127,11 +132,34 @@ class Seq(Iterable[TSource]):
 
         return Seq(map(mapper)(self))
 
-    def match(self, *args, **kw):
-        from pampy import match
-        return match(self, *args, **kw)
+    def match(self, *args: Any, **kw: Any) -&gt; Any:
+        from pampy import match  # type: ignore
 
-    def pipe(self, *args):
+        return match(self, *args, **kw)  # type: ignore
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], TResult]) -&gt; TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Seq[TSource]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    def pipe(self, *args: Any) -&gt; Any:
         &#34;&#34;&#34;Pipe sequence through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -147,7 +175,7 @@ class Seq(Iterable[TSource]):
         Returns:
             The resulting sequence of computed states.
         &#34;&#34;&#34;
-        return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore
+        return Seq(itertools.accumulate(self, scanner, initial=state))  # type: ignore
 
     def zip(self, other: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
         &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
@@ -170,9 +198,8 @@ class Seq(Iterable[TSource]):
 
 def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
     def _collect(source: Iterable[TSource]) -&gt; Iterable[TResult]:
-        return (x
-                for xs in source
-                for x in mapping(xs))
+        return (x for xs in source for x in mapping(xs))
+
     return _collect
 
 
@@ -245,6 +272,7 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Calla
         returns the state object after the folding function is applied
         to each element of the sequence.
     &#34;&#34;&#34;
+
     def _fold(source: Iterable[TSource]) -&gt; TState:
         &#34;&#34;&#34;Partially applied fold function.
         Returns:
@@ -270,6 +298,7 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
     Returns:
         Partially applied fold_back function.
     &#34;&#34;&#34;
+
     def _fold_back(state: TState) -&gt; TState:
         &#34;&#34;&#34;Partially applied fold_back function.
 
@@ -278,6 +307,7 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
             to each element of the sequence.
         &#34;&#34;&#34;
         return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+
     return _fold_back
 
 
@@ -417,6 +447,7 @@ def scan(
             from the sequence.
         state: The initial state.
     &#34;&#34;&#34;
+
     def _scan(source: Iterable[TSource]) -&gt; Iterable[TState]:
         &#34;&#34;&#34;Partially applied scan function.
         Args:
@@ -424,7 +455,8 @@ def scan(
         Returns:
             The resulting sequence of computed states.
         &#34;&#34;&#34;
-        return itertools.accumulate(source, scanner, initial=state)   # type: ignore
+        return itertools.accumulate(source, scanner, initial=state)  # type: ignore
+
     return _scan
 
 
@@ -452,6 +484,7 @@ def zip(source1: Iterable[TSource]) -&gt; Callable[[Iterable[TResult]], Iterable
     Returns:
         Partially applied zip function.
     &#34;&#34;&#34;
+
     def _zip(source2: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
         &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
         sequences need not have equal lengths: when one sequence is
@@ -465,6 +498,7 @@ def zip(source1: Iterable[TSource]) -&gt; Callable[[Iterable[TResult]], Iterable
             The result sequence.
         &#34;&#34;&#34;
         return builtins.zip(source1, source2)
+
     return _zip
 
 
@@ -486,7 +520,7 @@ __all__ = [
     &#34;of_list&#34;,
     &#34;of_iterable&#34;,
     &#34;scan&#34;,
-    &#34;singleton&#34;
+    &#34;singleton&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -515,9 +549,8 @@ __all__ = [
 </summary>
 <pre><code class="python">def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
     def _collect(source: Iterable[TSource]) -&gt; Iterable[TResult]:
-        return (x
-                for xs in source
-                for x in mapping(xs))
+        return (x for xs in source for x in mapping(xs))
+
     return _collect</code></pre>
 </details>
 </dd>
@@ -650,6 +683,7 @@ to each element of the sequence.</p></div>
         returns the state object after the folding function is applied
         to each element of the sequence.
     &#34;&#34;&#34;
+
     def _fold(source: Iterable[TSource]) -&gt; TState:
         &#34;&#34;&#34;Partially applied fold function.
         Returns:
@@ -697,6 +731,7 @@ from the sequence.</dd>
     Returns:
         Partially applied fold_back function.
     &#34;&#34;&#34;
+
     def _fold_back(state: TState) -&gt; TState:
         &#34;&#34;&#34;Partially applied fold_back function.
 
@@ -705,6 +740,7 @@ from the sequence.</dd>
             to each element of the sequence.
         &#34;&#34;&#34;
         return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+
     return _fold_back</code></pre>
 </details>
 </dd>
@@ -952,6 +988,7 @@ from the sequence.</dd>
             from the sequence.
         state: The initial state.
     &#34;&#34;&#34;
+
     def _scan(source: Iterable[TSource]) -&gt; Iterable[TState]:
         &#34;&#34;&#34;Partially applied scan function.
         Args:
@@ -959,7 +996,8 @@ from the sequence.</dd>
         Returns:
             The resulting sequence of computed states.
         &#34;&#34;&#34;
-        return itertools.accumulate(source, scanner, initial=state)   # type: ignore
+        return itertools.accumulate(source, scanner, initial=state)  # type: ignore
+
     return _scan</code></pre>
 </details>
 </dd>
@@ -998,7 +1036,7 @@ from the sequence.</dd>
 <dl>
 <dt id="fslash.collections.seq.Seq"><code class="flex name class">
 <span>class <span class="ident">Seq</span></span>
-<span>(</span><span>iterable=[])</span>
+<span>(</span><span>iterable: Iterable[~TSource] = [])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Sequence type.</p>
@@ -1023,13 +1061,13 @@ sequences.</p>
         &gt;&gt;&gt; ys = xs.map(lambda x: x + 1).filter(lambda x: x &lt; 3)
     &#34;&#34;&#34;
 
-    def __init__(self, iterable=[]) -&gt; None:
+    def __init__(self, iterable: Iterable[TSource] = []) -&gt; None:
         self._value = iterable
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
         return Seq(filter(predicate)(self))
 
-    def collect(self, mapping: Callable[[TSource], &#39;Seq[TResult]&#39;]) -&gt; &#39;Seq[TResult]&#39;:
+    def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
         return Seq(collect(mapping)(self))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
@@ -1045,7 +1083,7 @@ sequences.</p>
         Returns:
             The state object after the folding function is applied to
             each element of the sequence.
-            &#34;&#34;&#34;
+        &#34;&#34;&#34;
         return functools.reduce(folder, self, state)  # type: ignore
 
     def head(self) -&gt; TSource:
@@ -1069,11 +1107,34 @@ sequences.</p>
 
         return Seq(map(mapper)(self))
 
-    def match(self, *args, **kw):
-        from pampy import match
-        return match(self, *args, **kw)
+    def match(self, *args: Any, **kw: Any) -&gt; Any:
+        from pampy import match  # type: ignore
 
-    def pipe(self, *args):
+        return match(self, *args, **kw)  # type: ignore
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], TResult]) -&gt; TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Seq[TSource]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    def pipe(self, *args: Any) -&gt; Any:
         &#34;&#34;&#34;Pipe sequence through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -1089,7 +1150,7 @@ sequences.</p>
         Returns:
             The resulting sequence of computed states.
         &#34;&#34;&#34;
-        return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore
+        return Seq(itertools.accumulate(self, scanner, initial=state))  # type: ignore
 
     def zip(self, other: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
         &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
@@ -1125,7 +1186,7 @@ sequences.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def collect(self, mapping: Callable[[TSource], &#39;Seq[TResult]&#39;]) -&gt; &#39;Seq[TResult]&#39;:
+<pre><code class="python">def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
     return Seq(collect(mapping)(self))</code></pre>
 </details>
 </dd>
@@ -1178,7 +1239,7 @@ each element of the sequence.</p></div>
     Returns:
         The state object after the folding function is applied to
         each element of the sequence.
-        &#34;&#34;&#34;
+    &#34;&#34;&#34;
     return functools.reduce(folder, self, state)  # type: ignore</code></pre>
 </details>
 </dd>
@@ -1234,7 +1295,7 @@ collection.</p>
 </details>
 </dd>
 <dt id="fslash.collections.seq.Seq.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1242,13 +1303,14 @@ collection.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args, **kw):
-    from pampy import match
-    return match(self, *args, **kw)</code></pre>
+<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
+    from pampy import match  # type: ignore
+
+    return match(self, *args, **kw)  # type: ignore</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.Seq.pipe"><code class="name flex">
-<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Pipe sequence through the given functions.</p></div>
@@ -1256,7 +1318,7 @@ collection.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe(self, *args):
+<pre><code class="python">def pipe(self, *args: Any) -&gt; Any:
     &#34;&#34;&#34;Pipe sequence through the given functions.&#34;&#34;&#34;
     return pipe(self, *args)</code></pre>
 </details>
@@ -1293,7 +1355,7 @@ from the sequence.</dd>
     Returns:
         The resulting sequence of computed states.
     &#34;&#34;&#34;
-    return Seq(itertools.accumulate(self, scanner, initial=state))   # type: ignore</code></pre>
+    return Seq(itertools.accumulate(self, scanner, initial=state))  # type: ignore</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.seq.Seq.zip"><code class="name flex">

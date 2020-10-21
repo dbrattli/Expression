@@ -40,25 +40,53 @@ Programming.
 &#34;&#34;&#34;
 
 from abc import abstractmethod
-from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
+from typing import Any, Callable, Generator, Generic, Iterable, Iterator, TypeVar, Union, overload
+
 from .error import EffectError
-from .misc import identity
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
 TError = TypeVar(&#34;TError&#34;)
+T1 = TypeVar(&#34;T1&#34;)
+T2 = TypeVar(&#34;T2&#34;)
+T3 = TypeVar(&#34;T3&#34;)
+T4 = TypeVar(&#34;T4&#34;)
 
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
-    def match(self, *args, **kw):
-        from pampy import match
+    def match(self, *args: Any, **kw: Any) -&gt; Any:
+        from pampy import match  # type: ignore
 
-        return match(self, *args, **kw)
+        return match(self, *args, **kw)  # type: ignore
 
-    def pipe(self, *args):
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    def pipe(self, *args: Any):
         &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -84,14 +112,14 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     def is_ok(self) -&gt; bool:
         raise NotImplementedError
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
     def __iter__(self) -&gt; Iterator[TSource]:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         return str(self)
 
 
@@ -102,7 +130,7 @@ class Ok(Result[TSource, TError]):
         self._value = value
 
     @property
-    def value(self):
+    def value(self) -&gt; TSource:
         return self._value
 
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
@@ -122,12 +150,12 @@ class Ok(Result[TSource, TError]):
     def is_ok(self) -&gt; bool:
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Ok):
-            return self.value == other.value
+            return self.value == other.value  # type: ignore
         return False
 
-    def __iter__(self) -&gt; Iterator[TSource]:
+    def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
         &#34;&#34;&#34;Return iterator for Ok case.&#34;&#34;&#34;
         return (yield self._value)
 
@@ -162,9 +190,9 @@ class Error(Result[TSource, TError], EffectError):
     def is_ok(self) -&gt; bool:
         return False
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Error):
-            return self.error == other.error
+            return self.error == other.error  # type: ignore
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
@@ -192,36 +220,7 @@ def bind(
     return _bind
 
 
-def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -&gt; Result[List[TResult], TError]:
-    &#34;&#34;&#34;Traverses a list of items.
-
-    Threads an applicative computation though a list of items.
-    &#34;&#34;&#34;
-
-    from fslash.builders import result
-    from fslash.collections import Seq
-
-    # flake8: noqa: T484
-    @result
-    def folder(head: TSource, tail: Result[List[TResult], TError]):
-        &#34;&#34;&#34;Same as:
-        &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
-        &#34;&#34;&#34;
-        h = yield from fn(head)
-        t = yield from tail
-        return [h] + t
-
-    return Seq.fold_back(folder, lst)(Ok([]))
-
-
-def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TError]:
-    &#34;&#34;&#34;Execute a sequence of result returning commands and collect the
-    sequence of their response.&#34;&#34;&#34;
-
-    return traverse(identity, lst)
-
-
-__all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;bind&#34;, &#34;traverse&#34;, &#34;sequence&#34;]</code></pre>
+__all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;bind&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -263,55 +262,6 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
         return result.map(mapper)
 
     return _map</code></pre>
-</details>
-</dd>
-<dt id="fslash.core.result.sequence"><code class="name flex">
-<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TSource, ~TError]]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TSource], ~TError]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Execute a sequence of result returning commands and collect the
-sequence of their response.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TError]:
-    &#34;&#34;&#34;Execute a sequence of result returning commands and collect the
-    sequence of their response.&#34;&#34;&#34;
-
-    return traverse(identity, lst)</code></pre>
-</details>
-</dd>
-<dt id="fslash.core.result.traverse"><code class="name flex">
-<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[~TResult, ~TError]], lst: List[~TSource]) ‑> <a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a>[typing.List[~TResult], ~TError]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Traverses a list of items.</p>
-<p>Threads an applicative computation though a list of items.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -&gt; Result[List[TResult], TError]:
-    &#34;&#34;&#34;Traverses a list of items.
-
-    Threads an applicative computation though a list of items.
-    &#34;&#34;&#34;
-
-    from fslash.builders import result
-    from fslash.collections import Seq
-
-    # flake8: noqa: T484
-    @result
-    def folder(head: TSource, tail: Result[List[TResult], TError]):
-        &#34;&#34;&#34;Same as:
-        &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
-        &#34;&#34;&#34;
-        h = yield from fn(head)
-        t = yield from tail
-        return [h] + t
-
-    return Seq.fold_back(folder, lst)(Ok([]))</code></pre>
 </details>
 </dd>
 </dl>
@@ -356,9 +306,9 @@ sequence of their response.</p></div>
     def is_ok(self) -&gt; bool:
         return False
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Error):
-            return self.error == other.error
+            return self.error == other.error  # type: ignore
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
@@ -475,7 +425,7 @@ def error(self) -&gt; TError:
         self._value = value
 
     @property
-    def value(self):
+    def value(self) -&gt; TSource:
         return self._value
 
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
@@ -495,12 +445,12 @@ def error(self) -&gt; TError:
     def is_ok(self) -&gt; bool:
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Ok):
-            return self.value == other.value
+            return self.value == other.value  # type: ignore
         return False
 
-    def __iter__(self) -&gt; Iterator[TSource]:
+    def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
         &#34;&#34;&#34;Return iterator for Ok case.&#34;&#34;&#34;
         return (yield self._value)
 
@@ -515,7 +465,7 @@ def error(self) -&gt; TError:
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="fslash.core.result.Ok.value"><code class="name">var <span class="ident">value</span></code></dt>
+<dt id="fslash.core.result.Ok.value"><code class="name">var <span class="ident">value</span> : ~TSource</code></dt>
 <dd>
 <div class="desc"></div>
 <details class="source">
@@ -523,7 +473,7 @@ def error(self) -&gt; TError:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
-def value(self):
+def value(self) -&gt; TSource:
     return self._value</code></pre>
 </details>
 </dd>
@@ -606,12 +556,36 @@ def value(self):
 <pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
-    def match(self, *args, **kw):
-        from pampy import match
+    def match(self, *args: Any, **kw: Any) -&gt; Any:
+        from pampy import match  # type: ignore
 
-        return match(self, *args, **kw)
+        return match(self, *args, **kw)  # type: ignore
 
-    def pipe(self, *args):
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    def pipe(self, *args: Any):
         &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -637,14 +611,14 @@ def value(self):
     def is_ok(self) -&gt; bool:
         raise NotImplementedError
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
     def __iter__(self) -&gt; Iterator[TSource]:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         return str(self)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -733,7 +707,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </details>
 </dd>
 <dt id="fslash.core.result.Result.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -741,14 +715,14 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args, **kw):
-    from pampy import match
+<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
+    from pampy import match  # type: ignore
 
-    return match(self, *args, **kw)</code></pre>
+    return match(self, *args, **kw)  # type: ignore</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.result.Result.pipe"><code class="name flex">
-<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Pipe result through the given functions.</p></div>
@@ -756,7 +730,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe(self, *args):
+<pre><code class="python">def pipe(self, *args: Any):
     &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
     return pipe(self, *args)</code></pre>
 </details>
@@ -781,8 +755,6 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <ul class="">
 <li><code><a title="fslash.core.result.bind" href="#fslash.core.result.bind">bind</a></code></li>
 <li><code><a title="fslash.core.result.map" href="#fslash.core.result.map">map</a></code></li>
-<li><code><a title="fslash.core.result.sequence" href="#fslash.core.result.sequence">sequence</a></code></li>
-<li><code><a title="fslash.core.result.traverse" href="#fslash.core.result.traverse">traverse</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

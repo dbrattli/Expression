@@ -1,14 +1,14 @@
 from typing import TypeVar, Iterable, Callable
 from fslash.core import Builder, identity
 
-from fslash.collections import Seq, Seq_
+from fslash.collections import Seq
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TState = TypeVar("TState")
 
 
-class SeqBuilder(Builder[Seq_[TSource], TSource]):
+class SeqBuilder(Builder[Iterable[TSource], TSource]):
     def bind(self, xs: Iterable[TSource], fn: Callable[[TSource], Iterable[TResult]]) -> Iterable[TResult]:
         return list(Seq.collect(fn)(xs))
 

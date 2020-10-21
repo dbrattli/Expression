@@ -1,9 +1,10 @@
 import pytest
-from hypothesis import given, strategies as st
-from pampy import match, _
-
-from fslash.core import Option, Option_, Some, Nothing, Nothing_, pipe, pipe2
 from fslash.builders import option
+from fslash.core import Nothing, Nothing_, Option, Option_, Some, pipe, pipe2
+from hypothesis import given
+from hypothesis import strategies as st
+from pampy import _, match
+
 from tests.utils import CustomException
 
 
@@ -33,7 +34,7 @@ def test_option_none():
 def test_option_nothing_iterate():
     xs = Nothing
 
-    for x in Option.to_list(xs):
+    for _ in Option.to_list(xs):
         assert False
 
 
@@ -64,13 +65,12 @@ def test_option_some_map_piped():
     xs = Some(42)
     ys = xs.pipe(Option.map(lambda x: x + 1))
 
-    assert ys.match(
-        Some, lambda some: some.value == 43,
-        _, False)
+    for y in ys:
+        assert y == 43
 
 
 def test_option_none_map_piped():
-    xs = Nothing
+    xs: Option_[int] = Nothing
     map = Option.map(lambda x: x + 1)
     ys = xs.pipe(map)
     assert ys.match(Some, lambda some: False, _, True)
@@ -91,7 +91,7 @@ def test_option_none_map():
 
 
 @given(st.integers(), st.integers())
-def test_option_some_map2_piped(x, y):
+def test_option_some_map2_piped(x: int, y: int):
     xs = Some(x)
     ys = Some(y)
     zs = pipe2((xs, ys), Option.map2(lambda x, y: x + y))
@@ -117,20 +117,14 @@ def test_option_none_bind_none_fluent():
     xs = Nothing
     ys = xs.bind(lambda x: Nothing)
 
-    assert ys.match(
-        Some, lambda some: False,
-        _, True
-    )
+    assert ys.match(Some, lambda some: False, _, True)
 
 
 def test_option_some_bind_piped():
     xs = Some(42)
     ys = xs.pipe(Option.bind(lambda x: Some(x + 1)))
 
-    assert ys.match(
-        Some, lambda some: some.value == 43,
-        _, False
-    )
+    assert ys.match(Some, lambda some: some.value == 43, _, False)
 
 
 def test_option_none_to_list():
@@ -200,10 +194,7 @@ def test_option_builder_zero():
             yield
 
     xs = fn()
-    assert xs.match(
-        Some, lambda some: False,
-        _, True
-    )
+    assert xs.match(Some, lambda some: False, _, True)
 
 
 def test_option_builder_yield_value():
@@ -212,10 +203,7 @@ def test_option_builder_yield_value():
         yield 42
 
     xs = fn()
-    assert xs.match(
-        Some, lambda some: some.value,
-        _, None
-    ) == 42
+    assert xs.match(Some, lambda some: some.value, _, None) == 42
 
 
 def test_option_builder_yield_some():
@@ -225,10 +213,7 @@ def test_option_builder_yield_some():
         return x
 
     xs = fn()
-    assert Some(42) == xs.match(
-        Some, lambda some: some.value,
-        _, None
-    )
+    assert Some(42) == xs.match(Some, lambda some: some.value, _, None)
 
 
 def test_option_builder_return_some():
@@ -238,10 +223,7 @@ def test_option_builder_return_some():
         return x
 
     xs = fn()
-    assert 42 == xs.match(
-        Some, lambda some: some.value,
-        _, None
-    )
+    assert 42 == xs.match(Some, lambda some: some.value, _, None)
 
 
 def test_option_builder_return_none():
@@ -251,10 +233,7 @@ def test_option_builder_return_none():
         yield
 
     xs = fn()
-    assert xs.match(
-        Some, lambda some: some.value,
-        _, None
-    ) is Nothing
+    assert xs.match(Some, lambda some: some.value, _, None) is Nothing
 
 
 def test_option_builder_yield_from_some():
@@ -274,10 +253,7 @@ def test_option_builder_yield_from_none():
         return x
 
     xs = fn()
-    assert xs.match(
-        Some, lambda some: some.value,
-        _, None
-    ) is None
+    assert xs.match(Some, lambda some: some.value, _, None) is None
 
 
 def test_option_builder_multiple_some():
@@ -289,10 +265,7 @@ def test_option_builder_multiple_some():
         return x + y
 
     xs = fn()
-    assert 85 == xs.match(
-        Some, lambda some: some.value,
-        _, None
-    )
+    assert 85 == xs.match(Some, lambda some: some.value, _, None)
 
 
 def test_option_builder_none_short_circuits():
@@ -304,21 +277,19 @@ def test_option_builder_none_short_circuits():
         return x + y
 
     xs = fn()
-    assert xs.match(
-        Some, lambda some: some.value,
-        _, None
-    ) is None
+    assert xs.match(Some, lambda some: some.value, _, None) is None
 
 
 def test_option_builder_throws():
     error = "do'h"
+
     @option
     def fn():
         raise CustomException(error)
         yield
 
     with pytest.raises(CustomException) as ex:
-        xs = fn()
+        fn()
 
     assert ex.value.message == error
 

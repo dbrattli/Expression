@@ -4,6 +4,7 @@ Core abstractions such as pipes, options and results.
 
 from . import option as Option
 from . import result as Result
+from . import async_ as Async
 
 from .compose import compose
 from .misc import identity, flip
@@ -16,10 +17,24 @@ from .builder import Builder
 
 
 __all__ = [
-    'identity', 'flip',
-    'compose', 'pipe', 'pipe2', 'pipe3', 'curried',
-    'Option', 'Option_', 'Some', 'Nothing', "Nothing_",
-    'Result', 'Result_', 'Ok', 'Error',
-    'Builder',
-    'failwith', 'EffectError'
+    "Async",
+    "identity",
+    "flip",
+    "compose",
+    "pipe",
+    "pipe2",
+    "pipe3",
+    "curried",
+    "Option",
+    "Option_",
+    "Some",
+    "Nothing",
+    "Nothing_",
+    "Result",
+    "Result_",
+    "Ok",
+    "Error",
+    "Builder",
+    "failwith",
+    "EffectError",
 ]

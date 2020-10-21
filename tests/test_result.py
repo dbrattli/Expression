@@ -1,10 +1,13 @@
-import pytest
-from typing import List
-from hypothesis import given, strategies as st
-from pampy import match, _
+from typing import Callable, List
 
-from fslash.core import Result, Ok, Error, Result_
+import pytest
 from fslash.builders import result
+from fslash.core import Error, Ok, Result, Result_
+from fslash.extra.result import sequence, traverse
+from hypothesis import given
+from hypothesis import strategies as st
+from pampy import _, match
+
 from .utils import CustomException, throw
 
 
@@ -16,9 +19,7 @@ def test_result_ok():
     assert not xs.is_error()
     assert str(xs) == "Ok 42"
 
-    res = match(xs,
-                Ok, lambda ok: ok.value,
-                Error, lambda error: throw(error.error))
+    res = match(xs, Ok, lambda ok: ok.value, Error, lambda error: throw(error.error))
     assert res == 42
 
 
@@ -37,9 +38,7 @@ def test_result_error():
     assert str(xs) == f"Error {error}"
 
     with pytest.raises(CustomException):
-        match(xs,
-              Ok, lambda ok: ok.value,
-              Error, lambda error: throw(error.error))
+        match(xs, Ok, lambda ok: ok.value, Error, lambda error: throw(error.error))
 
 
 def test_result_error_iterate():
@@ -78,9 +77,7 @@ def test_result_map_piped(x, y):
     mapper = lambda x: x + y
 
     ys = xs.pipe(Result.map(mapper))
-    res = match(ys,
-                Ok, lambda ok: ok.value,
-                Error, lambda error: throw(error.error))
+    res = match(ys, Ok, lambda ok: ok.value, Error, lambda error: throw(error.error))
     assert res == mapper(x)
 
 
@@ -90,9 +87,7 @@ def test_result_map_ok_fluent(x, y):
     mapper = lambda x: x + y
 
     ys = xs.map(mapper)
-    res = match(ys,
-                Ok, lambda ok: ok.value,
-                Error, lambda error: throw(error.error))
+    res = match(ys, Ok, lambda ok: ok.value, Error, lambda error: throw(error.error))
     assert res == mapper(x)
 
 
@@ -103,9 +98,7 @@ def test_result_ok_chained_map(x, y):
     mapper2 = lambda x: x * 10
 
     ys = xs.map(mapper1).map(mapper2)
-    res = match(ys,
-                Ok, lambda ok: ok.value,
-                Error, lambda error: throw(error.error))
+    res = match(ys, Ok, lambda ok: ok.value, Error, lambda error: throw(error.error))
     assert res == mapper2(mapper1(x))
 
 
@@ -117,9 +110,7 @@ def test_result_map_error_piped(msg, y):
     ys = xs.pipe(Result.map(mapper))
 
     with pytest.raises(CustomException) as ex:
-        match(ys,
-              Ok, lambda ok: ok.value,
-              Error, lambda error: throw(CustomException(error.error)))
+        match(ys, Ok, lambda ok: ok.value, Error, lambda error: throw(CustomException(error.error)))
     assert ex.value.message == msg
 
 
@@ -130,62 +121,48 @@ def test_result_map_error_fluent(msg, y):
 
     ys = xs.map(mapper)
     with pytest.raises(CustomException) as ex:
-        match(ys,
-              Ok, lambda ok: ok.value,
-              Error, lambda error: throw(CustomException(error.error)))
+        match(ys, Ok, lambda ok: ok.value, Error, lambda error: throw(CustomException(error.error)))
     assert ex.value.message == msg
 
 
 @given(st.text(), st.integers())
-def test_result_error_chained_map(msg, y):
+def test_result_error_chained_map(msg: str, y: int):
     xs = Error(msg)
     mapper1 = lambda x: x + y
     mapper2 = lambda x: x * 10
 
     ys = xs.map(mapper1).map(mapper2)
     with pytest.raises(CustomException) as ex:
-        ys.match(
-            Ok, lambda ok: ok.value,
-            Error, lambda error: throw(CustomException(error.error))
-        )
+        ys.match(Ok, lambda ok: ok.value, Error, lambda error: throw(CustomException(error.error)))
     assert ex.value.message == msg
 
 
 @given(st.integers(), st.integers())
-def test_result_bind_piped(x, y):
-    xs = Ok(x)
-    mapper = lambda x: Ok(x + y)
+def test_result_bind_piped(x: int, y: int):
+    xs: Result_[int, str] = Ok(x)
+    mapper: Callable[[int], Result_[int, str]] = lambda x: Ok(x + y)
 
     ys = xs.pipe(Result.bind(mapper))
-    res = ys.match(
-        Ok, lambda ok: ok.value,
-        Error, lambda error: throw(error.error)
-    )
+    res = ys.match(Ok, lambda ok: ok.value, Error, lambda error: throw(error.error))
     assert Ok(res) == mapper(x)
 
 
 @given(st.lists(st.integers()))
-def test_result_traverse_ok(xs):
+def test_result_traverse_ok(xs: List[int]):
     ys: List[Result_[int, str]] = [Ok(x) for x in xs]
-    zs = Result.sequence(ys)
-    res = zs.match(
-        Ok, lambda ok: sum(ok.value),
-        Error, lambda error: throw(error.error)
-    )
+    zs = sequence(ys)
+    res = zs.match(Ok, lambda ok: sum(ok.value), Error, lambda error: throw(error.error))
 
     assert res == sum(xs)
 
 
 @given(st.lists(st.integers(), min_size=5))
-def test_result_traverse_error(xs):
+def test_result_traverse_error(xs: List[int]):
     error = "Do'h"
     ys: List[Result_[int, str]] = [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
 
-    zs = Result.sequence(ys)
-    res = zs.match(
-        Ok, lambda ok: "",
-        Error, lambda error: error.error
-    )
+    zs = sequence(ys)
+    res = zs.match(Ok, lambda ok: "", Error, lambda error: error.error)
 
     assert res == error
 
@@ -206,10 +183,7 @@ def test_result_builder_yield_ok():
         yield 42
 
     xs = fn()
-    assert 42 == xs.match(
-        Ok, lambda ok: ok.value,
-        _, None
-    )
+    assert 42 == xs.match(Ok, lambda ok: ok.value, _, None)
 
 
 def test_result_builder_return_ok():
@@ -219,10 +193,7 @@ def test_result_builder_return_ok():
         return x
 
     xs = fn()
-    assert 42 == xs.match(
-        Ok, lambda ok: ok.value,
-        _, None
-    )
+    assert 42 == xs.match(Ok, lambda ok: ok.value, _, None)
 
 
 def test_result_builder_yield_from_ok():
@@ -232,10 +203,7 @@ def test_result_builder_yield_from_ok():
         return x + 1
 
     xs = fn()
-    assert 43 == xs.match(
-        Ok, lambda some: some.value,
-        _, None
-    )
+    assert 43 == xs.match(Ok, lambda some: some.value, _, None)
 
 
 def test_result_builder_yield_from_error():
@@ -247,10 +215,15 @@ def test_result_builder_yield_from_error():
         return x
 
     xs = fn()
-    assert xs.match(
-        Ok, lambda some: some.value,
-        Error, lambda error: error.error
-    ) == error
+    assert (
+        xs.match(
+            Ok,
+            lambda some: some.value,
+            Error,
+            lambda error: error.error,
+        )
+        == error
+    )
 
 
 def test_result_builder_multiple_ok():
@@ -263,6 +236,8 @@ def test_result_builder_multiple_ok():
 
     xs = fn()
     assert 85 == xs.match(
-        Ok, lambda ok: ok.value,
-        _, None
+        Ok,
+        lambda ok: ok.value,
+        _,
+        None,
     )

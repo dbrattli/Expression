@@ -1,5 +1,3 @@
-from . import option
-from . import result
-
+from . import option, result
 
 __all__ = ["option", "result"]

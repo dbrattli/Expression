@@ -1,5 +1,6 @@
-from typing import TypeVar, Any, Callable
-from fslash.core import Option, Nothing, Some, Option_, Builder
+from typing import Any, Callable, TypeVar
+
+from fslash.core import Builder, Nothing, Option, Option_, Some
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -16,7 +17,8 @@ class OptionBuilder(Builder[Option_[TSource], TSource]):
         return xs
 
     def combine(self, xs: Option_[TSource], ys: Option_[TSource]) -> Option_[TSource]:
-        return Option.bind(lambda _: ys)(xs)
+        binder: Callable[[Any], Option_[TSource]] = lambda _: ys
+        return Option.bind(binder)(xs)
 
     def zero(self):
         return Nothing

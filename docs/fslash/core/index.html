@@ -33,6 +33,7 @@ Core abstractions such as pipes, options and results.
 
 from . import option as Option
 from . import result as Result
+from . import async_ as Async
 
 from .compose import compose
 from .misc import identity, flip
@@ -45,18 +46,36 @@ from .builder import Builder
 
 
 __all__ = [
-    &#39;identity&#39;, &#39;flip&#39;,
-    &#39;compose&#39;, &#39;pipe&#39;, &#39;pipe2&#39;, &#39;pipe3&#39;, &#39;curried&#39;,
-    &#39;Option&#39;, &#39;Option_&#39;, &#39;Some&#39;, &#39;Nothing&#39;, &#34;Nothing_&#34;,
-    &#39;Result&#39;, &#39;Result_&#39;, &#39;Ok&#39;, &#39;Error&#39;,
-    &#39;Builder&#39;,
-    &#39;failwith&#39;, &#39;EffectError&#39;
+    &#34;Async&#34;,
+    &#34;identity&#34;,
+    &#34;flip&#34;,
+    &#34;compose&#34;,
+    &#34;pipe&#34;,
+    &#34;pipe2&#34;,
+    &#34;pipe3&#34;,
+    &#34;curried&#34;,
+    &#34;Option&#34;,
+    &#34;Option_&#34;,
+    &#34;Some&#34;,
+    &#34;Nothing&#34;,
+    &#34;Nothing_&#34;,
+    &#34;Result&#34;,
+    &#34;Result_&#34;,
+    &#34;Ok&#34;,
+    &#34;Error&#34;,
+    &#34;Builder&#34;,
+    &#34;failwith&#34;,
+    &#34;EffectError&#34;,
 ]</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="fslash.core.async_" href="async_.html">fslash.core.async_</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt><code class="name"><a title="fslash.core.builder" href="builder.html">fslash.core.builder</a></code></dt>
 <dd>
 <div class="desc"></div>
@@ -133,43 +152,61 @@ functions gives back the identity function.</p>
 </details>
 </dd>
 <dt id="fslash.core.curried"><code class="name flex">
-<span>def <span class="ident">curried</span></span>(<span>fn)</span>
+<span>def <span class="ident">curried</span></span>(<span>fn: Callable[..., Any]) ‑> Callable[..., Any]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A curry decorator.</p>
-<p>Makes functions curryable. Note that the function will loose it's
-typing hints so use of it is not really recommented. Provided for
-completeness.</p>
+<p>Makes a function curryable. Note that the function will loose it's
+typing hints so you will need to provide typed overloads for the
+inteded uses of the function you are decorating.</p>
 <h2 id="example">Example</h2>
-<pre><code class="python-repl">&gt;&gt;&gt; @curried
-... def add(a, b): return a + b
-...
-&gt;&gt;&gt; add(3)(4)
-7
-</code></pre></div>
+<p>@overload
+def add(a: int, b: int) -&gt; int:
+&hellip;</p>
+<p>@overload
+def add(a: int) -&gt; Callable[[int], int]:
+&hellip;</p>
+<p>@curried
+def add(a: int, b: int) -&gt; int:
+return a + b</p>
+<p>assert add(3, 4) == 7
+assert add(3)(4) == 7</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def curried(fn):
+<pre><code class="python">def curried(fn: Callable[..., Any]) -&gt; Callable[..., Any]:
     &#34;&#34;&#34;A curry decorator.
 
-    Makes functions curryable. Note that the function will loose it&#39;s
-    typing hints so use of it is not really recommented. Provided for
-    completeness.
+    Makes a function curryable. Note that the function will loose it&#39;s
+    typing hints so you will need to provide typed overloads for the
+    inteded uses of the function you are decorating.
 
     Example:
-        &gt;&gt;&gt; @curried
-        ... def add(a, b): return a + b
-        ...
-        &gt;&gt;&gt; add(3)(4)
-        7
+        @overload
+        def add(a: int, b: int) -&gt; int:
+            ...
+
+        @overload
+        def add(a: int) -&gt; Callable[[int], int]:
+            ...
+
+        @curried
+        def add(a: int, b: int) -&gt; int:
+            return a + b
+
+        assert add(3, 4) == 7
+        assert add(3)(4) == 7
+
     &#34;&#34;&#34;
-    def wrapper(*args, **kw):
+
+    @wraps(fn)
+    def wrapper(*args: Any, **kw: Any) -&gt; Any:
         try:
             return fn(*args, **kw)
         except TypeError:
             return partial(fn, *args, **kw)
+
     return wrapper</code></pre>
 </details>
 </dd>
@@ -204,8 +241,10 @@ completeness.</p>
     Example:
         &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
     &#34;&#34;&#34;
+
     def _(b: B, a: A) -&gt; Any:
         return fn(a, b)
+
     return _</code></pre>
 </details>
 </dd>
@@ -292,38 +331,30 @@ completeness.</p>
 <span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
+<div class="desc"><p>Effect builder.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Builder(Generic[TOuter, TInner]):
+    &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
+
     def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
         raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
 
-    def return_(self, x):
+    def return_(self, x: TInner) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a return method&#34;)
 
-    def return_from(self, xs):
+    def return_from(self, xs: TOuter) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)
 
-    def combine(self, xs, ys):
+    def combine(self, xs: TOuter, ys: TOuter) -&gt; TOuter:
+        &#34;&#34;&#34;Used for combining multiple statements in the effect.&#34;&#34;&#34;
         raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)
 
-    def zero(self):
+    def zero(self) -&gt; TOuter:
+        &#34;&#34;&#34;Called if the effect raises StopIteration without a value,
+        i.e returns None&#34;&#34;&#34;
         raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)
 
     def _send(
@@ -365,6 +396,7 @@ return default</p></div>
             A `builder` function that can wrap coroutines into builders.
         &#34;&#34;&#34;
 
+        @wraps(fn)
         def wrapper(*args: Any, **kw: Any) -&gt; TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
@@ -373,11 +405,15 @@ return default</p></div>
             try:
                 result = self._send(gen, done)
                 while not done and not isinstance(result, EffectError):
-                    cont = self.bind(cast(TOuter, result), lambda value: self._send(gen, done, value))
+                    binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
+                    cont = self.bind(cast(TOuter, result), binder)
                     result = self.combine(result, cont)
             except EffectError:
                 pass
 
+            # If anything returns none (i.e raises StopIteration without
+            # a value) then we expect the effect to have a zero method
+            # implemented.
             if result is None:
                 result = self.zero()
 
@@ -411,20 +447,21 @@ return default</p></div>
 </details>
 </dd>
 <dt id="fslash.core.Builder.combine"><code class="name flex">
-<span>def <span class="ident">combine</span></span>(<span>self, xs, ys)</span>
+<span>def <span class="ident">combine</span></span>(<span>self, xs: ~TOuter, ys: ~TOuter) ‑> ~TOuter</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Used for combining multiple statements in the effect.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def combine(self, xs, ys):
+<pre><code class="python">def combine(self, xs: TOuter, ys: TOuter) -&gt; TOuter:
+    &#34;&#34;&#34;Used for combining multiple statements in the effect.&#34;&#34;&#34;
     raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Builder.return_"><code class="name flex">
-<span>def <span class="ident">return_</span></span>(<span>self, x)</span>
+<span>def <span class="ident">return_</span></span>(<span>self, x: ~TInner) ‑> ~TOuter</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -432,12 +469,12 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def return_(self, x):
+<pre><code class="python">def return_(self, x: TInner) -&gt; TOuter:
     raise NotImplementedError(&#34;Builder does not implement a return method&#34;)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Builder.return_from"><code class="name flex">
-<span>def <span class="ident">return_from</span></span>(<span>self, xs)</span>
+<span>def <span class="ident">return_from</span></span>(<span>self, xs: ~TOuter) ‑> ~TOuter</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -445,20 +482,23 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def return_from(self, xs):
+<pre><code class="python">def return_from(self, xs: TOuter) -&gt; TOuter:
     raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Builder.zero"><code class="name flex">
-<span>def <span class="ident">zero</span></span>(<span>self)</span>
+<span>def <span class="ident">zero</span></span>(<span>self) ‑> ~TOuter</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Called if the effect raises StopIteration without a value,
+i.e returns None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def zero(self):
+<pre><code class="python">def zero(self) -&gt; TOuter:
+    &#34;&#34;&#34;Called if the effect raises StopIteration without a value,
+    i.e returns None&#34;&#34;&#34;
     raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)</code></pre>
 </details>
 </dd>
@@ -531,9 +571,9 @@ yielding nothing will be silently ignored.</p></div>
     def is_ok(self) -&gt; bool:
         return False
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Error):
-            return self.error == other.error
+            return self.error == other.error  # type: ignore
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
@@ -853,7 +893,7 @@ return True</p></div>
         self._value = value
 
     @property
-    def value(self):
+    def value(self) -&gt; TSource:
         return self._value
 
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
@@ -873,12 +913,12 @@ return True</p></div>
     def is_ok(self) -&gt; bool:
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Ok):
-            return self.value == other.value
+            return self.value == other.value  # type: ignore
         return False
 
-    def __iter__(self) -&gt; Iterator[TSource]:
+    def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
         &#34;&#34;&#34;Return iterator for Ok case.&#34;&#34;&#34;
         return (yield self._value)
 
@@ -893,7 +933,7 @@ return True</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="fslash.core.Ok.value"><code class="name">var <span class="ident">value</span></code></dt>
+<dt id="fslash.core.Ok.value"><code class="name">var <span class="ident">value</span> : ~TSource</code></dt>
 <dd>
 <div class="desc"></div>
 <details class="source">
@@ -901,7 +941,7 @@ return True</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
-def value(self):
+def value(self) -&gt; TSource:
     return self._value</code></pre>
 </details>
 </dd>
@@ -984,14 +1024,38 @@ def value(self):
 <pre><code class="python">class Option(Iterable[TSource]):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
-    def pipe(self, *args):
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], TResult]) -&gt; TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Option[TSource]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    def pipe(self, *args: Any) -&gt; Any:
         &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
-    def match(self, *args, **kw) -&gt; Any:
-        from pampy import match
+    def match(self, *args: Any, **kw: Any) -&gt; Any:
+        from pampy import match  # type: ignore
 
-        return match(self, *args, **kw)
+        return match(self, *args, **kw)  # type: ignore
 
     def default_value(self, value: TSource) -&gt; TSource:
         &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
@@ -1143,7 +1207,7 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 </details>
 </dd>
 <dt id="fslash.core.Option.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args, **kw) ‑> Any</span>
+<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1151,10 +1215,10 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args, **kw) -&gt; Any:
-    from pampy import match
+<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
+    from pampy import match  # type: ignore
 
-    return match(self, *args, **kw)</code></pre>
+    return match(self, *args, **kw)  # type: ignore</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Option.or_else"><code class="name flex">
@@ -1173,7 +1237,7 @@ def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]
 </details>
 </dd>
 <dt id="fslash.core.Option.pipe"><code class="name flex">
-<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Pipe option through the given functions.</p></div>
@@ -1181,7 +1245,7 @@ def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe(self, *args):
+<pre><code class="python">def pipe(self, *args: Any) -&gt; Any:
     &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
     return pipe(self, *args)</code></pre>
 </details>
@@ -1229,12 +1293,36 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
-    def match(self, *args, **kw):
-        from pampy import match
+    def match(self, *args: Any, **kw: Any) -&gt; Any:
+        from pampy import match  # type: ignore
 
-        return match(self, *args, **kw)
+        return match(self, *args, **kw)  # type: ignore
 
-    def pipe(self, *args):
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    def pipe(self, *args: Any):
         &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -1260,14 +1348,14 @@ def to_seq(self) -&gt; Iterable[TSource]:
     def is_ok(self) -&gt; bool:
         raise NotImplementedError
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
     def __iter__(self) -&gt; Iterator[TSource]:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         return str(self)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1356,7 +1444,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </details>
 </dd>
 <dt id="fslash.core.Result.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args, **kw)</span>
+<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1364,14 +1452,14 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args, **kw):
-    from pampy import match
+<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
+    from pampy import match  # type: ignore
 
-    return match(self, *args, **kw)</code></pre>
+    return match(self, *args, **kw)  # type: ignore</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.Result.pipe"><code class="name flex">
-<span>def <span class="ident">pipe</span></span>(<span>self, *args)</span>
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Pipe result through the given functions.</p></div>
@@ -1379,7 +1467,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe(self, *args):
+<pre><code class="python">def pipe(self, *args: Any):
     &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
     return pipe(self, *args)</code></pre>
 </details>
@@ -1438,19 +1526,20 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         return [self._value]
 
     @property
-    def value(self):
+    def value(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the value wrapped by the option.
 
-        This is safe since the property is only defined on `Some` and not on either `Option` or `None`.
+        This is safe since the property is only defined on `Some` and
+        not on either `Option` or `None`.
         &#34;&#34;&#34;
         return self._value
 
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
-            return self._value == cast(Some[Any], other)._value
+            return self._value == other._value  # type: ignore
         return False
 
-    def __iter__(self) -&gt; Iterator[TSource]:
+    def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
         return (yield self._value)
 
     def __str__(self) -&gt; str:
@@ -1464,19 +1553,21 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="fslash.core.Some.value"><code class="name">var <span class="ident">value</span></code></dt>
+<dt id="fslash.core.Some.value"><code class="name">var <span class="ident">value</span> : ~TSource</code></dt>
 <dd>
 <div class="desc"><p>Returns the value wrapped by the option.</p>
-<p>This is safe since the property is only defined on <code><a title="fslash.core.Some" href="#fslash.core.Some">Some</a></code> and not on either <code><a title="fslash.core.Option" href="#fslash.core.Option">Option</a></code> or <code>None</code>.</p></div>
+<p>This is safe since the property is only defined on <code><a title="fslash.core.Some" href="#fslash.core.Some">Some</a></code> and
+not on either <code><a title="fslash.core.Option" href="#fslash.core.Option">Option</a></code> or <code>None</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
-def value(self):
+def value(self) -&gt; TSource:
     &#34;&#34;&#34;Returns the value wrapped by the option.
 
-    This is safe since the property is only defined on `Some` and not on either `Option` or `None`.
+    This is safe since the property is only defined on `Some` and
+    not on either `Option` or `None`.
     &#34;&#34;&#34;
     return self._value</code></pre>
 </details>
@@ -1620,6 +1711,7 @@ def value(self):
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="fslash.core.async_" href="async_.html">fslash.core.async_</a></code></li>
 <li><code><a title="fslash.core.builder" href="builder.html">fslash.core.builder</a></code></li>
 <li><code><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></li>
 <li><code><a title="fslash.core.error" href="error.html">fslash.core.error</a></code></li>

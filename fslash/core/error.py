@@ -1,4 +1,4 @@
-from typing import Any, NoReturn
+from typing import NoReturn
 
 
 class EffectError(Exception):

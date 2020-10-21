@@ -1,4 +1,4 @@
-from typing import TypeVar, Tuple, Any, Callable
+from typing import Any, Callable, Tuple, TypeVar
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -23,10 +23,11 @@ def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
     Example:
         >>> fn(a, b) == flip(fn(b, a)) ==
     """
+
     def _(b: B, a: A) -> Any:
         return fn(a, b)
-    return _
 
+    return _
 
 
 __all__ = ["identity", "starid", "flip"]

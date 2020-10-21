@@ -26,7 +26,7 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import TypeVar, Tuple, Any, Callable
+<pre><code class="python">from typing import Any, Callable, Tuple, TypeVar
 
 A = TypeVar(&#34;A&#34;)
 B = TypeVar(&#34;B&#34;)
@@ -51,10 +51,11 @@ def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
     Example:
         &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
     &#34;&#34;&#34;
+
     def _(b: B, a: A) -&gt; Any:
         return fn(a, b)
-    return _
 
+    return _
 
 
 __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
@@ -85,8 +86,10 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
     Example:
         &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
     &#34;&#34;&#34;
+
     def _(b: B, a: A) -&gt; Any:
         return fn(a, b)
+
     return _</code></pre>
 </details>
 </dd>

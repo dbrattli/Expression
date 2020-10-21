@@ -89,9 +89,10 @@ by F# instead.
 - Avoid operator (`|`, `>>`, etc) overloading, this usually confuses more than it helps.
 - Use [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
-- Code should pass static type checking by tools such as
+- Code should pass strict static type checking by tools such as
   [mypy](http://mypy-lang.org/) and
-  [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/). Pylance is awesome, use it!
+  [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
+  Pylance is awesome, use it!
 
 ## Supported features
 
@@ -295,10 +296,11 @@ assert ys == zs
 
 ## Notable Differences
 
-In F# you can have a type and a module with the same name, e.g `Option`
-is both a module and a type. This is not possible with Python, so
-instead we use `Option` as the module to access module functions such as
-`Option.map` and the primed `Option_`for the type itself. See also [Why are types primed with underscore](https://github.com/dbrattli/fslash#--why-are-types-primed-with-_).
+In F# you can have a type and a module with the same name, e.g `Option` is both
+a module and a type. This is not possible with Python, so instead we use
+`Option` as the module to access module functions such as `Option.map` and the
+primed `Option_`for the type itself. See also [Why are types primed with
+underscore](https://github.com/dbrattli/fslash#--why-are-types-primed-with-_).
 
 ## Common Gotchas and Pitfalls
 
@@ -348,11 +350,13 @@ also usable for others, then please open a PR to include it with FSlash.
 
 ## How-to Contribute
 
-You are very welcome to contribute with PRs :heart_eyes: It is nice if you can try
-to align the code with F# modules, functions and documentation.
+You are very welcome to contribute with PRs :heart_eyes: It is nice if you can
+try to align the code with F# modules, functions and documentation. But submit
+a PR even if you should feel unsure.
 
 Code, doc-strings and comments should also follow the [Google Python
-Style Guide](https://google.github.io/styleguide/pyguide.html).
+Style Guide](https://google.github.io/styleguide/pyguide.html). Code is
+formatted using [Black](https://github.com/psf/black)
 
 ## License
 

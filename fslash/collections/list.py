@@ -12,16 +12,21 @@ Example:
     >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
 """
 
-from abc import abstractmethod
-from typing import Iterable, Iterator, Sized, TypeVar, Callable, Optional, Tuple, cast
 import sys
+from abc import abstractmethod
+from typing import Any, Callable, Iterable, Iterator, Optional, Sized, Tuple, TypeVar, cast, overload
 
-from fslash.core.option import Option, Some, Nothing, pipe
+from fslash.core.option import Nothing, Option, Some, pipe
+
 from . import seq as Seq
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TState = TypeVar("TState")
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
+T3 = TypeVar("T3")
+T4 = TypeVar("T4")
 
 
 class List(Iterable[TSource], Sized):
@@ -37,12 +42,34 @@ class List(Iterable[TSource], Sized):
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
 
-    def match(self, *args, **kw):
-        from pampy import match
+    def match(self, *args: Any, **kw: Any) -> Any:
+        from pampy import match  # type: ignore
 
-        return match(self, *args, **kw)
+        return match(self, *args, **kw)  # type: ignore
 
-    def pipe(self, *args):
+    @overload
+    def pipe(self, __fn1: Callable[["List[TSource]"], TResult]) -> TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[["List[TSource]"], T1], __fn2: Callable[[T1], T2]) -> T2:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[["List[TSource]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -> T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["List[TSource]"], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -> T4:
+        ...
+
+    def pipe(self, *args: Any) -> Any:
         """Pipe list through the given functions."""
         return pipe(self, *args)
 
@@ -51,7 +78,7 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def choose(sef, chooser: Callable[[TSource], Option[TResult]]) -> "List[TResult]":
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "List[TResult]":
         raise NotImplementedError
 
     @abstractmethod
@@ -85,7 +112,7 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def indexed(self, start=0) -> 'List[Tuple[int, TSource]]':
+    def indexed(self, start: int = 0) -> "List[Tuple[int, TSource]]":
         """Returns a new list whose elements are the corresponding
         elements of the input list paired with the index (from `start`)
         of each element.
@@ -105,7 +132,7 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -> "List[TResult]":
+    def map(self, mapping: Callable[[TSource], TResult]) -> "List[TResult]":
         raise NotImplementedError
 
     @abstractmethod
@@ -121,7 +148,7 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def skip_last(self, count: int) -> 'List[TSource]':
+    def skip_last(self, count: int) -> "List[TSource]":
         raise NotImplementedError
 
     @abstractmethod
@@ -164,7 +191,7 @@ class List(Iterable[TSource], Sized):
 
     def slice(
         self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
-    ) -> 'List[TSource]':
+    ) -> "List[TSource]":
         """The slice operator.
 
         Slices the given list. It is basically a wrapper around the operators
@@ -212,19 +239,19 @@ class List(Iterable[TSource], Sized):
             try:
                 res = res.skip(_start)
             except ValueError:
-                res = empty
+                res = cast(List[TSource], empty)
 
         elif _start < 0:
             try:
                 res = res.take_last(-_start)
             except ValueError:
-                res = empty
+                res = cast(List[TSource], empty)
 
         if _stop < 0:
             try:
                 res = res.skip_last(-_stop)
             except ValueError:
-                res = empty
+                res = cast(List[TSource], empty)
 
         if _step > 1:
             res = res.indexed().filter(lambda t: t[0] % _step == 0)
@@ -235,7 +262,7 @@ class List(Iterable[TSource], Sized):
 
         return res
 
-    def zip(self, other: 'List[TResult]') -> 'List[Tuple[TSource, TResult]]':
+    def zip(self, other: "List[TResult]") -> "List[Tuple[TSource, TResult]]":
         """Combines the two lists into a list of pairs. The two lists
         must have equal lengths. .
 
@@ -249,19 +276,19 @@ class List(Iterable[TSource], Sized):
         raise NotImplementedError
 
     @abstractmethod
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[TSource]:
         """Return iterator for List."""
 
         raise NotImplementedError
 
     @abstractmethod
-    def __add__(self, other) -> "List[TSource]":
+    def __add__(self, other: "List[TSource]") -> "List[TSource]":
         """Append list with other list."""
 
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Return true if list equals other list."""
 
         raise NotImplementedError
@@ -272,7 +299,7 @@ class List(Iterable[TSource], Sized):
 
         raise NotImplementedError
 
-    def __getitem__(self, key) -> 'List[TSource]':
+    def __getitem__(self, key: Any) -> "List[TSource]":
         """
         Pythonic version of `slice`.
 
@@ -300,7 +327,7 @@ class List(Iterable[TSource], Sized):
         elif isinstance(key, int):
             start, stop, step = key, key + 1, 1
         else:
-            raise TypeError('Invalid argument type.')
+            raise TypeError("Invalid argument type.")
 
         return self.slice(start, stop, step)
 
@@ -317,7 +344,7 @@ class Cons(List[TSource]):
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> List[TResult]:
         head, tail = self._value
         filtered: List[TResult] = tail.choose(chooser)
-        return cast(List[TResult], of_option(chooser(head))).append(filtered)
+        return of_option(chooser(head)).append(filtered)
 
     def collect(self, mapping: Callable[[TSource], List[TResult]]) -> List[TResult]:
         """For each element of the list, applies the given function.
@@ -360,7 +387,7 @@ class Cons(List[TSource]):
         head, _ = self._value
         return head
 
-    def indexed(self, start=0) -> List[Tuple[int, TSource]]:
+    def indexed(self, start: int = 0) -> List[Tuple[int, TSource]]:
         """Returns a new list whose elements are the corresponding
         elements of the input list paired with the index (from `start`)
         of each element.
@@ -378,9 +405,9 @@ class Cons(List[TSource]):
         """Return `True` if list is empty."""
         return False
 
-    def map(self, mapper: Callable[[TSource], TResult]) -> List[TResult]:
+    def map(self, mapping: Callable[[TSource], TResult]) -> List[TResult]:
         head, tail = self._value
-        return Cons(mapper(head), tail.map(mapper))
+        return Cons(mapping(head), tail.map(mapping))
 
     def skip(self, count: int) -> "List[TSource]":
         """Returns the list after removing the first N elements."""
@@ -393,7 +420,7 @@ class Cons(List[TSource]):
         except ValueError as ex:
             raise ValueError(f"List has not enough elements to skip {count} items.") from ex
 
-    def skip_last(self, count: int) -> 'List[TSource]':
+    def skip_last(self, count: int) -> "List[TSource]":
         """Returns the list after removing the last N elements."""
         if count == 0:
             return self
@@ -477,12 +504,12 @@ class Cons(List[TSource]):
 
         return Cons((head, head_), tail.zip(tail_))
 
-    def __add__(self, other) -> List[TSource]:
+    def __add__(self, other: List[TSource]) -> List[TSource]:
         """Append list with other list."""
 
         return self.append(other)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Return true if list equals other list."""
 
         if other is Nil:
@@ -550,7 +577,7 @@ class _Nil(List[TSource]):
 
         raise ValueError("List is empty")
 
-    def indexed(self, start=0) -> List[Tuple[int, TSource]]:
+    def indexed(self, start: int = 0) -> List[Tuple[int, TSource]]:
         """Returns a new list whose elements are the corresponding
         elements of the input list paired with the index (from `start`)
         of each element.
@@ -587,7 +614,7 @@ class _Nil(List[TSource]):
 
         raise ValueError("List is empty")
 
-    def skip_last(self, count: int) -> 'List[TSource]':
+    def skip_last(self, count: int) -> "List[TSource]":
         if count == 0:
             return self
 
@@ -656,12 +683,12 @@ class _Nil(List[TSource]):
 
         raise ValueError("The list must have equal length.")
 
-    def __add__(self, other) -> List[TSource]:
+    def __add__(self, other: List[TSource]) -> List[TSource]:
         """Append list with other list."""
 
         return other
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Return true if list equals other list."""
 
         return other is Nil
@@ -676,7 +703,7 @@ class _Nil(List[TSource]):
         return 0
 
 
-Nil: _Nil = _Nil()
+Nil: List[Any] = _Nil()
 
 
 def append(source: List[TSource]) -> Callable[[List[TSource]], List[TSource]]:
@@ -686,7 +713,7 @@ def append(source: List[TSource]) -> Callable[[List[TSource]], List[TSource]]:
     return _append
 
 
-def choose(sef, chooser: Callable[[TSource], Option[TResult]]) -> Callable[[List[TSource]], List[TResult]]:
+def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[List[TSource]], List[TResult]]:
     def _choose(source: List[TSource]) -> List[TResult]:
         return source.choose(chooser)
 
@@ -705,6 +732,7 @@ def collect(mapping: Callable[[TSource], List[TResult]]) -> Callable[[List[TSour
         A partially applied collect function that takes the source
         list and returns the concatenation of the transformed sublists.
     """
+
     def _collect(source: List[TSource]) -> List[TResult]:
         """For each element of the list, applies the given function.
         Concatenates all the results and return the combined list.
@@ -727,7 +755,7 @@ def concat(sources: Iterable[List[TSource]]) -> List[TSource]:
     return Seq.fold_back(folder, sources)(Nil)
 
 
-empty = Nil
+empty: List[Any] = Nil
 """The empty list."""
 
 
@@ -741,6 +769,7 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[List[TSource]], Li
     Returns:
         Partially applied filter function.
     """
+
     def _filter(source: List[TSource]) -> List[TSource]:
         """Returns a new collection containing only the elements of the
         collection for which the given predicate returns `True`
@@ -802,7 +831,7 @@ def of_seq(xs: Iterable[TSource]) -> List[TSource]:
 
 def of_option(option: Option[TSource]) -> List[TSource]:
     if isinstance(option, Some):
-        return singleton(option.value)
+        return singleton(cast(Some[TSource], option).value)
     return empty
 
 
@@ -810,7 +839,7 @@ def singleton(value: TSource) -> List[TSource]:
     return Cons(value, Nil)
 
 
-def skip(count: int) -> Callable[[List[TSource]], List[TResult]]:
+def skip(count: int) -> Callable[[List[TSource]], List[TSource]]:
     """Returns the list after removing the first N elements.
 
     Args:
@@ -819,13 +848,13 @@ def skip(count: int) -> Callable[[List[TSource]], List[TResult]]:
         The list after removing the first N elements.
     """
 
-    def _skip(source: List[TSource]) -> List[TResult]:
+    def _skip(source: List[TSource]) -> List[TSource]:
         return source.skip(count)
 
     return _skip
 
 
-def skip_last(count: int) -> Callable[[List[TSource]], List[TResult]]:
+def skip_last(count: int) -> Callable[[List[TSource]], List[TSource]]:
     """Returns the list after removing the last N elements.
 
     Args:
@@ -834,7 +863,7 @@ def skip_last(count: int) -> Callable[[List[TSource]], List[TResult]]:
         The list after removing the last N elements.
     """
 
-    def _skip_last(source: List[TSource]) -> List[TResult]:
+    def _skip_last(source: List[TSource]) -> List[TSource]:
         return source.skip_last(count)
 
     return _skip_last
@@ -877,15 +906,8 @@ def take_last(count: int) -> Callable[[List[TSource]], List[TSource]]:
     return _take
 
 
-def try_head(self) -> Callable[[List[TSource]], Option[TSource]]:
-    """Returns the first element of the list, or None if the list is
-    empty.
-    """
-
-    def _try_head(source: List[TSource]) -> Option[TSource]:
-        return source.try_head()
-
-    return _try_head
+def try_head(source: List[TSource]) -> Option[TSource]:
+    return source.try_head()
 
 
 def zip(other: List[TResult]) -> Callable[[List[TSource]], List[Tuple[TSource, TResult]]]:
@@ -900,6 +922,7 @@ def zip(other: List[TResult]) -> Callable[[List[TSource]], List[Tuple[TSource, T
         returns s single list containing pairs of matching elements from
         the input lists.
     """
+
     def _zip(source: List[TSource]) -> List[Tuple[TSource, TResult]]:
         """Combines the two lists into a list of pairs. The two lists
         must have equal lengths.
@@ -912,6 +935,7 @@ def zip(other: List[TResult]) -> Callable[[List[TSource]], List[Tuple[TSource, T
             input lists.
         """
         return source.zip(other)
+
     return _zip
 
 

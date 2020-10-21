@@ -1,4 +1,6 @@
-from typing import Generic, Optional, TypeVar, Callable, Coroutine, List, Any, cast
+from functools import wraps
+from typing import Any, Callable, Coroutine, Generic, List, Optional, TypeVar, cast
+
 from fslash.core import EffectError
 
 TInner = TypeVar("TInner")
@@ -8,19 +10,24 @@ TResult = TypeVar("TResult")
 
 
 class Builder(Generic[TOuter, TInner]):
+    """Effect builder."""
+
     def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -> TOuter2:
         raise NotImplementedError("Builder does not implement a bind method")
 
-    def return_(self, x):
+    def return_(self, x: TInner) -> TOuter:
         raise NotImplementedError("Builder does not implement a return method")
 
-    def return_from(self, xs):
+    def return_from(self, xs: TOuter) -> TOuter:
         raise NotImplementedError("Builder does not implement a return from method")
 
-    def combine(self, xs, ys):
+    def combine(self, xs: TOuter, ys: TOuter) -> TOuter:
+        """Used for combining multiple statements in the effect."""
         raise NotImplementedError("Builder does not implement a combine method")
 
-    def zero(self):
+    def zero(self) -> TOuter:
+        """Called if the effect raises StopIteration without a value,
+        i.e returns None"""
         raise NotImplementedError("Builder does not implement a zero method")
 
     def _send(
@@ -62,6 +69,7 @@ class Builder(Generic[TOuter, TInner]):
             A `builder` function that can wrap coroutines into builders.
         """
 
+        @wraps(fn)
         def wrapper(*args: Any, **kw: Any) -> TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
@@ -70,11 +78,15 @@ class Builder(Generic[TOuter, TInner]):
             try:
                 result = self._send(gen, done)
                 while not done and not isinstance(result, EffectError):
-                    cont = self.bind(cast(TOuter, result), lambda value: self._send(gen, done, value))
+                    binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
+                    cont = self.bind(cast(TOuter, result), binder)
                     result = self.combine(result, cont)
             except EffectError:
                 pass
 
+            # If anything returns none (i.e raises StopIteration without
+            # a value) then we expect the effect to have a zero method
+            # implemented.
             if result is None:
                 result = self.zero()
 

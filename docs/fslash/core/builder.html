@@ -26,7 +26,9 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import Generic, Optional, TypeVar, Callable, Coroutine, List, Any, cast
+<pre><code class="python">from functools import wraps
+from typing import Any, Callable, Coroutine, Generic, List, Optional, TypeVar, cast
+
 from fslash.core import EffectError
 
 TInner = TypeVar(&#34;TInner&#34;)
@@ -36,19 +38,24 @@ TResult = TypeVar(&#34;TResult&#34;)
 
 
 class Builder(Generic[TOuter, TInner]):
+    &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
+
     def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
         raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
 
-    def return_(self, x):
+    def return_(self, x: TInner) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a return method&#34;)
 
-    def return_from(self, xs):
+    def return_from(self, xs: TOuter) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)
 
-    def combine(self, xs, ys):
+    def combine(self, xs: TOuter, ys: TOuter) -&gt; TOuter:
+        &#34;&#34;&#34;Used for combining multiple statements in the effect.&#34;&#34;&#34;
         raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)
 
-    def zero(self):
+    def zero(self) -&gt; TOuter:
+        &#34;&#34;&#34;Called if the effect raises StopIteration without a value,
+        i.e returns None&#34;&#34;&#34;
         raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)
 
     def _send(
@@ -90,6 +97,7 @@ class Builder(Generic[TOuter, TInner]):
             A `builder` function that can wrap coroutines into builders.
         &#34;&#34;&#34;
 
+        @wraps(fn)
         def wrapper(*args: Any, **kw: Any) -&gt; TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
@@ -98,11 +106,15 @@ class Builder(Generic[TOuter, TInner]):
             try:
                 result = self._send(gen, done)
                 while not done and not isinstance(result, EffectError):
-                    cont = self.bind(cast(TOuter, result), lambda value: self._send(gen, done, value))
+                    binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
+                    cont = self.bind(cast(TOuter, result), binder)
                     result = self.combine(result, cont)
             except EffectError:
                 pass
 
+            # If anything returns none (i.e raises StopIteration without
+            # a value) then we expect the effect to have a zero method
+            # implemented.
             if result is None:
                 result = self.zero()
 
@@ -125,38 +137,30 @@ class Builder(Generic[TOuter, TInner]):
 <span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
+<div class="desc"><p>Effect builder.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Builder(Generic[TOuter, TInner]):
+    &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
+
     def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
         raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
 
-    def return_(self, x):
+    def return_(self, x: TInner) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a return method&#34;)
 
-    def return_from(self, xs):
+    def return_from(self, xs: TOuter) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)
 
-    def combine(self, xs, ys):
+    def combine(self, xs: TOuter, ys: TOuter) -&gt; TOuter:
+        &#34;&#34;&#34;Used for combining multiple statements in the effect.&#34;&#34;&#34;
         raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)
 
-    def zero(self):
+    def zero(self) -&gt; TOuter:
+        &#34;&#34;&#34;Called if the effect raises StopIteration without a value,
+        i.e returns None&#34;&#34;&#34;
         raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)
 
     def _send(
@@ -198,6 +202,7 @@ return default</p></div>
             A `builder` function that can wrap coroutines into builders.
         &#34;&#34;&#34;
 
+        @wraps(fn)
         def wrapper(*args: Any, **kw: Any) -&gt; TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
@@ -206,11 +211,15 @@ return default</p></div>
             try:
                 result = self._send(gen, done)
                 while not done and not isinstance(result, EffectError):
-                    cont = self.bind(cast(TOuter, result), lambda value: self._send(gen, done, value))
+                    binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
+                    cont = self.bind(cast(TOuter, result), binder)
                     result = self.combine(result, cont)
             except EffectError:
                 pass
 
+            # If anything returns none (i.e raises StopIteration without
+            # a value) then we expect the effect to have a zero method
+            # implemented.
             if result is None:
                 result = self.zero()
 
@@ -244,20 +253,21 @@ return default</p></div>
 </details>
 </dd>
 <dt id="fslash.core.builder.Builder.combine"><code class="name flex">
-<span>def <span class="ident">combine</span></span>(<span>self, xs, ys)</span>
+<span>def <span class="ident">combine</span></span>(<span>self, xs: ~TOuter, ys: ~TOuter) ‑> ~TOuter</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Used for combining multiple statements in the effect.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def combine(self, xs, ys):
+<pre><code class="python">def combine(self, xs: TOuter, ys: TOuter) -&gt; TOuter:
+    &#34;&#34;&#34;Used for combining multiple statements in the effect.&#34;&#34;&#34;
     raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.builder.Builder.return_"><code class="name flex">
-<span>def <span class="ident">return_</span></span>(<span>self, x)</span>
+<span>def <span class="ident">return_</span></span>(<span>self, x: ~TInner) ‑> ~TOuter</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -265,12 +275,12 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def return_(self, x):
+<pre><code class="python">def return_(self, x: TInner) -&gt; TOuter:
     raise NotImplementedError(&#34;Builder does not implement a return method&#34;)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.builder.Builder.return_from"><code class="name flex">
-<span>def <span class="ident">return_from</span></span>(<span>self, xs)</span>
+<span>def <span class="ident">return_from</span></span>(<span>self, xs: ~TOuter) ‑> ~TOuter</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -278,20 +288,23 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def return_from(self, xs):
+<pre><code class="python">def return_from(self, xs: TOuter) -&gt; TOuter:
     raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.builder.Builder.zero"><code class="name flex">
-<span>def <span class="ident">zero</span></span>(<span>self)</span>
+<span>def <span class="ident">zero</span></span>(<span>self) ‑> ~TOuter</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Called if the effect raises StopIteration without a value,
+i.e returns None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def zero(self):
+<pre><code class="python">def zero(self) -&gt; TOuter:
+    &#34;&#34;&#34;Called if the effect raises StopIteration without a value,
+    i.e returns None&#34;&#34;&#34;
     raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)</code></pre>
 </details>
 </dd>

@@ -1,7 +1,7 @@
 from typing import Callable, Any, TypeVar, overload
 from functools import reduce
 
-from fslash.core.option import Option
+from fslash.core.option import Option, Nothing
 
 
 A = TypeVar("A")
@@ -15,29 +15,29 @@ TError = TypeVar("TError")
 
 
 @overload
-def kleisli() -> Callable[[A], A]:
+def pipeline() -> Callable[[A], A]:
     ...
 
 
 @overload
-def kleisli(__fn: Callable[[A], Option[B]]) -> Callable[[A], Option[B]]:
+def pipeline(__fn: Callable[[A], Option[B]]) -> Callable[[A], Option[B]]:
     ...
 
 
 @overload
-def kleisli(__fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]]) -> Callable[[A], Option[C]]:
+def pipeline(__fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]]) -> Callable[[A], Option[C]]:
     ...
 
 
 @overload
-def kleisli(
+def pipeline(
     __fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]], __fn3: Callable[[C], Option[D]]
 ) -> Callable[[A], Option[D]]:
     ...
 
 
 @overload
-def kleisli(
+def pipeline(
     __fn1: Callable[[A], Option[B]],
     __fn2: Callable[[B], Option[C]],
     __fn3: Callable[[C], Option[D]],
@@ -47,7 +47,7 @@ def kleisli(
 
 
 @overload
-def kleisli(
+def pipeline(
     __fn1: Callable[[A], Option[B]],
     __fn2: Callable[[B], Option[C]],
     __fn3: Callable[[C], Option[D]],
@@ -58,7 +58,7 @@ def kleisli(
 
 
 @overload
-def kleisli(
+def pipeline(
     __fn1: Callable[[A], Option[B]],
     __fn2: Callable[[B], Option[C]],
     __fn3: Callable[[C], Option[D]],
@@ -69,31 +69,30 @@ def kleisli(
     ...
 
 
-def kleisli(*fns: Callable) -> Callable:
-    """Kleisli (>=>) compose multiple option returning functions left
-    to right.
+def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:
+    """pipeline multiple option returning functions left to right.
 
-    Kleisli composes zero or more functions into a functional
-    composition. The functions are composed left to right. A composition
-    of zero functions gives back the identity function.
+    A pipeline kleisli (>=>) composes zero or more functions into a
+    functional composition. The functions are composed left to right. A
+    composition of zero functions gives back the identity function.
 
-    >>> kleisli()(x) == x
-    >>> kleisli(f)(x) == f(x)
-    >>> kleisli(f, g)(x) == g(f(x))
-    >>> kleisli(f, g, h)(x) == h(g(f(x)))
+    >>> pipeline()(x) == x
+    >>> pipeline(f)(x) == f(x)
+    >>> pipeline(f, g)(x) == g(f(x))
+    >>> pipeline(f, g, h)(x) == h(g(f(x)))
     ...
 
     Returns:
         The composed functions.
     """
 
-    def _kleisli(source: Any) -> Any:
-        def reducer(acc, fn):
-            return fn(acc.value) if acc.is_some() else acc
+    def kleisli(source: Any) -> Option[Any]:
+        def reducer(acc: Any, fn: Callable[[Any], Option[Any]]) -> Option[Any]:
+            return fn(acc.value) if acc is not Nothing else acc
 
         return reduce(reducer, fns, source)
 
-    return _kleisli
+    return kleisli
 
 
-__all__ = ["kleisli"]
+__all__ = ["pipeline"]

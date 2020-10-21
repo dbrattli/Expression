@@ -6,27 +6,54 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
 from abc import abstractmethod
-from typing import Optional, TypeVar, Callable, List, Iterable, Iterator, Any, cast
-from .pipe import pipe
+from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
+
 from .error import EffectError
+from .pipe import pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
+T3 = TypeVar("T3")
+T4 = TypeVar("T4")
 
 
 class Option(Iterable[TSource]):
     """Option abstract base class."""
 
-    def pipe(self, *args):
+    @overload
+    def pipe(self, __fn1: Callable[["Option[TSource]"], TResult]) -> TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[["Option[TSource]"], T1], __fn2: Callable[[T1], T2]) -> T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[["Option[TSource]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -> T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["Option[TSource]"], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -> T4:
+        ...
+
+    def pipe(self, *args: Any) -> Any:
         """Pipe option through the given functions."""
         return pipe(self, *args)
 
-    def match(self, *args, **kw) -> Any:
-        from pampy import match
+    def match(self, *args: Any, **kw: Any) -> Any:
+        from pampy import match  # type: ignore
 
-        return match(self, *args, **kw)
+        return match(self, *args, **kw)  # type: ignore
 
     def default_value(self, value: TSource) -> TSource:
         """Gets the value of the option if the option is Some, otherwise
@@ -119,19 +146,20 @@ class Some(Option[TSource]):
         return [self._value]
 
     @property
-    def value(self):
+    def value(self) -> TSource:
         """Returns the value wrapped by the option.
 
-        This is safe since the property is only defined on `Some` and not on either `Option` or `None`.
+        This is safe since the property is only defined on `Some` and
+        not on either `Option` or `None`.
         """
         return self._value
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Some):
-            return self._value == cast(Some[Any], other)._value
+            return self._value == other._value  # type: ignore
         return False
 
-    def __iter__(self) -> Iterator[TSource]:
+    def __iter__(self) -> Generator[TSource, TSource, TSource]:
         return (yield self._value)
 
     def __str__(self) -> str:

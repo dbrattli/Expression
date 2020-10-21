@@ -7,25 +7,53 @@ Programming.
 """
 
 from abc import abstractmethod
-from typing import TypeVar, Generic, Callable, Iterator, Iterable, Union, List
+from typing import Any, Callable, Generator, Generic, Iterable, Iterator, TypeVar, Union, overload
+
 from .error import EffectError
-from .misc import identity
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TError = TypeVar("TError")
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
+T3 = TypeVar("T3")
+T4 = TypeVar("T4")
 
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     """The result abstract base class."""
 
-    def match(self, *args, **kw):
-        from pampy import match
+    def match(self, *args: Any, **kw: Any) -> Any:
+        from pampy import match  # type: ignore
 
-        return match(self, *args, **kw)
+        return match(self, *args, **kw)  # type: ignore
 
-    def pipe(self, *args):
+    @overload
+    def pipe(self, __fn1: Callable[["Result[TSource, TError]"], TResult]) -> TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[["Result[TSource, TError]"], T1], __fn2: Callable[[T1], T2]) -> T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[["Result[TSource, TError]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -> T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["Result[TSource, TError]"], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -> T4:
+        ...
+
+    def pipe(self, *args: Any):
         """Pipe result through the given functions."""
         return pipe(self, *args)
 
@@ -51,14 +79,14 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
     def is_ok(self) -> bool:
         raise NotImplementedError
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         raise NotImplementedError
 
     @abstractmethod
     def __iter__(self) -> Iterator[TSource]:
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
@@ -69,7 +97,7 @@ class Ok(Result[TSource, TError]):
         self._value = value
 
     @property
-    def value(self):
+    def value(self) -> TSource:
         return self._value
 
     def map(self, mapper: Callable[[TSource], TResult]) -> Result[TResult, TError]:
@@ -89,12 +117,12 @@ class Ok(Result[TSource, TError]):
     def is_ok(self) -> bool:
         return True
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Ok):
-            return self.value == other.value
+            return self.value == other.value  # type: ignore
         return False
 
-    def __iter__(self) -> Iterator[TSource]:
+    def __iter__(self) -> Generator[TSource, TSource, TSource]:
         """Return iterator for Ok case."""
         return (yield self._value)
 
@@ -129,9 +157,9 @@ class Error(Result[TSource, TError], EffectError):
     def is_ok(self) -> bool:
         return False
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Error):
-            return self.error == other.error
+            return self.error == other.error  # type: ignore
         return False
 
     def __iter__(self) -> Iterator[TSource]:
@@ -159,33 +187,4 @@ def bind(
     return _bind
 
 
-def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -> Result[List[TResult], TError]:
-    """Traverses a list of items.
-
-    Threads an applicative computation though a list of items.
-    """
-
-    from fslash.builders import result
-    from fslash.collections import Seq
-
-    # flake8: noqa: T484
-    @result
-    def folder(head: TSource, tail: Result[List[TResult], TError]):
-        """Same as:
-        >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
-        """
-        h = yield from fn(head)
-        t = yield from tail
-        return [h] + t
-
-    return Seq.fold_back(folder, lst)(Ok([]))
-
-
-def sequence(lst: List[Result[TSource, TError]]) -> Result[List[TSource], TError]:
-    """Execute a sequence of result returning commands and collect the
-    sequence of their response."""
-
-    return traverse(identity, lst)
-
-
-__all__ = ["Result", "Ok", "Error", "map", "bind", "traverse", "sequence"]
+__all__ = ["Result", "Ok", "Error", "map", "bind"]
