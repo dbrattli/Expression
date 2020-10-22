@@ -199,13 +199,15 @@ assert add(3)(4) == 7</p></div>
         assert add(3)(4) == 7
 
     &#34;&#34;&#34;
+    spec = inspect.getfullargspec(fn)
+    # Number of arguments needed is length of args and kwargs - default args
+    count = len(spec.args) + len(spec.kwonlyargs) - len(spec.kwonlydefaults or [])
 
     @wraps(fn)
     def wrapper(*args: Any, **kw: Any) -&gt; Any:
-        try:
+        if len(args) + len(kw) &gt;= count:
             return fn(*args, **kw)
-        except TypeError:
-            return partial(fn, *args, **kw)
+        return curried(partial(fn, *args, **kw))
 
     return wrapper</code></pre>
 </details>
