@@ -196,7 +196,7 @@ def keep_positive(a: int) -> Option_[int]:
 ```py
 from pampy import _
 
-def exists (x : Option_[int]) -> bool:
+def exists(x : Option_[int]) -> bool:
     return x.match(
         Some, lambda some: True,
         _, False
