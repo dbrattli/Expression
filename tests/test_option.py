@@ -1,6 +1,8 @@
+from typing import Any, Generator
+
 import pytest
 from fslash.builders import option
-from fslash.core import Nothing, Nothing_, Option, Option_, Some, pipe, pipe2
+from fslash.core import Nothing, Option, Option_, Some, pipe, pipe2
 from hypothesis import given
 from hypothesis import strategies as st
 from pampy import _, match
@@ -21,6 +23,9 @@ def test_option_some_iterate():
 
     for x in Option.to_list(xs):
         assert x == 42
+        break
+    else:
+        assert False
 
 
 def test_option_none():
@@ -54,7 +59,7 @@ def test_option_none_not_equals_some():
 
 
 @given(st.one_of(st.integers(), st.text(), st.floats()), st.one_of(st.integers(), st.text(), st.floats()))
-def test_option_some_equals_some(a, b):
+def test_option_some_equals_some(a: Any, b: Any):
     xs = Some(a)
     ys = Some(b)
 
@@ -63,10 +68,13 @@ def test_option_some_equals_some(a, b):
 
 def test_option_some_map_piped():
     xs = Some(42)
-    ys = xs.pipe(Option.map(lambda x: x + 1))
+    ys: Option_[int] = xs.pipe(Option.map(lambda x: x + 1))
 
     for y in ys:
         assert y == 43
+        break
+    else:
+        assert False
 
 
 def test_option_none_map_piped():
@@ -103,28 +111,51 @@ def test_option_some_bind_fluent():
     xs = Some(42)
     ys = xs.bind(lambda x: Some(x + 1))
 
-    assert ys.match(Some, lambda some: some.value == 43, _, False)
+    assert ys.match(
+        Some,
+        lambda some: some.value == 43,
+        _,
+        False,
+    )
 
 
 def test_option_some_bind_none_fluent():
     xs = Some(42)
     ys = xs.bind(lambda x: Nothing)
 
-    assert match(ys, Some, lambda some: False, _, True)
+    assert match(
+        ys,
+        Some,
+        lambda some: False,
+        _,
+        True,
+    )
 
 
 def test_option_none_bind_none_fluent():
     xs = Nothing
     ys = xs.bind(lambda x: Nothing)
 
-    assert ys.match(Some, lambda some: False, _, True)
+    assert ys.match(
+        Some,
+        lambda some: False,
+        _,
+        True,
+    )
 
 
 def test_option_some_bind_piped():
     xs = Some(42)
-    ys = xs.pipe(Option.bind(lambda x: Some(x + 1)))
+    ys = xs.pipe(
+        Option.bind(lambda x: Some(x + 1)),
+    )
 
-    assert ys.match(Some, lambda some: some.value == 43, _, False)
+    assert ys.match(
+        Some,
+        lambda some: some.value == 43,
+        _,
+        False,
+    )
 
 
 def test_option_none_to_list():
@@ -194,7 +225,12 @@ def test_option_builder_zero():
             yield
 
     xs = fn()
-    assert xs.match(Some, lambda some: False, _, True)
+    assert xs.match(
+        Some,
+        lambda some: False,
+        _,
+        True,
+    )
 
 
 def test_option_builder_yield_value():
@@ -203,27 +239,45 @@ def test_option_builder_yield_value():
         yield 42
 
     xs = fn()
-    assert xs.match(Some, lambda some: some.value, _, None) == 42
+    assert (
+        xs.match(
+            Some,
+            lambda some: some.value,
+            _,
+            None,
+        )
+        == 42
+    )
 
 
-def test_option_builder_yield_some():
+def test_option_builder_yield_some_wrapped():
     @option
-    def fn():
+    def fn() -> Generator[Option_[int], Option_[int], Option_[int]]:
         x = yield Some(42)
         return x
 
     xs = fn()
-    assert Some(42) == xs.match(Some, lambda some: some.value, _, None)
+    assert Some(42) == xs.match(
+        Some,
+        lambda some: some.value,
+        _,
+        None,
+    )
 
 
 def test_option_builder_return_some():
     @option
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x = yield 42
         return x
 
     xs = fn()
-    assert 42 == xs.match(Some, lambda some: some.value, _, None)
+    assert 42 == xs.match(
+        Some,
+        lambda some: some.value,
+        _,
+        None,
+    )
 
 
 def test_option_builder_return_none():
@@ -233,32 +287,54 @@ def test_option_builder_return_none():
         yield
 
     xs = fn()
-    assert xs.match(Some, lambda some: some.value, _, None) is Nothing
+    assert (
+        xs.match(
+            Some,
+            lambda some: some.value,
+            _,
+            None,
+        )
+        is Nothing
+    )
 
 
 def test_option_builder_yield_from_some():
     @option
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x = yield from Some(42)
         return x + 1
 
     xs = fn()
-    assert 43 == match(xs, Some, lambda some: some.value, _, None)
+    assert 43 == match(
+        xs,
+        Some,
+        lambda some: some.value,
+        _,
+        None,
+    )
 
 
 def test_option_builder_yield_from_none():
     @option
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x = yield from Nothing
         return x
 
     xs = fn()
-    assert xs.match(Some, lambda some: some.value, _, None) is None
+    assert (
+        xs.match(
+            Some,
+            lambda some: some.value,
+            _,
+            None,
+        )
+        is None
+    )
 
 
 def test_option_builder_multiple_some():
     @option
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x = yield 42
         y = yield from Some(43)
 
@@ -270,7 +346,7 @@ def test_option_builder_multiple_some():
 
 def test_option_builder_none_short_circuits():
     @option
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x = yield from Nothing
         y = yield from Some(43)
 
@@ -288,7 +364,7 @@ def test_option_builder_throws():
         raise CustomException(error)
         yield
 
-    with pytest.raises(CustomException) as ex:
+    with pytest.raises(CustomException) as ex:  # type: ignore
         fn()
 
     assert ex.value.message == error

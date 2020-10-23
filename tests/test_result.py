@@ -12,15 +12,18 @@ from .utils import CustomException, throw
 
 
 def test_result_ok():
-    xs = Ok(42)
+    xs: Result_[int, str] = Ok(42)
 
     assert isinstance(xs, Result_)
     assert xs.is_ok()
     assert not xs.is_error()
     assert str(xs) == "Ok 42"
 
-    res = match(xs, Ok, lambda ok: ok.value, Error, lambda error: throw(error.error))
-    assert res == 42
+    for x in xs:
+        assert x == 42
+        break
+    else:
+        assert False
 
 
 def test_result_ok_iterate():

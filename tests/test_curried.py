@@ -49,7 +49,7 @@ def test_curried_none():
         return 42
 
     assert magic() == 42
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError):  # type:ignore
         magic(42)
 
 
@@ -65,10 +65,10 @@ def test_curried_three():
     assert add(3)(4)(2) == 9
     assert add()(3)()(4)()(2) == 9
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError):  # type:ignore
         add(3, 4, 5, 6)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError):  # type:ignore
         add(3, 4, 5)(6, 7)
 
 
@@ -89,5 +89,5 @@ def test_curried_typed():
     assert add(3, 4) == 7
     assert add(3)(4) == 7
 
-    with pytest.raises(TypeError):
-        add(3, 4)(4)  # Should show type error in vscode
+    with pytest.raises(TypeError):  # type:ignore
+        add(3, 4)(4)  # NOTE: This should show type error in vscode
