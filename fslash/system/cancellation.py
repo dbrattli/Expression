@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from threading import RLock
 from typing import Callable, Dict, Optional
 
@@ -19,21 +18,20 @@ class CancellationToken:
     objects that receive the notification can respond in whatever manner
     is appropriate."""
 
-    @abstractmethod
-    def __init__(self, cancelled: Optional[bool] = None, source: "Optional[CancellationTokenSource]" = None) -> None:
+    def __init__(self, cancelled: bool = True, source: "Optional[CancellationTokenSource]" = None) -> None:
         """Should not be used directly. Create cancellation tokens using
         the `CancellationTokenSource` instead."""
 
-        self._cancelled = False if cancelled is None else True
+        self._cancelled = cancelled
         self._source = CancellationTokenSource.cancelled_source() if source is None else source
 
     @property
     def is_cancellation_requested(self) -> bool:
-        return self._source.is_cancellation_requested
+        return not self._cancelled and self._source.is_cancellation_requested
 
     @property
-    def can_be_cancelled(self) -> bool:
-        return self._source is not None and self._source.is_cancellation_requested
+    def can_be_canceled(self) -> bool:
+        return not self._cancelled
 
     def throw_if_cancellation_requested(self):
         if self._source.is_cancellation_requested:
@@ -44,32 +42,34 @@ class CancellationToken:
 
     @staticmethod
     def none():
-        return CancellationToken(False, CancellationTokenSource())
+        return CancellationToken(True, None)
 
 
 class CancellationTokenSource(Disposable):
     def __init__(self):
+        super().__init__(self._do_cancel)
+
         self._lock = RLock()
         self._listeners: Dict[int, Callable[[], None]] = dict()
         self._id = 0
 
     @property
-    def token(self):
+    def token(self) -> CancellationToken:
         return CancellationToken(False, self)
 
     @property
     def is_cancellation_requested(self) -> bool:
-        return self._disposed
+        return self._is_disposed
 
-    def cancel(self):
-        if self._disposed:
-            raise ObjectDisposedException()
+    def cancel(self) -> None:
+        self.dispose()
 
-        self._disposed = True
+    def _do_cancel(self) -> None:
+        self._is_canceled = True
         for listener in self._listeners.values():
             listener()
 
-    def register_internal(self, callback: Callable[[], None]):
+    def register_internal(self, callback: Callable[[], None]) -> Disposable:
         if self.is_cancellation_requested:
             raise ObjectDisposedException()
 
@@ -84,8 +84,11 @@ class CancellationTokenSource(Disposable):
 
         return Disposable(dispose)
 
+    def __enter__(self) -> CancellationToken:
+        return self.token
+
     @staticmethod
-    def cancelled_source():
+    def cancelled_source() -> "CancellationTokenSource":
         source = CancellationTokenSource()
-        source._disposed = True
+        source.cancel()
         return source
