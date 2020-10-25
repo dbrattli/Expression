@@ -1,9 +1,10 @@
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import Any, Callable, TypeVar
 
+from aiohttp import ClientResponse
 from fslash.core import Error, Option, Option_, Result_, Some, pipe
 
-from .context import Context, HttpContent
-from .handler import HttpContext
+from .context import Context, HttpContent, HttpContext
+from .handler import HttpFunc, HttpFuncResult
 
 TSource = TypeVar("TSource")
 TError = TypeVar("TError")
@@ -12,13 +13,13 @@ TNext = TypeVar("TNext")
 
 
 async def fetch(
-    next: Callable[[Context[TSource]], Awaitable[Result_[Context[TResult], TError]]],
+    next: HttpFunc[Option_[ClientResponse], TResult, TError],
     ctx: HttpContext,
 ) -> Result_[Context[TResult], TError]:
     session = ctx.Request.SessionFactory()
     builder: Callable[[Any], HttpContent] = lambda builder: builder()
 
-    result: Result_[Context[TResult], TError]
+    result: HttpFuncResult
     try:
         content: Option_[Any] = pipe(ctx.Request.ContentBuilder, Option.map(builder))
         json = pipe(content, Option.default_value(None))
