@@ -26,10 +26,29 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import Any
+<pre><code class="python">import asyncio
+from typing import Any, Awaitable, TypeVar
+
+from fslash.system import CancellationToken
+
+TSource = TypeVar(&#34;TSource&#34;)
 
 
-async def singleton(value: Any) -&gt; Any:
+def start(computation: Awaitable[Any], token: CancellationToken) -&gt; None:
+    task = asyncio.create_task(computation)
+
+    def cb():
+        task.cancel()
+
+    token.register(cb)
+    return None
+
+
+def run_synchronous(computation: Awaitable[TSource]) -&gt; TSource:
+    return asyncio.run(computation)
+
+
+async def singleton(value: TSource) -&gt; TSource:
     &#34;&#34;&#34;Async function that returns a single value.&#34;&#34;&#34;
     return value
 
@@ -45,7 +64,7 @@ __all__ = [&#34;singleton&#34;]</code></pre>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="fslash.core.async_.singleton"><code class="name flex">
-<span>async def <span class="ident">singleton</span></span>(<span>value: Any) ‑> Any</span>
+<span>async def <span class="ident">singleton</span></span>(<span>value: ~TSource) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Async function that returns a single value.</p></div>
@@ -53,7 +72,7 @@ __all__ = [&#34;singleton&#34;]</code></pre>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">async def singleton(value: Any) -&gt; Any:
+<pre><code class="python">async def singleton(value: TSource) -&gt; TSource:
     &#34;&#34;&#34;Async function that returns a single value.&#34;&#34;&#34;
     return value</code></pre>
 </details>
