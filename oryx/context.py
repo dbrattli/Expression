@@ -45,6 +45,7 @@ class Context(Context_, Generic[T]):
         return self._replace(**kw)
 
 
+# This is usually the context used until we decode a fetched result into some custom result type.
 HttpContext = Context[Option_[ClientResponse]]
 
 

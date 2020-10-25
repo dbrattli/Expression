@@ -7,9 +7,9 @@
 
 > Python :heart: F#
 
-FSlash (F/) aims to be a solid library for practical functional programming in
-Python 3.8+ inspired by [F#](https://fsharp.org). By practical we mean that the
-goal of the library if to enable you to do meaningful and productive functional
+FSlash (F/) aims to be a solid library for practical functional
+programming in Python 3.8+. By practical we mean that the goal of the
+library if to enable you to do meaningful and productive functional
 programming in Python instead of being a [Monad
 tutorial](https://github.com/dbrattli/OSlash).
 
@@ -29,7 +29,7 @@ like Python than C# and F# can also do a lot of things better than Python:
 > Better Python with F#
 
 FSlash tries to make a better Python by providing several functional
-features inspired by F# into Python. This serves two purposes:
+features inspired by [F#](https://fsharp.org) into Python. This serves two purposes:
 
 - Make it easier for Python programmers to learn F# by starting out in a
   programming language they already know. Then get inspired to [try out

@@ -1,25 +1,70 @@
 from functools import reduce
-from typing import Any, Awaitable, Callable
-
-from fslash.core import Result_
+from typing import Any, TypeVar, overload
 
 from .context import Context
+from .handler import HttpFunc, HttpFuncResultAsync, HttpHandler
 
-HttpFunc = Callable[
-    [Context[Any]],
-    Awaitable[Result_[Context[Any], Any]],
-]
-
-HttpHandler = Callable[
-    [
-        Callable[[Context[Any]], Awaitable[Result_[Context[Any], Any]]],
-        Context[Any],
-    ],
-    Awaitable[Result_[Context[Any], Any]],
-]
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
+T3 = TypeVar("T3")
+T4 = TypeVar("T4")
+T5 = TypeVar("T5")
+T6 = TypeVar("T6")
+T7 = TypeVar("T7")
+TError = TypeVar("TError")
+TResult = TypeVar("TResult")
 
 
-def pipeline(*fns: HttpHandler) -> HttpHandler:
+@overload
+def pipeline(
+    __fn1: HttpHandler[T2, TResult, TError, T1], __fn2: HttpHandler[T3, TResult, TError, T2]
+) -> HttpHandler[T3, TResult, TError, T1]:
+    ...
+
+
+@overload
+def pipeline(
+    __fn1: HttpHandler[T2, TResult, TError, T1],
+    __fn2: HttpHandler[T3, TResult, TError, T2],
+    __fn3: HttpHandler[T4, TResult, TError, T3],
+) -> HttpHandler[T4, TResult, TError, T1]:
+    ...
+
+
+@overload
+def pipeline(
+    __fn1: HttpHandler[T2, TResult, TError, T1],
+    __fn2: HttpHandler[T3, TResult, TError, T2],
+    __fn3: HttpHandler[T4, TResult, TError, T3],
+    __fn4: HttpHandler[T5, TResult, TError, T4],
+) -> HttpHandler[T5, TResult, TError, T1]:
+    ...
+
+
+@overload
+def pipeline(
+    __fn1: HttpHandler[T2, TResult, TError, T1],
+    __fn2: HttpHandler[T3, TResult, TError, T2],
+    __fn3: HttpHandler[T4, TResult, TError, T3],
+    __fn4: HttpHandler[T5, TResult, TError, T4],
+    __fn5: HttpHandler[T6, TResult, TError, T5],
+) -> HttpHandler[T6, TResult, TError, T1]:
+    ...
+
+
+@overload
+def pipeline(
+    __fn1: HttpHandler[T2, TResult, TError, T1],
+    __fn2: HttpHandler[T3, TResult, TError, T2],
+    __fn3: HttpHandler[T4, TResult, TError, T3],
+    __fn4: HttpHandler[T5, TResult, TError, T4],
+    __fn5: HttpHandler[T6, TResult, TError, T5],
+    __fn6: HttpHandler[T7, TResult, TError, T6],
+) -> HttpHandler[T6, TResult, TError, T1]:
+    ...
+
+
+def pipeline(*fns: HttpHandler[Any, TResult, TError, Any]) -> HttpHandler[Any, TResult, TError, Any]:
     """Kleisli compose multiple http handlers left to right.
 
     Kleisli composes zero or more http handlers into a functional composition.
@@ -36,11 +81,13 @@ def pipeline(*fns: HttpHandler) -> HttpHandler:
         The kleisli composed handler.
     """
 
-    def kleisli(next: HttpFunc, ctx: Context[Any]) -> Awaitable[Result_[Context[Any], Any]]:
+    def kleisli(next: HttpFunc[Any, TResult, TError], ctx: Context[Any]) -> HttpFuncResultAsync[TResult, TError]:
         """Return a pipeline of composed handlers."""
 
-        def reducer(first: HttpHandler, second: HttpHandler) -> HttpHandler:
-            def _(next: HttpFunc, ctx: Context[Any]):
+        def reducer(
+            first: HttpHandler[Any, TResult, TError, Any], second: HttpHandler[Any, TResult, TError, Any]
+        ) -> HttpHandler[Any, TResult, TError, Any]:
+            def _(next: HttpFunc[Any, TResult, TError], ctx: Context[Any]):
                 return first(lambda c: second(next, c), ctx)
 
             return _

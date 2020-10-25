@@ -20,7 +20,7 @@ def run_synchronous(computation: Awaitable[TSource]) -> TSource:
     return asyncio.run(computation)
 
 
-async def singleton(value: Any) -> Any:
+async def singleton(value: TSource) -> TSource:
     """Async function that returns a single value."""
     return value
 

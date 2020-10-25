@@ -1,8 +1,8 @@
 from typing import Any, Awaitable, Callable, Dict, TypeVar
 
-from fslash.core import Async, Nothing, Ok, Option
+from aiohttp import ClientResponse
+from fslash.core import Nothing, Ok, Option, Option_
 from fslash.core import Result_ as Result
-from fslash.core import compose as compose_
 
 from .context import Context, HttpContext, HttpMethod
 
@@ -11,48 +11,51 @@ TError = TypeVar("TError")
 TResult = TypeVar("TResult")
 TNext = TypeVar("TNext")
 
-# Generator[YieldType, SendType, ReturnType]
 
+# HttpFuncResult[TResult, TError]
 HttpFuncResult = Result[Context[TResult], TError]
+# HttpFuncResultAsync[TResult, TError]
+HttpFuncResultAsync = Awaitable[Result[Context[TResult], TError]]
+
+# HttpFunc[TNext, TResult, TError]
 HttpFunc = Callable[
-    [Context[TSource]],
-    Awaitable[Result[Context[TResult], TError]],
+    [Context[TNext]],
+    HttpFuncResultAsync[TResult, TError],
 ]
 
+# HttpHandler[TNext, TResult, TError, TSource]
 HttpHandler = Callable[
     [
-        Callable[[Context[TSource]], Awaitable[Result[Context[TResult], TError]]],
+        HttpFunc[TNext, TResult, TError],
         Context[TSource],
     ],
-    Awaitable[Result[Context[TResult], TError]],
+    HttpFuncResultAsync[TResult, TError],
 ]
 
 
-finish_early = compose_(Ok, Async.singleton)
+async def finish_early(ctx: Context[TNext]) -> HttpFuncResult[TResult, TError]:
+    return Ok(ctx)
 
 
 async def run_async(
     ctx: Context[TSource],
-    handler: Callable[
-        [
-            Callable[[Context[TSource]], Awaitable[Result[Context[TResult], TError]]],
-            Context[TSource],
-        ],
-        Awaitable[Result[Context[TResult], TError]],
-    ],
-) -> Result[Context[TResult], TError]:
+    handler: HttpHandler[TNext, TResult, TError, TSource],
+) -> Result[TResult, TError]:
     result = await handler(finish_early, ctx)
-    return result.map(lambda x: x.Response)
+
+    def mapper(x: Context[TResult]) -> TResult:
+        return x.Response
+
+    return result.map(mapper)
 
 
-def with_url_builder(builder: Callable[[Any], str]):
+def with_url_builder(
+    builder: Callable[[Any], str]
+) -> HttpHandler[Option_[ClientResponse], TResult, TError, Option_[ClientResponse]]:
     def _with_url_builder(
-        next: Callable[
-            [Context[TSource]],
-            Awaitable[Result[Context[TResult], TError]],
-        ],
+        next: HttpFunc[Option_[ClientResponse], TResult, TError],
         context: HttpContext,
-    ):
+    ) -> HttpFuncResultAsync[TResult, TError]:
         return next(context.replace(Request=context.Request.replace(UrlBuilder=builder)))
 
     return _with_url_builder
@@ -60,23 +63,11 @@ def with_url_builder(builder: Callable[[Any], str]):
 
 def with_url(
     url: str,
-) -> Callable[
-    [
-        Callable[
-            [Context[TSource]],
-            Awaitable[Result[Context[TResult], TError]],
-        ],
-        Context[TSource],
-    ],
-    Awaitable[Result[Context[TResult], TError]],
-]:
+) -> HttpHandler[Option_[ClientResponse], TResult, TError, Option_[ClientResponse]]:
     def _with_url(
-        next: Callable[
-            [Context[TSource]],
-            Awaitable[Result[Context[TResult], TError]],
-        ],
+        next: HttpFunc[Option_[ClientResponse], TResult, TError],
         context: HttpContext,
-    ):
+    ) -> HttpFuncResultAsync[TResult, TError]:
         return with_url_builder(lambda _: url)(next, context)
 
     return _with_url
@@ -84,20 +75,11 @@ def with_url(
 
 def with_method(
     method: HttpMethod,
-) -> Callable[
-    [
-        Callable[[Context[TSource]], Awaitable[Result[Context[TResult], TError]]],
-        Context[TSource],
-    ],
-    Awaitable[Result[Context[TResult], TError]],
-]:
+) -> HttpHandler[Option_[ClientResponse], TResult, TError, Option_[ClientResponse]]:
     def _with_method(
-        next: Callable[
-            [Context[TSource]],
-            Awaitable[Result[Context[TResult], TError]],
-        ],
+        next: HttpFunc[Option_[ClientResponse], TResult, TError],
         ctx: HttpContext,
-    ) -> Awaitable[Result[Context[TResult], TError]]:
+    ) -> HttpFuncResultAsync[TResult, TError]:
         context = ctx.replace(Request=ctx.Request.replace(Method=method))
         return next(context)
 
@@ -105,9 +87,9 @@ def with_method(
 
 
 def GET(
-    next: Callable[[Context[TSource]], Awaitable[Result[Context[TResult], TError]]],
+    next: HttpFunc[Option_[ClientResponse], TResult, TError],
     context: HttpContext,
-) -> Awaitable[Result[Context[TResult], TError]]:
+) -> HttpFuncResultAsync[TResult, TError]:
     ctx = context.replace(Request=context.Request.replace(Method=HttpMethod.GET, ContentBuilder=Nothing))
     return next(ctx)
 
@@ -126,12 +108,9 @@ OPTIONS = with_method(HttpMethod.OPTIONS)
 
 
 async def text(
-    next: Callable[
-        [Context[str]],
-        Awaitable[Result[Context[TResult], TError]],
-    ],
+    next: HttpFunc[str, TResult, TError],
     context: HttpContext,
-):
+) -> HttpFuncResult[TResult, TError]:
     """Text decoding handler."""
 
     resp = context.Response
@@ -145,7 +124,7 @@ async def text(
 async def json(
     next: Callable[[Context[TSource]], Awaitable[Result[Context[TResult], TError]]],
     context: HttpContext,
-):
+) -> HttpFuncResult[TResult, TError]:
     """JSON decoding handler."""
 
     resp = context.Response
