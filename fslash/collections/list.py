@@ -322,14 +322,16 @@ class List(Iterable[TSource], Sized):
             TypeError: If key is not of type :code:`int` or :code:`slice`
         """
 
-        if isinstance(key, slice):
-            start, stop, step = key.start, key.stop, key.step
-        elif isinstance(key, int):
-            start, stop, step = key, key + 1, 1
+        for pattern in [
+            (slice, lambda: (key.start, key.stop, key.step)),
+            (int, lambda: (key, key + 1, 1)),
+        ]:
+            (type_, get_values) = pattern
+            if isinstance(key, type_):
+                start, stop, step = get_values()
+                return self.slice(start, stop, step)
         else:
             raise TypeError("Invalid argument type.")
-
-        return self.slice(start, stop, step)
 
 
 class Cons(List[TSource]):
@@ -414,11 +416,12 @@ class Cons(List[TSource]):
         if count == 0:
             return self
 
+        if self._len < count:
+            raise ValueError(f"Not enough values to skip (expected at least {count}, got {self._len})")
+
         _, tail = self._value
-        try:
-            return tail.skip(count - 1)
-        except ValueError as ex:
-            raise ValueError(f"List has not enough elements to skip {count} items.") from ex
+
+        return tail.skip(count - 1)
 
     def skip_last(self, count: int) -> "List[TSource]":
         """Returns the list after removing the last N elements."""
@@ -426,10 +429,7 @@ class Cons(List[TSource]):
             return self
 
         head, tail = self._value
-        try:
-            queue = tail if tail is Nil else tail.skip_last(count)
-        except ValueError as ex:
-            raise ValueError(f"List has not enough elements to skip last {count} items.") from ex
+        queue = tail if tail is Nil else tail.skip_last(count)
         return Cons(head, queue) if len(tail) >= count else queue
 
     def tail(self) -> List[TSource]:
@@ -450,11 +450,12 @@ class Cons(List[TSource]):
 
         if not count:
             return Nil
+
+        if self._len < count:
+            raise ValueError(f"Not enough values to take (expected at least {count}, got {self._len})")
+
         head, tail = self._value
-        try:
-            tail_ = tail.take(count - 1)
-        except ValueError as ex:
-            raise ValueError(f"List has not enough elements to take {count} items.") from ex
+        tail_ = tail.take(count - 1)
         return Cons(head, tail_)
 
     def take_last(self, count: int) -> "List[TSource]":
@@ -471,10 +472,7 @@ class Cons(List[TSource]):
             return Nil
 
         head, tail = self._value
-        try:
-            queue = tail if tail is Nil else tail.take_last(count)
-        except ValueError as ex:
-            raise ValueError(f"List has not enough elements to take last {count} items.") from ex
+        queue = tail if tail is Nil else tail.take_last(count)
         return Cons(head, queue) if len(queue) < count else queue
 
     def try_head(self) -> Option[TSource]:
@@ -612,13 +610,13 @@ class _Nil(List[TSource]):
         if count == 0:
             return self
 
-        raise ValueError("List is empty")
+        raise ValueError("Not enough values to skip.")
 
     def skip_last(self, count: int) -> "List[TSource]":
         if count == 0:
             return self
 
-        raise ValueError("List is empty.")
+        raise ValueError("Not enough values to skip.")
 
     def tail(self) -> List[TSource]:
         """Return tail of List."""
@@ -639,7 +637,7 @@ class _Nil(List[TSource]):
         """
         if not count:
             return Nil
-        raise ValueError("List is empty.")
+        raise ValueError("Not enough values to take.")
 
     def take_last(self, count: int) -> "List[TSource]":
         """Returns a specified number of contiguous elements from the
@@ -656,7 +654,7 @@ class _Nil(List[TSource]):
         """
         if not count:
             return Nil
-        raise ValueError("List is empty.")
+        raise ValueError("Not enough values to take.")
 
     def try_head(self) -> Option[TSource]:
         """Returns the first element of the list, or None if the list is

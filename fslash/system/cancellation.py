@@ -1,7 +1,8 @@
 from threading import RLock
 from typing import Callable, Dict, Optional
 
-from .disposable import Disposable, ObjectDisposedException
+from .disposable import Disposable
+from .error import ObjectDisposedException
 
 
 class CancellationToken:
@@ -47,8 +48,7 @@ class CancellationToken:
 
 class CancellationTokenSource(Disposable):
     def __init__(self):
-        super().__init__(self._do_cancel)
-
+        self._is_disposed = False
         self._lock = RLock()
         self._listeners: Dict[int, Callable[[], None]] = dict()
         self._id = 0
@@ -64,13 +64,21 @@ class CancellationTokenSource(Disposable):
     def cancel(self) -> None:
         self.dispose()
 
-    def _do_cancel(self) -> None:
-        self._is_canceled = True
-        for listener in self._listeners.values():
-            listener()
+    def dispose(self) -> None:
+        """Performs the task of cleaning up resources."""
+
+        dispose = False
+        with self._lock:
+            if not self._is_disposed:
+                dispose = True
+
+        if dispose:
+            self._is_disposed = True
+            for listener in self._listeners.values():
+                listener()
 
     def register_internal(self, callback: Callable[[], None]) -> Disposable:
-        if self.is_cancellation_requested:
+        if self._is_disposed:
             raise ObjectDisposedException()
 
         with self._lock:
@@ -82,9 +90,11 @@ class CancellationTokenSource(Disposable):
             with self._lock:
                 del self._listeners[current]
 
-        return Disposable(dispose)
+        return Disposable.create(dispose)
 
     def __enter__(self) -> CancellationToken:
+        if self._is_disposed:
+            raise ObjectDisposedException()
         return self.token
 
     @staticmethod

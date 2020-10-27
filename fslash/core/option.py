@@ -325,8 +325,8 @@ def of_obj(value: Any) -> Option[TSource]:
     """
     if value is None:
         return Nothing
-    else:
-        return Some(value)
+
+    return Some(value)
 
 
 __all__ = [

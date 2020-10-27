@@ -23,12 +23,9 @@ def test_token_cancelled_source_works():
     assert isinstance(source, CancellationTokenSource)
     assert source.is_cancellation_requested
 
-    with source as token:
-        with pytest.raises(ObjectDisposedException):  # type: ignore
-            token.throw_if_cancellation_requested()
-
-        assert token.is_cancellation_requested
-        assert token.can_be_canceled
+    with pytest.raises(ObjectDisposedException):  # type: ignore
+        with source as token:
+            assert not token
 
 
 def test_token_cancellation_works():
@@ -68,8 +65,9 @@ def test_token_cancellation_register_unregister_works():
 def test_token_cancelled_register_throws():
     called = []
     source = CancellationTokenSource.cancelled_source()
-    with source as token:
-        with pytest.raises(ObjectDisposedException):  # type: ignore
+
+    with pytest.raises(ObjectDisposedException):  # type: ignore
+        with source as token:
             token.register(lambda: called.append(True))
 
     assert not called

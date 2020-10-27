@@ -4,7 +4,7 @@ from fslash.system import Disposable, ObjectDisposedException
 
 def test_disposable_works():
     called = []
-    disp = Disposable(lambda: called.append(True))
+    disp = Disposable.create(lambda: called.append(True))
 
     with disp:
         assert not called
@@ -14,7 +14,7 @@ def test_disposable_works():
 
 def test_disposable_disposed():
     called = []
-    disp = Disposable(lambda: called.append(True))
+    disp = Disposable.create(lambda: called.append(True))
     disp.dispose()
     assert called
 
@@ -27,7 +27,7 @@ def test_disposable_disposed():
 
 def test_disposable_disposed_twice_calls_once():
     called = []
-    disp = Disposable(lambda: called.append(True))
+    disp = Disposable.create(lambda: called.append(True))
     disp.dispose()
     disp.dispose()
 

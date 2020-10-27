@@ -280,22 +280,18 @@ def test_option_builder_return_some():
     )
 
 
-def test_option_builder_return_none():
+def test_option_builder_return_nothing_wrapped():
     @option
     def fn():
         return Nothing
         yield
 
     xs = fn()
-    assert (
-        xs.match(
-            Some,
-            lambda some: some.value,
-            _,
-            None,
-        )
-        is Nothing
-    )
+    for x in xs.to_list():
+        assert x is Nothing
+        break
+    else:
+        assert False
 
 
 def test_option_builder_yield_from_some():

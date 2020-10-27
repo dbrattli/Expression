@@ -7,6 +7,8 @@ from fslash.core import pipe
 from hypothesis import given
 from hypothesis import strategies as st
 
+Func = Callable[[int], int]
+
 
 def test_list_nil():
     assert isinstance(Nil, List_)
@@ -100,7 +102,6 @@ def test_list_take(xs: PyList[int], x: int):
     try:
         ys = List.of_seq(xs).take(x)
         assert list(ys) == xs[:x]
-
     except ValueError:
         assert x > len(xs)
 
@@ -122,7 +123,6 @@ def test_list_skip(xs: PyList[int], x: int):
     try:
         ys = List.of_seq(xs).skip(x)
         assert list(ys) == xs[x:]
-
     except ValueError:
         assert x > len(xs)
 
@@ -134,7 +134,6 @@ def test_list_skip_last(xs: PyList[int], x: int):
     try:
         ys = List.of_seq(xs).skip_last(x)
         assert list(ys) == expected
-
     except ValueError:
         assert x > len(xs)
 
