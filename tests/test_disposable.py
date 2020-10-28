@@ -1,5 +1,5 @@
 import pytest
-from fslash.system import Disposable, ObjectDisposedException
+from fslash.system import AsyncDisposable, Disposable, ObjectDisposedException
 
 
 def test_disposable_works():
@@ -30,5 +30,52 @@ def test_disposable_disposed_twice_calls_once():
     disp = Disposable.create(lambda: called.append(True))
     disp.dispose()
     disp.dispose()
+
+    assert len(called) == 1
+
+
+@pytest.mark.asyncio
+async def test_async_disposable_works():
+    called = []
+
+    async def action():
+        called.append(True)
+
+    disp = AsyncDisposable.create(action)
+
+    async with disp:
+        assert not called
+
+    assert called
+
+
+@pytest.mark.asyncio
+async def test_async_disposable_disposed():
+    called = []
+
+    async def action():
+        called.append(True)
+
+    disp = AsyncDisposable.create(action)
+    await disp.adispose()
+    assert called
+
+    with pytest.raises(ObjectDisposedException):  # type: ignore
+        async with disp:
+            assert not called
+
+    assert called
+
+
+@pytest.mark.asyncio
+async def test_async_disposable_disposed_twice_calls_once():
+    called = []
+
+    async def action():
+        called.append(True)
+
+    disp = AsyncDisposable.create(action)
+    await disp.adispose()
+    await disp.adispose()
 
     assert len(called) == 1

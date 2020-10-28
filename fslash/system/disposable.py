@@ -1,11 +1,12 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
+from asyncio import iscoroutinefunction
 from threading import RLock
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 from .error import ObjectDisposedException
 
 
-class Disposable:
+class Disposable(ABC):
     """A disposable class with a context manager. Must implement the
     dispose method. Will dispoose on exit."""
 
@@ -13,9 +14,9 @@ class Disposable:
     def dispose(self) -> None:
         raise NotImplementedError
 
-    def __enter__(self):
+    def __enter__(self) -> "Disposable":
         """Enter context management."""
-        pass
+        return self
 
     def __exit__(self, type: Any, value: Any, traceback: Any):
         """Exit context management."""
@@ -48,23 +49,65 @@ class AnonymousDisposable(Disposable):
         if dispose:
             self._action()
 
-    def __enter__(self):
+    def __enter__(self) -> Disposable:
         if self._is_disposed:
             raise ObjectDisposedException()
+        return self
 
 
-class AsyncDisposable:
+class AsyncDisposable(ABC):
     """A disposable class with a context manager. Must implement the
     `adispose` method. Will dispose on exit."""
 
     @abstractmethod
-    async def adispose(self):
+    async def adispose(self) -> None:
         return NotImplemented
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "AsyncDisposable":
         """Enter context management."""
         return self
 
     async def __aexit__(self, type: Any, value: Any, traceback: Any) -> None:
         """Exit context management."""
         await self.adispose()
+
+    @staticmethod
+    def create(action: Callable[[], Awaitable[None]]):
+        return AsyncAnonymousDisposable(action)
+
+
+class AsyncAnonymousDisposable(AsyncDisposable):
+    def __init__(self, action: Callable[[], Awaitable[None]]) -> None:
+        if action:
+            assert iscoroutinefunction(action)
+        self._is_disposed = False
+        self._action = action
+
+    async def adispose(self) -> None:
+        if not self._is_disposed:
+            self._is_disposed = True
+
+            await self._action()
+
+    async def __aenter__(self) -> AsyncDisposable:
+        if self._is_disposed:
+            raise ObjectDisposedException()
+        return self
+
+
+class AsyncCompositeDisposable(AsyncDisposable):
+    def __init__(self, *disposables: AsyncDisposable) -> None:
+        self._disposables = disposables
+
+    async def adispose(self) -> None:
+        for disposable in self._disposables:
+            await disposable.adispose()
+
+
+__all__ = [
+    "Disposable",
+    "AnonymousDisposable",
+    "AsyncDisposable",
+    "AsyncAnonymousDisposable",
+    "AsyncCompositeDisposable",
+]
