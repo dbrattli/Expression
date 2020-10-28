@@ -1,3 +1,4 @@
+from abc import ABC
 from functools import wraps
 from typing import Any, Callable, Coroutine, Generic, List, Optional, TypeVar, cast
 
@@ -9,7 +10,7 @@ TOuter2 = TypeVar("TOuter2")
 TResult = TypeVar("TResult")
 
 
-class Builder(Generic[TOuter, TInner]):
+class Builder(Generic[TOuter, TInner], ABC):
     """Effect builder."""
 
     def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -> TOuter2:

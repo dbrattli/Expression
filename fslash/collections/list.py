@@ -13,7 +13,7 @@ Example:
 """
 
 import sys
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, Iterator, Optional, Sized, Tuple, TypeVar, cast, overload
 
 from fslash.core.option import Nothing, Option, Some, pipe
@@ -29,7 +29,7 @@ T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 
 
-class List(Iterable[TSource], Sized):
+class List(Iterable[TSource], Sized, ABC):
     """Immutable list type.
 
     This is not the most space efficient implementation of a list. If

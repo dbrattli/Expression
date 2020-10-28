@@ -6,7 +6,7 @@ error-handling, which is often referred to as Railway-oriented
 Programming.
 """
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Generator, Generic, Iterable, Iterator, TypeVar, Union, overload
 
 from .error import EffectError
@@ -21,7 +21,7 @@ T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 
 
-class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
+class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     """The result abstract base class."""
 
     def match(self, *args: Any, **kw: Any) -> Any:

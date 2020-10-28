@@ -5,7 +5,7 @@ options. All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
 
 from .error import EffectError
@@ -19,7 +19,7 @@ T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 
 
-class Option(Iterable[TSource]):
+class Option(Iterable[TSource], ABC):
     """Option abstract base class."""
 
     @overload
