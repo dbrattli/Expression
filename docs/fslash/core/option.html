@@ -38,7 +38,7 @@ options. All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 &#34;&#34;&#34;
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
 
 from .error import EffectError
@@ -52,7 +52,7 @@ T3 = TypeVar(&#34;T3&#34;)
 T4 = TypeVar(&#34;T4&#34;)
 
 
-class Option(Iterable[TSource]):
+class Option(Iterable[TSource], ABC):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -358,8 +358,8 @@ def of_obj(value: Any) -&gt; Option[TSource]:
     &#34;&#34;&#34;
     if value is None:
         return Nothing
-    else:
-        return Some(value)
+
+    return Some(value)
 
 
 __all__ = [
@@ -524,8 +524,8 @@ returns the specified default value.</p></div>
     &#34;&#34;&#34;
     if value is None:
         return Nothing
-    else:
-        return Some(value)</code></pre>
+
+    return Some(value)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.option.of_optional"><code class="name flex">
@@ -692,6 +692,7 @@ return True</p></div>
 <li><a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 <li><a title="fslash.core.error.EffectError" href="error.html#fslash.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
@@ -826,7 +827,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Option(Iterable[TSource]):
+<pre><code class="python">class Option(Iterable[TSource], ABC):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -914,6 +915,7 @@ return True</p></div>
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -1161,6 +1163,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <li><a title="fslash.core.option.Option" href="#fslash.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Instance variables</h3>
 <dl>

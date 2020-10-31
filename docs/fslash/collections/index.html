@@ -163,11 +163,12 @@ operations mostly (<code>O(1)</code>).</p>
         if count == 0:
             return self
 
+        if self._len &lt; count:
+            raise ValueError(f&#34;Not enough values to skip (expected at least {count}, got {self._len})&#34;)
+
         _, tail = self._value
-        try:
-            return tail.skip(count - 1)
-        except ValueError as ex:
-            raise ValueError(f&#34;List has not enough elements to skip {count} items.&#34;) from ex
+
+        return tail.skip(count - 1)
 
     def skip_last(self, count: int) -&gt; &#34;List[TSource]&#34;:
         &#34;&#34;&#34;Returns the list after removing the last N elements.&#34;&#34;&#34;
@@ -175,10 +176,7 @@ operations mostly (<code>O(1)</code>).</p>
             return self
 
         head, tail = self._value
-        try:
-            queue = tail if tail is Nil else tail.skip_last(count)
-        except ValueError as ex:
-            raise ValueError(f&#34;List has not enough elements to skip last {count} items.&#34;) from ex
+        queue = tail if tail is Nil else tail.skip_last(count)
         return Cons(head, queue) if len(tail) &gt;= count else queue
 
     def tail(self) -&gt; List[TSource]:
@@ -199,11 +197,12 @@ operations mostly (<code>O(1)</code>).</p>
 
         if not count:
             return Nil
+
+        if self._len &lt; count:
+            raise ValueError(f&#34;Not enough values to take (expected at least {count}, got {self._len})&#34;)
+
         head, tail = self._value
-        try:
-            tail_ = tail.take(count - 1)
-        except ValueError as ex:
-            raise ValueError(f&#34;List has not enough elements to take {count} items.&#34;) from ex
+        tail_ = tail.take(count - 1)
         return Cons(head, tail_)
 
     def take_last(self, count: int) -&gt; &#34;List[TSource]&#34;:
@@ -220,10 +219,7 @@ operations mostly (<code>O(1)</code>).</p>
             return Nil
 
         head, tail = self._value
-        try:
-            queue = tail if tail is Nil else tail.take_last(count)
-        except ValueError as ex:
-            raise ValueError(f&#34;List has not enough elements to take last {count} items.&#34;) from ex
+        queue = tail if tail is Nil else tail.take_last(count)
         return Cons(head, queue) if len(queue) &lt; count else queue
 
     def try_head(self) -&gt; Option[TSource]:
@@ -283,6 +279,7 @@ operations mostly (<code>O(1)</code>).</p>
 <li>collections.abc.Iterable</li>
 <li>collections.abc.Sized</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -392,11 +389,12 @@ Concatenates all the results and return the combined list.</p>
     if count == 0:
         return self
 
+    if self._len &lt; count:
+        raise ValueError(f&#34;Not enough values to skip (expected at least {count}, got {self._len})&#34;)
+
     _, tail = self._value
-    try:
-        return tail.skip(count - 1)
-    except ValueError as ex:
-        raise ValueError(f&#34;List has not enough elements to skip {count} items.&#34;) from ex</code></pre>
+
+    return tail.skip(count - 1)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.Cons.skip_last"><code class="name flex">
@@ -414,10 +412,7 @@ Concatenates all the results and return the combined list.</p>
         return self
 
     head, tail = self._value
-    try:
-        queue = tail if tail is Nil else tail.skip_last(count)
-    except ValueError as ex:
-        raise ValueError(f&#34;List has not enough elements to skip last {count} items.&#34;) from ex
+    queue = tail if tail is Nil else tail.skip_last(count)
     return Cons(head, queue) if len(tail) &gt;= count else queue</code></pre>
 </details>
 </dd>
@@ -496,7 +491,7 @@ operations mostly (<code>O(1)</code>).</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class List(Iterable[TSource], Sized):
+<pre><code class="python">class List(Iterable[TSource], Sized, ABC):
     &#34;&#34;&#34;Immutable list type.
 
     This is not the most space efficient implementation of a list. If
@@ -789,20 +784,23 @@ operations mostly (<code>O(1)</code>).</p>
             TypeError: If key is not of type :code:`int` or :code:`slice`
         &#34;&#34;&#34;
 
-        if isinstance(key, slice):
-            start, stop, step = key.start, key.stop, key.step
-        elif isinstance(key, int):
-            start, stop, step = key, key + 1, 1
+        for pattern in [
+            (slice, lambda: (key.start, key.stop, key.step)),
+            (int, lambda: (key, key + 1, 1)),
+        ]:
+            (type_, get_values) = pattern
+            if isinstance(key, type_):
+                start, stop, step = get_values()
+                return self.slice(start, stop, step)
         else:
-            raise TypeError(&#34;Invalid argument type.&#34;)
-
-        return self.slice(start, stop, step)</code></pre>
+            raise TypeError(&#34;Invalid argument type.&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
 <li>collections.abc.Sized</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">

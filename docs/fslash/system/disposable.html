@@ -26,16 +26,40 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from threading import RLock
-from typing import Any, Callable
+<pre><code class="python">from abc import ABC, abstractmethod
+from asyncio import iscoroutinefunction
+from threading import RLock
+from typing import Any, Awaitable, Callable
+
+from .error import ObjectDisposedException
 
 
-class ObjectDisposedException(Exception):
-    def __init__(self):
-        super().__init__(&#34;The operation was canceled&#34;)
+class Disposable(ABC):
+    &#34;&#34;&#34;A disposable class with a context manager. Must implement the
+    dispose method. Will dispoose on exit.&#34;&#34;&#34;
+
+    @abstractmethod
+    def dispose(self) -&gt; None:
+        raise NotImplementedError
+
+    def __enter__(self) -&gt; &#34;Disposable&#34;:
+        &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
+        return self
+
+    def __exit__(self, type: Any, value: Any, traceback: Any):
+        &#34;&#34;&#34;Exit context management.&#34;&#34;&#34;
+
+        self.dispose()
+        return False
+
+    @staticmethod
+    def create(action: Callable[[], None]):
+        &#34;&#34;&#34;Create disposable from action. Will call action when
+        disposed.&#34;&#34;&#34;
+        return AnonymousDisposable(action)
 
 
-class Disposable:
+class AnonymousDisposable(Disposable):
     def __init__(self, action: Callable[[], None]):
         self._is_disposed = False
         self._action = action
@@ -53,13 +77,68 @@ class Disposable:
         if dispose:
             self._action()
 
-    def __enter__(self):
+    def __enter__(self) -&gt; Disposable:
         if self._is_disposed:
             raise ObjectDisposedException()
+        return self
 
-    def __exit__(self, type: Any, value: Any, traceback: Any):
-        self.dispose()
-        return False</code></pre>
+
+class AsyncDisposable(ABC):
+    &#34;&#34;&#34;A disposable class with a context manager. Must implement the
+    `adispose` method. Will dispose on exit.&#34;&#34;&#34;
+
+    @abstractmethod
+    async def adispose(self) -&gt; None:
+        return NotImplemented
+
+    async def __aenter__(self) -&gt; &#34;AsyncDisposable&#34;:
+        &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
+        return self
+
+    async def __aexit__(self, type: Any, value: Any, traceback: Any) -&gt; None:
+        &#34;&#34;&#34;Exit context management.&#34;&#34;&#34;
+        await self.adispose()
+
+    @staticmethod
+    def create(action: Callable[[], Awaitable[None]]):
+        return AsyncAnonymousDisposable(action)
+
+
+class AsyncAnonymousDisposable(AsyncDisposable):
+    def __init__(self, action: Callable[[], Awaitable[None]]) -&gt; None:
+        if action:
+            assert iscoroutinefunction(action)
+        self._is_disposed = False
+        self._action = action
+
+    async def adispose(self) -&gt; None:
+        if not self._is_disposed:
+            self._is_disposed = True
+
+            await self._action()
+
+    async def __aenter__(self) -&gt; AsyncDisposable:
+        if self._is_disposed:
+            raise ObjectDisposedException()
+        return self
+
+
+class AsyncCompositeDisposable(AsyncDisposable):
+    def __init__(self, *disposables: AsyncDisposable) -&gt; None:
+        self._disposables = disposables
+
+    async def adispose(self) -&gt; None:
+        for disposable in self._disposables:
+            await disposable.adispose()
+
+
+__all__ = [
+    &#34;Disposable&#34;,
+    &#34;AnonymousDisposable&#34;,
+    &#34;AsyncDisposable&#34;,
+    &#34;AsyncAnonymousDisposable&#34;,
+    &#34;AsyncCompositeDisposable&#34;,
+]</code></pre>
 </details>
 </section>
 <section>
@@ -71,17 +150,18 @@ class Disposable:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="fslash.system.disposable.Disposable"><code class="flex name class">
-<span>class <span class="ident">Disposable</span></span>
+<dt id="fslash.system.disposable.AnonymousDisposable"><code class="flex name class">
+<span>class <span class="ident">AnonymousDisposable</span></span>
 <span>(</span><span>action: Callable[[], NoneType])</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>A disposable class with a context manager. Must implement the
+dispose method. Will dispoose on exit.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Disposable:
+<pre><code class="python">class AnonymousDisposable(Disposable):
     def __init__(self, action: Callable[[], None]):
         self._is_disposed = False
         self._action = action
@@ -99,21 +179,19 @@ class Disposable:
         if dispose:
             self._action()
 
-    def __enter__(self):
+    def __enter__(self) -&gt; Disposable:
         if self._is_disposed:
             raise ObjectDisposedException()
-
-    def __exit__(self, type: Any, value: Any, traceback: Any):
-        self.dispose()
-        return False</code></pre>
+        return self</code></pre>
 </details>
-<h3>Subclasses</h3>
+<h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="fslash.system.cancellation.CancellationTokenSource" href="cancellation.html#fslash.system.cancellation.CancellationTokenSource">CancellationTokenSource</a></li>
+<li><a title="fslash.system.disposable.Disposable" href="#fslash.system.disposable.Disposable">Disposable</a></li>
+<li>abc.ABC</li>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="fslash.system.disposable.Disposable.dispose"><code class="name flex">
+<dt id="fslash.system.disposable.AnonymousDisposable.dispose"><code class="name flex">
 <span>def <span class="ident">dispose</span></span>(<span>self) ‑> NoneType</span>
 </code></dt>
 <dd>
@@ -136,25 +214,265 @@ class Disposable:
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="fslash.system.disposable.Disposable" href="#fslash.system.disposable.Disposable">Disposable</a></b></code>:
+<ul class="hlist">
+<li><code><a title="fslash.system.disposable.Disposable.create" href="#fslash.system.disposable.Disposable.create">create</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
-<dt id="fslash.system.disposable.ObjectDisposedException"><code class="flex name class">
-<span>class <span class="ident">ObjectDisposedException</span></span>
+<dt id="fslash.system.disposable.AsyncAnonymousDisposable"><code class="flex name class">
+<span>class <span class="ident">AsyncAnonymousDisposable</span></span>
+<span>(</span><span>action: Callable[[], Awaitable[NoneType]])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Common base class for all non-exit exceptions.</p></div>
+<div class="desc"><p>A disposable class with a context manager. Must implement the
+<code>adispose</code> method. Will dispose on exit.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class ObjectDisposedException(Exception):
-    def __init__(self):
-        super().__init__(&#34;The operation was canceled&#34;)</code></pre>
+<pre><code class="python">class AsyncAnonymousDisposable(AsyncDisposable):
+    def __init__(self, action: Callable[[], Awaitable[None]]) -&gt; None:
+        if action:
+            assert iscoroutinefunction(action)
+        self._is_disposed = False
+        self._action = action
+
+    async def adispose(self) -&gt; None:
+        if not self._is_disposed:
+            self._is_disposed = True
+
+            await self._action()
+
+    async def __aenter__(self) -&gt; AsyncDisposable:
+        if self._is_disposed:
+            raise ObjectDisposedException()
+        return self</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>builtins.Exception</li>
-<li>builtins.BaseException</li>
+<li><a title="fslash.system.disposable.AsyncDisposable" href="#fslash.system.disposable.AsyncDisposable">AsyncDisposable</a></li>
+<li>abc.ABC</li>
 </ul>
+<h3>Methods</h3>
+<dl>
+<dt id="fslash.system.disposable.AsyncAnonymousDisposable.adispose"><code class="name flex">
+<span>async def <span class="ident">adispose</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def adispose(self) -&gt; None:
+    if not self._is_disposed:
+        self._is_disposed = True
+
+        await self._action()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="fslash.system.disposable.AsyncCompositeDisposable"><code class="flex name class">
+<span>class <span class="ident">AsyncCompositeDisposable</span></span>
+<span>(</span><span>*disposables: <a title="fslash.system.disposable.AsyncDisposable" href="#fslash.system.disposable.AsyncDisposable">AsyncDisposable</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A disposable class with a context manager. Must implement the
+<code>adispose</code> method. Will dispose on exit.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class AsyncCompositeDisposable(AsyncDisposable):
+    def __init__(self, *disposables: AsyncDisposable) -&gt; None:
+        self._disposables = disposables
+
+    async def adispose(self) -&gt; None:
+        for disposable in self._disposables:
+            await disposable.adispose()</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="fslash.system.disposable.AsyncDisposable" href="#fslash.system.disposable.AsyncDisposable">AsyncDisposable</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="fslash.system.disposable.AsyncCompositeDisposable.adispose"><code class="name flex">
+<span>async def <span class="ident">adispose</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def adispose(self) -&gt; None:
+    for disposable in self._disposables:
+        await disposable.adispose()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="fslash.system.disposable.AsyncDisposable"><code class="flex name class">
+<span>class <span class="ident">AsyncDisposable</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>A disposable class with a context manager. Must implement the
+<code>adispose</code> method. Will dispose on exit.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class AsyncDisposable(ABC):
+    &#34;&#34;&#34;A disposable class with a context manager. Must implement the
+    `adispose` method. Will dispose on exit.&#34;&#34;&#34;
+
+    @abstractmethod
+    async def adispose(self) -&gt; None:
+        return NotImplemented
+
+    async def __aenter__(self) -&gt; &#34;AsyncDisposable&#34;:
+        &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
+        return self
+
+    async def __aexit__(self, type: Any, value: Any, traceback: Any) -&gt; None:
+        &#34;&#34;&#34;Exit context management.&#34;&#34;&#34;
+        await self.adispose()
+
+    @staticmethod
+    def create(action: Callable[[], Awaitable[None]]):
+        return AsyncAnonymousDisposable(action)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="fslash.system.disposable.AsyncAnonymousDisposable" href="#fslash.system.disposable.AsyncAnonymousDisposable">AsyncAnonymousDisposable</a></li>
+<li><a title="fslash.system.disposable.AsyncCompositeDisposable" href="#fslash.system.disposable.AsyncCompositeDisposable">AsyncCompositeDisposable</a></li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="fslash.system.disposable.AsyncDisposable.create"><code class="name flex">
+<span>def <span class="ident">create</span></span>(<span>action: Callable[[], Awaitable[NoneType]])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def create(action: Callable[[], Awaitable[None]]):
+    return AsyncAnonymousDisposable(action)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="fslash.system.disposable.AsyncDisposable.adispose"><code class="name flex">
+<span>async def <span class="ident">adispose</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+async def adispose(self) -&gt; None:
+    return NotImplemented</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="fslash.system.disposable.Disposable"><code class="flex name class">
+<span>class <span class="ident">Disposable</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>A disposable class with a context manager. Must implement the
+dispose method. Will dispoose on exit.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Disposable(ABC):
+    &#34;&#34;&#34;A disposable class with a context manager. Must implement the
+    dispose method. Will dispoose on exit.&#34;&#34;&#34;
+
+    @abstractmethod
+    def dispose(self) -&gt; None:
+        raise NotImplementedError
+
+    def __enter__(self) -&gt; &#34;Disposable&#34;:
+        &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
+        return self
+
+    def __exit__(self, type: Any, value: Any, traceback: Any):
+        &#34;&#34;&#34;Exit context management.&#34;&#34;&#34;
+
+        self.dispose()
+        return False
+
+    @staticmethod
+    def create(action: Callable[[], None]):
+        &#34;&#34;&#34;Create disposable from action. Will call action when
+        disposed.&#34;&#34;&#34;
+        return AnonymousDisposable(action)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="fslash.system.cancellation.CancellationTokenSource" href="cancellation.html#fslash.system.cancellation.CancellationTokenSource">CancellationTokenSource</a></li>
+<li><a title="fslash.system.disposable.AnonymousDisposable" href="#fslash.system.disposable.AnonymousDisposable">AnonymousDisposable</a></li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="fslash.system.disposable.Disposable.create"><code class="name flex">
+<span>def <span class="ident">create</span></span>(<span>action: Callable[[], NoneType])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create disposable from action. Will call action when
+disposed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def create(action: Callable[[], None]):
+    &#34;&#34;&#34;Create disposable from action. Will call action when
+    disposed.&#34;&#34;&#34;
+    return AnonymousDisposable(action)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="fslash.system.disposable.Disposable.dispose"><code class="name flex">
+<span>def <span class="ident">dispose</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def dispose(self) -&gt; None:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+</dl>
 </dd>
 </dl>
 </section>
@@ -173,13 +491,36 @@ class Disposable:
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="fslash.system.disposable.Disposable" href="#fslash.system.disposable.Disposable">Disposable</a></code></h4>
+<h4><code><a title="fslash.system.disposable.AnonymousDisposable" href="#fslash.system.disposable.AnonymousDisposable">AnonymousDisposable</a></code></h4>
 <ul class="">
-<li><code><a title="fslash.system.disposable.Disposable.dispose" href="#fslash.system.disposable.Disposable.dispose">dispose</a></code></li>
+<li><code><a title="fslash.system.disposable.AnonymousDisposable.dispose" href="#fslash.system.disposable.AnonymousDisposable.dispose">dispose</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="fslash.system.disposable.ObjectDisposedException" href="#fslash.system.disposable.ObjectDisposedException">ObjectDisposedException</a></code></h4>
+<h4><code><a title="fslash.system.disposable.AsyncAnonymousDisposable" href="#fslash.system.disposable.AsyncAnonymousDisposable">AsyncAnonymousDisposable</a></code></h4>
+<ul class="">
+<li><code><a title="fslash.system.disposable.AsyncAnonymousDisposable.adispose" href="#fslash.system.disposable.AsyncAnonymousDisposable.adispose">adispose</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="fslash.system.disposable.AsyncCompositeDisposable" href="#fslash.system.disposable.AsyncCompositeDisposable">AsyncCompositeDisposable</a></code></h4>
+<ul class="">
+<li><code><a title="fslash.system.disposable.AsyncCompositeDisposable.adispose" href="#fslash.system.disposable.AsyncCompositeDisposable.adispose">adispose</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="fslash.system.disposable.AsyncDisposable" href="#fslash.system.disposable.AsyncDisposable">AsyncDisposable</a></code></h4>
+<ul class="">
+<li><code><a title="fslash.system.disposable.AsyncDisposable.adispose" href="#fslash.system.disposable.AsyncDisposable.adispose">adispose</a></code></li>
+<li><code><a title="fslash.system.disposable.AsyncDisposable.create" href="#fslash.system.disposable.AsyncDisposable.create">create</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="fslash.system.disposable.Disposable" href="#fslash.system.disposable.Disposable">Disposable</a></code></h4>
+<ul class="">
+<li><code><a title="fslash.system.disposable.Disposable.create" href="#fslash.system.disposable.Disposable.create">create</a></code></li>
+<li><code><a title="fslash.system.disposable.Disposable.dispose" href="#fslash.system.disposable.Disposable.dispose">dispose</a></code></li>
+</ul>
 </li>
 </ul>
 </li>

@@ -108,6 +108,9 @@ on-demand as we go along.
 - **Computational Expressions**: this is actually amazing stuff
   - **option** - an optional world for working with optional values
   - **result** - an error handling world for working with result values
+- **Mailbox Processor**: for lock free programming using the [Actor model](https://en.wikipedia.org/wiki/Actor_model).
+- **Cancellation Token**: for cancellation of asynchronous (and synchronous) workflows.
+- **Disposable**: For resource management.
 - Pattern matching - provided by
   [Pampy](https://github.com/santinic/pampy), while we wait for [PEP
   634](https://www.python.org/dev/peps/pep-0634/) and structural pattern

@@ -26,10 +26,11 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from functools import wraps
+<pre><code class="python">from abc import ABC
+from functools import wraps
 from typing import Any, Callable, Coroutine, Generic, List, Optional, TypeVar, cast
 
-from fslash.core import EffectError
+from .error import EffectError
 
 TInner = TypeVar(&#34;TInner&#34;)
 TOuter = TypeVar(&#34;TOuter&#34;)
@@ -37,7 +38,7 @@ TOuter2 = TypeVar(&#34;TOuter2&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
 
 
-class Builder(Generic[TOuter, TInner]):
+class Builder(Generic[TOuter, TInner], ABC):
     &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
 
     def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
@@ -142,7 +143,7 @@ class Builder(Generic[TOuter, TInner]):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Builder(Generic[TOuter, TInner]):
+<pre><code class="python">class Builder(Generic[TOuter, TInner], ABC):
     &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
 
     def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
@@ -230,6 +231,7 @@ class Builder(Generic[TOuter, TInner]):
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">

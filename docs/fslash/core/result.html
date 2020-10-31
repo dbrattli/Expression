@@ -39,7 +39,7 @@ error-handling, which is often referred to as Railway-oriented
 Programming.
 &#34;&#34;&#34;
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Generator, Generic, Iterable, Iterator, TypeVar, Union, overload
 
 from .error import EffectError
@@ -54,7 +54,7 @@ T3 = TypeVar(&#34;T3&#34;)
 T4 = TypeVar(&#34;T4&#34;)
 
 
-class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
+class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     def match(self, *args: Any, **kw: Any) -&gt; Any:
@@ -324,6 +324,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <li><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 <li><a title="fslash.core.error.EffectError" href="error.html#fslash.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
@@ -462,6 +463,7 @@ def error(self) -&gt; TError:
 <li><a title="fslash.core.result.Result" href="#fslash.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -553,7 +555,7 @@ def value(self) -&gt; TSource:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]]):
+<pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     def match(self, *args: Any, **kw: Any) -&gt; Any:
@@ -625,6 +627,7 @@ def value(self) -&gt; TSource:
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">

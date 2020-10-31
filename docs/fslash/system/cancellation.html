@@ -29,7 +29,8 @@
 <pre><code class="python">from threading import RLock
 from typing import Callable, Dict, Optional
 
-from .disposable import Disposable, ObjectDisposedException
+from .disposable import Disposable
+from .error import ObjectDisposedException
 
 
 class CancellationToken:
@@ -75,8 +76,7 @@ class CancellationToken:
 
 class CancellationTokenSource(Disposable):
     def __init__(self):
-        super().__init__(self._do_cancel)
-
+        self._is_disposed = False
         self._lock = RLock()
         self._listeners: Dict[int, Callable[[], None]] = dict()
         self._id = 0
@@ -92,13 +92,21 @@ class CancellationTokenSource(Disposable):
     def cancel(self) -&gt; None:
         self.dispose()
 
-    def _do_cancel(self) -&gt; None:
-        self._is_canceled = True
-        for listener in self._listeners.values():
-            listener()
+    def dispose(self) -&gt; None:
+        &#34;&#34;&#34;Performs the task of cleaning up resources.&#34;&#34;&#34;
+
+        dispose = False
+        with self._lock:
+            if not self._is_disposed:
+                dispose = True
+
+        if dispose:
+            self._is_disposed = True
+            for listener in self._listeners.values():
+                listener()
 
     def register_internal(self, callback: Callable[[], None]) -&gt; Disposable:
-        if self.is_cancellation_requested:
+        if self._is_disposed:
             raise ObjectDisposedException()
 
         with self._lock:
@@ -110,9 +118,11 @@ class CancellationTokenSource(Disposable):
             with self._lock:
                 del self._listeners[current]
 
-        return Disposable(dispose)
+        return Disposable.create(dispose)
 
     def __enter__(self) -&gt; CancellationToken:
+        if self._is_disposed:
+            raise ObjectDisposedException()
         return self.token
 
     @staticmethod
@@ -273,15 +283,15 @@ def is_cancellation_requested(self) -&gt; bool:
 <span>class <span class="ident">CancellationTokenSource</span></span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>A disposable class with a context manager. Must implement the
+dispose method. Will dispoose on exit.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class CancellationTokenSource(Disposable):
     def __init__(self):
-        super().__init__(self._do_cancel)
-
+        self._is_disposed = False
         self._lock = RLock()
         self._listeners: Dict[int, Callable[[], None]] = dict()
         self._id = 0
@@ -297,13 +307,21 @@ def is_cancellation_requested(self) -&gt; bool:
     def cancel(self) -&gt; None:
         self.dispose()
 
-    def _do_cancel(self) -&gt; None:
-        self._is_canceled = True
-        for listener in self._listeners.values():
-            listener()
+    def dispose(self) -&gt; None:
+        &#34;&#34;&#34;Performs the task of cleaning up resources.&#34;&#34;&#34;
+
+        dispose = False
+        with self._lock:
+            if not self._is_disposed:
+                dispose = True
+
+        if dispose:
+            self._is_disposed = True
+            for listener in self._listeners.values():
+                listener()
 
     def register_internal(self, callback: Callable[[], None]) -&gt; Disposable:
-        if self.is_cancellation_requested:
+        if self._is_disposed:
             raise ObjectDisposedException()
 
         with self._lock:
@@ -315,9 +333,11 @@ def is_cancellation_requested(self) -&gt; bool:
             with self._lock:
                 del self._listeners[current]
 
-        return Disposable(dispose)
+        return Disposable.create(dispose)
 
     def __enter__(self) -&gt; CancellationToken:
+        if self._is_disposed:
+            raise ObjectDisposedException()
         return self.token
 
     @staticmethod
@@ -329,6 +349,7 @@ def is_cancellation_requested(self) -&gt; bool:
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="fslash.system.disposable.Disposable" href="disposable.html#fslash.system.disposable.Disposable">Disposable</a></li>
+<li>abc.ABC</li>
 </ul>
 <h3>Static methods</h3>
 <dl>
@@ -391,6 +412,29 @@ def token(self) -&gt; CancellationToken:
     self.dispose()</code></pre>
 </details>
 </dd>
+<dt id="fslash.system.cancellation.CancellationTokenSource.dispose"><code class="name flex">
+<span>def <span class="ident">dispose</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Performs the task of cleaning up resources.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dispose(self) -&gt; None:
+    &#34;&#34;&#34;Performs the task of cleaning up resources.&#34;&#34;&#34;
+
+    dispose = False
+    with self._lock:
+        if not self._is_disposed:
+            dispose = True
+
+    if dispose:
+        self._is_disposed = True
+        for listener in self._listeners.values():
+            listener()</code></pre>
+</details>
+</dd>
 <dt id="fslash.system.cancellation.CancellationTokenSource.register_internal"><code class="name flex">
 <span>def <span class="ident">register_internal</span></span>(<span>self, callback: Callable[[], NoneType]) ‑> <a title="fslash.system.disposable.Disposable" href="disposable.html#fslash.system.disposable.Disposable">Disposable</a></span>
 </code></dt>
@@ -401,7 +445,7 @@ def token(self) -&gt; CancellationToken:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def register_internal(self, callback: Callable[[], None]) -&gt; Disposable:
-    if self.is_cancellation_requested:
+    if self._is_disposed:
         raise ObjectDisposedException()
 
     with self._lock:
@@ -413,7 +457,7 @@ def token(self) -&gt; CancellationToken:
         with self._lock:
             del self._listeners[current]
 
-    return Disposable(dispose)</code></pre>
+    return Disposable.create(dispose)</code></pre>
 </details>
 </dd>
 </dl>
@@ -421,7 +465,7 @@ def token(self) -&gt; CancellationToken:
 <ul class="hlist">
 <li><code><b><a title="fslash.system.disposable.Disposable" href="disposable.html#fslash.system.disposable.Disposable">Disposable</a></b></code>:
 <ul class="hlist">
-<li><code><a title="fslash.system.disposable.Disposable.dispose" href="disposable.html#fslash.system.disposable.Disposable.dispose">dispose</a></code></li>
+<li><code><a title="fslash.system.disposable.Disposable.create" href="disposable.html#fslash.system.disposable.Disposable.create">create</a></code></li>
 </ul>
 </li>
 </ul>
@@ -457,6 +501,7 @@ def token(self) -&gt; CancellationToken:
 <ul class="">
 <li><code><a title="fslash.system.cancellation.CancellationTokenSource.cancel" href="#fslash.system.cancellation.CancellationTokenSource.cancel">cancel</a></code></li>
 <li><code><a title="fslash.system.cancellation.CancellationTokenSource.cancelled_source" href="#fslash.system.cancellation.CancellationTokenSource.cancelled_source">cancelled_source</a></code></li>
+<li><code><a title="fslash.system.cancellation.CancellationTokenSource.dispose" href="#fslash.system.cancellation.CancellationTokenSource.dispose">dispose</a></code></li>
 <li><code><a title="fslash.system.cancellation.CancellationTokenSource.is_cancellation_requested" href="#fslash.system.cancellation.CancellationTokenSource.is_cancellation_requested">is_cancellation_requested</a></code></li>
 <li><code><a title="fslash.system.cancellation.CancellationTokenSource.register_internal" href="#fslash.system.cancellation.CancellationTokenSource.register_internal">register_internal</a></code></li>
 <li><code><a title="fslash.system.cancellation.CancellationTokenSource.token" href="#fslash.system.cancellation.CancellationTokenSource.token">token</a></code></li>
