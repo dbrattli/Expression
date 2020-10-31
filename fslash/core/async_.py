@@ -70,4 +70,8 @@ async def singleton(value: TSource) -> TSource:
     return value
 
 
+async def sleep(msecs: int) -> None:
+    return await asyncio.sleep(msecs / 1000.0)
+
+
 __all__ = ["singleton"]

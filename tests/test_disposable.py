@@ -57,7 +57,7 @@ async def test_async_disposable_disposed():
         called.append(True)
 
     disp = AsyncDisposable.create(action)
-    await disp.adispose()
+    await disp.dispose_async()
     assert called
 
     with pytest.raises(ObjectDisposedException):  # type: ignore
@@ -75,7 +75,7 @@ async def test_async_disposable_disposed_twice_calls_once():
         called.append(True)
 
     disp = AsyncDisposable.create(action)
-    await disp.adispose()
-    await disp.adispose()
+    await disp.dispose_async()
+    await disp.dispose_async()
 
     assert len(called) == 1

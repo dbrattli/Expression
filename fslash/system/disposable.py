@@ -60,7 +60,7 @@ class AsyncDisposable(ABC):
     `adispose` method. Will dispose on exit."""
 
     @abstractmethod
-    async def adispose(self) -> None:
+    async def dispose_async(self) -> None:
         return NotImplemented
 
     async def __aenter__(self) -> "AsyncDisposable":
@@ -69,11 +69,18 @@ class AsyncDisposable(ABC):
 
     async def __aexit__(self, type: Any, value: Any, traceback: Any) -> None:
         """Exit context management."""
-        await self.adispose()
+        await self.dispose_async()
 
     @staticmethod
-    def create(action: Callable[[], Awaitable[None]]):
+    def create(action: Callable[[], Awaitable[None]]) -> "AsyncDisposable":
         return AsyncAnonymousDisposable(action)
+
+    @staticmethod
+    def empty() -> "AsyncDisposable":
+        async def anoop() -> None:
+            pass
+
+        return AsyncAnonymousDisposable(anoop)
 
 
 class AsyncAnonymousDisposable(AsyncDisposable):
@@ -83,7 +90,7 @@ class AsyncAnonymousDisposable(AsyncDisposable):
         self._is_disposed = False
         self._action = action
 
-    async def adispose(self) -> None:
+    async def dispose_async(self) -> None:
         if not self._is_disposed:
             self._is_disposed = True
 
@@ -101,7 +108,7 @@ class AsyncCompositeDisposable(AsyncDisposable):
 
     async def adispose(self) -> None:
         for disposable in self._disposables:
-            await disposable.adispose()
+            await disposable.dispose_async()
 
 
 __all__ = [

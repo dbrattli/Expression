@@ -111,10 +111,10 @@ on-demand as we go along.
 - **Mailbox Processor**: for lock free programming using the [Actor model](https://en.wikipedia.org/wiki/Actor_model).
 - **Cancellation Token**: for cancellation of asynchronous (and synchronous) workflows.
 - **Disposable**: For resource management.
-- Pattern matching - provided by
-  [Pampy](https://github.com/santinic/pampy), while we wait for [PEP
-  634](https://www.python.org/dev/peps/pep-0634/) and structural pattern
-  matching for Python.
+
+Pattern matching is provided by [Pampy](https://github.com/santinic/pampy),
+while we wait for [PEP 634](https://www.python.org/dev/peps/pep-0634/) and
+structural pattern matching for Python.
 
 ### Pipelining
 
@@ -229,7 +229,7 @@ This enables ["railway oriented
 programming"](https://fsharpforfunandprofit.com/rop/) e.g if one part of the
 function yields from `Nothing` then the function is side-tracked
 (short-circuit) and the following statements will never be executed. The end
-result of the expression will be `Nothing`. Thus results from such a option
+result of the expression will be `Nothing`. Thus results from such an option
 decorated function can either be `Ok(value)` or `Error(error_value)`.
 
 ```py
