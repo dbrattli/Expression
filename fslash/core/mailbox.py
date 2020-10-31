@@ -1,3 +1,17 @@
+# ---------------------------
+# Attribution to original authors of this code
+# ---------------------------
+# This code has been originally ported from the Fable project (https://fable.io)
+# Copyright (c) Alfonso García-Caro and contributors.
+#
+# The original code was authored by
+# * Alfonso Garcia-Caro (https://github.com/alfonsogarciacaro)
+# * ncave (https://github.com/ncave)
+#
+# You can find the original implementation here:
+# - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/MailboxProcessor.ts
+
+
 import asyncio
 from queue import SimpleQueue
 from threading import RLock
@@ -91,13 +105,9 @@ class MailboxProcessor(Generic[Msg]):
         waiting for further messages. Raise a TimeoutException if the
         timeout is exceeded."""
 
-        print("MailboxProcessor:receive()")
-
         def callback(
             done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
         ):
-            print("MailboxProcessor:receive:callback()")
-
             if self.continuation:
                 raise Exception("Receive can only be called once!")
 
@@ -107,7 +117,6 @@ class MailboxProcessor(Generic[Msg]):
         return Async.from_continuations(callback)
 
     def __process_events(self):
-        print("MailboxProcessor:__process_events")
         if self.continuation is None:
             return
 
