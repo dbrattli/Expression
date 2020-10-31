@@ -1,6 +1,6 @@
 from .cancellation import CancellationToken, CancellationTokenSource
 from .disposable import AsyncAnonymousDisposable, AsyncCompositeDisposable, AsyncDisposable, Disposable
-from .error import ObjectDisposedException
+from .error import ObjectDisposedException, OperationCanceledError
 
 __all__ = [
     "AsyncDisposable",
@@ -11,4 +11,5 @@ __all__ = [
     "Disposable",
     "AnonymousDisposable",
     "ObjectDisposedException",
+    "OperationCanceledError",
 ]

@@ -2,7 +2,7 @@ from abc import ABC
 from functools import wraps
 from typing import Any, Callable, Coroutine, Generic, List, Optional, TypeVar, cast
 
-from fslash.core import EffectError
+from .error import EffectError
 
 TInner = TypeVar("TInner")
 TOuter = TypeVar("TOuter")
