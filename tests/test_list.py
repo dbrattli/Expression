@@ -1,8 +1,8 @@
+from builtins import list as pylist
 from typing import Any, Callable
 from typing import List as PyList
 
-from fslash.collections import Cons, List_, Nil
-from fslash.collections import list as List
+from fslash.collections import Cons, List, Nil, list
 from fslash.core import pipe
 from hypothesis import given
 from hypothesis import strategies as st
@@ -11,27 +11,27 @@ Func = Callable[[int], int]
 
 
 def test_list_nil():
-    assert isinstance(Nil, List_)
+    assert isinstance(Nil, List)
 
 
 def test_list_cons():
     xs = Cons(42, Nil)
-    assert isinstance(xs, List_)
+    assert isinstance(xs, List)
 
 
 @given(st.integers(min_value=0, max_value=10000))
 def test_list_large_list(x: int):
-    xs = List.of_seq(range(x))
+    xs = list.of_seq(range(x))
     assert len(xs) == x
 
 
 def test_list_is_null_after_cons_and_tail_fluent():
-    xs: List_[int] = List.empty.cons(42).tail()
+    xs: List[int] = list.empty.cons(42).tail()
     assert xs.is_empty()
 
 
 def test_list_not_null_after_cons_fluent():
-    xs = List.empty.cons(42)
+    xs = list.empty.cons(42)
     assert not xs.is_empty()
 
 
@@ -42,7 +42,7 @@ def test_list_head_fluent():
 
 @given(st.text(), st.text())
 def test_list_tail_head_fluent(a: str, b: str):
-    xs = List.empty.cons(b).cons(a)
+    xs = list.empty.cons(b).cons(a)
     assert a == xs.head()
 
 
@@ -52,29 +52,29 @@ def test_list_tail_tail_null_fluent():
 
 
 def test_list_list_fluent():
-    xs = List.empty.cons(empty.cons(42))
+    xs = list.empty.cons(empty.cons(42))
     assert 42 == xs.head().head()
 
 
 def test_list_length_empty():
-    xs = List.empty
+    xs = list.empty
     assert len(xs) == 0
 
 
 def test_list_length_non_empty():
-    xs = List.singleton(42)
+    xs = list.singleton(42)
     assert len(xs) == 1
 
 
 @given(st.lists(st.integers()))
 def test_list_length(xs: PyList[int]):
-    ys = List.of_seq(xs)
+    ys = list.of_seq(xs)
     assert len(xs) == len(ys)
 
 
 @given(st.one_of(st.integers(), st.text()))
 def test_list_cons_head(value: Any):
-    x = pipe(Cons(value, Nil), List.head)
+    x = pipe(Cons(value, Nil), list.head)
     assert x == value
 
 
@@ -83,25 +83,25 @@ def test_list_pipe_map(xs: PyList[int]):
     def mapper(x: int):
         return x + 1
 
-    ys = List.of_seq(xs)
-    zs = ys.pipe(List.map(mapper))
+    ys = list.of_seq(xs)
+    zs = ys.pipe(list.map(mapper))
 
-    assert isinstance(zs, List_)
+    assert isinstance(zs, List)
     assert [y for y in zs] == [mapper(x) for x in xs]
 
 
 @given(st.lists(st.integers()))
 def test_list_len(xs: PyList[int]):
-    ys = List.of_seq(xs)
+    ys = list.of_seq(xs)
     assert len(xs) == len(ys)
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_list_take(xs: PyList[int], x: int):
-    ys: List_[int]
+    ys: List[int]
     try:
-        ys = List.of_seq(xs).take(x)
-        assert list(ys) == xs[:x]
+        ys = list.of_seq(xs).take(x)
+        assert pylist(ys) == xs[:x]
     except ValueError:
         assert x > len(xs)
 
@@ -109,20 +109,20 @@ def test_list_take(xs: PyList[int], x: int):
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_list_take_last(xs: PyList[int], x: int):
     expected = xs[-x:] if x else []
-    ys: List_[int]
+    ys: List[int]
     try:
-        ys = List.of_seq(xs).take_last(x)
-        assert list(ys) == expected
+        ys = list.of_seq(xs).take_last(x)
+        assert pylist(ys) == expected
     except ValueError:
         assert x > len(xs)
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_list_skip(xs: PyList[int], x: int):
-    ys: List_[int]
+    ys: List[int]
     try:
-        ys = List.of_seq(xs).skip(x)
-        assert list(ys) == xs[x:]
+        ys = list.of_seq(xs).skip(x)
+        assert pylist(ys) == xs[x:]
     except ValueError:
         assert x > len(xs)
 
@@ -130,10 +130,10 @@ def test_list_skip(xs: PyList[int], x: int):
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_list_skip_last(xs: PyList[int], x: int):
     expected = xs[:-x] if x else xs
-    ys: List_[int]
+    ys: List[int]
     try:
-        ys = List.of_seq(xs).skip_last(x)
-        assert list(ys) == expected
+        ys = list.of_seq(xs).skip_last(x)
+        assert pylist(ys) == expected
     except ValueError:
         assert x > len(xs)
 
@@ -142,14 +142,14 @@ def test_list_skip_last(xs: PyList[int], x: int):
 def test_list_slice(xs: PyList[int], x: int, y: int):
     expected = xs[x:y]
 
-    ys: List_[int]
-    ys = List.of_seq(xs)[x:y]
+    ys: List[int]
+    ys = list.of_seq(xs)[x:y]
 
-    assert list(ys) == expected
+    assert pylist(ys) == expected
 
 
-rtn: Callable[[int], List_[int]] = List.singleton
-empty: List_[Any] = List.empty
+rtn: Callable[[int], List[int]] = list.singleton
+empty: List[Any] = list.empty
 
 
 @given(st.integers(), st.integers())
@@ -221,5 +221,5 @@ def test_list_monad_law_associativity_iterable(xs: PyList[int]):
     f = lambda x: rtn(x + 10)
     g = lambda y: rtn(y * 42)
 
-    m = List.of_seq(xs)
+    m = list.of_seq(xs)
     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))

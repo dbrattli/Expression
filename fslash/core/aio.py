@@ -1,3 +1,6 @@
+"""The aio module contains asynchronous functions similar to the F#
+`Async` module.
+"""
 import asyncio
 from asyncio import Future
 from typing import Any, Awaitable, Callable, Optional, TypeVar

@@ -2,8 +2,8 @@ from enum import Enum
 from typing import Any, Callable, Dict, Generic, NamedTuple, Tuple, TypeVar
 
 from aiohttp import ClientResponse, ClientSession
-from fslash.collections import Seq, Seq_
-from fslash.core import Nothing, Option_, failwith
+from fslash.collections import Seq, seq
+from fslash.core import Nothing, Option, failwith
 
 T = TypeVar("T")
 TResult = TypeVar("TResult")
@@ -21,12 +21,12 @@ class HttpMethod(Enum):
 class HttpRequest(NamedTuple):
     SessionFactory: Callable[[], ClientSession]
     Method: HttpMethod
-    ContentBuilder: Option_[Callable[[], HttpContent]]
-    Query: Seq_[Tuple[str, str]]
+    ContentBuilder: Option[Callable[[], HttpContent]]
+    Query: Seq[Tuple[str, str]]
     # Responsetype. JSON or Protobuf
     # ResponseType: ResponseType
     # Map of headers to be sent
-    Headers: Seq_[Tuple[str, str]]
+    Headers: Seq[Tuple[str, str]]
     UrlBuilder: Callable[[Any], str]
 
     def replace(self, **kw: Any) -> "HttpRequest":
@@ -46,7 +46,7 @@ class Context(Context_, Generic[T]):
 
 
 # This is usually the context used until we decode a fetched result into some custom result type.
-HttpContext = Context[Option_[ClientResponse]]
+HttpContext = Context[Option[ClientResponse]]
 
 
 def default_session() -> ClientSession:
@@ -57,9 +57,9 @@ default_result = Nothing
 default_request = HttpRequest(
     SessionFactory=default_session,
     Method=HttpMethod.GET,
-    Headers=Seq.empty,
+    Headers=seq.empty,
     ContentBuilder=Nothing,
-    Query=Seq.empty,
+    Query=seq.empty,
     UrlBuilder=lambda _: failwith("Url not set"),  # type: ignore
 )
 default_context: HttpContext = Context(Request=default_request, Response=default_result)

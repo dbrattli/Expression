@@ -130,10 +130,16 @@ class Ok(Result[TSource, TError]):
         return f"Ok {self._value}"
 
 
-class Error(Result[TSource, TError], EffectError):
+class ResultException(EffectError):
+    def __init__(self, message: str):
+        self.message = message
+
+
+class Error(Result[TSource, TError], ResultException):
     """The Error result case class."""
 
     def __init__(self, error: TError) -> None:
+        super().__init__(str(error))
         self._error = error
 
     @property

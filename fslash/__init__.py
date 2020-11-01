@@ -8,14 +8,12 @@ tutorial](https://github.com/dbrattli/OSlash).
 GitHub: https://github.com/dbrattli/FSlash
 """
 
-from . import core
-from . import collections
+from . import builder as ce
+from . import collections, core
 
-
-__all__ = [
-    'core', 'collections'
-]
+__all__ = ["core", "collections", "ce"]
 
 from ._version import get_versions
-__version__ = get_versions()['version']
+
+__version__ = get_versions()["version"]  # type: ignore
 del get_versions

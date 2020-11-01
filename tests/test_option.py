@@ -1,8 +1,8 @@
 from typing import Any, Generator
 
 import pytest
-from fslash.builders import option
-from fslash.core import Nothing, Option, Option_, Some, pipe, pipe2
+from fslash import ce as effect
+from fslash.core import Nothing, Option, Some, option, pipe, pipe2
 from hypothesis import given
 from hypothesis import strategies as st
 from pampy import _, match
@@ -13,15 +13,15 @@ from tests.utils import CustomException
 def test_option_some():
     xs = Some(42)
 
-    assert isinstance(xs, Option_)
-    assert pipe(xs, Option.is_some) is True
-    assert pipe(xs, Option.is_none) is False
+    assert isinstance(xs, Option)
+    assert pipe(xs, option.is_some) is True
+    assert pipe(xs, option.is_none) is False
 
 
 def test_option_some_iterate():
     xs = Some(42)
 
-    for x in Option.to_list(xs):
+    for x in option.to_list(xs):
         assert x == 42
         break
     else:
@@ -31,15 +31,15 @@ def test_option_some_iterate():
 def test_option_none():
     xs = Nothing
 
-    assert isinstance(xs, Option_)
-    assert xs.pipe(Option.is_some) is False
-    assert xs.pipe(Option.is_none) is True
+    assert isinstance(xs, Option)
+    assert xs.pipe(option.is_some) is False
+    assert xs.pipe(option.is_none) is True
 
 
 def test_option_nothing_iterate():
     xs = Nothing
 
-    for _ in Option.to_list(xs):
+    for _ in option.to_list(xs):
         assert False
 
 
@@ -68,7 +68,7 @@ def test_option_some_equals_some(a: Any, b: Any):
 
 def test_option_some_map_piped():
     xs = Some(42)
-    ys: Option_[int] = xs.pipe(Option.map(lambda x: x + 1))
+    ys: Option[int] = xs.pipe(option.map(lambda x: x + 1))
 
     for y in ys:
         assert y == 43
@@ -78,8 +78,8 @@ def test_option_some_map_piped():
 
 
 def test_option_none_map_piped():
-    xs: Option_[int] = Nothing
-    map = Option.map(lambda x: x + 1)
+    xs: Option[int] = Nothing
+    map = option.map(lambda x: x + 1)
     ys = xs.pipe(map)
     assert ys.match(Some, lambda some: False, _, True)
 
@@ -102,7 +102,7 @@ def test_option_none_map():
 def test_option_some_map2_piped(x: int, y: int):
     xs = Some(x)
     ys = Some(y)
-    zs = pipe2((xs, ys), Option.map2(lambda x, y: x + y))
+    zs = pipe2((xs, ys), option.map2(lambda x, y: x + y))
 
     assert zs.match(Some, lambda some: some.value, _, False) == x + y
 
@@ -147,7 +147,7 @@ def test_option_none_bind_none_fluent():
 def test_option_some_bind_piped():
     xs = Some(42)
     ys = xs.pipe(
-        Option.bind(lambda x: Some(x + 1)),
+        option.bind(lambda x: Some(x + 1)),
     )
 
     assert ys.match(
@@ -209,17 +209,17 @@ def test_option_some_is_some():
 
 
 def test_option_of_object_none():
-    xs = Option.of_obj(None)
+    xs = option.of_obj(None)
     assert xs.is_none()
 
 
 def test_option_of_object_value():
-    xs = Option.of_obj(42)
+    xs = option.of_obj(42)
     assert xs.is_some()
 
 
 def test_option_builder_zero():
-    @option
+    @effect.option
     def fn():
         while False:
             yield
@@ -234,7 +234,7 @@ def test_option_builder_zero():
 
 
 def test_option_builder_yield_value():
-    @option
+    @effect.option
     def fn():
         yield 42
 
@@ -251,8 +251,8 @@ def test_option_builder_yield_value():
 
 
 def test_option_builder_yield_some_wrapped():
-    @option
-    def fn() -> Generator[Option_[int], Option_[int], Option_[int]]:
+    @effect.option
+    def fn() -> Generator[Option[int], Option[int], Option[int]]:
         x = yield Some(42)
         return x
 
@@ -266,7 +266,7 @@ def test_option_builder_yield_some_wrapped():
 
 
 def test_option_builder_return_some():
-    @option
+    @effect.option
     def fn() -> Generator[int, int, int]:
         x = yield 42
         return x
@@ -281,7 +281,7 @@ def test_option_builder_return_some():
 
 
 def test_option_builder_return_nothing_wrapped():
-    @option
+    @effect.option
     def fn():
         return Nothing
         yield
@@ -295,7 +295,7 @@ def test_option_builder_return_nothing_wrapped():
 
 
 def test_option_builder_yield_from_some():
-    @option
+    @effect.option
     def fn() -> Generator[int, int, int]:
         x = yield from Some(42)
         return x + 1
@@ -311,7 +311,7 @@ def test_option_builder_yield_from_some():
 
 
 def test_option_builder_yield_from_none():
-    @option
+    @effect.option
     def fn() -> Generator[int, int, int]:
         x = yield from Nothing
         return x
@@ -329,7 +329,7 @@ def test_option_builder_yield_from_none():
 
 
 def test_option_builder_multiple_some():
-    @option
+    @effect.option
     def fn() -> Generator[int, int, int]:
         x = yield 42
         y = yield from Some(43)
@@ -341,7 +341,7 @@ def test_option_builder_multiple_some():
 
 
 def test_option_builder_none_short_circuits():
-    @option
+    @effect.option
     def fn() -> Generator[int, int, int]:
         x = yield from Nothing
         y = yield from Some(43)
@@ -355,7 +355,7 @@ def test_option_builder_none_short_circuits():
 def test_option_builder_throws():
     error = "do'h"
 
-    @option
+    @effect.option
     def fn():
         raise CustomException(error)
         yield
@@ -373,7 +373,7 @@ def gather(a, b):
 
 
 def test_option_builder_applicative():
-    @option
+    @effect.option
     def fn():
         x, y = yield from gather(Some(2), Some(43))
 

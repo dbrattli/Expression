@@ -1,8 +1,7 @@
 from typing import Any, Awaitable, Callable, Dict, TypeVar
 
 from aiohttp import ClientResponse
-from fslash.core import Nothing, Ok, Option, Option_
-from fslash.core import Result_ as Result
+from fslash.core import Nothing, Ok, Option, Result, option
 
 from .context import Context, HttpContext, HttpMethod
 
@@ -51,9 +50,9 @@ async def run_async(
 
 def with_url_builder(
     builder: Callable[[Any], str]
-) -> HttpHandler[Option_[ClientResponse], TResult, TError, Option_[ClientResponse]]:
+) -> HttpHandler[Option[ClientResponse], TResult, TError, Option[ClientResponse]]:
     def _with_url_builder(
-        next: HttpFunc[Option_[ClientResponse], TResult, TError],
+        next: HttpFunc[Option[ClientResponse], TResult, TError],
         context: HttpContext,
     ) -> HttpFuncResultAsync[TResult, TError]:
         return next(context.replace(Request=context.Request.replace(UrlBuilder=builder)))
@@ -63,9 +62,9 @@ def with_url_builder(
 
 def with_url(
     url: str,
-) -> HttpHandler[Option_[ClientResponse], TResult, TError, Option_[ClientResponse]]:
+) -> HttpHandler[Option[ClientResponse], TResult, TError, Option[ClientResponse]]:
     def _with_url(
-        next: HttpFunc[Option_[ClientResponse], TResult, TError],
+        next: HttpFunc[Option[ClientResponse], TResult, TError],
         context: HttpContext,
     ) -> HttpFuncResultAsync[TResult, TError]:
         return with_url_builder(lambda _: url)(next, context)
@@ -75,9 +74,9 @@ def with_url(
 
 def with_method(
     method: HttpMethod,
-) -> HttpHandler[Option_[ClientResponse], TResult, TError, Option_[ClientResponse]]:
+) -> HttpHandler[Option[ClientResponse], TResult, TError, Option[ClientResponse]]:
     def _with_method(
-        next: HttpFunc[Option_[ClientResponse], TResult, TError],
+        next: HttpFunc[Option[ClientResponse], TResult, TError],
         ctx: HttpContext,
     ) -> HttpFuncResultAsync[TResult, TError]:
         context = ctx.replace(Request=ctx.Request.replace(Method=method))
@@ -87,7 +86,7 @@ def with_method(
 
 
 def GET(
-    next: HttpFunc[Option_[ClientResponse], TResult, TError],
+    next: HttpFunc[Option[ClientResponse], TResult, TError],
     context: HttpContext,
 ) -> HttpFuncResultAsync[TResult, TError]:
     ctx = context.replace(Request=context.Request.replace(Method=HttpMethod.GET, ContentBuilder=Nothing))
@@ -115,7 +114,7 @@ async def text(
 
     resp = context.Response
     ret: str = ""
-    for resp in Option.to_list(context.Response):
+    for resp in option.to_list(context.Response):
         ret = await resp.text()
 
     return await next(context.replace(Response=ret))
@@ -129,7 +128,7 @@ async def json(
 
     resp = context.Response
     ret: Dict[str, Any] = {}
-    for resp in Option.to_list(context.Response):
+    for resp in option.to_list(context.Response):
         ret = await resp.json()
 
     return await next(context.replace(Response=ret))

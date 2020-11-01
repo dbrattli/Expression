@@ -18,8 +18,7 @@ from typing import Any, Awaitable, Callable, Generic, Optional, TypeVar
 
 from fslash.system import CancellationToken, OperationCanceledError
 
-from . import async_ as Async
-from .async_ import Continuation
+from .aio import Continuation, from_continuations, start_immediate
 
 Msg = TypeVar("Msg")
 Reply = TypeVar("Reply")
@@ -96,7 +95,7 @@ class MailboxProcessor(Generic[Msg]):
             continuation = done
             check_completion()
 
-        return Async.from_continuations(callback)
+        return from_continuations(callback)
 
     def receive(self) -> Awaitable[Msg]:
         """Return an asynchronous computation which will consume the
@@ -113,7 +112,7 @@ class MailboxProcessor(Generic[Msg]):
             self.continuation = done
             self.__process_events()
 
-        return Async.from_continuations(callback)
+        return from_continuations(callback)
 
     def __process_events(self):
         if self.continuation is None:
@@ -134,5 +133,5 @@ class MailboxProcessor(Generic[Msg]):
         cancellation_token: Optional[CancellationToken] = None,
     ) -> "MailboxProcessor[Any]":
         mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
-        Async.start_immediate(body(mbox), cancellation_token)
+        start_immediate(body(mbox), cancellation_token)
         return mbox

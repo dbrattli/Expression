@@ -12,13 +12,14 @@ Example:
     >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
 """
 
+import builtins
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, Iterator, Optional, Sized, Tuple, TypeVar, cast, overload
+from typing import Any, Callable, Iterable, Iterator, Optional, Sized, Tuple, TypeVar, Union, cast, overload
 
 from fslash.core.option import Nothing, Option, Some, pipe
 
-from . import seq as Seq
+from . import seq
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -34,7 +35,8 @@ class List(Iterable[TSource], Sized, ABC):
 
     This is not the most space efficient implementation of a list. If
     that is the goal then use the builin mutable list or array types
-    instead. Use this list if you need an immutable list for prepend
+    instead. Use this l
+    ist if you need an immutable list for prepend
     operations mostly (`O(1)`).
 
     Example:
@@ -299,7 +301,15 @@ class List(Iterable[TSource], Sized, ABC):
 
         raise NotImplementedError
 
-    def __getitem__(self, key: Any) -> "List[TSource]":
+    @overload
+    def __getitem__(self, key: builtins.slice) -> "List[TSource]":
+        ...
+
+    @overload
+    def __getitem__(self, key: int) -> TSource:
+        ...
+
+    def __getitem__(self, key: Union[builtins.slice, int]) -> Union["List[TSource]", TSource]:
         """
         Pythonic version of `slice`.
 
@@ -750,7 +760,7 @@ def concat(sources: Iterable[List[TSource]]) -> List[TSource]:
     def folder(xs: List[TSource], acc: List[TSource]) -> List[TSource]:
         return xs + acc
 
-    return Seq.fold_back(folder, sources)(Nil)
+    return seq.fold_back(folder, sources)(Nil)
 
 
 empty: List[Any] = Nil
@@ -824,7 +834,7 @@ def of_seq(xs: Iterable[TSource]) -> List[TSource]:
     def folder(value: TSource, acc: List[TSource]) -> List[TSource]:
         return Cons(value, acc)
 
-    return Seq.fold_back(folder, xs)(Nil)
+    return seq.fold_back(folder, xs)(Nil)
 
 
 def of_option(option: Option[TSource]) -> List[TSource]:

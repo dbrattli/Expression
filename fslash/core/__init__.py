@@ -2,24 +2,19 @@
 Core abstractions such as pipes, options and results.
 """
 
-from . import async_ as Async
-from . import option as Option
-from . import result as Result
+from . import aio, option, result
 from .builder import Builder
 from .compose import compose
 from .curry import curried
 from .error import EffectError, failwith
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .misc import flip, identity
-from .option import Nothing, Nothing_
-from .option import Option as Option_
-from .option import Some
+from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
-from .result import Error, Ok
-from .result import Result as Result_
+from .result import Error, Ok, Result
 
 __all__ = [
-    "Async",
+    "aio",
     "AsyncReplyChannel",
     "Builder",
     "compose",
@@ -34,11 +29,11 @@ __all__ = [
     "Nothing_",
     "Ok",
     "Option",
-    "Option_",
+    "option",
     "pipe",
     "pipe2",
     "pipe3",
     "Result",
-    "Result_",
+    "result",
     "Some",
 ]

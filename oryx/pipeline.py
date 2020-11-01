@@ -11,6 +11,7 @@ T4 = TypeVar("T4")
 T5 = TypeVar("T5")
 T6 = TypeVar("T6")
 T7 = TypeVar("T7")
+T8 = TypeVar("T8")
 TError = TypeVar("TError")
 TResult = TypeVar("TResult")
 
@@ -60,7 +61,20 @@ def pipeline(
     __fn4: HttpHandler[T5, TResult, TError, T4],
     __fn5: HttpHandler[T6, TResult, TError, T5],
     __fn6: HttpHandler[T7, TResult, TError, T6],
-) -> HttpHandler[T6, TResult, TError, T1]:
+) -> HttpHandler[T7, TResult, TError, T1]:
+    ...
+
+
+@overload
+def pipeline(
+    __fn1: HttpHandler[T2, TResult, TError, T1],
+    __fn2: HttpHandler[T3, TResult, TError, T2],
+    __fn3: HttpHandler[T4, TResult, TError, T3],
+    __fn4: HttpHandler[T5, TResult, TError, T4],
+    __fn5: HttpHandler[T6, TResult, TError, T5],
+    __fn6: HttpHandler[T7, TResult, TError, T6],
+    __fn7: HttpHandler[T8, TResult, TError, T7],
+) -> HttpHandler[T8, TResult, TError, T1]:
     ...
 
 
@@ -74,7 +88,7 @@ def pipeline(*fns: HttpHandler[Any, TResult, TError, Any]) -> HttpHandler[Any, T
     >>> pipeline()(h) ==
     >>> pipeline(f)(next, ctx) == f(next, ctx)
     >>> pipeline(f, g)(next, ctx) == g(lambda next, ctx: f(next, ctx))(next, ctx)
-    >>> pipeline(f, g, h)(x) == h(lambda next, ctx: g(lambda next, ctx: f(next, ctx))(next, ctx)
+    >>> pipeline(f, g, h)(next, ctx) == h(lambda next, ctx: g(lambda next, ctx: f(next, ctx))(next, ctx)
     ...
 
     Returns:

@@ -3,15 +3,15 @@ from itertools import accumulate
 from typing import Callable, Iterable, List
 
 import pytest
-from fslash.builders import seq
-from fslash.collections import Seq, Seq_
+from fslash import builder as ce
+from fslash.collections import Seq, seq
 from fslash.core import pipe
 from hypothesis import given
 from hypothesis import strategies as st
 
 
 def test_seq_empty():
-    @seq
+    @ce.seq
     def fn():
         while False:
             yield
@@ -23,7 +23,7 @@ def test_seq_empty():
 
 
 def test_seq_yield():
-    @seq
+    @ce.seq
     def fn():
         yield 42
 
@@ -34,7 +34,7 @@ def test_seq_yield():
 
 @given(st.lists(st.integers(), max_size=10))
 def test_seq_yield_for_in(xs: int):
-    @seq
+    @ce.seq
     def fn():
         for x in xs:
             yield x
@@ -59,7 +59,7 @@ def test_seq_yield_for_in(xs: int):
 
 @given(st.lists(st.integers()))
 def test_seq_pipe_map(xs: List[int]):
-    ys = pipe(xs, Seq.map(lambda x: x + 1))
+    ys = pipe(xs, seq.map(lambda x: x + 1))
 
     assert isinstance(ys, Iterable)
     assert [y for y in ys] == [x + 1 for x in xs]
@@ -67,33 +67,33 @@ def test_seq_pipe_map(xs: List[int]):
 
 @given(st.lists(st.integers(), min_size=1))
 def test_seq_head_pipe(xs: List[int]):
-    value = pipe(xs, Seq.head)
+    value = pipe(xs, seq.head)
 
     assert value == xs[0]
 
 
 def test_seq_head_empty_source():
     with pytest.raises(ValueError):
-        pipe([], Seq.head)
+        pipe([], seq.head)
 
 
 @given(st.lists(st.integers(), min_size=1))
 def test_seq_head_fluent(xs: List[int]):
-    value = Seq.of(xs).head()
+    value = seq.of(xs).head()
 
     assert value == xs[0]
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_fold_pipe(xs: List[int], s: int):
-    value = pipe(Seq.of(xs), Seq.fold(lambda s, v: s + v, s))
+    value = pipe(seq.of(xs), seq.fold(lambda s, v: s + v, s))
 
     assert value == sum(xs) + s
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_fold_fluent(xs: List[int], s: int):
-    value = Seq.of(xs).fold(lambda s, v: s + v, s)
+    value = seq.of(xs).fold(lambda s, v: s + v, s)
 
     assert value == sum(xs) + s
 
@@ -101,7 +101,7 @@ def test_seq_fold_fluent(xs: List[int], s: int):
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_scan_pipe(xs: List[int], s: int):
     func = lambda s, v: s + v
-    value = pipe(Seq.of(xs), Seq.scan(func, s))
+    value = pipe(seq.of(xs), seq.scan(func, s))
 
     assert list(value) == list(accumulate(xs, func, initial=s))
 
@@ -109,51 +109,51 @@ def test_seq_scan_pipe(xs: List[int], s: int):
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_scan_fluent(xs: List[int], s: int):
     func = lambda s, v: s + v
-    value = Seq.of(xs).scan(func, s)
+    value = seq.of(xs).scan(func, s)
 
     assert list(value) == list(accumulate(xs, func, initial=s))
 
 
 @given(st.lists(st.integers()))
 def test_seq_concat_pipe(xs: List[int]):
-    value = Seq.concat(xs)
+    value = seq.concat(xs)
 
     assert list(value) == xs
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()))
 def test_seq_concat_pipe2(xs: List[int], ys: List[int]):
-    value = Seq.concat(xs, ys)
+    value = seq.concat(xs, ys)
 
     assert list(value) == xs + ys
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()), st.lists(st.integers()))
 def test_seq_concat_pipe3(xs: List[int], ys: List[int], zs: List[int]):
-    value = Seq.concat(xs, ys, zs)
+    value = seq.concat(xs, ys, zs)
 
     assert list(value) == xs + ys + zs
 
 
 @given(st.lists(st.integers()))
 def test_seq_collect(xs: List[int]):
-    ys = pipe(xs, Seq.collect(Seq.singleton))
+    ys = pipe(xs, seq.collect(seq.singleton))
 
     assert list(xs) == list(ys)
 
 
 @given(st.lists(st.integers()))
 def test_seq_pipeline(xs: List[int]):
-    ys = Seq.of(xs).pipe(
-        Seq.map(lambda x: x * 10),
-        Seq.filter(lambda x: x > 100),
-        Seq.fold(lambda s, x: s + x, 0),
+    ys = seq.of(xs).pipe(
+        seq.map(lambda x: x * 10),
+        seq.filter(lambda x: x > 100),
+        seq.fold(lambda s, x: s + x, 0),
     )
     assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
 
-rtn: Callable[[int], Seq_[int]] = Seq.singleton
-empty: Seq_[int] = Seq.empty
+rtn: Callable[[int], Seq[int]] = seq.singleton
+empty: Seq[int] = seq.empty
 
 
 @given(st.integers(), st.integers())
@@ -166,7 +166,7 @@ def test_list_monad_bind(x: int, y: int):
 
 @given(st.integers())
 def test_list_monad_empty_bind(value: int):
-    m = empty
+    m: List[int] = empty
     f = lambda x: rtn(x + value)
 
     assert list(m.collect(f)) == list(m)

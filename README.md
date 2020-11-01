@@ -157,9 +157,9 @@ pipelines:
 
 ```py
 ys = xs.pipe(
-    Seq.map(lambda x: x * 10),
-    Seq.filter(lambda x: x > 100),
-    Seq.fold(lambda s, x: s + x, 0)
+    seq.map(lambda x: x * 10),
+    seq.filter(lambda x: x > 100),
+    seq.fold(lambda s, x: s + x, 0)
 )
 ```
 
@@ -171,9 +171,9 @@ Functions may even be composed directly into custom operators:
 from fslash.core import compose
 
 custom = compose(
-    Seq.map(lambda x: x * 10),
-    Seq.filter(lambda x: x > 100),
-    Seq.fold(lambda s, x: s + x, 0)
+    seq.map(lambda x: x * 10),
+    seq.filter(lambda x: x > 100),
+    seq.fold(lambda s, x: s + x, 0)
 )
 
 ys = custom(xs)
@@ -187,9 +187,9 @@ value or variable. An option has an underlying type and can hold a value of
 that type `Some(value)`, or it might not have the value `Nothing`.
 
 ```py
-from fslash.core import Some, Nothing, Option_
+from fslash.core import Some, Nothing, Option
 
-def keep_positive(a: int) -> Option_[int]:
+def keep_positive(a: int) -> Option[int]:
     if a > 0:
         return Some(a)
     else:
@@ -199,7 +199,7 @@ def keep_positive(a: int) -> Option_[int]:
 ```py
 from pampy import _
 
-def exists(x : Option_[int]) -> bool:
+def exists(x : Option[int]) -> bool:
     return x.match(
         Some, lambda some: True,
         _, False
@@ -289,21 +289,31 @@ xs = range(100)
 ys = functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
 # With F/ you pipe the result so it flows from one operator to the next:
-ys = Seq.of(xs).pipe(
-    Seq.map(lambda x: x * 10),
-    Seq.filter(lambda x: x > 100),
-    Seq.fold(lambda s, x: s + x, 0)
+ys = seq.of(xs).pipe(
+    seq.map(lambda x: x * 10),
+    seq.filter(lambda x: x > 100),
+    seq.fold(lambda s, x: s + x, 0)
 )
 assert ys == zs
 ```
 
 ## Notable Differences
 
-In F# you can have a type and a module with the same name, e.g `Option` is both
-a module and a type. This is not possible with Python, so instead we use
-`Option` as the module to access module functions such as `Option.map` and the
-primed `Option_`for the type itself. See also [Why are types primed with
-underscore](https://github.com/dbrattli/fslash#--why-are-types-primed-with-_).
+In F# you modules are capitalized, in Python they are lowercase
+([PEP-8](https://www.python.org/dev/peps/pep-0008/#package-and-module-names)).
+E.g in F# `Option` is both a module and a type. In Python the module is
+`option` and the type is capitalized i.e `Option`.
+
+Thus in F/ you use `option` as the module to access module functions such as
+`option.map` and the name `Option` for the type itself.
+
+```py
+>>> from fslash.core import Option, option
+>>> Option
+<class 'fslash.core.option.Option'>
+>>> option
+<module 'fslash.core.option' from '/Users/dbrattli/Developer/Github/FSlash/fslash/core/option.py'>
+```
 
 ## Common Gotchas and Pitfalls
 
@@ -314,23 +324,16 @@ A list of common problems and how you may solve it:
 You can easily import the FSlash list module with e.g a different name:
 
 ```py
-from fslash.collections import List as FList
+from fslash.collections import List as FList, list as flist
 ```
 
-### Why are types primed with underscore?
-
-This is because e.g `Option` and `Result` are imported as modules in
-order to easily access module functions e.g `Option.map`. We cannot have
-types with the same name as modules in Python, so that's why the types
-themselves are available as primed `_` names e.g `Option_` and `Result_`.
+... or you can rename the standard Python list:
 
 ```py
->>> from fslash.core import Option, Option_
->>> Option
-<module 'fslash.core.option' from '/Users/dbrattli/Developer/Github/FSlash/fslash/core/option.py'>
->>> Option_
-<class 'fslash.core.option.Option'>
+from builtins import list as pylist
+from typing import List as PyList
 ```
+
 
 ### FSlash is missing the function / operator I need
 
