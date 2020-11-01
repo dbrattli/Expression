@@ -40,6 +40,10 @@ def from_continuations(
 
 
 def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -> None:
+    """Starts the asynchronous computation in the event loop. Do not await its result.
+
+    If no cancellation token is provided then the default cancellation token
+    is used."""
     task = asyncio.create_task(computation)
 
     def cb():
@@ -62,6 +66,7 @@ def start_immediate(computation: Awaitable[Any], token: Optional[CancellationTok
 
 
 def run_synchronous(computation: Awaitable[TSource]) -> TSource:
+    """Runs the asynchronous computation and await its result."""
     return asyncio.run(computation)
 
 
@@ -71,6 +76,10 @@ async def singleton(value: TSource) -> TSource:
 
 
 async def sleep(msecs: int) -> None:
+    """Creates an asynchronous computation that will sleep for the given
+    time. This is scheduled using a System.Threading.Timer object. The
+    operation will not block operating system threads for the duration
+    of the wait."""
     return await asyncio.sleep(msecs / 1000.0)
 
 

@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from asyncio import iscoroutinefunction
 from threading import RLock
-from typing import Any, Awaitable, Callable
+from types import TracebackType
+from typing import Awaitable, Callable, Optional, Type
 
 from .error import ObjectDisposedException
 
@@ -18,7 +19,9 @@ class Disposable(ABC):
         """Enter context management."""
         return self
 
-    def __exit__(self, type: Any, value: Any, traceback: Any):
+    def __exit__(
+        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+    ):
         """Exit context management."""
 
         self.dispose()
@@ -67,7 +70,9 @@ class AsyncDisposable(ABC):
         """Enter context management."""
         return self
 
-    async def __aexit__(self, type: Any, value: Any, traceback: Any) -> None:
+    async def __aexit__(
+        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+    ) -> None:
         """Exit context management."""
         await self.dispose_async()
 
