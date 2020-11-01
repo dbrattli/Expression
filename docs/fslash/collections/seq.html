@@ -64,7 +64,7 @@ import itertools
 import sys
 from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar, overload
 
-from fslash.core import pipe
+from fslash.core import identity, pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -341,6 +341,10 @@ def init_infinite(initializer: Callable[[int], TSource]) -&gt; Iterable[TSource]
     &#34;&#34;&#34;
     for i in range(sys.maxsize):
         yield initializer(i)
+
+
+def infinite():
+    return init_infinite(identity)
 
 
 def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:

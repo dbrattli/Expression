@@ -26,15 +26,14 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python"># ---------------------------
-# Attribution to original authors of this code
-# ---------------------------
+<pre><code class="python"># Attribution to original authors of this code
+# --------------------------------------------
 # This code has been originally ported from the Fable project (https://fable.io)
 # Copyright (c) Alfonso García-Caro and contributors.
 #
 # The original code was authored by
-# * Alfonso Garcia-Caro (https://github.com/alfonsogarciacaro)
-# * ncave (https://github.com/ncave)
+# - Alfonso Garcia-Caro (https://github.com/alfonsogarciacaro)
+# - ncave (https://github.com/ncave)
 #
 # You can find the original implementation here:
 # - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/MailboxProcessor.ts
@@ -47,8 +46,7 @@ from typing import Any, Awaitable, Callable, Generic, Optional, TypeVar
 
 from fslash.system import CancellationToken, OperationCanceledError
 
-from . import async_ as Async
-from .async_ import Continuation
+from .aio import Continuation, from_continuations, start_immediate
 
 Msg = TypeVar(&#34;Msg&#34;)
 Reply = TypeVar(&#34;Reply&#34;)
@@ -125,7 +123,7 @@ class MailboxProcessor(Generic[Msg]):
             continuation = done
             check_completion()
 
-        return Async.from_continuations(callback)
+        return from_continuations(callback)
 
     def receive(self) -&gt; Awaitable[Msg]:
         &#34;&#34;&#34;Return an asynchronous computation which will consume the
@@ -142,7 +140,7 @@ class MailboxProcessor(Generic[Msg]):
             self.continuation = done
             self.__process_events()
 
-        return Async.from_continuations(callback)
+        return from_continuations(callback)
 
     def __process_events(self):
         if self.continuation is None:
@@ -163,7 +161,7 @@ class MailboxProcessor(Generic[Msg]):
         cancellation_token: Optional[CancellationToken] = None,
     ) -&gt; &#34;MailboxProcessor[Any]&#34;:
         mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
-        Async.start_immediate(body(mbox), cancellation_token)
+        start_immediate(body(mbox), cancellation_token)
         return mbox</code></pre>
 </details>
 </section>
@@ -313,7 +311,7 @@ return default</p></div>
             continuation = done
             check_completion()
 
-        return Async.from_continuations(callback)
+        return from_continuations(callback)
 
     def receive(self) -&gt; Awaitable[Msg]:
         &#34;&#34;&#34;Return an asynchronous computation which will consume the
@@ -330,7 +328,7 @@ return default</p></div>
             self.continuation = done
             self.__process_events()
 
-        return Async.from_continuations(callback)
+        return from_continuations(callback)
 
     def __process_events(self):
         if self.continuation is None:
@@ -351,7 +349,7 @@ return default</p></div>
         cancellation_token: Optional[CancellationToken] = None,
     ) -&gt; &#34;MailboxProcessor[Any]&#34;:
         mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
-        Async.start_immediate(body(mbox), cancellation_token)
+        start_immediate(body(mbox), cancellation_token)
         return mbox</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -375,7 +373,7 @@ def start(
     cancellation_token: Optional[CancellationToken] = None,
 ) -&gt; &#34;MailboxProcessor[Any]&#34;:
     mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
-    Async.start_immediate(body(mbox), cancellation_token)
+    start_immediate(body(mbox), cancellation_token)
     return mbox</code></pre>
 </details>
 </dd>
@@ -473,7 +471,7 @@ Returns: The reply from mailbox processor.</p></div>
         continuation = done
         check_completion()
 
-    return Async.from_continuations(callback)</code></pre>
+    return from_continuations(callback)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.mailbox.MailboxProcessor.receive"><code class="name flex">
@@ -503,7 +501,7 @@ timeout is exceeded.</p></div>
         self.continuation = done
         self.__process_events()
 
-    return Async.from_continuations(callback)</code></pre>
+    return from_continuations(callback)</code></pre>
 </details>
 </dd>
 </dl>

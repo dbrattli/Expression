@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
-<title>fslash.core.async_ API documentation</title>
+<title>fslash.builder.result API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,86 +19,41 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>fslash.core.async_</code></h1>
+<h1 class="title">Module <code>fslash.builder.result</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">import asyncio
-from asyncio import Future
-from typing import Any, Awaitable, Callable, Optional, TypeVar
+<pre><code class="python">from typing import Any, Callable, TypeVar
 
-from fslash.system import CancellationToken, OperationCanceledError
+from fslash.core import Builder, Ok, Result, pipe, result
 
 TSource = TypeVar(&#34;TSource&#34;)
-
-Continuation = Callable[[TSource], None]
-
-
-def from_continuations(
-    callback: Callable[[Continuation[TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
-) -&gt; Awaitable[TSource]:
-    &#34;&#34;&#34;Creates an asynchronous computation that captures the current
-    success, exception and cancellation continuations. The callback must
-    eventually call exactly one of the given continuations.
-
-    Args:
-        callback: The function that accepts the current success,
-            exception, and cancellation continuations.
-
-    Returns:
-        An asynchronous computation that provides the callback with
-        the current continuations.
-    &#34;&#34;&#34;
-    future: Future[Any] = asyncio.Future()
-
-    def done(value: TSource) -&gt; None:
-        future.set_result(value)
-
-    def error(error: Exception) -&gt; None:
-        future.set_exception(error)
-
-    def cancel(cancel: OperationCanceledError) -&gt; None:
-        future.cancel()
-
-    callback(done, error, cancel)
-    return asyncio.ensure_future(future)
+TResult = TypeVar(&#34;TResult&#34;)
+TError = TypeVar(&#34;TError&#34;)
 
 
-def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -&gt; None:
-    task = asyncio.create_task(computation)
+class ResultBuilder(Builder[Result[TSource, TError], TSource]):
+    def bind(self, xs: TSource, fn: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
+        return result.bind(fn)(xs)
 
-    def cb():
-        task.cancel()
+    def return_(self, x: TSource) -&gt; Result[TSource, TError]:
+        return Ok(x)
 
-    if token:
-        token.register(cb)
-    return None
+    def return_from(self, xs: Result[TSource, TError]) -&gt; Result[TSource, TError]:
+        return xs
 
-
-def start_immediate(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -&gt; None:
-    task = asyncio.create_task(computation)
-
-    def cb():
-        task.cancel()
-
-    if token:
-        token.register(cb)
-    return None
+    def combine(self, xs: Result[TSource, TError], ys: Result[TSource, TError]) -&gt; Result[TSource, TError]:
+        binder: Callable[[Any], Result[TSource, TError]] = lambda _: ys
+        return pipe(xs, result.bind(binder))
 
 
-def run_synchronous(computation: Awaitable[TSource]) -&gt; TSource:
-    return asyncio.run(computation)
+result_builder: ResultBuilder[Any, Any] = ResultBuilder()
 
 
-async def singleton(value: TSource) -&gt; TSource:
-    &#34;&#34;&#34;Async function that returns a single value.&#34;&#34;&#34;
-    return value
-
-
-__all__ = [&#34;singleton&#34;]</code></pre>
+__all__ = [&#34;result_builder&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -106,23 +61,6 @@ __all__ = [&#34;singleton&#34;]</code></pre>
 <section>
 </section>
 <section>
-<h2 class="section-title" id="header-functions">Functions</h2>
-<dl>
-<dt id="fslash.core.async_.singleton"><code class="name flex">
-<span>async def <span class="ident">singleton</span></span>(<span>value: ~TSource) ‑> ~TSource</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Async function that returns a single value.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">async def singleton(value: TSource) -&gt; TSource:
-    &#34;&#34;&#34;Async function that returns a single value.&#34;&#34;&#34;
-    return value</code></pre>
-</details>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -135,12 +73,7 @@ __all__ = [&#34;singleton&#34;]</code></pre>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="fslash.core" href="index.html">fslash.core</a></code></li>
-</ul>
-</li>
-<li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
-<li><code><a title="fslash.core.async_.singleton" href="#fslash.core.async_.singleton">singleton</a></code></li>
+<li><code><a title="fslash.builder" href="index.html">fslash.builder</a></code></li>
 </ul>
 </li>
 </ul>

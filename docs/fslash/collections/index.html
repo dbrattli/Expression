@@ -30,17 +30,11 @@
 <pre><code class="python">&#34;&#34;&#34;
 Collection abstractions.
 &#34;&#34;&#34;
-from . import seq as Seq
-from . import list as List
+from . import list, seq
+from .list import Cons, List, Nil
+from .seq import Seq
 
-from .seq import Seq as Seq_
-from .list import List as List_, Cons, Nil
-
-
-__all__ = [
-    &#39;Seq&#39;, &#39;Seq_&#39;,
-    &#39;List&#39;, &#39;List_&#39;, &#39;Cons&#39;, &#39;Nil&#39;
-]</code></pre>
+__all__ = [&#34;Seq&#34;, &#34;seq&#34;, &#34;List&#34;, &#34;list&#34;, &#34;Cons&#34;, &#34;Nil&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -71,7 +65,8 @@ __all__ = [
 <div class="desc"><p>Immutable list type.</p>
 <p>This is not the most space efficient implementation of a list. If
 that is the goal then use the builin mutable list or array types
-instead. Use this list if you need an immutable list for prepend
+instead. Use this l
+ist if you need an immutable list for prepend
 operations mostly (<code>O(1)</code>).</p>
 <h2 id="example">Example</h2>
 <pre><code class="python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
@@ -474,14 +469,15 @@ input lists.</p></div>
 </ul>
 </dd>
 <dt id="fslash.collections.List"><code class="flex name class">
-<span>class <span class="ident">List_</span></span>
+<span>class <span class="ident">List</span></span>
 <span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Immutable list type.</p>
 <p>This is not the most space efficient implementation of a list. If
 that is the goal then use the builin mutable list or array types
-instead. Use this list if you need an immutable list for prepend
+instead. Use this l
+ist if you need an immutable list for prepend
 operations mostly (<code>O(1)</code>).</p>
 <h2 id="example">Example</h2>
 <pre><code class="python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
@@ -496,7 +492,8 @@ operations mostly (<code>O(1)</code>).</p>
 
     This is not the most space efficient implementation of a list. If
     that is the goal then use the builin mutable list or array types
-    instead. Use this list if you need an immutable list for prepend
+    instead. Use this l
+    ist if you need an immutable list for prepend
     operations mostly (`O(1)`).
 
     Example:
@@ -761,7 +758,15 @@ operations mostly (<code>O(1)</code>).</p>
 
         raise NotImplementedError
 
-    def __getitem__(self, key: Any) -&gt; &#34;List[TSource]&#34;:
+    @overload
+    def __getitem__(self, key: builtins.slice) -&gt; &#34;List[TSource]&#34;:
+        ...
+
+    @overload
+    def __getitem__(self, key: int) -&gt; TSource:
+        ...
+
+    def __getitem__(self, key: Union[builtins.slice, int]) -&gt; Union[&#34;List[TSource]&#34;, TSource]:
         &#34;&#34;&#34;
         Pythonic version of `slice`.
 
@@ -1291,7 +1296,7 @@ input lists.</p></div>
 </dl>
 </dd>
 <dt id="fslash.collections.Seq"><code class="flex name class">
-<span>class <span class="ident">Seq_</span></span>
+<span>class <span class="ident">Seq</span></span>
 <span>(</span><span>iterable: Iterable[~TSource] = [])</span>
 </code></dt>
 <dd>

@@ -50,13 +50,14 @@ Example:
     &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
 &#34;&#34;&#34;
 
+import builtins
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, Iterator, Optional, Sized, Tuple, TypeVar, cast, overload
+from typing import Any, Callable, Iterable, Iterator, Optional, Sized, Tuple, TypeVar, Union, cast, overload
 
 from fslash.core.option import Nothing, Option, Some, pipe
 
-from . import seq as Seq
+from . import seq
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -72,7 +73,8 @@ class List(Iterable[TSource], Sized, ABC):
 
     This is not the most space efficient implementation of a list. If
     that is the goal then use the builin mutable list or array types
-    instead. Use this list if you need an immutable list for prepend
+    instead. Use this l
+    ist if you need an immutable list for prepend
     operations mostly (`O(1)`).
 
     Example:
@@ -337,7 +339,15 @@ class List(Iterable[TSource], Sized, ABC):
 
         raise NotImplementedError
 
-    def __getitem__(self, key: Any) -&gt; &#34;List[TSource]&#34;:
+    @overload
+    def __getitem__(self, key: builtins.slice) -&gt; &#34;List[TSource]&#34;:
+        ...
+
+    @overload
+    def __getitem__(self, key: int) -&gt; TSource:
+        ...
+
+    def __getitem__(self, key: Union[builtins.slice, int]) -&gt; Union[&#34;List[TSource]&#34;, TSource]:
         &#34;&#34;&#34;
         Pythonic version of `slice`.
 
@@ -788,7 +798,7 @@ def concat(sources: Iterable[List[TSource]]) -&gt; List[TSource]:
     def folder(xs: List[TSource], acc: List[TSource]) -&gt; List[TSource]:
         return xs + acc
 
-    return Seq.fold_back(folder, sources)(Nil)
+    return seq.fold_back(folder, sources)(Nil)
 
 
 empty: List[Any] = Nil
@@ -862,7 +872,7 @@ def of_seq(xs: Iterable[TSource]) -&gt; List[TSource]:
     def folder(value: TSource, acc: List[TSource]) -&gt; List[TSource]:
         return Cons(value, acc)
 
-    return Seq.fold_back(folder, xs)(Nil)
+    return seq.fold_back(folder, xs)(Nil)
 
 
 def of_option(option: Option[TSource]) -&gt; List[TSource]:
@@ -1101,7 +1111,7 @@ list and returns the concatenation of the transformed sublists.</p></div>
     def folder(xs: List[TSource], acc: List[TSource]) -&gt; List[TSource]:
         return xs + acc
 
-    return Seq.fold_back(folder, sources)(Nil)</code></pre>
+    return seq.fold_back(folder, sources)(Nil)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.list.filter"><code class="name flex">
@@ -1240,7 +1250,7 @@ collection for which the given predicate returns <code>True</code></p>
     def folder(value: TSource, acc: List[TSource]) -&gt; List[TSource]:
         return Cons(value, acc)
 
-    return Seq.fold_back(folder, xs)(Nil)</code></pre>
+    return seq.fold_back(folder, xs)(Nil)</code></pre>
 </details>
 </dd>
 <dt id="fslash.collections.list.singleton"><code class="name flex">
@@ -1282,7 +1292,8 @@ collection for which the given predicate returns <code>True</code></p>
 <div class="desc"><p>Immutable list type.</p>
 <p>This is not the most space efficient implementation of a list. If
 that is the goal then use the builin mutable list or array types
-instead. Use this list if you need an immutable list for prepend
+instead. Use this l
+ist if you need an immutable list for prepend
 operations mostly (<code>O(1)</code>).</p>
 <h2 id="example">Example</h2>
 <pre><code class="python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
@@ -1692,7 +1703,8 @@ input lists.</p></div>
 <div class="desc"><p>Immutable list type.</p>
 <p>This is not the most space efficient implementation of a list. If
 that is the goal then use the builin mutable list or array types
-instead. Use this list if you need an immutable list for prepend
+instead. Use this l
+ist if you need an immutable list for prepend
 operations mostly (<code>O(1)</code>).</p>
 <h2 id="example">Example</h2>
 <pre><code class="python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
@@ -1707,7 +1719,8 @@ operations mostly (<code>O(1)</code>).</p>
 
     This is not the most space efficient implementation of a list. If
     that is the goal then use the builin mutable list or array types
-    instead. Use this list if you need an immutable list for prepend
+    instead. Use this l
+    ist if you need an immutable list for prepend
     operations mostly (`O(1)`).
 
     Example:
@@ -1972,7 +1985,15 @@ operations mostly (<code>O(1)</code>).</p>
 
         raise NotImplementedError
 
-    def __getitem__(self, key: Any) -&gt; &#34;List[TSource]&#34;:
+    @overload
+    def __getitem__(self, key: builtins.slice) -&gt; &#34;List[TSource]&#34;:
+        ...
+
+    @overload
+    def __getitem__(self, key: int) -&gt; TSource:
+        ...
+
+    def __getitem__(self, key: Union[builtins.slice, int]) -&gt; Union[&#34;List[TSource]&#34;, TSource]:
         &#34;&#34;&#34;
         Pythonic version of `slice`.
 

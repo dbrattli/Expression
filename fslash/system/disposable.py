@@ -60,7 +60,7 @@ class AnonymousDisposable(Disposable):
 
 class AsyncDisposable(ABC):
     """A disposable class with a context manager. Must implement the
-    `adispose` method. Will dispose on exit."""
+    `dispose_async` method. Will dispose on exit."""
 
     @abstractmethod
     async def dispose_async(self) -> None:

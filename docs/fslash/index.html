@@ -43,23 +43,21 @@ tutorial](https://github.com/dbrattli/OSlash).
 GitHub: https://github.com/dbrattli/FSlash
 &#34;&#34;&#34;
 
-from . import core
-from . import collections
+from . import builder as ce
+from . import collections, core
 
-
-__all__ = [
-    &#39;core&#39;, &#39;collections&#39;
-]
+__all__ = [&#34;core&#34;, &#34;collections&#34;, &#34;ce&#34;]
 
 from ._version import get_versions
-__version__ = get_versions()[&#39;version&#39;]
+
+__version__ = get_versions()[&#34;version&#34;]  # type: ignore
 del get_versions</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="fslash.builders" href="builders/index.html">fslash.builders</a></code></dt>
+<dt><code class="name"><a title="fslash.builder" href="builder/index.html">fslash.builder</a></code></dt>
 <dd>
 <div class="desc"><p>A collection of computational expression builders.</p></div>
 </dd>
@@ -96,7 +94,7 @@ del get_versions</code></pre>
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="fslash.builders" href="builders/index.html">fslash.builders</a></code></li>
+<li><code><a title="fslash.builder" href="builder/index.html">fslash.builder</a></code></li>
 <li><code><a title="fslash.collections" href="collections/index.html">fslash.collections</a></code></li>
 <li><code><a title="fslash.core" href="core/index.html">fslash.core</a></code></li>
 <li><code><a title="fslash.extra" href="extra/index.html">fslash.extra</a></code></li>

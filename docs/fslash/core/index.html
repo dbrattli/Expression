@@ -31,24 +31,19 @@
 Core abstractions such as pipes, options and results.
 &#34;&#34;&#34;
 
-from . import async_ as Async
-from . import option as Option
-from . import result as Result
+from . import aio, option, result
 from .builder import Builder
 from .compose import compose
 from .curry import curried
 from .error import EffectError, failwith
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .misc import flip, identity
-from .option import Nothing, Nothing_
-from .option import Option as Option_
-from .option import Some
+from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
-from .result import Error, Ok
-from .result import Result as Result_
+from .result import Error, Ok, Result
 
 __all__ = [
-    &#34;Async&#34;,
+    &#34;aio&#34;,
     &#34;AsyncReplyChannel&#34;,
     &#34;Builder&#34;,
     &#34;compose&#34;,
@@ -63,12 +58,12 @@ __all__ = [
     &#34;Nothing_&#34;,
     &#34;Ok&#34;,
     &#34;Option&#34;,
-    &#34;Option_&#34;,
+    &#34;option&#34;,
     &#34;pipe&#34;,
     &#34;pipe2&#34;,
     &#34;pipe3&#34;,
     &#34;Result&#34;,
-    &#34;Result_&#34;,
+    &#34;result&#34;,
     &#34;Some&#34;,
 ]</code></pre>
 </details>
@@ -76,9 +71,10 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="fslash.core.async_" href="async_.html">fslash.core.async_</a></code></dt>
+<dt><code class="name"><a title="fslash.core.aio" href="aio.html">fslash.core.aio</a></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The aio module contains asynchronous functions similar to the F#
+<code>Async</code> module.</p></div>
 </dd>
 <dt><code class="name"><a title="fslash.core.builder" href="builder.html">fslash.core.builder</a></code></dt>
 <dd>
@@ -489,9 +485,9 @@ return default</p></div>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li>fslash.builders.option.OptionBuilder</li>
-<li>fslash.builders.result.ResultBuilder</li>
-<li>fslash.builders.seq.SeqBuilder</li>
+<li>fslash.builder.option.OptionBuilder</li>
+<li>fslash.builder.result.ResultBuilder</li>
+<li>fslash.builder.seq.SeqBuilder</li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -593,7 +589,7 @@ yielding nothing will be silently ignored.</p></div>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="fslash.core.option.Nothing_" href="option.html#fslash.core.option.Nothing_">Nothing_</a></li>
-<li><a title="fslash.core.result.Error" href="result.html#fslash.core.result.Error">Error</a></li>
+<li>fslash.core.result.ResultException</li>
 </ul>
 </dd>
 <dt id="fslash.core.Error"><code class="flex name class">
@@ -606,10 +602,11 @@ yielding nothing will be silently ignored.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Error(Result[TSource, TError], EffectError):
+<pre><code class="python">class Error(Result[TSource, TError], ResultException):
     &#34;&#34;&#34;The Error result case class.&#34;&#34;&#34;
 
     def __init__(self, error: TError) -&gt; None:
+        super().__init__(str(error))
         self._error = error
 
     @property
@@ -652,6 +649,7 @@ yielding nothing will be silently ignored.</p></div>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
+<li>fslash.core.result.ResultException</li>
 <li><a title="fslash.core.error.EffectError" href="error.html#fslash.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
@@ -822,7 +820,7 @@ return default</p></div>
             continuation = done
             check_completion()
 
-        return Async.from_continuations(callback)
+        return from_continuations(callback)
 
     def receive(self) -&gt; Awaitable[Msg]:
         &#34;&#34;&#34;Return an asynchronous computation which will consume the
@@ -839,7 +837,7 @@ return default</p></div>
             self.continuation = done
             self.__process_events()
 
-        return Async.from_continuations(callback)
+        return from_continuations(callback)
 
     def __process_events(self):
         if self.continuation is None:
@@ -860,7 +858,7 @@ return default</p></div>
         cancellation_token: Optional[CancellationToken] = None,
     ) -&gt; &#34;MailboxProcessor[Any]&#34;:
         mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
-        Async.start_immediate(body(mbox), cancellation_token)
+        start_immediate(body(mbox), cancellation_token)
         return mbox</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -884,7 +882,7 @@ def start(
     cancellation_token: Optional[CancellationToken] = None,
 ) -&gt; &#34;MailboxProcessor[Any]&#34;:
     mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
-    Async.start_immediate(body(mbox), cancellation_token)
+    start_immediate(body(mbox), cancellation_token)
     return mbox</code></pre>
 </details>
 </dd>
@@ -982,7 +980,7 @@ Returns: The reply from mailbox processor.</p></div>
         continuation = done
         check_completion()
 
-    return Async.from_continuations(callback)</code></pre>
+    return from_continuations(callback)</code></pre>
 </details>
 </dd>
 <dt id="fslash.core.MailboxProcessor.receive"><code class="name flex">
@@ -1012,7 +1010,7 @@ timeout is exceeded.</p></div>
         self.continuation = done
         self.__process_events()
 
-    return Async.from_continuations(callback)</code></pre>
+    return from_continuations(callback)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1358,7 +1356,7 @@ def value(self) -&gt; TSource:
 </ul>
 </dd>
 <dt id="fslash.core.Option"><code class="flex name class">
-<span>class <span class="ident">Option_</span></span>
+<span>class <span class="ident">Option</span></span>
 <span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
@@ -1628,7 +1626,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </dl>
 </dd>
 <dt id="fslash.core.Result"><code class="flex name class">
-<span>class <span class="ident">Result_</span></span>
+<span>class <span class="ident">Result</span></span>
 <span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
@@ -2060,7 +2058,7 @@ def value(self) -&gt; TSource:
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="fslash.core.async_" href="async_.html">fslash.core.async_</a></code></li>
+<li><code><a title="fslash.core.aio" href="aio.html">fslash.core.aio</a></code></li>
 <li><code><a title="fslash.core.builder" href="builder.html">fslash.core.builder</a></code></li>
 <li><code><a title="fslash.core.curry" href="curry.html">fslash.core.curry</a></code></li>
 <li><code><a title="fslash.core.error" href="error.html">fslash.core.error</a></code></li>

@@ -1,6 +1,6 @@
 import functools
 from itertools import accumulate
-from typing import Callable, Iterable, List
+from typing import Callable, Generator, Iterable, List
 
 import pytest
 from fslash import builder as ce
@@ -12,7 +12,7 @@ from hypothesis import strategies as st
 
 def test_seq_empty():
     @ce.seq
-    def fn():
+    def fn() -> Generator[None, None, None]:
         while False:
             yield
 
@@ -33,7 +33,7 @@ def test_seq_yield():
 
 
 @given(st.lists(st.integers(), max_size=10))
-def test_seq_yield_for_in(xs: int):
+def test_seq_yield_for_in(xs: List[int]):
     @ce.seq
     def fn():
         for x in xs:
@@ -152,40 +152,48 @@ def test_seq_pipeline(xs: List[int]):
     assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
 
+@given(st.lists(st.integers()))
+def test_seq_infinite(xs: List[int]):
+    ys = pipe(xs, seq.zip(seq.infinite()))
+
+    expected = list(enumerate(xs))
+    assert expected == list(ys)
+
+
 rtn: Callable[[int], Seq[int]] = seq.singleton
 empty: Seq[int] = seq.empty
 
 
 @given(st.integers(), st.integers())
-def test_list_monad_bind(x: int, y: int):
+def test_seq_monad_bind(x: int, y: int):
     m = rtn(x)
-    f = lambda x: rtn(x + y)
+    f: Callable[[int], Seq[int]] = lambda x: rtn(x + y)
 
     assert list(m.collect(f)) == list(rtn(x + y))
 
 
 @given(st.integers())
-def test_list_monad_empty_bind(value: int):
-    m: List[int] = empty
-    f = lambda x: rtn(x + value)
+def test_seq_monad_empty_bind(value: int):
+    m: Seq[int] = empty
+    f: Callable[[int], Seq[int]] = lambda x: rtn(x + value)
 
     assert list(m.collect(f)) == list(m)
 
 
 @given(st.integers())
-def test_list_monad_law_left_identity(value: int):
+def test_seq_monad_law_left_identity(value: int):
     """Monad law left identity.
 
     return x >>= f is the same thing as f x
     """
 
-    f = lambda x: rtn(x + 42)
+    f: Callable[[int], Seq[int]] = lambda x: rtn(x + 42)
 
     assert list(rtn(value).collect(f)) == list(f(value))
 
 
 @given(st.integers())
-def test_list_monad_law_right_identity(value: int):
+def test_seq_monad_law_right_identity(value: int):
     r"""Monad law right identit.
 
     m >>= return is no different than just m.
@@ -196,23 +204,23 @@ def test_list_monad_law_right_identity(value: int):
 
 
 @given(st.integers())
-def test_list_monad_law_associativity(value: int):
+def test_seq_monad_law_associativity(value: int):
     r"""Monad law associativity.
 
     (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
     """
-    f = lambda x: rtn(x + 10)
-    g = lambda y: rtn(y * 42)
+    f: Callable[[int], Seq[int]] = lambda x: rtn(x + 10)
+    g: Callable[[int], Seq[int]] = lambda y: rtn(y * 42)
 
     m = rtn(value)
     assert list(m.collect(f).collect(g)) == list(m.collect(lambda x: f(x).collect(g)))
 
 
 @given(st.integers())
-def test_list_monad_law_associativity_empty(value: int):
+def test_seq_monad_law_associativity_empty(value: int):
     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
-    f = lambda x: rtn(x + 1000)
-    g = lambda y: rtn(y * 42)
+    f: Callable[[int], Seq[int]] = lambda x: rtn(x + 1000)
+    g: Callable[[int], Seq[int]] = lambda y: rtn(y * 42)
 
     # Empty list
     m = empty
