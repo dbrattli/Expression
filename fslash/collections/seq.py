@@ -301,7 +301,7 @@ def init_infinite(initializer: Callable[[int], TSource]) -> Iterable[TSource]:
         yield initializer(i)
 
 
-def infinite():
+def infinite() -> Iterable[int]:
     return init_infinite(identity)
 
 
