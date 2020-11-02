@@ -1,7 +1,7 @@
 from typing import Callable, Generator, List, Optional
 
 import pytest
-from expression import builder as ce
+from expression import effect
 from expression.core import Error, Ok, Result, result
 from expression.core.result import ResultException
 from expression.extra.result import sequence
@@ -184,7 +184,7 @@ def test_result_traverse_error(xs: List[int]):
 
 
 def test_result_builder_zero():
-    @ce.result
+    @effect.result
     def fn():
         while False:
             yield
@@ -194,7 +194,7 @@ def test_result_builder_zero():
 
 
 def test_result_builder_yield_ok():
-    @ce.result
+    @effect.result
     def fn() -> Generator[int, int, Optional[int]]:
         yield 42
 
@@ -204,7 +204,7 @@ def test_result_builder_yield_ok():
 
 
 def test_result_builder_return_ok():
-    @ce.result
+    @effect.result
     def fn() -> Generator[int, int, int]:
         x = yield 42
         return x
@@ -215,7 +215,7 @@ def test_result_builder_return_ok():
 
 
 def test_result_builder_yield_from_ok():
-    @ce.result
+    @effect.result
     def fn() -> Generator[int, int, int]:
         x = yield from Ok(42)
         return x + 1
@@ -228,7 +228,7 @@ def test_result_builder_yield_from_ok():
 def test_result_builder_yield_from_error():
     error = "Do'h"
 
-    @ce.result
+    @effect.result
     def fn() -> Generator[int, int, int]:
         x = yield from Error(error)
         return x
@@ -244,7 +244,7 @@ def test_result_builder_yield_from_error():
 
 
 def test_result_builder_multiple_ok():
-    @ce.result
+    @effect.result
     def fn() -> Generator[int, int, int]:
         x = yield 42
         y = yield from Ok(43)

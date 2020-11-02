@@ -22,7 +22,7 @@ class ResultBuilder(Builder[Result[TSource, TError], TSource]):
         return pipe(xs, result.bind(binder))
 
 
-result_builder: ResultBuilder[Any, Any] = ResultBuilder()
+result_effect: ResultBuilder[Any, Any] = ResultBuilder()
 
 
-__all__ = ["result_builder"]
+__all__ = ["result_effect"]

@@ -24,6 +24,6 @@ class OptionBuilder(Builder[Option[TSource], TSource]):
         return Nothing
 
 
-option_builder: OptionBuilder[Any] = OptionBuilder()
+option_effect: OptionBuilder[Any] = OptionBuilder()
 
-__all__ = ["option_builder"]
+__all__ = ["option_effect"]

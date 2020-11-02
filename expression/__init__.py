@@ -8,10 +8,9 @@ tutorial](https://github.com/dbrattli/OSlash).
 GitHub: https://github.com/dbrattli/Expression
 """
 
-from . import builder as ce
-from . import collections, core
+from . import collections, core, effect
 
-__all__ = ["core", "collections", "ce"]
+__all__ = ["core", "collections", "effect"]
 
 from ._version import get_versions
 

@@ -1,7 +1,7 @@
 """Data structures that can be traversed from left to right, performing an action on each element."""
 from typing import Callable, Generator, List, TypeVar
 
-from expression import builder
+from expression import effect
 from expression.collections import seq
 from expression.core import Ok, Result, identity, pipe
 
@@ -17,7 +17,7 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
     """
 
     # flake8: noqa: T484
-    @builder.result
+    @effect.result
     def folder(head: TSource, tail: Result[List[TResult], TError]) -> Generator[TResult, TResult, List[TResult]]:
         """Same as:
         >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))

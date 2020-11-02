@@ -26,7 +26,7 @@ class SeqBuilder(Builder[Iterable[TSource], TSource]):
 
 
 # seq_builder: SeqBuilder[Any] = SeqBuilder()
-seq_builder = identity
+seq_effect = identity  # For now
 
 
 __all__ = ["seq"]

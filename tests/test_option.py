@@ -1,7 +1,7 @@
 from typing import Any, Generator
 
 import pytest
-from expression import ce as effect
+from expression import effect
 from expression.core import Nothing, Option, Some, option, pipe, pipe2
 from hypothesis import given
 from hypothesis import strategies as st

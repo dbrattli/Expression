@@ -3,7 +3,7 @@ from itertools import accumulate
 from typing import Callable, Generator, Iterable, List
 
 import pytest
-from expression import builder as ce
+from expression import effect
 from expression.collections import Seq, seq
 from expression.core import pipe
 from hypothesis import given
@@ -11,7 +11,7 @@ from hypothesis import strategies as st
 
 
 def test_seq_empty():
-    @ce.seq
+    @effect.seq
     def fn() -> Generator[None, None, None]:
         while False:
             yield
@@ -23,7 +23,7 @@ def test_seq_empty():
 
 
 def test_seq_yield():
-    @ce.seq
+    @effect.seq
     def fn():
         yield 42
 
@@ -34,7 +34,7 @@ def test_seq_yield():
 
 @given(st.lists(st.integers(), max_size=10))
 def test_seq_yield_for_in(xs: List[int]):
-    @ce.seq
+    @effect.seq
     def fn():
         for x in xs:
             yield x
