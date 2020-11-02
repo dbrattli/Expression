@@ -226,11 +226,12 @@ xs = fn()
 ```
 
 This enables ["railway oriented
-programming"](https://fsharpforfunandprofit.com/rop/) e.g if one part of the
-function yields from `Nothing` then the function is side-tracked
-(short-circuit) and the following statements will never be executed. The end
-result of the expression will be `Nothing`. Thus results from such an option
-decorated function can either be `Ok(value)` or `Error(error_value)`.
+programming"](https://fsharpforfunandprofit.com/rop/) e.g if one part of
+the function yields from `Nothing` then the function is side-tracked
+(short-circuit) and the following statements will never be executed. The
+end result of the expression will be `Nothing`. Thus results from such
+an option decorated function can either be `Ok(value)` or
+`Error(error_value)`.
 
 ```py
 from expression.core import Some, Nothing
@@ -256,10 +257,10 @@ For more information about options:
 
 ### Results
 
-The `Result[T, TError]` type lets you write error-tolerant code that can be
-composed. Result works similar to `Option` but lets you define the value used
-for errors, e.g an exception type or similar. This is great when you want to
-know why some operation failed (not just `Nothing`).
+The `Result[T, TError]` type lets you write error-tolerant code that can
+be composed. Result works similar to `Option` but lets you define the
+value used for errors, e.g an exception type or similar. This is great
+when you want to know why some operation failed (not just `Nothing`).
 
 ```py
 from expression.core import Result, Ok, Error, pipe
@@ -304,8 +305,9 @@ In F# you modules are capitalized, in Python they are lowercase
 E.g in F# `Option` is both a module and a type. In Python the module is
 `option` and the type is capitalized i.e `Option`.
 
-Thus in Expression you use `option` as the module to access module functions such as
-`option.map` and the name `Option` for the type itself.
+Thus in Expression you use `option` as the module to access module
+functions such as `option.map` and the name `Option` for the type
+itself.
 
 ```py
 >>> from expression.core import Option, option
@@ -319,27 +321,12 @@ Thus in Expression you use `option` as the module to access module functions suc
 
 A list of common problems and how you may solve it:
 
-### The Expression List type has the same name as the builtin List type in Python
-
-You can easily import the Expression list module with e.g a different name:
-
-```py
-from expression.collections import List as FList, list as flist
-```
-
-... or you can rename the standard Python list:
-
-```py
-from builtins import list as pylist
-from typing import List as PyList
-```
-
-
 ### Expression is missing the function / operator I need
 
 Remember that everything is a function, so you can easily implement the
-function yourself and use it with Expression. If you think the function is
-also usable for others, then please open a PR to include it with Expression.
+function yourself and use it with Expression. If you think the function
+is also usable for others, then please open a PR to include it with
+Expression.
 
 ## Resources
 
@@ -356,9 +343,9 @@ also usable for others, then please open a PR to include it with Expression.
 
 ## How-to Contribute
 
-You are very welcome to contribute with PRs :heart_eyes: It is nice if you can
-try to align the code with F# modules, functions and documentation. But submit
-a PR even if you should feel unsure.
+You are very welcome to contribute with PRs :heart_eyes: It is nice if
+you can try to align the code with F# modules, functions and
+documentation. But submit a PR even if you should feel unsure.
 
 Code, doc-strings and comments should also follow the [Google Python
 Style Guide](https://google.github.io/styleguide/pyguide.html). Code is
