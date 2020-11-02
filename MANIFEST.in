@@ -1,2 +1,2 @@
 include versioneer.py
-include fslash/_version.py
+include expression/_version.py

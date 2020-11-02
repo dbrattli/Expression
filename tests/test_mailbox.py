@@ -2,7 +2,7 @@ import asyncio
 from typing import Callable, List, Tuple
 
 import pytest
-from fslash.core import AsyncReplyChannel, MailboxProcessor
+from expression.core import AsyncReplyChannel, MailboxProcessor
 from hypothesis import given
 from hypothesis import strategies as st
 

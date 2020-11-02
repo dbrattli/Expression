@@ -11,7 +11,7 @@ with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="FSlash",
+    name="Expression",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description="Practical functional programming for Python 3.8+",
@@ -20,8 +20,8 @@ setuptools.setup(
     author="Dag Brattli",
     author_email="dag@brattli.net",
     license="MIT License",
-    url="https://github.com/dbrattli/fslash",
-    download_url="https://github.com/dbrattli/fslash",
+    url="https://github.com/dbrattli/expression",
+    download_url="https://github.com/dbrattli/expression",
     zip_safe=True,
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -39,8 +39,8 @@ setuptools.setup(
     install_requires=[],
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pytest-cov", "pytest-asyncio", "hypothesis", "pampy"],
-    package_data={"fslash": ["py.typed"]},
+    package_data={"expression": ["py.typed"]},
     packages=setuptools.find_packages(),
-    package_dir={"fslash": "fslash"},
+    package_dir={"expression": "expression"},
     include_package_data=True,
 )

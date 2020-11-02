@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>expression.collections.map API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>expression.collections.map</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># Copyright (c) Microsoft Corporation.  All Rights Reserved.  See
+# License.txt in the project root for license information.
+
+from dataclasses import dataclass
+from typing import Generic, TypeVar
+
+from expression.core import Option
+
+Value = TypeVar(&#34;Value&#34;)
+Key = TypeVar(&#34;Key&#34;)
+
+from . import maptree
+
+# type Map&lt;[&lt;EqualityConditionalOn&gt;]&#39;Key, [&lt;EqualityConditionalOn; ComparisonConditionalOn&gt;]&#39;Value when &#39;Key : comparison &gt;(comparer: IComparer&lt;&#39;Key&gt;, tree: MapTree&lt;&#39;Key, &#39;Value&gt;) =
+
+
+#     // We use .NET generics per-instantiation static fields to avoid allocating a new object for each empty
+#     // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
+#     static let empty =
+#         let comparer = LanguagePrimitives.FastGenericComparer&lt;&#39;Key&gt;
+#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.empty)
+
+#     static member Empty : Map&lt;&#39;Key, &#39;Value&gt; =
+#         empty
+
+#     static member Create(ie : IEnumerable&lt;_&gt;) : Map&lt;&#39;Key, &#39;Value&gt; =
+#         let comparer = LanguagePrimitives.FastGenericComparer&lt;&#39;Key&gt;
+#         new Map&lt;_, _&gt;(comparer, MapTree.ofSeq comparer ie)
+
+#     // [&lt;DebuggerBrowsable(DebuggerBrowsableState.Never)&gt;]
+#     member internal m.Comparer = comparer
+
+#     // [&lt;DebuggerBrowsable(DebuggerBrowsableState.Never)&gt;]
+#     member internal m.Tree = tree
+
+#     interface Fable.Core.Symbol_wellknown with
+#         member _.``Symbol.toStringTag`` = &#34;FSharpMap&#34;
+
+#     member m.Add(key, value) : Map&lt;&#39;Key, &#39;Value&gt; =
+#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.add comparer key value tree)
+
+#     member m.Change(key, f) : Map&lt;&#39;Key, &#39;Value&gt; =
+#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.change comparer key f tree)
+
+#     // [&lt;DebuggerBrowsable(DebuggerBrowsableState.Never)&gt;]
+#     member m.IsEmpty = MapTree.isEmpty tree
+
+#     member m.Item
+#      with get(key : &#39;Key) =
+#         MapTree.find comparer key tree
+
+#     member m.TryPick f =
+#         MapTree.tryPick f tree
+
+#     member m.Exists predicate =
+#         MapTree.exists predicate tree
+
+#     member m.Filter predicate =
+#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.filter comparer predicate tree)
+
+#     member m.ForAll predicate =
+#         MapTree.forall predicate tree
+
+#     member m.Fold f acc =
+#         MapTree.foldBack f tree acc
+
+#     member m.FoldSection (lo:&#39;Key) (hi:&#39;Key) f (acc:&#39;z) =
+#         MapTree.foldSection comparer lo hi f tree acc
+
+#     member m.Iterate f =
+#         MapTree.iter f tree
+
+#     member m.MapRange (f:&#39;Value-&gt;&#39;Result) =
+#         new Map&lt;&#39;Key, &#39;Result&gt;(comparer, MapTree.map f tree)
+
+#     member m.Map f =
+#         new Map&lt;&#39;Key, &#39;b&gt;(comparer, MapTree.mapi f tree)
+
+#     member m.Partition predicate : Map&lt;&#39;Key, &#39;Value&gt; * Map&lt;&#39;Key, &#39;Value&gt; =
+#         let r1, r2 = MapTree.partition comparer predicate tree
+#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, r1), new Map&lt;&#39;Key, &#39;Value&gt;(comparer, r2)
+
+#     member m.Count =
+#         MapTree.size tree
+
+#     member m.ContainsKey key =
+#         MapTree.mem comparer key tree
+
+#     member m.Remove key =
+#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.remove comparer key tree)
+
+#     member __.TryGetValue(key: &#39;Key, value: &#39;Value ref) =
+#         match MapTree.tryFind comparer key tree with
+#         | Some v -&gt; value := v; true
+#         | None -&gt; false
+
+#     member m.TryFind key =
+#         MapTree.tryFind comparer key tree
+
+#     member m.ToList() =
+#         MapTree.toList tree
+
+#     member m.ToArray() =
+#         MapTree.toArray tree
+
+#     static member ofList l : Map&lt;&#39;Key, &#39;Value&gt; =
+#        let comparer = LanguagePrimitives.FastGenericComparer&lt;&#39;Key&gt;
+#        new Map&lt;_, _&gt;(comparer, MapTree.ofList comparer l)
+
+#     member this.ComputeHashCode() =
+#         let combineHash x y = (x &lt;&lt;&lt; 1) + y + 631
+#         let mutable res = 0
+#         for (KeyValue(x, y)) in this do
+#             res &lt;- combineHash res (hash x)
+#             res &lt;- combineHash res (Unchecked.hash y)
+#         res
+
+#     override this.GetHashCode() = this.ComputeHashCode()
+
+#     override this.Equals that =
+#         match that with
+#         | :? Map&lt;&#39;Key, &#39;Value&gt; as that -&gt;
+#             use e1 = (this :&gt; seq&lt;_&gt;).GetEnumerator()
+#             use e2 = (that :&gt; seq&lt;_&gt;).GetEnumerator()
+#             let rec loop () =
+#                 let m1 = e1.MoveNext()
+#                 let m2 = e2.MoveNext()
+#                 (m1 = m2) &amp;&amp; (not m1 ||
+#                                  (let e1c = e1.Current
+#                                   let e2c = e2.Current
+#                                   ((e1c.Key = e2c.Key) &amp;&amp; (Unchecked.equals e1c.Value e2c.Value) &amp;&amp; loop())))
+#             loop()
+#         | _ -&gt; false
+
+#     interface IEnumerable&lt;KeyValuePair&lt;&#39;Key, &#39;Value&gt;&gt; with
+#         member __.GetEnumerator() = MapTree.mkIEnumerator tree
+
+#     interface System.Collections.IEnumerable with
+#         member __.GetEnumerator() = MapTree.mkIEnumerator tree :&gt; System.Collections.IEnumerator
+
+#     interface System.IComparable with
+#         member m.CompareTo(obj: obj) =
+#             match obj with
+#             | :? Map&lt;&#39;Key, &#39;Value&gt;  as m2-&gt;
+#                 Seq.compareWith
+#                    (fun (kvp1 : KeyValuePair&lt;_, _&gt;) (kvp2 : KeyValuePair&lt;_, _&gt;)-&gt;
+#                        let c = comparer.Compare(kvp1.Key, kvp2.Key) in
+#                        if c &lt;&gt; 0 then c else Unchecked.compare kvp1.Value kvp2.Value)
+#                    m m2
+#             | _ -&gt;
+#                 invalidArg &#34;obj&#34; &#34;not comparable&#34;
+
+#     interface ICollection&lt;KeyValuePair&lt;&#39;Key, &#39;Value&gt;&gt; with
+#         member m.Add x = ignore x; raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
+#         member m.Clear() = raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
+#         member m.Remove x = ignore x; raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
+#         member m.Contains x = m.ContainsKey x.Key &amp;&amp; Unchecked.equals m.[x.Key] x.Value
+#         member m.CopyTo(arr, i) = MapTree.copyToArray tree arr i
+#         member m.IsReadOnly = true
+#         member m.Count = m.Count
+
+#     interface IReadOnlyCollection&lt;KeyValuePair&lt;&#39;Key, &#39;Value&gt;&gt; with
+#         member m.Count = m.Count
+
+#     // interface IReadOnlyDictionary&lt;&#39;Key, &#39;Value&gt; with
+#     //     member m.Item with get key = m.[key]
+#     //     member m.Keys = seq { for kvp in m -&gt; kvp.Key }
+#     //     member m.TryGetValue(key, value: byref&lt;&#39;Value&gt;) = m.TryGetValue(key, &amp;value)
+#     //     member m.Values = seq { for kvp in m -&gt; kvp.Value }
+#     //     member m.ContainsKey key = m.ContainsKey key
+
+#     interface Fable.Core.JS.Map&lt;&#39;Key,&#39;Value&gt; with
+#         member m.size = m.Count
+#         member m.clear() = failwith &#34;Map cannot be mutated&#34;; ()
+#         member m.delete(_) = failwith &#34;Map cannot be mutated&#34;; false
+#         member m.entries() = m |&gt; Seq.map (fun p -&gt; p.Key, p.Value)
+#         member m.get(k) = m.Item(k)
+#         member m.has(k) = m.ContainsKey(k)
+#         member m.keys() = m |&gt; Seq.map (fun p -&gt; p.Key)
+#         member m.set(k, v) = failwith &#34;Map cannot be mutated&#34;; m :&gt; Fable.Core.JS.Map&lt;&#39;Key,&#39;Value&gt;
+#         member m.values() = m |&gt; Seq.map (fun p -&gt; p.Value)
+#         member m.forEach(f, ?thisArg) = m |&gt; Seq.iter (fun p -&gt; f p.Value p.Key m)
+
+#     override this.ToString() =
+#         let inline toStr (kv: KeyValuePair&lt;&#39;Key,&#39;Value&gt;) = System.String.Format(&#34;({0}, {1})&#34;, kv.Key, kv.Value)
+#         let str = this |&gt; Seq.map toStr |&gt; String.concat &#34;; &#34;
+#         &#34;map [&#34; + str + &#34;]&#34;
+
+# // [&lt;CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)&gt;]
+# // [&lt;RequireQualifiedAccess&gt;]
+# // module Map =
+
+# // [&lt;CompiledName(&#34;IsEmpty&#34;)&gt;]
+# let isEmpty (table: Map&lt;_, _&gt;) =
+#     table.IsEmpty
+
+# // [&lt;CompiledName(&#34;Add&#34;)&gt;]
+# let add key value (table: Map&lt;_, _&gt;) =
+#     table.Add (key, value)
+
+# // [&lt;CompiledName(&#34;Change&#34;)&gt;]
+# let change key f (table: Map&lt;_, _&gt;) =
+#     table.Change (key, f)
+
+# // [&lt;CompiledName(&#34;Find&#34;)&gt;]
+# let find key (table: Map&lt;_, _&gt;) =
+#     table.[key]
+
+# // [&lt;CompiledName(&#34;TryFind&#34;)&gt;]
+# let tryFind key (table: Map&lt;_, _&gt;) =
+#     table.TryFind key
+
+# // [&lt;CompiledName(&#34;Remove&#34;)&gt;]
+# let remove key (table: Map&lt;_, _&gt;) =
+#     table.Remove key
+
+# // [&lt;CompiledName(&#34;ContainsKey&#34;)&gt;]
+# let containsKey key (table: Map&lt;_, _&gt;) =
+#     table.ContainsKey key
+
+# // [&lt;CompiledName(&#34;Iterate&#34;)&gt;]
+# let iterate action (table: Map&lt;_, _&gt;) =
+#     table.Iterate action
+
+# // [&lt;CompiledName(&#34;TryPick&#34;)&gt;]
+# let tryPick chooser (table: Map&lt;_, _&gt;) =
+#     table.TryPick chooser
+
+# // [&lt;CompiledName(&#34;Pick&#34;)&gt;]
+# let pick chooser (table: Map&lt;_, _&gt;) =
+#     match tryPick chooser table with
+#     | None -&gt; raise (KeyNotFoundException())
+#     | Some res -&gt; res
+
+# // [&lt;CompiledName(&#34;Exists&#34;)&gt;]
+# let exists predicate (table: Map&lt;_, _&gt;) =
+#     table.Exists predicate
+
+# // [&lt;CompiledName(&#34;Filter&#34;)&gt;]
+# let filter predicate (table: Map&lt;_, _&gt;) =
+#     table.Filter predicate
+
+# // [&lt;CompiledName(&#34;Partition&#34;)&gt;]
+# let partition predicate (table: Map&lt;_, _&gt;) =
+#     table.Partition predicate
+
+# // [&lt;CompiledName(&#34;ForAll&#34;)&gt;]
+# let forAll predicate (table: Map&lt;_, _&gt;) =
+#     table.ForAll predicate
+
+# // [&lt;CompiledName(&#34;Map&#34;)&gt;]
+# let map mapping (table: Map&lt;_, _&gt;) =
+#     table.Map mapping
+
+# // [&lt;CompiledName(&#34;Fold&#34;)&gt;]
+# let fold&lt;&#39;Key, &#39;T, &#39;State when &#39;Key : comparison&gt; folder (state:&#39;State) (table: Map&lt;&#39;Key, &#39;T&gt;) =
+#     MapTree.fold folder state table.Tree
+
+# // [&lt;CompiledName(&#34;FoldBack&#34;)&gt;]
+# let foldBack&lt;&#39;Key, &#39;T, &#39;State  when &#39;Key : comparison&gt; folder (table: Map&lt;&#39;Key, &#39;T&gt;) (state:&#39;State) =
+#     MapTree.foldBack folder table.Tree state
+
+# // [&lt;CompiledName(&#34;ToSeq&#34;)&gt;]
+# let toSeq (table: Map&lt;_, _&gt;) =
+#     table |&gt; Seq.map (fun kvp -&gt; kvp.Key, kvp.Value)
+
+# // [&lt;CompiledName(&#34;FindKey&#34;)&gt;]
+# let findKey predicate (table : Map&lt;_, _&gt;) =
+#     table |&gt; Seq.pick (fun kvp -&gt; let k = kvp.Key in if predicate k kvp.Value then Some k else None)
+
+# // [&lt;CompiledName(&#34;TryFindKey&#34;)&gt;]
+# let tryFindKey predicate (table : Map&lt;_, _&gt;) =
+#     table |&gt; Seq.tryPick (fun kvp -&gt; let k = kvp.Key in if predicate k kvp.Value then Some k else None)
+
+# // [&lt;CompiledName(&#34;OfList&#34;)&gt;]
+# let ofList (elements: (&#39;Key * &#39;Value) list) =
+#     Map&lt;_, _&gt;.ofList elements
+
+# // [&lt;CompiledName(&#34;OfSeq&#34;)&gt;]
+# let ofSeq elements =
+#     Map&lt;_, _&gt;.Create elements
+
+# // [&lt;CompiledName(&#34;OfArray&#34;)&gt;]
+# let ofArray (elements: (&#39;Key * &#39;Value) array) =
+#    let comparer = LanguagePrimitives.FastGenericComparer&lt;&#39;Key&gt;
+#    new Map&lt;_, _&gt;(comparer, MapTree.ofArray comparer elements)
+
+# // [&lt;CompiledName(&#34;ToList&#34;)&gt;]
+# let toList (table: Map&lt;_, _&gt;) =
+#     table.ToList()
+
+# // [&lt;CompiledName(&#34;ToArray&#34;)&gt;]
+# let toArray (table: Map&lt;_, _&gt;) =
+#     table.ToArray()
+
+# // [&lt;CompiledName(&#34;Empty&#34;)&gt;]
+# let empty&lt;&#39;Key, &#39;Value  when &#39;Key : comparison&gt; =
+#     Map&lt;&#39;Key, &#39;Value&gt;.Empty
+
+# let createMutable (source: KeyValuePair&lt;&#39;Key, &#39;Value&gt; seq) ([&lt;Fable.Core.Inject&gt;] comparer: IEqualityComparer&lt;&#39;Key&gt;) =
+#     let map = Fable.Collections.MutableMap(source, comparer)
+#     map :&gt; Fable.Core.JS.Map&lt;_,_&gt;
+
+# let groupBy (projection: &#39;T -&gt; &#39;Key) (xs: &#39;T seq) ([&lt;Fable.Core.Inject&gt;] comparer: IEqualityComparer&lt;&#39;Key&gt;): (&#39;Key * &#39;T seq) seq =
+#     let dict: Fable.Core.JS.Map&lt;_,ResizeArray&lt;&#39;T&gt;&gt; = createMutable Seq.empty comparer
+
+#     // Build the groupings
+#     for v in xs do
+#         let key = projection v
+#         if dict.has(key) then dict.get(key).Add(v)
+#         else dict.set(key, ResizeArray [v]) |&gt; ignore
+
+#     // Mapping shouldn&#39;t be necessary because KeyValuePair compiles
+#     // as a tuple, but let&#39;s do it just in case the implementation changes
+#     dict.entries() |&gt; Seq.map (fun (k,v) -&gt; k, upcast v)
+
+# let countBy (projection: &#39;T -&gt; &#39;Key) (xs: &#39;T seq) ([&lt;Fable.Core.Inject&gt;] comparer: IEqualityComparer&lt;&#39;Key&gt;): (&#39;Key * int) seq =
+#     let dict = createMutable Seq.empty comparer
+
+#     for value in xs do
+#         let key = projection value
+#         if dict.has(key) then dict.set(key, dict.get(key) + 1)
+#         else dict.set(key, 1)
+#         |&gt; ignore
+
+#     dict.entries()
+
+# // [&lt;CompiledName(&#34;Count&#34;)&gt;]
+# let count (table: Map&lt;_, _&gt;) =
+#     table.Count</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="expression.collections" href="index.html">expression.collections</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>

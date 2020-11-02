@@ -3,9 +3,9 @@ from itertools import accumulate
 from typing import Callable, Generator, Iterable, List
 
 import pytest
-from fslash import builder as ce
-from fslash.collections import Seq, seq
-from fslash.core import pipe
+from expression import builder as ce
+from expression.collections import Seq, seq
+from expression.core import pipe
 from hypothesis import given
 from hypothesis import strategies as st
 

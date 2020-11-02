@@ -1,0 +1,2213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>expression.core API documentation</title>
+<meta name="description" content="Core abstractions such as pipes, options and results." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>expression.core</code></h1>
+</header>
+<section id="section-intro">
+<p>Core abstractions such as pipes, options and results.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Core abstractions such as pipes, options and results.
+&#34;&#34;&#34;
+
+from . import aio, option, result
+from .builder import Builder
+from .compose import compose
+from .curry import curried
+from .error import EffectError, failwith
+from .mailbox import AsyncReplyChannel, MailboxProcessor
+from .misc import flip, identity
+from .option import Nothing, Nothing_, Option, Some
+from .pipe import pipe, pipe2, pipe3
+from .result import Error, Ok, Result
+
+__all__ = [
+    &#34;aio&#34;,
+    &#34;AsyncReplyChannel&#34;,
+    &#34;Builder&#34;,
+    &#34;compose&#34;,
+    &#34;curried&#34;,
+    &#34;EffectError&#34;,
+    &#34;Error&#34;,
+    &#34;failwith&#34;,
+    &#34;flip&#34;,
+    &#34;identity&#34;,
+    &#34;MailboxProcessor&#34;,
+    &#34;Nothing&#34;,
+    &#34;Nothing_&#34;,
+    &#34;Ok&#34;,
+    &#34;Option&#34;,
+    &#34;option&#34;,
+    &#34;pipe&#34;,
+    &#34;pipe2&#34;,
+    &#34;pipe3&#34;,
+    &#34;Result&#34;,
+    &#34;result&#34;,
+    &#34;Some&#34;,
+]</code></pre>
+</details>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="expression.core.aio" href="aio.html">expression.core.aio</a></code></dt>
+<dd>
+<div class="desc"><p>The aio module contains asynchronous functions similar to the F#
+<code>Async</code> module.</p></div>
+</dd>
+<dt><code class="name"><a title="expression.core.builder" href="builder.html">expression.core.builder</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="expression.core.curry" href="curry.html">expression.core.curry</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="expression.core.error" href="error.html">expression.core.error</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="expression.core.mailbox" href="mailbox.html">expression.core.mailbox</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="expression.core.misc" href="misc.html">expression.core.misc</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="expression.core.option" href="option.html">expression.core.option</a></code></dt>
+<dd>
+<div class="desc"><p>Option module …</p></div>
+</dd>
+<dt><code class="name"><a title="expression.core.result" href="result.html">expression.core.result</a></code></dt>
+<dd>
+<div class="desc"><p>Result module …</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="expression.core.compose"><code class="name flex">
+<span>def <span class="ident">compose</span></span>(<span>*fns: Callable[[Any], Any]) ‑> Callable[[Any], Any]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Compose multiple functions left to right.</p>
+<p>Composes zero or more functions into a functional composition. The
+functions are composed left to right. A composition of zero
+functions gives back the identity function.</p>
+<pre><code class="python-repl">&gt;&gt;&gt; compose()(x) == x
+&gt;&gt;&gt; compose(f)(x) == f(x)
+&gt;&gt;&gt; compose(f, g)(x) == g(f(x))
+&gt;&gt;&gt; compose(f, g, h)(x) == h(g(f(x)))
+...
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>The composed function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compose(*fns: Callable[[Any], Any]) -&gt; Callable[[Any], Any]:
+    &#34;&#34;&#34;Compose multiple functions left to right.
+
+    Composes zero or more functions into a functional composition. The
+    functions are composed left to right. A composition of zero
+    functions gives back the identity function.
+
+    &gt;&gt;&gt; compose()(x) == x
+    &gt;&gt;&gt; compose(f)(x) == f(x)
+    &gt;&gt;&gt; compose(f, g)(x) == g(f(x))
+    &gt;&gt;&gt; compose(f, g, h)(x) == h(g(f(x)))
+    ...
+
+    Returns:
+        The composed function.
+    &#34;&#34;&#34;
+
+    def compose(source: Any) -&gt; Any:
+        &#34;&#34;&#34;Return a pipeline of composed functions.&#34;&#34;&#34;
+        return reduce(lambda acc, f: f(acc), fns, source)
+
+    return compose</code></pre>
+</details>
+</dd>
+<dt id="expression.core.curried"><code class="name flex">
+<span>def <span class="ident">curried</span></span>(<span>fn: Callable[..., Any]) ‑> Callable[..., Any]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A curry decorator.</p>
+<p>Makes a function curryable. Note that the function will loose it's
+typing hints so you will need to provide typed overloads for the
+intended uses of the function you are decorating.</p>
+<h2 id="example">Example</h2>
+<p>@overload
+def add(a: int, b: int) -&gt; int:
+&hellip;</p>
+<p>@overload
+def add(a: int) -&gt; Callable[[int], int]:
+&hellip;</p>
+<p>@curried
+def add(a: int, b: int) -&gt; int:
+return a + b</p>
+<p>assert add(3, 4) == 7
+assert add(3)(4) == 7</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def curried(fn: Callable[..., Any]) -&gt; Callable[..., Any]:
+    &#34;&#34;&#34;A curry decorator.
+
+    Makes a function curryable. Note that the function will loose it&#39;s
+    typing hints so you will need to provide typed overloads for the
+    intended uses of the function you are decorating.
+
+    Example:
+        @overload
+        def add(a: int, b: int) -&gt; int:
+            ...
+
+        @overload
+        def add(a: int) -&gt; Callable[[int], int]:
+            ...
+
+        @curried
+        def add(a: int, b: int) -&gt; int:
+            return a + b
+
+        assert add(3, 4) == 7
+        assert add(3)(4) == 7
+
+    &#34;&#34;&#34;
+    spec = inspect.getfullargspec(fn)
+    # Number of arguments needed is length of args and kwargs - default args
+    count = len(spec.args) + len(spec.kwonlyargs) - len(spec.kwonlydefaults or [])
+
+    @wraps(fn)
+    def wrapper(*args: Any, **kw: Any) -&gt; Any:
+        if len(args) + len(kw) &gt;= count:
+            return fn(*args, **kw)
+        return curried(partial(fn, *args, **kw))
+
+    return wrapper</code></pre>
+</details>
+</dd>
+<dt id="expression.core.failwith"><code class="name flex">
+<span>def <span class="ident">failwith</span></span>(<span>message: str) ‑> NoReturn</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def failwith(message: str) -&gt; NoReturn:
+    raise Exception(message)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.flip"><code class="name flex">
+<span>def <span class="ident">flip</span></span>(<span>fn: Callable[[~A, ~B], Any]) ‑> Callable[[~B, ~A], Any]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Flips the arguments for a function taking two arguments.</p>
+<h2 id="example">Example</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
+    &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
+
+    Example:
+        &gt;&gt;&gt; fn(a, b) == flip(fn(b, a)) ==
+    &#34;&#34;&#34;
+
+    def _(b: B, a: A) -&gt; Any:
+        return fn(a, b)
+
+    return _</code></pre>
+</details>
+</dd>
+<dt id="expression.core.identity"><code class="name flex">
+<span>def <span class="ident">identity</span></span>(<span>value: ~A) ‑> ~A</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Identity function.</p>
+<p>Returns value given as argument.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def identity(value: A) -&gt; A:
+    &#34;&#34;&#34;Identity function.
+
+    Returns value given as argument.
+    &#34;&#34;&#34;
+    return value</code></pre>
+</details>
+</dd>
+<dt id="expression.core.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>value: Any, *fns: Callable[[Any], Any]) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Functional pipe (<code>|&gt;</code>)</p>
+<p>Allows the use of function argument on the left side of the function.</p>
+<h2 id="example">Example</h2>
+<pre><code class="python-repl">&gt;&gt;&gt; pipe(x, __fn) == __fn(x)  # Same as x |&gt; __fn
+&gt;&gt;&gt; pipe(x, __fn, gn) == gn(fn(x))  # Same as x |&gt; __fn |&gt; gn
+...
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(value: Any, *fns: Callable[[Any], Any]) -&gt; Any:
+    &#34;&#34;&#34;Functional pipe (`|&gt;`)
+
+    Allows the use of function argument on the left side of the function.
+
+    Example:
+        &gt;&gt;&gt; pipe(x, __fn) == __fn(x)  # Same as x |&gt; __fn
+        &gt;&gt;&gt; pipe(x, __fn, gn) == gn(fn(x))  # Same as x |&gt; __fn |&gt; gn
+        ...
+    &#34;&#34;&#34;
+
+    return compose(*fns)(value)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.pipe2"><code class="name flex">
+<span>def <span class="ident">pipe2</span></span>(<span>args, *fns)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe2(args, *fns):
+    return starpipe(args, *fns)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.pipe3"><code class="name flex">
+<span>def <span class="ident">pipe3</span></span>(<span>args, *fns)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe3(args, *fns):
+    return starpipe(args, *fns)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="expression.core.AsyncReplyChannel"><code class="flex name class">
+<span>class <span class="ident">AsyncReplyChannel</span></span>
+<span>(</span><span>fn: Callable[[~Reply], NoneType])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Abstract base class for generic types.</p>
+<p>A generic type is typically declared by inheriting from
+this class parameterized with one or more type variables.
+For example, a generic mapping type might be defined as::</p>
+<p>class Mapping(Generic[KT, VT]):
+def <strong>getitem</strong>(self, key: KT) -&gt; VT:
+&hellip;
+# Etc.</p>
+<p>This class can then be used as follows::</p>
+<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
+try:
+return mapping[key]
+except KeyError:
+return default</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class AsyncReplyChannel(Generic[Reply]):
+    def __init__(self, fn: Callable[[Reply], None]) -&gt; None:
+        self.fn = fn
+
+    def reply(self, r: Reply) -&gt; None:
+        self.fn(r)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.AsyncReplyChannel.reply"><code class="name flex">
+<span>def <span class="ident">reply</span></span>(<span>self, r: ~Reply) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reply(self, r: Reply) -&gt; None:
+    self.fn(r)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Builder"><code class="flex name class">
+<span>class <span class="ident">Builder</span></span>
+<span>(</span><span>*args, **kwds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Effect builder.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Builder(Generic[TOuter, TInner], ABC):
+    &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
+
+    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
+        raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
+
+    def return_(self, x: TInner) -&gt; TOuter:
+        raise NotImplementedError(&#34;Builder does not implement a return method&#34;)
+
+    def return_from(self, xs: TOuter) -&gt; TOuter:
+        raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)
+
+    def combine(self, xs: TOuter, ys: TOuter) -&gt; TOuter:
+        &#34;&#34;&#34;Used for combining multiple statements in the effect.&#34;&#34;&#34;
+        raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)
+
+    def zero(self) -&gt; TOuter:
+        &#34;&#34;&#34;Called if the effect raises StopIteration without a value,
+        i.e returns None&#34;&#34;&#34;
+        raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)
+
+    def _send(
+        self,
+        gen: Coroutine[TInner, Optional[TInner], Optional[TOuter]],
+        done: List[bool],
+        value: Optional[TInner] = None,
+    ) -&gt; TOuter:
+        try:
+            yielded = gen.send(value)
+            return self.return_(yielded)
+        except EffectError as error:
+            done.append(True)
+            return self.return_from(error)
+        except StopIteration as ex:
+            done.append(True)
+            if ex.value is not None:
+                return self.return_(ex.value)
+
+            raise EffectError()
+        except Exception:
+            raise
+
+    def __call__(
+        self,  # Ignored self parameter
+        fn: Callable[..., Any],
+    ) -&gt; Callable[..., TOuter]:
+        &#34;&#34;&#34;Option builder.
+
+        Enables the use of computational expressions using coroutines.
+        Thus inside the coroutine the keywords `yield` and `yield from`
+        reasembles `yield` and `yield!` from F#.
+
+        Args:
+            fn: A function that contains a computational expression and
+                returns either a coroutine, generator or an option.
+
+        Returns:
+            A `builder` function that can wrap coroutines into builders.
+        &#34;&#34;&#34;
+
+        @wraps(fn)
+        def wrapper(*args: Any, **kw: Any) -&gt; TOuter:
+            gen = fn(*args, **kw)
+            done: List[bool] = []
+
+            result: Optional[TOuter] = None
+            try:
+                result = self._send(gen, done)
+                while not done and not isinstance(result, EffectError):
+                    binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
+                    cont = self.bind(cast(TOuter, result), binder)
+                    result = self.combine(result, cont)
+            except EffectError:
+                pass
+
+            # If anything returns none (i.e raises StopIteration without
+            # a value) then we expect the effect to have a zero method
+            # implemented.
+            if result is None:
+                result = self.zero()
+
+            return result
+
+        return wrapper</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>expression.builder.option.OptionBuilder</li>
+<li>expression.builder.result.ResultBuilder</li>
+<li>expression.builder.seq.SeqBuilder</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Builder.bind"><code class="name flex">
+<span>def <span class="ident">bind</span></span>(<span>self, xs: ~TOuter, fn: Callable[[~TInner], ~TOuter2]) ‑> ~TOuter2</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
+    raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Builder.combine"><code class="name flex">
+<span>def <span class="ident">combine</span></span>(<span>self, xs: ~TOuter, ys: ~TOuter) ‑> ~TOuter</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Used for combining multiple statements in the effect.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def combine(self, xs: TOuter, ys: TOuter) -&gt; TOuter:
+    &#34;&#34;&#34;Used for combining multiple statements in the effect.&#34;&#34;&#34;
+    raise NotImplementedError(&#34;Builder does not implement a combine method&#34;)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Builder.return_"><code class="name flex">
+<span>def <span class="ident">return_</span></span>(<span>self, x: ~TInner) ‑> ~TOuter</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def return_(self, x: TInner) -&gt; TOuter:
+    raise NotImplementedError(&#34;Builder does not implement a return method&#34;)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Builder.return_from"><code class="name flex">
+<span>def <span class="ident">return_from</span></span>(<span>self, xs: ~TOuter) ‑> ~TOuter</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def return_from(self, xs: TOuter) -&gt; TOuter:
+    raise NotImplementedError(&#34;Builder does not implement a return from method&#34;)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Builder.zero"><code class="name flex">
+<span>def <span class="ident">zero</span></span>(<span>self) ‑> ~TOuter</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Called if the effect raises StopIteration without a value,
+i.e returns None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def zero(self) -&gt; TOuter:
+    &#34;&#34;&#34;Called if the effect raises StopIteration without a value,
+    i.e returns None&#34;&#34;&#34;
+    raise NotImplementedError(&#34;Builder does not implement a zero method&#34;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.EffectError"><code class="flex name class">
+<span>class <span class="ident">EffectError</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An error that will exit any computational expression.</p>
+<p>We use this to detect if sub-generators causes an exit, since
+yielding nothing will be silently ignored.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class EffectError(Exception):
+    &#34;&#34;&#34;An error that will exit any computational expression.
+
+    We use this to detect if sub-generators causes an exit, since
+    yielding nothing will be silently ignored.
+    &#34;&#34;&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.option.Nothing_" href="option.html#expression.core.option.Nothing_">Nothing_</a></li>
+<li>expression.core.result.ResultException</li>
+</ul>
+</dd>
+<dt id="expression.core.Error"><code class="flex name class">
+<span>class <span class="ident">Error</span></span>
+<span>(</span><span>error: ~TError)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The Error result case class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Error(Result[TSource, TError], ResultException):
+    &#34;&#34;&#34;The Error result case class.&#34;&#34;&#34;
+
+    def __init__(self, error: TError) -&gt; None:
+        super().__init__(str(error))
+        self._error = error
+
+    @property
+    def error(self) -&gt; TError:
+        return self._error
+
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
+        return Error(self._error)
+
+    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
+        return Error(self._error)
+
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
+        return Error(mapper(self._error))
+
+    def is_error(self) -&gt; bool:
+        return True
+
+    def is_ok(self) -&gt; bool:
+        return False
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Error):
+            return self.error == other.error  # type: ignore
+        return False
+
+    def __iter__(self) -&gt; Iterator[TSource]:
+        &#34;&#34;&#34;Return iterator for Error case.&#34;&#34;&#34;
+        raise Error(self._error)
+        yield
+
+    def __str__(self):
+        return f&#34;Error {self._error}&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
+<li>collections.abc.Iterable</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+<li>expression.core.result.ResultException</li>
+<li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="expression.core.Error.error"><code class="name">var <span class="ident">error</span> : ~TError</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def error(self) -&gt; TError:
+    return self._error</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Error.bind"><code class="name flex">
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
+    return Error(self._error)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Error.is_error"><code class="name flex">
+<span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_error(self) -&gt; bool:
+    return True</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Error.is_ok"><code class="name flex">
+<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_ok(self) -&gt; bool:
+    return False</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Error.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
+    return Error(self._error)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.result.Result.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Result.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="expression.core.MailboxProcessor"><code class="flex name class">
+<span>class <span class="ident">MailboxProcessor</span></span>
+<span>(</span><span>cancellationToken: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Abstract base class for generic types.</p>
+<p>A generic type is typically declared by inheriting from
+this class parameterized with one or more type variables.
+For example, a generic mapping type might be defined as::</p>
+<p>class Mapping(Generic[KT, VT]):
+def <strong>getitem</strong>(self, key: KT) -&gt; VT:
+&hellip;
+# Etc.</p>
+<p>This class can then be used as follows::</p>
+<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
+try:
+return mapping[key]
+except KeyError:
+return default</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MailboxProcessor(Generic[Msg]):
+    def __init__(self, cancellationToken: Optional[CancellationToken]) -&gt; None:
+        self.messages: SimpleQueue[Msg] = SimpleQueue()
+        self.continuation: Optional[
+            Continuation[Msg]
+        ] = None  # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
+        self.token = cancellationToken or CancellationToken.none()
+        self.lock = RLock()
+        self.loop = asyncio.get_event_loop()
+
+    def post(self, msg: Msg) -&gt; None:
+        &#34;&#34;&#34;Post a message synchronously to the mailbox processor.
+
+        This method is not asynchronous since it&#39;s very fast to execute.
+        It simply adds the message to the message queue of the mailbox
+        processor and returns.
+
+        Args:
+            msg: Message to post.
+
+        Returns: None
+        &#34;&#34;&#34;
+        self.messages.put(msg)
+        self.loop.call_soon_threadsafe(self.__process_events)
+
+    def post_and_async_reply(self, build_message: Callable[[AsyncReplyChannel[Reply]], Msg]) -&gt; Awaitable[Reply]:
+        &#34;&#34;&#34;Post a message asynchronously to the mailbox processor and
+        wait for the reply.
+
+        Args:
+            build_message: A function that takes a reply channel
+            (`AsyncReplyChannel[Reply]`) and returns a message to send
+            to the mailbox processor. The message should contain the
+            reply channel as e.g a tuple.
+
+        Returns: The reply from mailbox processor.
+        &#34;&#34;&#34;
+
+        result: Optional[Reply] = None
+        continuation: Optional[
+            Continuation[Reply]
+        ] = None  # This is the continuation for the `done` callback of the awaiting poster.
+
+        def check_completion() -&gt; None:
+            if result is not None and continuation is not None:
+                continuation(result)
+
+        def reply_callback(res: Reply):
+            nonlocal result
+            result = res
+            check_completion()
+
+        reply_channel = AsyncReplyChannel(reply_callback)
+        self.messages.put(build_message(reply_channel))
+        self.__process_events()
+
+        def callback(
+            done: Continuation[Reply], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
+        ):
+            nonlocal continuation
+            continuation = done
+            check_completion()
+
+        return from_continuations(callback)
+
+    def receive(self) -&gt; Awaitable[Msg]:
+        &#34;&#34;&#34;Return an asynchronous computation which will consume the
+        first message in arrival order. No thread is blocked while
+        waiting for further messages. Raise a TimeoutException if the
+        timeout is exceeded.&#34;&#34;&#34;
+
+        def callback(
+            done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
+        ):
+            if self.continuation:
+                raise Exception(&#34;Receive can only be called once!&#34;)
+
+            self.continuation = done
+            self.__process_events()
+
+        return from_continuations(callback)
+
+    def __process_events(self):
+        if self.continuation is None:
+            return
+
+        with self.lock:
+            if self.messages.empty():
+                return
+            msg = self.messages.get()
+            self.continuation, cont = None, self.continuation
+
+            if cont is not None:
+                cont(msg)
+
+    @staticmethod
+    def start(
+        body: Callable[[&#34;MailboxProcessor[Any]&#34;], Awaitable[None]],
+        cancellation_token: Optional[CancellationToken] = None,
+    ) -&gt; &#34;MailboxProcessor[Any]&#34;:
+        mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
+        start_immediate(body(mbox), cancellation_token)
+        return mbox</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.MailboxProcessor.start"><code class="name flex">
+<span>def <span class="ident">start</span></span>(<span>body: Callable[[ForwardRef('<a title="expression.core.MailboxProcessor" href="#expression.core.MailboxProcessor">MailboxProcessor</a>[Any]')], Awaitable[NoneType]], cancellation_token: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType] = None) ‑> <a title="expression.core.mailbox.MailboxProcessor" href="mailbox.html#expression.core.mailbox.MailboxProcessor">MailboxProcessor</a>[typing.Any]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def start(
+    body: Callable[[&#34;MailboxProcessor[Any]&#34;], Awaitable[None]],
+    cancellation_token: Optional[CancellationToken] = None,
+) -&gt; &#34;MailboxProcessor[Any]&#34;:
+    mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
+    start_immediate(body(mbox), cancellation_token)
+    return mbox</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.MailboxProcessor.post"><code class="name flex">
+<span>def <span class="ident">post</span></span>(<span>self, msg: ~Msg) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Post a message synchronously to the mailbox processor.</p>
+<p>This method is not asynchronous since it's very fast to execute.
+It simply adds the message to the message queue of the mailbox
+processor and returns.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>msg</code></strong></dt>
+<dd>Message to post.</dd>
+</dl>
+<p>Returns: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def post(self, msg: Msg) -&gt; None:
+    &#34;&#34;&#34;Post a message synchronously to the mailbox processor.
+
+    This method is not asynchronous since it&#39;s very fast to execute.
+    It simply adds the message to the message queue of the mailbox
+    processor and returns.
+
+    Args:
+        msg: Message to post.
+
+    Returns: None
+    &#34;&#34;&#34;
+    self.messages.put(msg)
+    self.loop.call_soon_threadsafe(self.__process_events)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.MailboxProcessor.post_and_async_reply"><code class="name flex">
+<span>def <span class="ident">post_and_async_reply</span></span>(<span>self, build_message: Callable[[<a title="expression.core.mailbox.AsyncReplyChannel" href="mailbox.html#expression.core.mailbox.AsyncReplyChannel">AsyncReplyChannel</a>[~Reply]], ~Msg]) ‑> Awaitable[~Reply]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Post a message asynchronously to the mailbox processor and
+wait for the reply.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>build_message</code></strong></dt>
+<dd>A function that takes a reply channel</dd>
+</dl>
+<p>(<code><a title="expression.core.AsyncReplyChannel" href="#expression.core.AsyncReplyChannel">AsyncReplyChannel</a>[Reply]</code>) and returns a message to send
+to the mailbox processor. The message should contain the
+reply channel as e.g a tuple.
+Returns: The reply from mailbox processor.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def post_and_async_reply(self, build_message: Callable[[AsyncReplyChannel[Reply]], Msg]) -&gt; Awaitable[Reply]:
+    &#34;&#34;&#34;Post a message asynchronously to the mailbox processor and
+    wait for the reply.
+
+    Args:
+        build_message: A function that takes a reply channel
+        (`AsyncReplyChannel[Reply]`) and returns a message to send
+        to the mailbox processor. The message should contain the
+        reply channel as e.g a tuple.
+
+    Returns: The reply from mailbox processor.
+    &#34;&#34;&#34;
+
+    result: Optional[Reply] = None
+    continuation: Optional[
+        Continuation[Reply]
+    ] = None  # This is the continuation for the `done` callback of the awaiting poster.
+
+    def check_completion() -&gt; None:
+        if result is not None and continuation is not None:
+            continuation(result)
+
+    def reply_callback(res: Reply):
+        nonlocal result
+        result = res
+        check_completion()
+
+    reply_channel = AsyncReplyChannel(reply_callback)
+    self.messages.put(build_message(reply_channel))
+    self.__process_events()
+
+    def callback(
+        done: Continuation[Reply], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
+    ):
+        nonlocal continuation
+        continuation = done
+        check_completion()
+
+    return from_continuations(callback)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.MailboxProcessor.receive"><code class="name flex">
+<span>def <span class="ident">receive</span></span>(<span>self) ‑> Awaitable[~Msg]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return an asynchronous computation which will consume the
+first message in arrival order. No thread is blocked while
+waiting for further messages. Raise a TimeoutException if the
+timeout is exceeded.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def receive(self) -&gt; Awaitable[Msg]:
+    &#34;&#34;&#34;Return an asynchronous computation which will consume the
+    first message in arrival order. No thread is blocked while
+    waiting for further messages. Raise a TimeoutException if the
+    timeout is exceeded.&#34;&#34;&#34;
+
+    def callback(
+        done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
+    ):
+        if self.continuation:
+            raise Exception(&#34;Receive can only be called once!&#34;)
+
+        self.continuation = done
+        self.__process_events()
+
+    return from_continuations(callback)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Nothing_"><code class="flex name class">
+<span>class <span class="ident">Nothing_</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The None option case class.</p>
+<p>Do not use. Use the singleton <code>Nothing</code> instead. Since Nothing is a
+singleton it can be tested e.g using <code>is</code>:
+&gt;&gt;&gt; if xs is Nothing:
+&hellip;
+return True</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Nothing_(Option[TSource], EffectError):
+    &#34;&#34;&#34;The None option case class.
+
+    Do not use. Use the singleton `Nothing` instead. Since Nothing is a
+    singleton it can be tested e.g using `is`:
+        &gt;&gt;&gt; if xs is Nothing:
+        ...     return True
+    &#34;&#34;&#34;
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        return value
+
+    def is_some(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
+        return False
+
+    def is_none(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
+        return True
+
+    def map(self, mapper: Callable[[TSource], TResult]):
+        return self
+
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+        return Nothing
+
+    def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+        return Nothing
+
+    def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns `if_none`.&#34;&#34;&#34;
+        return if_none
+
+    def to_list(self) -&gt; List[TSource]:
+        return []
+
+    def to_seq(self) -&gt; Iterable[TSource]:
+        return []
+
+    @property
+    def value(self) -&gt; TSource:
+        &#34;&#34;&#34;Returns the value wrapped by the option.
+
+        A `ValueError` is raised if the option is `Nothing`.
+        &#34;&#34;&#34;
+
+        raise ValueError(&#34;There is no value.&#34;)
+
+    def __iter__(self) -&gt; Iterator[TSource]:
+        &#34;&#34;&#34;Return iterator for the `Nothing` case.
+
+        We basically want to return nothing, but we have to return
+        something to signal fail.
+        &#34;&#34;&#34;
+        raise Nothing
+        yield
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if other is Nothing:
+            return True
+        return False
+
+    def __str__(self):
+        return &#34;Nothing&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></li>
+<li>collections.abc.Iterable</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+<li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Nothing_.bind"><code class="name flex">
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+    return Nothing</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Nothing_.is_none"><code class="name flex">
+<span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns <code>True</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_none(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
+    return True</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Nothing_.is_some"><code class="name flex">
+<span>def <span class="ident">is_some</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns <code>False</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_some(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
+    return False</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Nothing_.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]):
+    return self</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Nothing_.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~T2]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+    return Nothing</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Nothing_.or_else"><code class="name flex">
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TSource]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns <code>if_none</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns `if_none`.&#34;&#34;&#34;
+    return if_none</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Nothing_.to_list"><code class="name flex">
+<span>def <span class="ident">to_list</span></span>(<span>self) ‑> List[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_list(self) -&gt; List[TSource]:
+    return []</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Nothing_.to_seq"><code class="name flex">
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_seq(self) -&gt; Iterable[TSource]:
+    return []</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.option.Option.default_value" href="option.html#expression.core.option.Option.default_value">default_value</a></code></li>
+<li><code><a title="expression.core.option.Option.pipe" href="option.html#expression.core.option.Option.pipe">pipe</a></code></li>
+<li><code><a title="expression.core.option.Option.value" href="option.html#expression.core.option.Option.value">value</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="expression.core.Ok"><code class="flex name class">
+<span>class <span class="ident">Ok</span></span>
+<span>(</span><span>value: ~TSource)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The Ok result case class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Ok(Result[TSource, TError]):
+    &#34;&#34;&#34;The Ok result case class.&#34;&#34;&#34;
+
+    def __init__(self, value: TSource) -&gt; None:
+        self._value = value
+
+    @property
+    def value(self) -&gt; TSource:
+        return self._value
+
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
+        return Ok(mapper(self._value))
+
+    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
+        return mapper(self._value)
+
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
+        return Ok(self._value)
+
+    def is_error(self) -&gt; bool:
+        return False
+
+    def is_ok(self) -&gt; bool:
+        return True
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Ok):
+            return self.value == other.value  # type: ignore
+        return False
+
+    def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
+        &#34;&#34;&#34;Return iterator for Ok case.&#34;&#34;&#34;
+        return (yield self._value)
+
+    def __str__(self):
+        return f&#34;Ok {self._value}&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
+<li>collections.abc.Iterable</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="expression.core.Ok.value"><code class="name">var <span class="ident">value</span> : ~TSource</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self) -&gt; TSource:
+    return self._value</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Ok.bind"><code class="name flex">
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
+    return mapper(self._value)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Ok.is_error"><code class="name flex">
+<span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_error(self) -&gt; bool:
+    return False</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Ok.is_ok"><code class="name flex">
+<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_ok(self) -&gt; bool:
+    return True</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Ok.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
+    return Ok(mapper(self._value))</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.result.Result.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Result.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="expression.core.Option"><code class="flex name class">
+<span>class <span class="ident">Option</span></span>
+<span>(</span><span>*args, **kwds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Option abstract base class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Option(Iterable[TSource], ABC):
+    &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], TResult]) -&gt; TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Option[TSource]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    def pipe(self, *args: Any) -&gt; Any:
+        &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
+
+    def match(self, *args: Any, **kw: Any) -&gt; Any:
+        from pampy import match  # type: ignore
+
+        return match(self, *args, **kw)  # type: ignore
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+        &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_list(self) -&gt; List[TSource]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_seq(self) -&gt; Iterable[TSource]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def is_some(self) -&gt; bool:
+        &#34;&#34;&#34;Returns true if the option is not Nothing.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def is_none(self) -&gt; bool:
+        &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def __eq__(self, other: Any) -&gt; bool:
+        raise NotImplementedError
+
+    def __repr__(self) -&gt; str:
+        return self.__str__()
+
+    @abstractproperty
+    def value(self) -&gt; TSource:
+        &#34;&#34;&#34;Returns the value wrapped by the option.
+
+        A `ValueError` is raised if the option is `Nothing`.
+        &#34;&#34;&#34;
+        raise NotImplementedError</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>collections.abc.Iterable</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.option.Nothing_" href="option.html#expression.core.option.Nothing_">Nothing_</a></li>
+<li><a title="expression.core.option.Some" href="option.html#expression.core.option.Some">Some</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="expression.core.Option.value"><code class="name">var <span class="ident">value</span> : ~TSource</code></dt>
+<dd>
+<div class="desc"><p>Returns the value wrapped by the option.</p>
+<p>A <code>ValueError</code> is raised if the option is <code>Nothing</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractproperty
+def value(self) -&gt; TSource:
+    &#34;&#34;&#34;Returns the value wrapped by the option.
+
+    A `ValueError` is raised if the option is `Nothing`.
+    &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Option.bind"><code class="name flex">
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.Option" href="#expression.core.Option">Option</a>[TResult]')]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.default_value"><code class="name flex">
+<span>def <span class="ident">default_value</span></span>(<span>self, value: ~TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+returns the specified default value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.is_none"><code class="name flex">
+<span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns true if the option is Nothing.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def is_none(self) -&gt; bool:
+    &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.is_some"><code class="name flex">
+<span>def <span class="ident">is_some</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns true if the option is not Nothing.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def is_some(self) -&gt; bool:
+    &#34;&#34;&#34;Returns true if the option is not Nothing.&#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
+    from pampy import match  # type: ignore
+
+    return match(self, *args, **kw)  # type: ignore</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.or_else"><code class="name flex">
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TSource]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns option if it is Some, otherwise returns <code>if_one</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+    &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe option through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args: Any) -&gt; Any:
+    &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.to_list"><code class="name flex">
+<span>def <span class="ident">to_list</span></span>(<span>self) ‑> List[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def to_list(self) -&gt; List[TSource]:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.to_seq"><code class="name flex">
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def to_seq(self) -&gt; Iterable[TSource]:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Result"><code class="flex name class">
+<span>class <span class="ident">Result</span></span>
+<span>(</span><span>*args, **kwds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The result abstract base class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
+    &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
+
+    def match(self, *args: Any, **kw: Any) -&gt; Any:
+        from pampy import match  # type: ignore
+
+        return match(self, *args, **kw)  # type: ignore
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    def pipe(self, *args: Any):
+        &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
+
+    @abstractmethod
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
+        &#34;&#34;&#34;Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+        raise NotImplementedError
+
+    @abstractmethod
+    def is_error(self) -&gt; bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    def is_ok(self) -&gt; bool:
+        raise NotImplementedError
+
+    def __eq__(self, other: Any) -&gt; bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    def __iter__(self) -&gt; Iterator[TSource]:
+        raise NotImplementedError
+
+    def __repr__(self) -&gt; str:
+        return str(self)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>collections.abc.Iterable</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.result.Error" href="result.html#expression.core.result.Error">Error</a></li>
+<li><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Result.bind"><code class="name flex">
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.Result" href="#expression.core.Result">Result</a>[TResult, TError]')]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Result.is_error"><code class="name flex">
+<span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def is_error(self) -&gt; bool:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Result.is_ok"><code class="name flex">
+<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def is_ok(self) -&gt; bool:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Result.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Result.map_error"><code class="name flex">
+<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TSource, ~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return a result of the error value after applying the mapping
+function, or Ok if the input is Ok.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
+    &#34;&#34;&#34;Return a result of the error value after applying the mapping
+    function, or Ok if the input is Ok.&#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Result.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
+    from pampy import match  # type: ignore
+
+    return match(self, *args, **kw)  # type: ignore</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Result.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe result through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args: Any):
+    &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Some"><code class="flex name class">
+<span>class <span class="ident">Some</span></span>
+<span>(</span><span>value: ~TSource)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The Some option case class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Some(Option[TSource]):
+    &#34;&#34;&#34;The Some option case class.&#34;&#34;&#34;
+
+    def __init__(self, value: TSource) -&gt; None:
+        self._value = value
+
+    def default_value(self, value: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        &#34;&#34;&#34;
+        return self._value
+
+    def is_some(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
+        return True
+
+    def is_none(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
+        return False
+
+    def map(self, mapper: Callable[[TSource], TResult]):
+        return Some(mapper(self._value))
+
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+        if isinstance(other, Some):
+            return Some(mapper(self._value, cast(Some[T2], other).value))
+        return Nothing
+
+    def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+        return mapper(self._value)
+
+    def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
+        return self
+
+    def to_list(self) -&gt; List[TSource]:
+        return [self._value]
+
+    def to_seq(self) -&gt; Iterable[TSource]:
+        return [self._value]
+
+    @property
+    def value(self) -&gt; TSource:
+        &#34;&#34;&#34;Returns the value wrapped by the option.
+
+        A `ValueError` is raised if the option is `Nothing`.
+        &#34;&#34;&#34;
+        return self._value
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Some):
+            return self._value == other._value  # type: ignore
+        return False
+
+    def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
+        return (yield self._value)
+
+    def __str__(self) -&gt; str:
+        return f&#34;Some {self._value}&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></li>
+<li>collections.abc.Iterable</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Some.bind"><code class="name flex">
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+    return mapper(self._value)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Some.is_none"><code class="name flex">
+<span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns <code>False</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_none(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
+    return False</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Some.is_some"><code class="name flex">
+<span>def <span class="ident">is_some</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns <code>True</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_some(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
+    return True</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Some.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]):
+    return Some(mapper(self._value))</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Some.map2"><code class="name flex">
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~T2]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
+    if isinstance(other, Some):
+        return Some(mapper(self._value, cast(Some[T2], other).value))
+    return Nothing</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Some.or_else"><code class="name flex">
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TSource]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns <code>self</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
+    return self</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Some.to_list"><code class="name flex">
+<span>def <span class="ident">to_list</span></span>(<span>self) ‑> List[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_list(self) -&gt; List[TSource]:
+    return [self._value]</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Some.to_seq"><code class="name flex">
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_seq(self) -&gt; Iterable[TSource]:
+    return [self._value]</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.option.Option.default_value" href="option.html#expression.core.option.Option.default_value">default_value</a></code></li>
+<li><code><a title="expression.core.option.Option.pipe" href="option.html#expression.core.option.Option.pipe">pipe</a></code></li>
+<li><code><a title="expression.core.option.Option.value" href="option.html#expression.core.option.Option.value">value</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="expression" href="../index.html">expression</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="expression.core.aio" href="aio.html">expression.core.aio</a></code></li>
+<li><code><a title="expression.core.builder" href="builder.html">expression.core.builder</a></code></li>
+<li><code><a title="expression.core.curry" href="curry.html">expression.core.curry</a></code></li>
+<li><code><a title="expression.core.error" href="error.html">expression.core.error</a></code></li>
+<li><code><a title="expression.core.mailbox" href="mailbox.html">expression.core.mailbox</a></code></li>
+<li><code><a title="expression.core.misc" href="misc.html">expression.core.misc</a></code></li>
+<li><code><a title="expression.core.option" href="option.html">expression.core.option</a></code></li>
+<li><code><a title="expression.core.result" href="result.html">expression.core.result</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="two-column">
+<li><code><a title="expression.core.compose" href="#expression.core.compose">compose</a></code></li>
+<li><code><a title="expression.core.curried" href="#expression.core.curried">curried</a></code></li>
+<li><code><a title="expression.core.failwith" href="#expression.core.failwith">failwith</a></code></li>
+<li><code><a title="expression.core.flip" href="#expression.core.flip">flip</a></code></li>
+<li><code><a title="expression.core.identity" href="#expression.core.identity">identity</a></code></li>
+<li><code><a title="expression.core.pipe" href="#expression.core.pipe">pipe</a></code></li>
+<li><code><a title="expression.core.pipe2" href="#expression.core.pipe2">pipe2</a></code></li>
+<li><code><a title="expression.core.pipe3" href="#expression.core.pipe3">pipe3</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="expression.core.AsyncReplyChannel" href="#expression.core.AsyncReplyChannel">AsyncReplyChannel</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.AsyncReplyChannel.reply" href="#expression.core.AsyncReplyChannel.reply">reply</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Builder" href="#expression.core.Builder">Builder</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Builder.bind" href="#expression.core.Builder.bind">bind</a></code></li>
+<li><code><a title="expression.core.Builder.combine" href="#expression.core.Builder.combine">combine</a></code></li>
+<li><code><a title="expression.core.Builder.return_" href="#expression.core.Builder.return_">return_</a></code></li>
+<li><code><a title="expression.core.Builder.return_from" href="#expression.core.Builder.return_from">return_from</a></code></li>
+<li><code><a title="expression.core.Builder.zero" href="#expression.core.Builder.zero">zero</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.EffectError" href="#expression.core.EffectError">EffectError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="expression.core.Error" href="#expression.core.Error">Error</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Error.bind" href="#expression.core.Error.bind">bind</a></code></li>
+<li><code><a title="expression.core.Error.error" href="#expression.core.Error.error">error</a></code></li>
+<li><code><a title="expression.core.Error.is_error" href="#expression.core.Error.is_error">is_error</a></code></li>
+<li><code><a title="expression.core.Error.is_ok" href="#expression.core.Error.is_ok">is_ok</a></code></li>
+<li><code><a title="expression.core.Error.map" href="#expression.core.Error.map">map</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.MailboxProcessor" href="#expression.core.MailboxProcessor">MailboxProcessor</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.MailboxProcessor.post" href="#expression.core.MailboxProcessor.post">post</a></code></li>
+<li><code><a title="expression.core.MailboxProcessor.post_and_async_reply" href="#expression.core.MailboxProcessor.post_and_async_reply">post_and_async_reply</a></code></li>
+<li><code><a title="expression.core.MailboxProcessor.receive" href="#expression.core.MailboxProcessor.receive">receive</a></code></li>
+<li><code><a title="expression.core.MailboxProcessor.start" href="#expression.core.MailboxProcessor.start">start</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Nothing_" href="#expression.core.Nothing_">Nothing_</a></code></h4>
+<ul class="two-column">
+<li><code><a title="expression.core.Nothing_.bind" href="#expression.core.Nothing_.bind">bind</a></code></li>
+<li><code><a title="expression.core.Nothing_.is_none" href="#expression.core.Nothing_.is_none">is_none</a></code></li>
+<li><code><a title="expression.core.Nothing_.is_some" href="#expression.core.Nothing_.is_some">is_some</a></code></li>
+<li><code><a title="expression.core.Nothing_.map" href="#expression.core.Nothing_.map">map</a></code></li>
+<li><code><a title="expression.core.Nothing_.map2" href="#expression.core.Nothing_.map2">map2</a></code></li>
+<li><code><a title="expression.core.Nothing_.or_else" href="#expression.core.Nothing_.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.Nothing_.to_list" href="#expression.core.Nothing_.to_list">to_list</a></code></li>
+<li><code><a title="expression.core.Nothing_.to_seq" href="#expression.core.Nothing_.to_seq">to_seq</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Ok" href="#expression.core.Ok">Ok</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Ok.bind" href="#expression.core.Ok.bind">bind</a></code></li>
+<li><code><a title="expression.core.Ok.is_error" href="#expression.core.Ok.is_error">is_error</a></code></li>
+<li><code><a title="expression.core.Ok.is_ok" href="#expression.core.Ok.is_ok">is_ok</a></code></li>
+<li><code><a title="expression.core.Ok.map" href="#expression.core.Ok.map">map</a></code></li>
+<li><code><a title="expression.core.Ok.value" href="#expression.core.Ok.value">value</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Option" href="#expression.core.Option">Option</a></code></h4>
+<ul class="two-column">
+<li><code><a title="expression.core.Option.bind" href="#expression.core.Option.bind">bind</a></code></li>
+<li><code><a title="expression.core.Option.default_value" href="#expression.core.Option.default_value">default_value</a></code></li>
+<li><code><a title="expression.core.Option.is_none" href="#expression.core.Option.is_none">is_none</a></code></li>
+<li><code><a title="expression.core.Option.is_some" href="#expression.core.Option.is_some">is_some</a></code></li>
+<li><code><a title="expression.core.Option.map" href="#expression.core.Option.map">map</a></code></li>
+<li><code><a title="expression.core.Option.map2" href="#expression.core.Option.map2">map2</a></code></li>
+<li><code><a title="expression.core.Option.match" href="#expression.core.Option.match">match</a></code></li>
+<li><code><a title="expression.core.Option.or_else" href="#expression.core.Option.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.Option.pipe" href="#expression.core.Option.pipe">pipe</a></code></li>
+<li><code><a title="expression.core.Option.to_list" href="#expression.core.Option.to_list">to_list</a></code></li>
+<li><code><a title="expression.core.Option.to_seq" href="#expression.core.Option.to_seq">to_seq</a></code></li>
+<li><code><a title="expression.core.Option.value" href="#expression.core.Option.value">value</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Result" href="#expression.core.Result">Result</a></code></h4>
+<ul class="two-column">
+<li><code><a title="expression.core.Result.bind" href="#expression.core.Result.bind">bind</a></code></li>
+<li><code><a title="expression.core.Result.is_error" href="#expression.core.Result.is_error">is_error</a></code></li>
+<li><code><a title="expression.core.Result.is_ok" href="#expression.core.Result.is_ok">is_ok</a></code></li>
+<li><code><a title="expression.core.Result.map" href="#expression.core.Result.map">map</a></code></li>
+<li><code><a title="expression.core.Result.map_error" href="#expression.core.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.Result.match" href="#expression.core.Result.match">match</a></code></li>
+<li><code><a title="expression.core.Result.pipe" href="#expression.core.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Some" href="#expression.core.Some">Some</a></code></h4>
+<ul class="two-column">
+<li><code><a title="expression.core.Some.bind" href="#expression.core.Some.bind">bind</a></code></li>
+<li><code><a title="expression.core.Some.is_none" href="#expression.core.Some.is_none">is_none</a></code></li>
+<li><code><a title="expression.core.Some.is_some" href="#expression.core.Some.is_some">is_some</a></code></li>
+<li><code><a title="expression.core.Some.map" href="#expression.core.Some.map">map</a></code></li>
+<li><code><a title="expression.core.Some.map2" href="#expression.core.Some.map2">map2</a></code></li>
+<li><code><a title="expression.core.Some.or_else" href="#expression.core.Some.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.Some.to_list" href="#expression.core.Some.to_list">to_list</a></code></li>
+<li><code><a title="expression.core.Some.to_seq" href="#expression.core.Some.to_seq">to_seq</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>

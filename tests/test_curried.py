@@ -1,7 +1,7 @@
 from typing import Callable, overload
 
 import pytest
-from fslash.core import curried
+from expression.core import curried
 
 
 def test_curried_simple():

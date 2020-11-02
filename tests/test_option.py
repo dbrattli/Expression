@@ -1,8 +1,8 @@
 from typing import Any, Generator
 
 import pytest
-from fslash import ce as effect
-from fslash.core import Nothing, Option, Some, option, pipe, pipe2
+from expression import ce as effect
+from expression.core import Nothing, Option, Some, option, pipe, pipe2
 from hypothesis import given
 from hypothesis import strategies as st
 from pampy import _, match

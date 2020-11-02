@@ -1,21 +1,39 @@
-# F/
+# Expression
 
-[![PyPI](https://img.shields.io/pypi/v/fslash.svg)](https://pypi.python.org/pypi/FSlash)
-![Python package](https://github.com/dbrattli/fslash/workflows/Python%20package/badge.svg)
-![Upload Python Package](https://github.com/dbrattli/fslash/workflows/Upload%20Python%20Package/badge.svg)
-[![codecov](https://codecov.io/gh/dbrattli/FSlash/branch/master/graph/badge.svg)](https://codecov.io/gh/dbrattli/FSlash)
+[![PyPI](https://img.shields.io/pypi/v/expression.svg)](https://pypi.python.org/pypi/Expression)
+![Python package](https://github.com/dbrattli/expression/workflows/Python%20package/badge.svg)
+![Upload Python Package](https://github.com/dbrattli/expression/workflows/Upload%20Python%20Package/badge.svg)
+[![codecov](https://codecov.io/gh/dbrattli/expression/branch/master/graph/badge.svg)](https://codecov.io/gh/dbrattli/expression)
 
-> Python :heart: F#
+> Expressions evaluates to a value. Statements do something.
 
-FSlash (F/) aims to be a solid library for practical functional
+Expression aims to be a solid library for practical functional
 programming in Python 3.8+. By practical we mean that the goal of the
-library if to enable you to do meaningful and productive functional
+library if to enable you to do productive and meaningful functional
 programming in Python instead of being a [Monad
 tutorial](https://github.com/dbrattli/OSlash).
 
 Python is a multi-paradigm programming language that also supports
 functional programming constructs such as functions, higher-order
 functions, lambdas, and in many ways favors composition over inheritance.
+
+> Better Python with F#
+
+Expression tries to make a better Python by providing several functional
+features inspired by [F#](https://fsharp.org) into Python. This serves two purposes:
+
+- Make it easier for Python programmers to learn F# by starting out in a
+  programming language they already know. Then get inspired to [try out
+  F#](https://aka.ms/fsharphome) by itself.
+- Make it easier for F# developers to use Python when needed, and re-use many
+  of the concepts and abstractions that they already know and love.
+
+Expression will enable you to work with Python along with F# using many of
+the same programming concepts and abstractions. This enables concepts
+such as [Railway oriented
+programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
+and predictable error handling. Pipelining for workflows, computational
+expressions, etc.
 
 F# is a functional programming language for .NET that is succinct
 (concise, readable and type-safe) and kind of
@@ -26,31 +44,13 @@ like Python than C# and F# can also do a lot of things better than Python:
 - Type inference, the compiler deduces types during compilation
 - Expression based language
 
-> Better Python with F#
-
-FSlash tries to make a better Python by providing several functional
-features inspired by [F#](https://fsharp.org) into Python. This serves two purposes:
-
-- Make it easier for Python programmers to learn F# by starting out in a
-  programming language they already know. Then get inspired to [try out
-  F#](https://aka.ms/fsharphome) by itself.
-- Make it easier for F# developers to use Python when needed, and re-use many
-  of the concepts and abstractions that they already know and love.
-
-FSlash will enable you to work with Python along with F# using many of
-the same programming concepts and abstractions. This enables concepts
-such as [Railway oriented
-programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
-and predictable error handling. Pipelining for workflows, computational
-expressions, etc.
-
 ## Getting Started
 
-You can install the latest `fslash` from PyPI by running `pip` (or `pip3`).
-Note that `fslash` only works for Python 3.8+.
+You can install the latest `expression` from PyPI by running `pip` (or `pip3`).
+Note that `expression` only works for Python 3.8+.
 
 ```sh
-$ pip3 install fslash
+$ pip3 install expression
 ```
 
 ## Why
@@ -71,12 +71,12 @@ Oslo 2020. Doing a transpiler like [Fable](https://fable.io) for Python is one
 option, but a Python library may give a lower barrier and a better introduction
 to existing Python programmers.
 
-I named the project FSlash since it's an F# inspired version of my previously
-written [OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I
-ported a number of Haskell abstractions to Python. I never felt that OSlash was
-really practically usable in Python, but F# is much closer to Python than
-Haskell, so it makes more sense to try and make a functional library inspired
-by F# instead.
+Expression is an F# inspired version of my previously written
+[OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I ported a
+number of Haskell abstractions to Python. I never felt that OSlash was really
+practically usable in Python, but F# is much closer to Python than Haskell, so
+it makes more sense to try and make a functional library inspired by F#
+instead.
 
 ## Goals
 
@@ -96,7 +96,7 @@ by F# instead.
 
 ## Supported features
 
-FSlash will never provide you with all the features of F# and .NET. We are
+Expression will never provide you with all the features of F# and .NET. We are
 providing a few of the features we think are useful, and will add more
 on-demand as we go along.
 
@@ -104,7 +104,7 @@ on-demand as we go along.
 - **Result** - for better error handling and enables railway-oriented programming
   in Python.
 - **Sequence** - a better [itertools](https://docs.python.org/3/library/itertools.html) and fully compatible with Python iterables.
-- **List** - an immutable list type.
+- **FrozenList** - a frozen and immutable list type.
 - **Computational Expressions**: this is actually amazing stuff
   - **option** - an optional world for working with optional values
   - **result** - an error handling world for working with result values
@@ -118,12 +118,12 @@ structural pattern matching for Python.
 
 ### Pipelining
 
-OSlash provides a `pipe` function similar to `|>` in F#. We don't want to
+Expression provides a `pipe` function similar to `|>` in F#. We don't want to
 overload any Python operators e.g `|` so `pipe` is a plain old function taking
 N-arguments and thus lets you pipe a value though any number of functions.
 
 ```py
-from fslash.core import pipe
+from expression.core import pipe
 
 gn = lambda g: g * y
 fn = lambda x: x + z
@@ -136,11 +136,11 @@ value = pipe(
 assert value == gn(fn(x))
 ```
 
-F/ objects also have a pipe method so you can dot chain pipelines
+Expression objects also have a pipe method so you can dot chain pipelines
 directly on the object:
 
 ```py
-from fslash.core import pipe
+from expression.core import pipe
 
 gn = lambda g: g * y
 fn = lambda x: x + z
@@ -168,7 +168,7 @@ ys = xs.pipe(
 Functions may even be composed directly into custom operators:
 
 ```py
-from fslash.core import compose
+from expression.core import compose
 
 custom = compose(
     seq.map(lambda x: x * 10),
@@ -187,7 +187,7 @@ value or variable. An option has an underlying type and can hold a value of
 that type `Some(value)`, or it might not have the value `Nothing`.
 
 ```py
-from fslash.core import Some, Nothing, Option
+from expression.core import Some, Nothing, Option
 
 def keep_positive(a: int) -> Option[int]:
     if a > 0:
@@ -207,13 +207,13 @@ def exists(x : Option[int]) -> bool:
 ```
 
 Options as decorators for computational expressions. Computational expressions
-in OSlash are implemented as coroutines ([enhanced
+in Expression are implemented as coroutines ([enhanced
 generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`, `yield from`
 and `return` to consume or generate optional values:
 
 ```py
-from fslash.builders import option
-from fslash.core import Some
+from expression.builders import option
+from expression.core import Some
 
 @option
 def fn():
@@ -233,8 +233,8 @@ result of the expression will be `Nothing`. Thus results from such an option
 decorated function can either be `Ok(value)` or `Error(error_value)`.
 
 ```py
-from fslash.core import Some, Nothing
-from fslash.builders import option
+from expression.core import Some, Nothing
+from expression.builders import option
 
 @option
 def fn():
@@ -251,8 +251,8 @@ assert xs is Nothing
 
 For more information about options:
 
-- [Tutorial](https://github.com/dbrattli/FSlash/blob/master/notebooks/Options.ipynb)
-- [API reference](https://dbrattli.github.io/FSlash/fslash/core/option.html)
+- [Tutorial](https://github.com/dbrattli/Expression/blob/master/notebooks/Options.ipynb)
+- [API reference](https://dbrattli.github.io/Expression/expression/core/option.html)
 
 ### Results
 
@@ -262,8 +262,8 @@ for errors, e.g an exception type or similar. This is great when you want to
 know why some operation failed (not just `Nothing`).
 
 ```py
-from fslash.core import Result, Ok, Error, pipe
-from fslash.builders import result
+from expression.core import Result, Ok, Error, pipe
+from expression.builders import result
 
 @result
 def fn():
@@ -288,7 +288,7 @@ using with functional programming.
 xs = range(100)
 ys = functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
-# With F/ you pipe the result so it flows from one operator to the next:
+# With Expression you pipe the result so it flows from one operator to the next:
 ys = seq.of(xs).pipe(
     seq.map(lambda x: x * 10),
     seq.filter(lambda x: x > 100),
@@ -304,27 +304,27 @@ In F# you modules are capitalized, in Python they are lowercase
 E.g in F# `Option` is both a module and a type. In Python the module is
 `option` and the type is capitalized i.e `Option`.
 
-Thus in F/ you use `option` as the module to access module functions such as
+Thus in Expression you use `option` as the module to access module functions such as
 `option.map` and the name `Option` for the type itself.
 
 ```py
->>> from fslash.core import Option, option
+>>> from expression.core import Option, option
 >>> Option
-<class 'fslash.core.option.Option'>
+<class 'expression.core.option.Option'>
 >>> option
-<module 'fslash.core.option' from '/Users/dbrattli/Developer/Github/FSlash/fslash/core/option.py'>
+<module 'expression.core.option' from '/Users/dbrattli/Developer/Github/Expression/expression/core/option.py'>
 ```
 
 ## Common Gotchas and Pitfalls
 
 A list of common problems and how you may solve it:
 
-### The FSlash List type has the same name as the builtin List type in Python
+### The Expression List type has the same name as the builtin List type in Python
 
-You can easily import the FSlash list module with e.g a different name:
+You can easily import the Expression list module with e.g a different name:
 
 ```py
-from fslash.collections import List as FList, list as flist
+from expression.collections import List as FList, list as flist
 ```
 
 ... or you can rename the standard Python list:
@@ -335,11 +335,11 @@ from typing import List as PyList
 ```
 
 
-### FSlash is missing the function / operator I need
+### Expression is missing the function / operator I need
 
 Remember that everything is a function, so you can easily implement the
-function yourself and use it with FSlash. If you think the function is
-also usable for others, then please open a PR to include it with FSlash.
+function yourself and use it with Expression. If you think the function is
+also usable for others, then please open a PR to include it with Expression.
 
 ## Resources
 
@@ -366,4 +366,4 @@ formatted using [Black](https://github.com/psf/black)
 
 ## License
 
-MIT, see [LICENSE](https://github.com/dbrattli/FSlash/blob/master/LICENSE).
+MIT, see [LICENSE](https://github.com/dbrattli/Expression/blob/master/LICENSE).

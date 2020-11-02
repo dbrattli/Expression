@@ -1,6 +1,6 @@
 from typing import Callable
 
-from fslash.core import compose, identity
+from expression.core import compose, identity
 from hypothesis import given
 from hypothesis import strategies as st
 

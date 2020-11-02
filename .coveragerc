@@ -3,7 +3,7 @@ omit =
     tests/*
     */python?.?/*
     */site-packages/nose/*
-    fslash/_version.py
+    expression/_version.py
 exclude_lines =
     pragma: no cover
     return NotImplemented

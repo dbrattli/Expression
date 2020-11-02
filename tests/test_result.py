@@ -1,10 +1,10 @@
 from typing import Callable, Generator, List, Optional
 
 import pytest
-from fslash import builder as ce
-from fslash.core import Error, Ok, Result, result
-from fslash.core.result import ResultException
-from fslash.extra.result import sequence
+from expression import builder as ce
+from expression.core import Error, Ok, Result, result
+from expression.core.result import ResultException
+from expression.extra.result import sequence
 from hypothesis import given
 from hypothesis import strategies as st
 from pampy import _, match

@@ -114,9 +114,6 @@ venv.bak/
 .spyderproject
 .spyproject
 
-# Fslashe project settings
-.Fslasheproject
-
 # mkdocs documentation
 /site
 

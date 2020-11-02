@@ -1,7 +1,7 @@
 from typing import Any, Awaitable, Callable, Dict, TypeVar
 
 from aiohttp import ClientResponse
-from fslash.core import Nothing, Ok, Option, Result, option
+from expression.core import Nothing, Ok, Option, Result, option
 
 from .context import Context, HttpContext, HttpMethod
 

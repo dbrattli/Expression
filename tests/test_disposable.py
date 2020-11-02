@@ -1,5 +1,5 @@
 import pytest
-from fslash.system import AsyncDisposable, Disposable, ObjectDisposedException
+from expression.system import AsyncDisposable, Disposable, ObjectDisposedException
 
 
 def test_disposable_works():

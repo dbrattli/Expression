@@ -1,5 +1,5 @@
 import pytest
-from fslash.system import CancellationToken, CancellationTokenSource, ObjectDisposedException
+from expression.system import CancellationToken, CancellationTokenSource, ObjectDisposedException
 
 
 def test_token_none_works():
