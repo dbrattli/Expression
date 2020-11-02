@@ -83,7 +83,7 @@ sequence of their response.</p></div>
     &#34;&#34;&#34;
 
     # flake8: noqa: T484
-    @builder.result
+    @effect.result
     def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Generator[TResult, TResult, List[TResult]]:
         &#34;&#34;&#34;Same as:
         &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))

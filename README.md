@@ -105,9 +105,9 @@ on-demand as we go along.
   in Python.
 - **Sequence** - a better [itertools](https://docs.python.org/3/library/itertools.html) and fully compatible with Python iterables.
 - **FrozenList** - a frozen and immutable list type.
-- **Computational Expressions**: this is actually amazing stuff
-  - **option** - an optional world for working with optional values
-  - **result** - an error handling world for working with result values
+- **Effects**: - light weight computational expressions for Python. This is actually amazing stuff.
+  - **option** - an optional world for working with optional values.
+  - **result** - an error handling world for working with result values.
 - **Mailbox Processor**: for lock free programming using the [Actor model](https://en.wikipedia.org/wiki/Actor_model).
 - **Cancellation Token**: for cancellation of asynchronous (and synchronous) workflows.
 - **Disposable**: For resource management.
@@ -235,9 +235,9 @@ an option decorated function can either be `Ok(value)` or
 
 ```py
 from expression.core import Some, Nothing
-from expression.builders import option
+from expression import effect
 
-@option
+@effect.option
 def fn():
     x = yield from Nothing # or a function returning Nothing
 
@@ -264,9 +264,9 @@ when you want to know why some operation failed (not just `Nothing`).
 
 ```py
 from expression.core import Result, Ok, Error, pipe
-from expression.builders import result
+from expression import effect
 
-@result
+@effect.result
 def fn():
     x = yield from Ok(42)
     y = yield from OK(10)

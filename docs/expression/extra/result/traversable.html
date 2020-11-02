@@ -30,7 +30,7 @@
 <pre><code class="python">&#34;&#34;&#34;Data structures that can be traversed from left to right, performing an action on each element.&#34;&#34;&#34;
 from typing import Callable, Generator, List, TypeVar
 
-from expression import builder
+from expression import effect
 from expression.collections import seq
 from expression.core import Ok, Result, identity, pipe
 
@@ -46,7 +46,7 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
     &#34;&#34;&#34;
 
     # flake8: noqa: T484
-    @builder.result
+    @effect.result
     def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Generator[TResult, TResult, List[TResult]]:
         &#34;&#34;&#34;Same as:
         &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
@@ -107,7 +107,7 @@ sequence of their response.</p></div>
     &#34;&#34;&#34;
 
     # flake8: noqa: T484
-    @builder.result
+    @effect.result
     def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Generator[TResult, TResult, List[TResult]]:
         &#34;&#34;&#34;Same as:
         &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))

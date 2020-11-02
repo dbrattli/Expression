@@ -30,7 +30,7 @@
 # See License.txt in the project root for license information.
 
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, Callable, Generic, Tuple, TypeVar, cast
 
 from expression.core import Nothing, Option, Some, failwith
 
@@ -101,88 +101,124 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
         return Some(MapTreeNode(key, value, left, right, m + 1))  # new map is higher by 1 than the highest
 
 
-# def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
-#     t1h = height(t1)
-#     t2h = height(t2)
-#     if t2h &gt; t1h + tolerance:  # right is heavier than left
-#         if isinstance(t2.value, MapTreeNode):
-#             t2_ = cast(MapTreeNode[Key, Value], t2.value)
-#             # one of the nodes must have height &gt; height t1 + 1
-#             if height(t2_.left) &gt; t1h + 1:  # balance left: combination
-#                 if isinstance(left.value)
-#                 match t2&#39;.left.value with
-#                 | :? MapTreeNode[Key, Value] as t2l -&gt;
-#                     mk (mk t1 k v t2l.left) t2l.Key t2l.value (mk t2l.right t2&#39;.Key t2&#39;.value t2&#39;.right)
-#                 | _ -&gt; failwith &#34;internal error: Map.rebalance&#34;
-#             else: # rotate left
-#                 mk (mk t1 k v t2&#39;.left) t2&#39;.Key t2&#39;.value t2&#39;.right
-#         | _ -&gt; failwith(&#34;internal error: Map.rebalance&#34;)
-#     else
-#         if t1h &gt; t2h + tolerance then // left is heavier than right
-#             match t1.value with
-#             | :? MapTreeNode[Key, Value] as t1&#39; -&gt;
-#                 // one of the nodes must have height &gt; height t2 + 1
-#                 if height t1&#39;.right &gt; t2h + 1 then // balance right: combination
-#                     match t1&#39;.right.value with
-#                     | :? MapTreeNode[Key, Value] as t1r -&gt;
-#                         mk (mk t1&#39;.left t1&#39;.Key t1&#39;.value t1r.left) t1r.Key t1r.value (mk t1r.right k v t2)
-#                     | _ -&gt; failwith &#34;internal error: Map.rebalance&#34;
-#                 else
-#                     mk t1&#39;.left t1&#39;.Key t1&#39;.value (mk t1&#39;.right k v t2)
-#             | _ -&gt; failwith &#34;internal error: Map.rebalance&#34;
-#         else mk t1 k v t2
+def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
+    t1h = height(t1)
+    t2h = height(t2)
+    if t2h &gt; t1h + tolerance:  # right is heavier than left
+        if isinstance(t2.value, MapTreeNode):
+            t2_ = cast(MapTreeNode[Key, Value], t2.value)
+            # one of the nodes must have height &gt; height t1 + 1
+            if height(t2_.left) &gt; t1h + 1:  # balance left: combination
+                if isinstance(t2_.left.value, MapTreeNode):
+                    t2l = cast(MapTreeNode[Key, Value], t2_.left.value)
 
-# let rec add (comparer: IComparer&lt;Key&gt;) k (v: Value) (m: MapTree[Key, Value]) : MapTree[Key, Value] =
-#     match m with
-#     | None -&gt; MapTreeLeaf (k,v) |&gt; Some
-#     | Some m2 -&gt;
-#         let c = comparer.Compare(k, m2.Key)
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             if c &lt; 0 then rebalance (add comparer k v mn.left) mn.Key mn.value mn.right
-#             elif c = 0 then MapTreeNode(k,v,mn.left,mn.right,mn.Height) :&gt; MapTreeLeaf[Key, Value] |&gt; Some
-#             else rebalance mn.left mn.Key mn.value (add comparer k v mn.right)
-#         | _ -&gt;
-#             if c &lt; 0   then MapTreeNode (k,v,empty,m,2) :&gt; MapTreeLeaf[Key, Value] |&gt; Some
-#             elif c = 0 then MapTreeLeaf (k,v) |&gt; Some
-#             else            MapTreeNode (k,v,m,empty,2) :&gt; MapTreeLeaf[Key, Value] |&gt; Some
+                    return mk(mk(t1, k, v, t2l.left), t2l.key, t2l.value, mk(t2l.right, t2_.key, t2_.value, t2_.right))
+                else:
+                    failwith(&#34;internal error: Map.rebalance&#34;)
+            else:  # rotate left
+                return mk(mk(t1, k, v, t2_.left), t2_.key, t2_.value, t2_.right)
+        else:
+            failwith(&#34;internal error: Map.rebalance&#34;)
+    else:
+        if t1h &gt; t2h + tolerance:  # left is heavier than right
+            if isinstance(t1.value, MapTreeNode):
+                t1_ = cast(MapTreeNode[Key, Value], t1.value)
+                # one of the nodes must have height &gt; height t2 + 1
+                if height(t1_.right) &gt; t2h + 1:  # balance right: combination
+                    if isinstance(t1_.right.value, MapTreeNode):
+                        t1r = cast(MapTreeNode[Key, Value], t1_.right.value)
+                        return mk(
+                            mk(t1_.left, t1_.key, t1_.value, t1r.left), t1r.key, t1r.value, mk(t1r.right, k, v, t2)
+                        )
+                    else:
+                        failwith(&#34;internal error: Map.rebalance&#34;)
+                else:
+                    return mk(t1_.left, t1_.key, t1_.value, mk(t1_.right, k, v, t2))
+            else:
+                failwith(&#34;internal error: Map.rebalance&#34;)
+        else:
+            return mk(t1, k, v, t2)
 
-# let rec tryFind (comparer: IComparer&lt;Key&gt;) k (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -&gt; None
-#     | Some m2 -&gt;
-#         let c = comparer.Compare(k, m2.Key)
-#         if c = 0 then Some m2.value
-#         else
-#             match m2 with
-#             | :? MapTreeNode[Key, Value] as mn -&gt;
-#                 tryFind comparer k (if c &lt; 0 then mn.left else mn.right)
-#             | _ -&gt; None
 
-# let find (comparer: IComparer&lt;Key&gt;) k (m: MapTree[Key, Value]) =
-#     match tryFind comparer k m with
-#     | Some v -&gt; v
-#     | None -&gt; raise (KeyNotFoundException())
+def add(k: Key, v: Value, m: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            if k &lt; mn.key:
+                return rebalance(add(k, v, mn.left), mn.key, mn.value, mn.right)
+            elif k == mn.key:
+                return Some(MapTreeNode(k, v, mn.left, mn.right, mn.height))
+            else:
+                rebalance(mn.left, mn.key, mn.value, add(k, v, mn.right))
+        else:
+            if k &lt; m2.key:
+                return Some(MapTreeNode(k, v, empty, m, 2))
+            elif k == m2:
+                return Some(MapTreeLeaf(k, v))
+            else:
+                return Some(MapTreeNode(k, v, m, empty, 2))
+    else:
+        return Some(MapTreeLeaf(k, v))
 
-# let partition1 (comparer: IComparer&lt;Key&gt;) (f: OptimizedClosures.FSharpFunc&lt;_, _, _&gt;) k v (acc1, acc2) =
-#     if f.Invoke (k, v) then (add comparer k v acc1, acc2) else (acc1, add comparer k v acc2)
 
-# let rec partitionAux (comparer: IComparer&lt;Key&gt;) (f: OptimizedClosures.FSharpFunc&lt;_, _, _&gt;) (m: MapTree[Key, Value]) acc =
-#     match m with
-#     | None -&gt; acc
-#     | Some m2 -&gt;
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             let acc = partitionAux comparer f mn.right acc
-#             let acc = partition1 comparer f mn.Key mn.value acc
-#             partitionAux comparer f mn.left acc
-#         | _ -&gt; partition1 comparer f m2.Key m2.value acc
+def try_find(k: Key, m: MapTree[Key, Value]) -&gt; Option[Value]:
+    for m2 in m.to_list():
+        if k == m2.key:
+            return Some(m2.value)
+        else:
+            if isinstance(m2, MapTreeNode):
+                mn = cast(MapTreeNode[Key, Value], m2)
+                return try_find(k, mn.left if k &lt; m2 else mn.right)
+            else:
+                return Nothing
+    else:
+        return Nothing
 
-# let partition (comparer: IComparer&lt;Key&gt;) f m =
-#     partitionAux comparer (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m (empty, empty)
 
-# let filter1 (comparer: IComparer&lt;Key&gt;) (f: OptimizedClosures.FSharpFunc&lt;_, _, _&gt;) k v acc =
-#     if f.Invoke (k, v) then add comparer k v acc else acc
+def find(k: Key, m: MapTree[Key, Value]) -&gt; Value:
+    for v in try_find(k, m).to_list():
+        return v
+    else:
+        raise KeyError(&#34;Key not found&#34;)
+
+
+def partition1(
+    f: Callable[[Key, Value], bool], k: Key, v: Value, acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
+) -&gt; Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+    (acc1, acc2) = acc
+    if f(k, v):
+        return (add(k, v, acc1), acc2)
+    else:
+        return (acc1, add(k, v, acc2))
+
+
+def partition_aux(
+    f: Callable[[Key, Value], bool], m: MapTree[Key, Value], acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
+) -&gt; Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+    for m2 in m:
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            acc = partition_aux(f, mn.right, acc)
+            acc = partition1(f, mn.key, mn.value, acc)
+            return partition_aux(f, mn.left, acc)
+        else:
+            return partition1(f, m2.key, m2.value, acc)
+    else:
+        return acc
+
+
+def partition(
+    f: Callable[[Key, Value], bool], m: MapTree[Key, Value]
+) -&gt; Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+    return partition_aux(f, m, (empty, empty))
+
+
+def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
+    if f(k, v):
+        return add(k, v, acc)
+    else:
+        return acc
+
 
 # let rec filterAux (comparer: IComparer&lt;Key&gt;) (f: OptimizedClosures.FSharpFunc&lt;_, _, _&gt;) (m: MapTree[Key, Value]) acc =
 #     match m with
@@ -191,9 +227,9 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #         match m2 with
 #         | :? MapTreeNode[Key, Value] as mn -&gt;
 #             let acc = filterAux comparer f mn.left acc
-#             let acc = filter1 comparer f mn.Key mn.value acc
+#             let acc = filter1 comparer f mn.key mn.value acc
 #             filterAux comparer f mn.right acc
-#         | _ -&gt; filter1 comparer f m2.Key m2.value acc
+#         | _ -&gt; filter1 comparer f m2.key m2.value acc
 
 # let filter (comparer: IComparer&lt;Key&gt;) f m =
 #     filterAux comparer (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m empty
@@ -204,25 +240,25 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #     | Some m2 -&gt;
 #         match m2 with
 #         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             if isEmpty mn.left then mn.Key, mn.value, mn.right
-#             else let k3, v3, l&#39; = spliceOutSuccessor mn.left in k3, v3, mk l&#39; mn.Key mn.value mn.right
-#         | _ -&gt; m2.Key, m2.value, empty
+#             if isEmpty mn.left then mn.key, mn.value, mn.right
+#             else let k3, v3, l&#39; = spliceOutSuccessor mn.left in k3, v3, mk l&#39; mn.key mn.value mn.right
+#         | _ -&gt; m2.key, m2.value, empty
 
 # let rec remove (comparer: IComparer&lt;Key&gt;) k (m: MapTree[Key, Value]) =
 #     match m with
 #     | None -&gt; empty
 #     | Some m2 -&gt;
-#         let c = comparer.Compare(k, m2.Key)
+#         let c = comparer.Compare(k, m2.key)
 #         match m2 with
 #         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             if c &lt; 0 then rebalance (remove comparer k mn.left) mn.Key mn.value mn.right
+#             if c &lt; 0 then rebalance (remove comparer k mn.left) mn.key mn.value mn.right
 #             elif c = 0 then
 #                 if isEmpty mn.left then mn.right
 #                 elif isEmpty mn.right then mn.left
 #                 else
 #                     let sk, sv, r&#39; = spliceOutSuccessor mn.right
 #                     mk mn.left sk sv r&#39;
-#             else rebalance mn.left mn.Key mn.value (remove comparer k mn.right)
+#             else rebalance mn.left mn.key mn.value (remove comparer k mn.right)
 #         | _ -&gt;
 #             if c = 0 then empty else m
 
@@ -235,9 +271,9 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #     | Some m2 -&gt;
 #         match m2 with
 #         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             let c = comparer.Compare(k, mn.Key)
+#             let c = comparer.Compare(k, mn.key)
 #             if c &lt; 0 then
-#                 rebalance (change comparer k u mn.left) mn.Key mn.value mn.right
+#                 rebalance (change comparer k u mn.left) mn.key mn.value mn.right
 #             elif c = 0 then
 #                 match u (Some mn.value) with
 #                 | None -&gt;
@@ -248,9 +284,9 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #                         mk mn.left sk sv r&#39;
 #                 | Some v -&gt; MapTreeNode (k, v, mn.left, mn.right, mn.Height) :&gt; MapTreeLeaf&lt;Key,Value&gt; |&gt; Some
 #             else
-#                 rebalance mn.left mn.Key mn.value (change comparer k u mn.right)
+#                 rebalance mn.left mn.key mn.value (change comparer k u mn.right)
 #         | _ -&gt;
-#             let c = comparer.Compare(k, m2.Key)
+#             let c = comparer.Compare(k, m2.key)
 #             if c &lt; 0 then
 #                 match u None with
 #                 | None -&gt; m
@@ -268,7 +304,7 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #     match m with
 #     | None -&gt; false
 #     | Some m2 -&gt;
-#         let c = comparer.Compare(k, m2.Key)
+#         let c = comparer.Compare(k, m2.key)
 #         match m2 with
 #         | :? MapTreeNode[Key, Value] as mn -&gt;
 #             if c &lt; 0 then mem comparer k mn.left
@@ -280,8 +316,8 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #     | None -&gt; ()
 #     | Some m2 -&gt;
 #         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt; iterOpt f mn.left; f.Invoke (mn.Key, mn.value); iterOpt f mn.right
-#         | _ -&gt; f.Invoke (m2.Key, m2.value)
+#         | :? MapTreeNode[Key, Value] as mn -&gt; iterOpt f mn.left; f.Invoke (mn.key, mn.value); iterOpt f mn.right
+#         | _ -&gt; f.Invoke (m2.key, m2.value)
 
 # let iter f m =
 #     iterOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
@@ -295,11 +331,11 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #             match tryPickOpt f mn.left with
 #             | Some _ as res -&gt; res
 #             | None -&gt;
-#             match f.Invoke (mn.Key, mn.value) with
+#             match f.Invoke (mn.key, mn.value) with
 #             | Some _ as res -&gt; res
 #             | None -&gt;
 #             tryPickOpt f mn.right
-#         | _ -&gt; f.Invoke (m2.Key, m2.value)
+#         | _ -&gt; f.Invoke (m2.key, m2.value)
 
 # let tryPick f m =
 #     tryPickOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
@@ -309,8 +345,8 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #     | None -&gt; false
 #     | Some m2 -&gt;
 #         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt; existsOpt f mn.left || f.Invoke (mn.Key, mn.value) || existsOpt f mn.right
-#         | _ -&gt; f.Invoke (m2.Key, m2.value)
+#         | :? MapTreeNode[Key, Value] as mn -&gt; existsOpt f mn.left || f.Invoke (mn.key, mn.value) || existsOpt f mn.right
+#         | _ -&gt; f.Invoke (m2.key, m2.value)
 
 # let exists f m =
 #     existsOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
@@ -320,8 +356,8 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #     | None -&gt; true
 #     | Some m2 -&gt;
 #         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt; forallOpt f mn.left &amp;&amp; f.Invoke (mn.Key, mn.value) &amp;&amp; forallOpt f mn.right
-#         | _ -&gt; f.Invoke (m2.Key, m2.value)
+#         | :? MapTreeNode[Key, Value] as mn -&gt; forallOpt f mn.left &amp;&amp; f.Invoke (mn.key, mn.value) &amp;&amp; forallOpt f mn.right
+#         | _ -&gt; f.Invoke (m2.key, m2.value)
 
 # let forall f m =
 #     forallOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
@@ -335,8 +371,8 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #             let l2 = map f mn.left
 #             let v2 = f mn.value
 #             let r2 = map f mn.right
-#             MapTreeNode (mn.Key, v2, l2, r2, mn.Height) :&gt; MapTreeLeaf&lt;Key, &#39;Result&gt; |&gt; Some
-#         | _ -&gt; MapTreeLeaf (m2.Key, f m2.value) |&gt; Some
+#             MapTreeNode (mn.key, v2, l2, r2, mn.Height) :&gt; MapTreeLeaf&lt;Key, &#39;Result&gt; |&gt; Some
+#         | _ -&gt; MapTreeLeaf (m2.key, f m2.value) |&gt; Some
 
 # let rec mapiOpt (f: OptimizedClosures.FSharpFunc&lt;Key, Value, &#39;Result&gt;) (m: MapTree[Key, Value]) =
 #     match m with
@@ -345,10 +381,10 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #         match m2 with
 #         | :? MapTreeNode[Key, Value] as mn -&gt;
 #             let l2 = mapiOpt f mn.left
-#             let v2 = f.Invoke (mn.Key, mn.value)
+#             let v2 = f.Invoke (mn.key, mn.value)
 #             let r2 = mapiOpt f mn.right
-#             MapTreeNode (mn.Key, v2, l2, r2, mn.Height) :&gt; MapTreeLeaf&lt;Key, &#39;Result&gt; |&gt; Some
-#         | _ -&gt; MapTreeLeaf (m2.Key, f.Invoke (m2.Key, m2.value)) |&gt; Some
+#             MapTreeNode (mn.key, v2, l2, r2, mn.Height) :&gt; MapTreeLeaf&lt;Key, &#39;Result&gt; |&gt; Some
+#         | _ -&gt; MapTreeLeaf (m2.key, f.Invoke (m2.key, m2.value)) |&gt; Some
 
 # let mapi f m =
 #     mapiOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
@@ -360,9 +396,9 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #         match m2 with
 #         | :? MapTreeNode[Key, Value] as mn -&gt;
 #             let x = foldBackOpt f mn.right x
-#             let x = f.Invoke (mn.Key, mn.value, x)
+#             let x = f.Invoke (mn.key, mn.value, x)
 #             foldBackOpt f mn.left x
-#         | _ -&gt; f.Invoke (m2.Key, m2.value, x)
+#         | _ -&gt; f.Invoke (m2.key, m2.value, x)
 
 # let foldBack f m x =
 #     foldBackOpt (OptimizedClosures.FSharpFunc&lt;_, _, _, _&gt;.Adapt f) m x
@@ -374,9 +410,9 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #         match m2 with
 #         | :? MapTreeNode[Key, Value] as mn -&gt;
 #             let x = foldOpt f x mn.left
-#             let x = f.Invoke (x, mn.Key, mn.value)
+#             let x = f.Invoke (x, mn.key, mn.value)
 #             foldOpt f x mn.right
-#         | _ -&gt; f.Invoke (x, m2.Key, m2.value)
+#         | _ -&gt; f.Invoke (x, m2.key, m2.value)
 
 # let fold f x m =
 #     foldOpt (OptimizedClosures.FSharpFunc&lt;_, _, _, _&gt;.Adapt f) x m
@@ -388,16 +424,16 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #         | Some m2 -&gt;
 #             match m2 with
 #             | :? MapTreeNode[Key, Value] as mn -&gt;
-#                 let cLoKey = comparer.Compare(lo, mn.Key)
-#                 let cKeyHi = comparer.Compare(mn.Key, hi)
+#                 let cLoKey = comparer.Compare(lo, mn.key)
+#                 let cKeyHi = comparer.Compare(mn.key, hi)
 #                 let x = if cLoKey &lt; 0 then foldFromTo f mn.left x else x
-#                 let x = if cLoKey &lt;= 0 &amp;&amp; cKeyHi &lt;= 0 then f.Invoke (mn.Key, mn.value, x) else x
+#                 let x = if cLoKey &lt;= 0 &amp;&amp; cKeyHi &lt;= 0 then f.Invoke (mn.key, mn.value, x) else x
 #                 let x = if cKeyHi &lt; 0 then foldFromTo f mn.right x else x
 #                 x
 #             | _ -&gt;
-#                 let cLoKey = comparer.Compare(lo, m2.Key)
-#                 let cKeyHi = comparer.Compare(m2.Key, hi)
-#                 let x = if cLoKey &lt;= 0 &amp;&amp; cKeyHi &lt;= 0 then f.Invoke (m2.Key, m2.value, x) else x
+#                 let cLoKey = comparer.Compare(lo, m2.key)
+#                 let cKeyHi = comparer.Compare(m2.key, hi)
+#                 let x = if cLoKey &lt;= 0 &amp;&amp; cKeyHi &lt;= 0 then f.Invoke (m2.key, m2.value, x) else x
 #                 x
 
 #     if comparer.Compare(lo, hi) = 1 then x else foldFromTo f m x
@@ -411,8 +447,8 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #         | None -&gt; acc
 #         | Some m2 -&gt;
 #             match m2 with
-#             | :? MapTreeNode[Key, Value] as mn -&gt; loop mn.left ((mn.Key, mn.value) :: loop mn.right acc)
-#             | _ -&gt; (m2.Key, m2.value) :: acc
+#             | :? MapTreeNode[Key, Value] as mn -&gt; loop mn.left ((mn.key, mn.value) :: loop mn.right acc)
+#             | _ -&gt; (m2.key, m2.value) :: acc
 #     loop m []
 
 # let toArray (m: MapTree[Key, Value]): (Key * Value)[] =
@@ -466,7 +502,7 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #         | Some m2 -&gt;
 #             match m2 with
 #             | :? MapTreeNode[Key, Value] as mn -&gt;
-#                 collapseLHS (mn.left :: (MapTreeLeaf (mn.Key, mn.value) |&gt; Some) :: mn.right :: rest)
+#                 collapseLHS (mn.left :: (MapTreeLeaf (mn.key, mn.value) |&gt; Some) :: mn.right :: rest)
 #             | _ -&gt; stack
 
 # let mkIterator m =
@@ -486,7 +522,7 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 #             match m with
 #             | :? MapTreeNode[Key, Value] -&gt;
 #                 failwith &#34;Please report error: Map iterator, unexpected stack for current&#34;
-#             | _ -&gt; new KeyValuePair&lt;_, _&gt;(m.Key, m.value)
+#             | _ -&gt; new KeyValuePair&lt;_, _&gt;(m.key, m.value)
 #     else
 #         notStarted()
 
@@ -533,6 +569,68 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="expression.collections.maptree.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>k: ~Key, v: ~Value, m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add(k: Key, v: Value, m: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            if k &lt; mn.key:
+                return rebalance(add(k, v, mn.left), mn.key, mn.value, mn.right)
+            elif k == mn.key:
+                return Some(MapTreeNode(k, v, mn.left, mn.right, mn.height))
+            else:
+                rebalance(mn.left, mn.key, mn.value, add(k, v, mn.right))
+        else:
+            if k &lt; m2.key:
+                return Some(MapTreeNode(k, v, empty, m, 2))
+            elif k == m2:
+                return Some(MapTreeLeaf(k, v))
+            else:
+                return Some(MapTreeNode(k, v, m, empty, 2))
+    else:
+        return Some(MapTreeLeaf(k, v))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.maptree.filter1"><code class="name flex">
+<span>def <span class="ident">filter1</span></span>(<span>f: Callable[[~Key, ~Value], bool], k: ~Key, v: ~Value, acc: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
+    if f(k, v):
+        return add(k, v, acc)
+    else:
+        return acc</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.maptree.find"><code class="name flex">
+<span>def <span class="ident">find</span></span>(<span>k: ~Key, m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> ~Value</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find(k: Key, m: MapTree[Key, Value]) -&gt; Value:
+    for v in try_find(k, m).to_list():
+        return v
+    else:
+        raise KeyError(&#34;Key not found&#34;)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.maptree.height"><code class="name flex">
 <span>def <span class="ident">height</span></span>(<span>m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> int</span>
 </code></dt>
@@ -585,6 +683,112 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
         return Some(MapTreeNode(key, value, left, right, m + 1))  # new map is higher by 1 than the highest</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.maptree.partition"><code class="name flex">
+<span>def <span class="ident">partition</span></span>(<span>f: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def partition(
+    f: Callable[[Key, Value], bool], m: MapTree[Key, Value]
+) -&gt; Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+    return partition_aux(f, m, (empty, empty))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.maptree.partition1"><code class="name flex">
+<span>def <span class="ident">partition1</span></span>(<span>f: Callable[[~Key, ~Value], bool], k: ~Key, v: ~Value, acc: Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def partition1(
+    f: Callable[[Key, Value], bool], k: Key, v: Value, acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
+) -&gt; Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+    (acc1, acc2) = acc
+    if f(k, v):
+        return (add(k, v, acc1), acc2)
+    else:
+        return (acc1, add(k, v, acc2))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.maptree.partition_aux"><code class="name flex">
+<span>def <span class="ident">partition_aux</span></span>(<span>f: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], acc: Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def partition_aux(
+    f: Callable[[Key, Value], bool], m: MapTree[Key, Value], acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
+) -&gt; Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+    for m2 in m:
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            acc = partition_aux(f, mn.right, acc)
+            acc = partition1(f, mn.key, mn.value, acc)
+            return partition_aux(f, mn.left, acc)
+        else:
+            return partition1(f, m2.key, m2.value, acc)
+    else:
+        return acc</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.maptree.rebalance"><code class="name flex">
+<span>def <span class="ident">rebalance</span></span>(<span>t1: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], k: ~Key, v: ~Value, t2: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
+    t1h = height(t1)
+    t2h = height(t2)
+    if t2h &gt; t1h + tolerance:  # right is heavier than left
+        if isinstance(t2.value, MapTreeNode):
+            t2_ = cast(MapTreeNode[Key, Value], t2.value)
+            # one of the nodes must have height &gt; height t1 + 1
+            if height(t2_.left) &gt; t1h + 1:  # balance left: combination
+                if isinstance(t2_.left.value, MapTreeNode):
+                    t2l = cast(MapTreeNode[Key, Value], t2_.left.value)
+
+                    return mk(mk(t1, k, v, t2l.left), t2l.key, t2l.value, mk(t2l.right, t2_.key, t2_.value, t2_.right))
+                else:
+                    failwith(&#34;internal error: Map.rebalance&#34;)
+            else:  # rotate left
+                return mk(mk(t1, k, v, t2_.left), t2_.key, t2_.value, t2_.right)
+        else:
+            failwith(&#34;internal error: Map.rebalance&#34;)
+    else:
+        if t1h &gt; t2h + tolerance:  # left is heavier than right
+            if isinstance(t1.value, MapTreeNode):
+                t1_ = cast(MapTreeNode[Key, Value], t1.value)
+                # one of the nodes must have height &gt; height t2 + 1
+                if height(t1_.right) &gt; t2h + 1:  # balance right: combination
+                    if isinstance(t1_.right.value, MapTreeNode):
+                        t1r = cast(MapTreeNode[Key, Value], t1_.right.value)
+                        return mk(
+                            mk(t1_.left, t1_.key, t1_.value, t1r.left), t1r.key, t1r.value, mk(t1r.right, k, v, t2)
+                        )
+                    else:
+                        failwith(&#34;internal error: Map.rebalance&#34;)
+                else:
+                    return mk(t1_.left, t1_.key, t1_.value, mk(t1_.right, k, v, t2))
+            else:
+                failwith(&#34;internal error: Map.rebalance&#34;)
+        else:
+            return mk(t1, k, v, t2)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.maptree.size"><code class="name flex">
 <span>def <span class="ident">size</span></span>(<span>x: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]])</span>
 </code></dt>
@@ -616,6 +820,29 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
             return acc + 1
     else:
         return acc</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.maptree.try_find"><code class="name flex">
+<span>def <span class="ident">try_find</span></span>(<span>k: ~Key, m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def try_find(k: Key, m: MapTree[Key, Value]) -&gt; Option[Value]:
+    for m2 in m.to_list():
+        if k == m2.key:
+            return Some(m2.value)
+        else:
+            if isinstance(m2, MapTreeNode):
+                mn = cast(MapTreeNode[Key, Value], m2)
+                return try_find(k, mn.left if k &lt; m2 else mn.right)
+            else:
+                return Nothing
+    else:
+        return Nothing</code></pre>
 </details>
 </dd>
 </dl>
@@ -709,12 +936,20 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="">
+<ul class="two-column">
+<li><code><a title="expression.collections.maptree.add" href="#expression.collections.maptree.add">add</a></code></li>
+<li><code><a title="expression.collections.maptree.filter1" href="#expression.collections.maptree.filter1">filter1</a></code></li>
+<li><code><a title="expression.collections.maptree.find" href="#expression.collections.maptree.find">find</a></code></li>
 <li><code><a title="expression.collections.maptree.height" href="#expression.collections.maptree.height">height</a></code></li>
 <li><code><a title="expression.collections.maptree.is_empty" href="#expression.collections.maptree.is_empty">is_empty</a></code></li>
 <li><code><a title="expression.collections.maptree.mk" href="#expression.collections.maptree.mk">mk</a></code></li>
+<li><code><a title="expression.collections.maptree.partition" href="#expression.collections.maptree.partition">partition</a></code></li>
+<li><code><a title="expression.collections.maptree.partition1" href="#expression.collections.maptree.partition1">partition1</a></code></li>
+<li><code><a title="expression.collections.maptree.partition_aux" href="#expression.collections.maptree.partition_aux">partition_aux</a></code></li>
+<li><code><a title="expression.collections.maptree.rebalance" href="#expression.collections.maptree.rebalance">rebalance</a></code></li>
 <li><code><a title="expression.collections.maptree.size" href="#expression.collections.maptree.size">size</a></code></li>
 <li><code><a title="expression.collections.maptree.size_aux" href="#expression.collections.maptree.size_aux">size_aux</a></code></li>
+<li><code><a title="expression.collections.maptree.try_find" href="#expression.collections.maptree.try_find">try_find</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

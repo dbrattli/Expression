@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
-<title>expression.builder.result API documentation</title>
+<title>expression.effect.result API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,7 +19,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>expression.builder.result</code></h1>
+<h1 class="title">Module <code>expression.effect.result</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
@@ -50,10 +50,10 @@ class ResultBuilder(Builder[Result[TSource, TError], TSource]):
         return pipe(xs, result.bind(binder))
 
 
-result_builder: ResultBuilder[Any, Any] = ResultBuilder()
+result_effect: ResultBuilder[Any, Any] = ResultBuilder()
 
 
-__all__ = [&#34;result_builder&#34;]</code></pre>
+__all__ = [&#34;result_effect&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -73,7 +73,7 @@ __all__ = [&#34;result_builder&#34;]</code></pre>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="expression.builder" href="index.html">expression.builder</a></code></li>
+<li><code><a title="expression.effect" href="index.html">expression.effect</a></code></li>
 </ul>
 </li>
 </ul>
