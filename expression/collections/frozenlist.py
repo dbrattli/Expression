@@ -15,7 +15,8 @@ Example:
 import builtins
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, Iterator, Optional, Sized, Tuple, TypeVar, Union, cast, overload
+from typing import (Any, Callable, Iterable, Iterator, Optional, Sized, Tuple,
+                    TypeVar, Union, cast, overload)
 
 from expression.core.option import Nothing, Option, Some, pipe
 
@@ -96,6 +97,28 @@ class FrozenList(Iterable[TSource], Sized, ABC):
 
     @abstractmethod
     def filter(self, predicate: Callable[[TSource], bool]) -> "FrozenList[TSource]":
+        raise NotImplementedError
+
+    @abstractmethod
+    def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
+        """Applies a function to each element of the collection,
+        threading an accumulator argument through the computation. Take
+        the second argument, and apply the function to it and the first
+        element of the list. Then feed this result into the function
+        along with the second element and so on. Return the final
+        result. If the input function is f and the elements are i0...iN
+        then computes f (... (f s i0) i1 ...) iN.
+
+        Args:
+            folder: The function to update the state given the input
+                elements.
+
+            state: The initial state.
+
+        Returns:
+            Partially applied fold function that takes the source list
+            and returns the final state value.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -392,6 +415,28 @@ class Cons(FrozenList[TSource]):
         filtered = tail.filter(predicate)
         return Cons(head, filtered) if predicate(head) else filtered
 
+    def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
+        """Applies a function to each element of the collection,
+        threading an accumulator argument through the computation. Take
+        the second argument, and apply the function to it and the first
+        element of the list. Then feed this result into the function
+        along with the second element and so on. Return the final
+        result. If the input function is f and the elements are i0...iN
+        then computes f (... (f s i0) i1 ...) iN.
+
+        Args:
+            folder: The function to update the state given the input
+                elements.
+
+            state: The initial state.
+
+        Returns:
+            Partially applied fold function that takes the source list
+            and returns the final state value.
+        """
+        head, tail = self._value
+        return tail.fold(folder, folder(state, head))
+
     def head(self) -> TSource:
         """Returns the first element of the list.
 
@@ -591,6 +636,27 @@ class _Nil(FrozenList[TSource]):
 
     def filter(self, predicate: Callable[[TSource], bool]) -> FrozenList[TSource]:
         return Nil
+
+    def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
+        """Applies a function to each element of the collection,
+        threading an accumulator argument through the computation. Take
+        the second argument, and apply the function to it and the first
+        element of the list. Then feed this result into the function
+        along with the second element and so on. Return the final
+        result. If the input function is f and the elements are i0...iN
+        then computes f (... (f s i0) i1 ...) iN.
+
+        Args:
+            folder: The function to update the state given the input
+                elements.
+
+            state: The initial state.
+
+        Returns:
+            Partially applied fold function that takes the source list
+            and returns the final state value.
+        """
+        return state
 
     def head(self) -> TSource:
         """Returns the first element of the list.
@@ -827,6 +893,33 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[FrozenList[TSource
     return _filter
 
 
+def fold(
+    folder: Callable[[TState, TSource], TState], state: TState
+) -> Callable[[FrozenList[TSource]], TState]:
+    """Applies a function to each element of the collection, threading
+    an accumulator argument through the computation. Take the second
+    argument, and apply the function to it and the first element of the
+    list. Then feed this result into the function along with the second
+    element and so on. Return the final result. If the input function is
+    f and the elements are i0...iN then computes f (... (f s i0) i1 ...)
+    iN.
+
+    Args:
+        folder: The function to update the state given the input elements.
+
+        state: The initial state.
+
+    Returns:
+        Partially applied fold function that takes the source list
+        and returns the final state value.
+    """
+
+    def _fold(source: FrozenList[TSource]) -> TState:
+        return source.fold(folder, folder(state, head))
+
+    return _fold
+
+
 def head(source: FrozenList[TSource]) -> TSource:
     """Returns the first element of the list.
 
@@ -1008,6 +1101,7 @@ __all__ = [
     "concat",
     "empty",
     "filter",
+    "fold",
     "head",
     "indexed",
     "item",

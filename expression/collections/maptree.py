@@ -2,12 +2,15 @@
 # See License.txt in the project root for license information.
 
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Tuple, TypeVar, cast
+from typing import Any, Callable, Generic, Iterable, Iterator, List, Tuple, TypeVar, cast
 
 from expression.core import Nothing, Option, Some, failwith
 
+from .frozenlist import FrozenList
+
 Value = TypeVar("Value")
 Key = TypeVar("Key")
+Result = TypeVar("Result")
 
 
 @dataclass
@@ -222,7 +225,7 @@ def splice_out_successor(m: MapTree[Key, Value]) -> Tuple[Key, Value, Option[Map
                 return (k3, v3, mk(l_, mn.key, mn.value, mn.right))
         else:
             return (m2.key, m2.value, empty)
-    else:
+    else:  # Nothing
         failwith("internal error: Map.splice_out_successor")
 
 
@@ -252,54 +255,65 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
         return empty
 
 
-# let rec change (comparer: IComparer<Key>) k (u: Value option -> Value option) (m: MapTree[Key, Value]) : MapTree<Key,Value> =
-#     match m with
-#     | None ->
-#         match u None with
-#         | None -> m
-#         | Some v -> MapTreeLeaf (k, v) |> Some
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn ->
-#             let c = comparer.Compare(k, mn.key)
-#             if c < 0 then
-#                 rebalance (change comparer k u mn.left) mn.key mn.value mn.right
-#             elif c = 0 then
-#                 match u (Some mn.value) with
-#                 | None ->
-#                     if is_empty mn.left then mn.right
-#                     elif is_empty mn.right then mn.left
-#                     else
-#                         let sk, sv, r' = splice_out_successor mn.right
-#                         mk mn.left sk sv r'
-#                 | Some v -> MapTreeNode (k, v, mn.left, mn.right, mn.Height) :> MapTreeLeaf<Key,Value> |> Some
-#             else
-#                 rebalance mn.left mn.key mn.value (change comparer k u mn.right)
-#         | _ ->
-#             let c = comparer.Compare(k, m2.key)
-#             if c < 0 then
-#                 match u None with
-#                 | None -> m
-#                 | Some v -> MapTreeNode (k, v, empty, m, 2) :> MapTreeLeaf<Key,Value> |> Some
-#             elif c = 0 then
-#                 match u (Some m2.value) with
-#                 | None -> empty
-#                 | Some v -> MapTreeLeaf (k, v) |> Some
-#             else
-#                 match u None with
-#                 | None -> m
-#                 | Some v -> MapTreeNode (k, v, m, empty, 2) :> MapTreeLeaf<Key,Value> |> Some
+def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            # let c = comparer.Compare(k, mn.key)
+            if k < mn.key:
+                rebalance(change(k, u, mn.left), mn.key, mn.value, mn.right)
+            elif k == mn.key:
+                for v in u(Some(mn.value)).to_list():
+                    return Some(MapTreeNode(k, v, mn.left, mn.right, mn.height))
+                else:
+                    if is_empty(mn.left):
+                        return mn.right
+                    elif is_empty(mn.right):
+                        return mn.left
+                    else:
+                        sk, sv, r_ = splice_out_successor(mn.right)
+                        return mk(mn.left, sk, sv, r_)
+            else:
+                rebalance(mn.left, mn.key, mn.value, change(k, u, mn.right))
+        else:
+            # let c = comparer.Compare(k, m2.key)
+            if k < m2.key:
+                for v in u(Nothing).to_list():
+                    return Some(MapTreeNode(k, v, empty, m, 2))
+                else:
+                    return m
+            elif k == m2.key:
+                for v in u(Some(m2.value)).to_list():
+                    return Some(MapTreeLeaf(k, v))
+                else:
+                    return empty
+            else:
+                for v in u(Nothing).to_list():
+                    return Some(MapTreeNode(k, v, m, empty, 2))
+                else:
+                    return m
 
-# let rec mem (comparer: IComparer<Key>) k (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -> false
-#     | Some m2 ->
-#         let c = comparer.Compare(k, m2.key)
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn ->
-#             if c < 0 then mem comparer k mn.left
-#             else (c = 0 || mem comparer k mn.right)
-#         | _ -> c = 0
+    else:
+        for v in u(Nothing):
+            return Some(MapTreeLeaf(k, v))
+        else:
+            return m
+
+
+def mem(k: Key, m: MapTree[Key, Value]) -> bool:
+    for m2 in m.to_list():
+        # let c = comparer.Compare(k, m2.key)
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            if k < mn.key:
+                return mem(k, mn.left)
+            else:
+                return k == mn.key or mem(k, mn.right)
+        else:
+            return k == m2.key
+    else:
+        return False
+
 
 # let rec iterOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree[Key, Value]) =
 #     match m with
@@ -352,17 +366,20 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
 # let forall f m =
 #     forallOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
-# let rec map (f:Value -> 'Result) (m: MapTree[Key, Value]) : MapTree<Key, 'Result> =
-#     match m with
-#     | None -> empty
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn ->
-#             let l2 = map f mn.left
-#             let v2 = f mn.value
-#             let r2 = map f mn.right
-#             MapTreeNode (mn.key, v2, l2, r2, mn.Height) :> MapTreeLeaf<Key, 'Result> |> Some
-#         | _ -> MapTreeLeaf (m2.key, f m2.value) |> Some
+
+def map(f: Callable[[Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            l2 = map(f, mn.left)
+            v2 = f(mn.value)
+            r2 = map(f, mn.right)
+            return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
+        else:
+            return Some(MapTreeLeaf(m2.key, f(m2.value)))
+    else:
+        return empty
+
 
 # let rec mapiOpt (f: OptimizedClosures.FSharpFunc<Key, Value, 'Result>) (m: MapTree[Key, Value]) =
 #     match m with
@@ -373,7 +390,7 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
 #             let l2 = mapiOpt f mn.left
 #             let v2 = f.Invoke (mn.key, mn.value)
 #             let r2 = mapiOpt f mn.right
-#             MapTreeNode (mn.key, v2, l2, r2, mn.Height) :> MapTreeLeaf<Key, 'Result> |> Some
+#             MapTreeNode (mn.key, v2, l2, r2, mn.height) :> MapTreeLeaf<Key, 'Result> |> Some
 #         | _ -> MapTreeLeaf (m2.key, f.Invoke (m2.key, m2.value)) |> Some
 
 # let mapi f m =
@@ -444,32 +461,32 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
 # let toArray (m: MapTree[Key, Value]): (Key * Value)[] =
 #     m |> toList |> Array.ofList
 
-# let ofList comparer l =
-#     List.fold (fun acc (k, v) -> add comparer k v acc) empty l
 
-# let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) =
-#     if e.MoveNext() then
-#         let (x, y) = e.Current
-#         mkFromEnumerator comparer (add comparer x y acc) e
-#     else acc
+def of_list(xs: FrozenList[Tuple[Key, Value]]) -> MapTree[Key, Value]:
+    def folder(acc: MapTree[Key, Value], kv: Tuple[Key, Value]):
+        k, v = kv
+        return add(k, v, acc)
 
-# let ofArray comparer (arr: array<Key * Value>) =
-#     let mutable res = empty
-#     for (x, y) in arr do
-#         res <- add comparer x y res
-#     res
+    return xs.fold(folder, empty)
 
-# let ofSeq comparer (c: seq<Key * 'T>) =
-#     match c with
-#     | :? array<Key * 'T> as xs -> ofArray comparer xs
-#     | :? list<Key * 'T> as xs -> ofList comparer xs
-#     | _ ->
-#         use ie = c.GetEnumerator()
-#         mkFromEnumerator comparer empty ie
 
-# let copyToArray m (arr: _[]) i =
-#     let mutable j = i
-#     m |> iter (fun x y -> arr.[j] <- KeyValuePair(x, y); j <- j + 1)
+def mk_from_iterator(acc: MapTree[Key, Value], e: Iterator[Tuple[Key, Value]]) -> MapTree[Key, Value]:
+    try:
+        (x, y) = next(e)
+    except StopIteration:
+        return acc
+    else:
+        return mk_from_iterator(add(x, y, acc), e)
+
+
+def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
+    if isinstance(xs, FrozenList):
+        xs = cast(FrozenList[Tuple[Key, Value]], xs)
+        return of_list(xs)
+    else:
+        ie = iter(xs)
+        return mk_from_iterator(empty, ie)
+
 
 # /// Imperative left-to-right iterators.
 # [<NoEquality; NoComparison>]

@@ -10,6 +10,7 @@ from .maptree import MapTree
 
 Value = TypeVar("Value")
 Key = TypeVar("Key")
+Result = TypeVar("Result")
 
 
 class Map(Generic[Key, Value]):
@@ -20,15 +21,15 @@ class Map(Generic[Key, Value]):
     def empty() -> "Map[Key, Value]":
         return Map(maptree.empty)
 
-    # @staticmethod
-    # def create(ie: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
-    #     return Map(maptree.of_seq(ie))
+    @staticmethod
+    def create(ie: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
+        return Map(maptree.of_seq(ie))
 
     def add(self, key: Key, value: Value) -> "Map[Key, Value]":
         return Map(maptree.add(key, value, self._tree))
 
-    #     def Change(key, f) : Map[Key, Value]:
-    #         return Map[Key, Value](comparer, maptree.change comparer key f tree)
+    def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -> "Map[Key, Value]":
+        return Map(maptree.change(key, f, self._tree))
 
     def is_empty(self) -> bool:
         return maptree.is_empty(self._tree)
@@ -61,8 +62,8 @@ class Map(Generic[Key, Value]):
     #     def MapRange (f:'Value->'Result) =
     #         return Map<'Key, 'Result>(comparer, maptree.map f tree)
 
-    #     def Map f =
-    #         return Map<'Key, 'b>(comparer, maptree.mapi f tree)
+    def map(self, f: Callable[[Value], Result]) -> "Map[Key, Result]":
+        return Map(maptree.map(f, self._tree))
 
     def partition(self, predicate: Callable[[Key, Value], bool]) -> "Tuple[Map[Key, Value], Map[Key, Value]]":
         r1, r2 = maptree.partition(predicate, self._tree)
@@ -71,8 +72,8 @@ class Map(Generic[Key, Value]):
     def count(self):
         return maptree.size(self._tree)
 
-    #     def ContainsKey key =
-    #         maptree.mem comparer key tree
+    def contains_key(self, key: Key) -> bool:
+        return maptree.mem(key, self._tree)
 
     def remove(self, key: Key) -> "Map[Key, Value]":
         return Map(maptree.remove(key, self._tree))
@@ -239,9 +240,13 @@ class Map(Generic[Key, Value]):
 # let forAll predicate (table: Map<_, _>) =
 #     table.ForAll predicate
 
-# // [<CompiledName("Map")>]
-# let map mapping (table: Map<_, _>) =
-#     table.Map mapping
+
+def map(mapping: Callable[[Value], Result]) -> Callable[[Map[Key, Value]], Map[Key, Result]]:
+    def _map(table: Map[Key, Value]) -> Map[Key, Result]:
+        return table.map(mapping)
+
+    return _map
+
 
 # // [<CompiledName("Fold")>]
 # let fold<'Key, 'T, 'State when 'Key : comparison> folder (state:'State) (table: Map<'Key, 'T>) =
@@ -267,9 +272,10 @@ class Map(Generic[Key, Value]):
 # let ofList (elements: ('Key * 'Value) list) =
 #     Map<_, _>.ofList elements
 
-# // [<CompiledName("OfSeq")>]
-# let ofSeq elements =
-#     Map<_, _>.Create elements
+
+def of_seq(elements: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
+    return Map.create(elements)
+
 
 # // [<CompiledName("OfArray")>]
 # let ofArray (elements: ('Key * 'Value) array) =
