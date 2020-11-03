@@ -202,9 +202,13 @@ class Map(Generic[Key, Value]):
 # let tryFind key (table: Map<_, _>) =
 #     table.TryFind key
 
-# // [<CompiledName("Remove")>]
-# let remove key (table: Map<_, _>) =
-#     table.Remove key
+
+def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+    def _remove(table: Map[Key, Value]) -> Map[Key, Value]:
+        return table.remove(key)
+
+    return _remove
+
 
 # // [<CompiledName("ContainsKey")>]
 # let containsKey key (table: Map<_, _>) =

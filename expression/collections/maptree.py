@@ -2,10 +2,12 @@
 # See License.txt in the project root for license information.
 
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterable, Iterator, List, Tuple, TypeVar, cast
+from typing import (Any, Callable, Generic, Iterable, Iterator, List, Tuple,
+                    TypeVar, cast)
 
-from expression.core import Nothing, Option, Some, failwith
+from expression.core import Nothing, Option, Some, failwith, pipe
 
+from . import frozenlist
 from .frozenlist import FrozenList
 
 Value = TypeVar("Value")
@@ -124,7 +126,7 @@ def add(k: Key, v: Value, m: MapTree[Key, Value]) -> MapTree[Key, Value]:
             elif k == mn.key:
                 return Some(MapTreeNode(k, v, mn.left, mn.right, mn.height))
             else:
-                rebalance(mn.left, mn.key, mn.value, add(k, v, mn.right))
+                return rebalance(mn.left, mn.key, mn.value, add(k, v, mn.right))
         else:
             if k < m2.key:
                 return Some(MapTreeNode(k, v, empty, m, 2))
@@ -473,6 +475,7 @@ def of_list(xs: FrozenList[Tuple[Key, Value]]) -> MapTree[Key, Value]:
 def mk_from_iterator(acc: MapTree[Key, Value], e: Iterator[Tuple[Key, Value]]) -> MapTree[Key, Value]:
     try:
         (x, y) = next(e)
+        print([x, y])
     except StopIteration:
         return acc
     else:
@@ -497,23 +500,30 @@ def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
 #         /// true when MoveNext has been called
 #         mutable started : bool }
 
-# // collapseLHS:
-# // a) Always returns either [] or a list starting with MapOne.
-# // b) The "fringe" of the set stack is unchanged.
-# let rec collapseLHS (stack: MapTree[Key, Value] list) =
-#     match stack with
-#     | [] -> []
-#     | m :: rest ->
-#         match m with
-#         | None -> collapseLHS rest
-#         | Some m2 ->
-#             match m2 with
-#             | :? MapTreeNode[Key, Value] as mn ->
-#                 collapseLHS (mn.left :: (MapTreeLeaf (mn.key, mn.value) |> Some) :: mn.right :: rest)
-#             | _ -> stack
+# collapseLHS:
+# a) Always returns either [] or a list starting with MapOne.
+# b) The "fringe" of the set stack is unchanged.
+def collapseLHS(stack: FrozenList[MapTree[Key, Value]]) -> FrozenList[MapTree[Key, Value]]:
+    if stack.is_empty():
+        return frozenlist.empty
+    m, rest = stack.head(), stack.tail()
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            return collapseLHS(rest.cons(mn.right).cons(Some(MapTreeLeaf(mn.key, mn.value))).cons(mn.left))
+        else:
+            return stack
+    else:
+        return collapseLHS(rest)
 
-# let mkIterator m =
-#     { stack = collapseLHS [m]; started = false }
+
+class MkIterator(Iterator[Tuple[Key, Value]]):
+    def __init__(self, m: MapTree[Key, Value]) -> None:
+        self.stack = collapseLHS(frozenlist.singleton(m))
+        self.started = False
+
+    def __next__(self) -> Tuple[Key, Value]:
+        raise NotImplementedError
 
 # let notStarted() = failwith "enumeration not started"
 
@@ -550,20 +560,16 @@ def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
 #         i.started <- true  // The first call to MoveNext "starts" the enumeration.
 #         not i.stack.Is_empty
 
-# let mkIEnumerator m =
-#     let mutable i = mkIterator m
-#     { new IEnumerator<_> with
-#             member __.Current = current i
+# def mk_iterator(m: MapTree[Key, Value]) -> Iterator[Tuple[Key, Value]]:
+#     i = MkIterator(m)
 #         interface System.Collections.IEnumerator with
 #             member __.Current = box (current i)
 #             member __.MoveNext() = moveNext i
-#             member __.Reset() = i <- mkIterator m
-#         interface System.IDisposable with
-#             member __.Dispose() = ()}
 
-# let toSeq s =
-#     let en = mkIEnumerator s
-#     en |> Seq.unfold (fun en ->
+# def to_seq(s: MapTree[Key, Value]) -> Iterable[Tuple[Key, Value]]:
+#     en = mk_iterator(s)
+#     def folder(en):
 #         if en.MoveNext()
 #         then Some(en.Current, en)
 #         else None)
+#     return pipe(en, Seq.unfold(folder))
