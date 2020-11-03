@@ -22,19 +22,69 @@
 <h1 class="title">Module <code>expression.extra.option</code></h1>
 </header>
 <section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from .pipeline import pipeline
+
+__all__ = [&#34;pipeline&#34;]</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="expression.extra.option.pipeline" href="pipeline.html">expression.extra.option.pipeline</a></code></dt>
+<dt id="expression.extra.option.pipeline"><code class="name flex">
+<span>def <span class="ident">pipeline</span></span>(<span>*fns: Callable[[Any], <a title="expression.core.option.Option" href="../../core/option.html#expression.core.option.Option">Option</a>[Any]]) ‑> Callable[[Any], <a title="expression.core.option.Option" href="../../core/option.html#expression.core.option.Option">Option</a>[Any]]</span>
+</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>pipeline multiple option returning functions left to right.</p>
+<p>A pipeline kleisli (&gt;=&gt;) composes zero or more functions into a
+functional composition. The functions are composed left to right. A
+composition of zero functions gives back the identity function.</p>
+<pre><code class="python-repl">&gt;&gt;&gt; pipeline()(x) == x
+&gt;&gt;&gt; pipeline(f)(x) == f(x)
+&gt;&gt;&gt; pipeline(f, g)(x) == g(f(x))
+&gt;&gt;&gt; pipeline(f, g, h)(x) == h(g(f(x)))
+...
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>The composed functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipeline(*fns: Callable[[Any], Option[Any]]) -&gt; Callable[[Any], Option[Any]]:
+    &#34;&#34;&#34;pipeline multiple option returning functions left to right.
+
+    A pipeline kleisli (&gt;=&gt;) composes zero or more functions into a
+    functional composition. The functions are composed left to right. A
+    composition of zero functions gives back the identity function.
+
+    &gt;&gt;&gt; pipeline()(x) == x
+    &gt;&gt;&gt; pipeline(f)(x) == f(x)
+    &gt;&gt;&gt; pipeline(f, g)(x) == g(f(x))
+    &gt;&gt;&gt; pipeline(f, g, h)(x) == h(g(f(x)))
+    ...
+
+    Returns:
+        The composed functions.
+    &#34;&#34;&#34;
+
+    def kleisli(source: Any) -&gt; Option[Any]:
+        def reducer(acc: Any, fn: Callable[[Any], Option[Any]]) -&gt; Option[Any]:
+            return fn(acc.value) if acc is not Nothing else acc
+
+        return reduce(reducer, fns, source)
+
+    return kleisli</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -50,9 +100,9 @@
 <li><code><a title="expression.extra" href="../index.html">expression.extra</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
-<ul>
-<li><code><a title="expression.extra.option.pipeline" href="pipeline.html">expression.extra.option.pipeline</a></code></li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="expression.extra.option.pipeline" href="#expression.extra.option.pipeline">pipeline</a></code></li>
 </ul>
 </li>
 </ul>

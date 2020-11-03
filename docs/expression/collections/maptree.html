@@ -171,7 +171,7 @@ def try_find(k: Key, m: MapTree[Key, Value]) -&gt; Option[Value]:
                 return try_find(k, mn.left if k &lt; m2 else mn.right)
             else:
                 return Nothing
-    else:
+    else:  # Nothing
         return Nothing
 
 
@@ -203,7 +203,7 @@ def partition_aux(
             return partition_aux(f, mn.left, acc)
         else:
             return partition1(f, m2.key, m2.value, acc)
-    else:
+    else:  # Nothing
         return acc
 
 
@@ -220,47 +220,65 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
         return acc
 
 
-# let rec filterAux (comparer: IComparer&lt;Key&gt;) (f: OptimizedClosures.FSharpFunc&lt;_, _, _&gt;) (m: MapTree[Key, Value]) acc =
-#     match m with
-#     | None -&gt; acc
-#     | Some m2 -&gt;
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             let acc = filterAux comparer f mn.left acc
-#             let acc = filter1 comparer f mn.key mn.value acc
-#             filterAux comparer f mn.right acc
-#         | _ -&gt; filter1 comparer f m2.key m2.value acc
+def filter_aux(
+    f: Callable[[Key, Value], bool], m: MapTree[Key, Value], acc: MapTree[Key, Value]
+) -&gt; MapTree[Key, Value]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            acc = filter_aux(f, mn.left, acc)
+            acc = filter1(f, mn.key, mn.value, acc)
+            return filter_aux(f, mn.right, acc)
+        else:
+            return filter1(f, m2.key, m2.value, acc)
+    else:  # Nothing
+        return acc
 
-# let filter (comparer: IComparer&lt;Key&gt;) f m =
-#     filterAux comparer (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m empty
 
-# let rec spliceOutSuccessor (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -&gt; failwith &#34;internal error: Map.spliceOutSuccessor&#34;
-#     | Some m2 -&gt;
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             if isEmpty mn.left then mn.key, mn.value, mn.right
-#             else let k3, v3, l&#39; = spliceOutSuccessor mn.left in k3, v3, mk l&#39; mn.key mn.value mn.right
-#         | _ -&gt; m2.key, m2.value, empty
+def filter(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
+    return filter_aux(f, m, empty)
 
-# let rec remove (comparer: IComparer&lt;Key&gt;) k (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -&gt; empty
-#     | Some m2 -&gt;
-#         let c = comparer.Compare(k, m2.key)
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             if c &lt; 0 then rebalance (remove comparer k mn.left) mn.key mn.value mn.right
-#             elif c = 0 then
-#                 if isEmpty mn.left then mn.right
-#                 elif isEmpty mn.right then mn.left
-#                 else
-#                     let sk, sv, r&#39; = spliceOutSuccessor mn.right
-#                     mk mn.left sk sv r&#39;
-#             else rebalance mn.left mn.key mn.value (remove comparer k mn.right)
-#         | _ -&gt;
-#             if c = 0 then empty else m
+
+def splice_out_successor(m: MapTree[Key, Value]) -&gt; Tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            if is_empty(mn.left):
+                return (mn.key, mn.value, mn.right)
+            else:
+                k3, v3, l_ = splice_out_successor(mn.left)
+                return (k3, v3, mk(l_, mn.key, mn.value, mn.right))
+        else:
+            return (m2.key, m2.value, empty)
+    else:
+        failwith(&#34;internal error: Map.splice_out_successor&#34;)
+
+
+def remove(k: Key, m: MapTree[Key, Value]) -&gt; Option[MapTreeLeaf[Key, Value]]:
+    for m2 in m.to_list():
+        # let c = comparer.Compare(k, m2.key)
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            if k &lt; mn.key:
+                return rebalance(remove(k, mn.left), mn.key, mn.value, mn.right)
+            elif k == mn.key:
+                if is_empty(mn.left):
+                    return mn.right
+                elif is_empty(mn.right):
+                    return mn.left
+                else:
+                    sk, sv, r_ = splice_out_successor(mn.right)
+                    return mk(mn.left, sk, sv, r_)
+            else:
+                return rebalance(mn.left, mn.key, mn.value, remove(k, mn.right))
+        else:
+            if k == m2.key:
+                return empty
+            else:
+                return m
+    else:  # Nothing
+        return empty
+
 
 # let rec change (comparer: IComparer&lt;Key&gt;) k (u: Value option -&gt; Value option) (m: MapTree[Key, Value]) : MapTree&lt;Key,Value&gt; =
 #     match m with
@@ -277,10 +295,10 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
 #             elif c = 0 then
 #                 match u (Some mn.value) with
 #                 | None -&gt;
-#                     if isEmpty mn.left then mn.right
-#                     elif isEmpty mn.right then mn.left
+#                     if is_empty mn.left then mn.right
+#                     elif is_empty mn.right then mn.left
 #                     else
-#                         let sk, sv, r&#39; = spliceOutSuccessor mn.right
+#                         let sk, sv, r&#39; = splice_out_successor mn.right
 #                         mk mn.left sk sv r&#39;
 #                 | Some v -&gt; MapTreeNode (k, v, mn.left, mn.right, mn.Height) :&gt; MapTreeLeaf&lt;Key,Value&gt; |&gt; Some
 #             else
@@ -538,10 +556,10 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
 #                 failwith &#34;Please report error: Map iterator, unexpected stack for moveNext&#34;
 #             | _ -&gt;
 #                 i.stack &lt;- collapseLHS rest
-#                 not i.stack.IsEmpty
+#                 not i.stack.Is_empty
 #     else
 #         i.started &lt;- true  // The first call to MoveNext &#34;starts&#34; the enumeration.
-#         not i.stack.IsEmpty
+#         not i.stack.Is_empty
 
 # let mkIEnumerator m =
 #     let mutable i = mkIterator m
@@ -599,6 +617,19 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
         return Some(MapTreeLeaf(k, v))</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.maptree.filter"><code class="name flex">
+<span>def <span class="ident">filter</span></span>(<span>f: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def filter(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
+    return filter_aux(f, m, empty)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.maptree.filter1"><code class="name flex">
 <span>def <span class="ident">filter1</span></span>(<span>f: Callable[[~Key, ~Value], bool], k: ~Key, v: ~Value, acc: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]</span>
 </code></dt>
@@ -612,6 +643,30 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
     if f(k, v):
         return add(k, v, acc)
     else:
+        return acc</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.maptree.filter_aux"><code class="name flex">
+<span>def <span class="ident">filter_aux</span></span>(<span>f: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], acc: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def filter_aux(
+    f: Callable[[Key, Value], bool], m: MapTree[Key, Value], acc: MapTree[Key, Value]
+) -&gt; MapTree[Key, Value]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            acc = filter_aux(f, mn.left, acc)
+            acc = filter1(f, mn.key, mn.value, acc)
+            return filter_aux(f, mn.right, acc)
+        else:
+            return filter1(f, m2.key, m2.value, acc)
+    else:  # Nothing
         return acc</code></pre>
 </details>
 </dd>
@@ -737,7 +792,7 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
             return partition_aux(f, mn.left, acc)
         else:
             return partition1(f, m2.key, m2.value, acc)
-    else:
+    else:  # Nothing
         return acc</code></pre>
 </details>
 </dd>
@@ -789,6 +844,41 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
             return mk(t1, k, v, t2)</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.maptree.remove"><code class="name flex">
+<span>def <span class="ident">remove</span></span>(<span>k: ~Key, m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove(k: Key, m: MapTree[Key, Value]) -&gt; Option[MapTreeLeaf[Key, Value]]:
+    for m2 in m.to_list():
+        # let c = comparer.Compare(k, m2.key)
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            if k &lt; mn.key:
+                return rebalance(remove(k, mn.left), mn.key, mn.value, mn.right)
+            elif k == mn.key:
+                if is_empty(mn.left):
+                    return mn.right
+                elif is_empty(mn.right):
+                    return mn.left
+                else:
+                    sk, sv, r_ = splice_out_successor(mn.right)
+                    return mk(mn.left, sk, sv, r_)
+            else:
+                return rebalance(mn.left, mn.key, mn.value, remove(k, mn.right))
+        else:
+            if k == m2.key:
+                return empty
+            else:
+                return m
+    else:  # Nothing
+        return empty</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.maptree.size"><code class="name flex">
 <span>def <span class="ident">size</span></span>(<span>x: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]])</span>
 </code></dt>
@@ -822,6 +912,30 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
         return acc</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.maptree.splice_out_successor"><code class="name flex">
+<span>def <span class="ident">splice_out_successor</span></span>(<span>m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> Tuple[~Key, ~Value, <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def splice_out_successor(m: MapTree[Key, Value]) -&gt; Tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            if is_empty(mn.left):
+                return (mn.key, mn.value, mn.right)
+            else:
+                k3, v3, l_ = splice_out_successor(mn.left)
+                return (k3, v3, mk(l_, mn.key, mn.value, mn.right))
+        else:
+            return (m2.key, m2.value, empty)
+    else:
+        failwith(&#34;internal error: Map.splice_out_successor&#34;)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.maptree.try_find"><code class="name flex">
 <span>def <span class="ident">try_find</span></span>(<span>k: ~Key, m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]</span>
 </code></dt>
@@ -841,7 +955,7 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
                 return try_find(k, mn.left if k &lt; m2 else mn.right)
             else:
                 return Nothing
-    else:
+    else:  # Nothing
         return Nothing</code></pre>
 </details>
 </dd>
@@ -936,9 +1050,11 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="expression.collections.maptree.add" href="#expression.collections.maptree.add">add</a></code></li>
+<li><code><a title="expression.collections.maptree.filter" href="#expression.collections.maptree.filter">filter</a></code></li>
 <li><code><a title="expression.collections.maptree.filter1" href="#expression.collections.maptree.filter1">filter1</a></code></li>
+<li><code><a title="expression.collections.maptree.filter_aux" href="#expression.collections.maptree.filter_aux">filter_aux</a></code></li>
 <li><code><a title="expression.collections.maptree.find" href="#expression.collections.maptree.find">find</a></code></li>
 <li><code><a title="expression.collections.maptree.height" href="#expression.collections.maptree.height">height</a></code></li>
 <li><code><a title="expression.collections.maptree.is_empty" href="#expression.collections.maptree.is_empty">is_empty</a></code></li>
@@ -947,8 +1063,10 @@ def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key,
 <li><code><a title="expression.collections.maptree.partition1" href="#expression.collections.maptree.partition1">partition1</a></code></li>
 <li><code><a title="expression.collections.maptree.partition_aux" href="#expression.collections.maptree.partition_aux">partition_aux</a></code></li>
 <li><code><a title="expression.collections.maptree.rebalance" href="#expression.collections.maptree.rebalance">rebalance</a></code></li>
+<li><code><a title="expression.collections.maptree.remove" href="#expression.collections.maptree.remove">remove</a></code></li>
 <li><code><a title="expression.collections.maptree.size" href="#expression.collections.maptree.size">size</a></code></li>
 <li><code><a title="expression.collections.maptree.size_aux" href="#expression.collections.maptree.size_aux">size_aux</a></code></li>
+<li><code><a title="expression.collections.maptree.splice_out_successor" href="#expression.collections.maptree.splice_out_successor">splice_out_successor</a></code></li>
 <li><code><a title="expression.collections.maptree.try_find" href="#expression.collections.maptree.try_find">try_find</a></code></li>
 </ul>
 </li>

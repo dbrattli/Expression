@@ -29,111 +29,102 @@
 <pre><code class="python"># Copyright (c) Microsoft Corporation.  All Rights Reserved.  See
 # License.txt in the project root for license information.
 
-from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
 
 from expression.core import Option
+
+from . import maptree as maptree
+from .maptree import MapTree
 
 Value = TypeVar(&#34;Value&#34;)
 Key = TypeVar(&#34;Key&#34;)
 
-from . import maptree
 
-# type Map&lt;[&lt;EqualityConditionalOn&gt;]&#39;Key, [&lt;EqualityConditionalOn; ComparisonConditionalOn&gt;]&#39;Value when &#39;Key : comparison &gt;(comparer: IComparer&lt;&#39;Key&gt;, tree: MapTree&lt;&#39;Key, &#39;Value&gt;) =
+class Map(Generic[Key, Value]):
+    def __init__(self, tree: MapTree[Key, Value]) -&gt; None:
+        self._tree = tree
+
+    @staticmethod
+    def empty() -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.empty)
+
+    # @staticmethod
+    # def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
+    #     return Map(maptree.of_seq(ie))
+
+    def add(self, key: Key, value: Value) -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.add(key, value, self._tree))
+
+    #     def Change(key, f) : Map[Key, Value]:
+    #         return Map[Key, Value](comparer, maptree.change comparer key f tree)
+
+    def is_empty(self) -&gt; bool:
+        return maptree.is_empty(self._tree)
+
+    #     def Item
+    #      with get(key : &#39;Key) =
+    #         maptree.find comparer key tree
+
+    #     def TryPick f =
+    #         maptree.tryPick f tree
+
+    #     def Exists predicate =
+    #         maptree.exists predicate tree
+
+    def filter(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.filter(predicate, self._tree))
+
+    #     def ForAll predicate =
+    #         maptree.forall predicate tree
+
+    #     def Fold f acc =
+    #         maptree.foldBack f tree acc
+
+    #     def FoldSection (lo:&#39;Key) (hi:&#39;Key) f (acc:&#39;z) =
+    #         maptree.foldSection comparer lo hi f tree acc
+
+    #     def Iterate f =
+    #         maptree.iter f tree
+
+    #     def MapRange (f:&#39;Value-&gt;&#39;Result) =
+    #         return Map&lt;&#39;Key, &#39;Result&gt;(comparer, maptree.map f tree)
+
+    #     def Map f =
+    #         return Map&lt;&#39;Key, &#39;b&gt;(comparer, maptree.mapi f tree)
+
+    def partition(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Tuple[Map[Key, Value], Map[Key, Value]]&#34;:
+        r1, r2 = maptree.partition(predicate, self._tree)
+        return Map(r1), Map(r2)
+
+    def count(self):
+        return maptree.size(self._tree)
+
+    #     def ContainsKey key =
+    #         maptree.mem comparer key tree
+
+    def remove(self, key: Key) -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.remove(key, self._tree))
+
+    def try_get_value(self, key: Key, value: List[Value]):
+        for v in maptree.try_find(key, self._tree):
+            value.append(v)
+            return True
+        else:
+            return False
+
+    def try_find(self, key: Key) -&gt; Option[Value]:
+        return maptree.try_find(key, self._tree)
 
 
-#     // We use .NET generics per-instantiation static fields to avoid allocating a new object for each empty
-#     // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
-#     static let empty =
-#         let comparer = LanguagePrimitives.FastGenericComparer&lt;&#39;Key&gt;
-#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.empty)
+#     def ToList() =
+#         maptree.toList tree
 
-#     static member Empty : Map&lt;&#39;Key, &#39;Value&gt; =
-#         empty
+#     def ToArray() =
+#         maptree.toArray tree
 
-#     static member Create(ie : IEnumerable&lt;_&gt;) : Map&lt;&#39;Key, &#39;Value&gt; =
-#         let comparer = LanguagePrimitives.FastGenericComparer&lt;&#39;Key&gt;
-#         new Map&lt;_, _&gt;(comparer, MapTree.ofSeq comparer ie)
-
-#     // [&lt;DebuggerBrowsable(DebuggerBrowsableState.Never)&gt;]
-#     member internal m.Comparer = comparer
-
-#     // [&lt;DebuggerBrowsable(DebuggerBrowsableState.Never)&gt;]
-#     member internal m.Tree = tree
-
-#     interface Fable.Core.Symbol_wellknown with
-#         member _.``Symbol.toStringTag`` = &#34;FSharpMap&#34;
-
-#     member m.Add(key, value) : Map&lt;&#39;Key, &#39;Value&gt; =
-#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.add comparer key value tree)
-
-#     member m.Change(key, f) : Map&lt;&#39;Key, &#39;Value&gt; =
-#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.change comparer key f tree)
-
-#     // [&lt;DebuggerBrowsable(DebuggerBrowsableState.Never)&gt;]
-#     member m.IsEmpty = MapTree.isEmpty tree
-
-#     member m.Item
-#      with get(key : &#39;Key) =
-#         MapTree.find comparer key tree
-
-#     member m.TryPick f =
-#         MapTree.tryPick f tree
-
-#     member m.Exists predicate =
-#         MapTree.exists predicate tree
-
-#     member m.Filter predicate =
-#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.filter comparer predicate tree)
-
-#     member m.ForAll predicate =
-#         MapTree.forall predicate tree
-
-#     member m.Fold f acc =
-#         MapTree.foldBack f tree acc
-
-#     member m.FoldSection (lo:&#39;Key) (hi:&#39;Key) f (acc:&#39;z) =
-#         MapTree.foldSection comparer lo hi f tree acc
-
-#     member m.Iterate f =
-#         MapTree.iter f tree
-
-#     member m.MapRange (f:&#39;Value-&gt;&#39;Result) =
-#         new Map&lt;&#39;Key, &#39;Result&gt;(comparer, MapTree.map f tree)
-
-#     member m.Map f =
-#         new Map&lt;&#39;Key, &#39;b&gt;(comparer, MapTree.mapi f tree)
-
-#     member m.Partition predicate : Map&lt;&#39;Key, &#39;Value&gt; * Map&lt;&#39;Key, &#39;Value&gt; =
-#         let r1, r2 = MapTree.partition comparer predicate tree
-#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, r1), new Map&lt;&#39;Key, &#39;Value&gt;(comparer, r2)
-
-#     member m.Count =
-#         MapTree.size tree
-
-#     member m.ContainsKey key =
-#         MapTree.mem comparer key tree
-
-#     member m.Remove key =
-#         new Map&lt;&#39;Key, &#39;Value&gt;(comparer, MapTree.remove comparer key tree)
-
-#     member __.TryGetValue(key: &#39;Key, value: &#39;Value ref) =
-#         match MapTree.tryFind comparer key tree with
-#         | Some v -&gt; value := v; true
-#         | None -&gt; false
-
-#     member m.TryFind key =
-#         MapTree.tryFind comparer key tree
-
-#     member m.ToList() =
-#         MapTree.toList tree
-
-#     member m.ToArray() =
-#         MapTree.toArray tree
-
-#     static member ofList l : Map&lt;&#39;Key, &#39;Value&gt; =
+#     static member ofList l : Map[Key, Value]:
 #        let comparer = LanguagePrimitives.FastGenericComparer&lt;&#39;Key&gt;
-#        new Map&lt;_, _&gt;(comparer, MapTree.ofList comparer l)
+#        return Map&lt;_, _&gt;(comparer, maptree.ofList comparer l)
 
 #     member this.ComputeHashCode() =
 #         let combineHash x y = (x &lt;&lt;&lt; 1) + y + 631
@@ -147,7 +138,7 @@ from . import maptree
 
 #     override this.Equals that =
 #         match that with
-#         | :? Map&lt;&#39;Key, &#39;Value&gt; as that -&gt;
+#         | :? Map[Key, Value] as that -&gt;
 #             use e1 = (this :&gt; seq&lt;_&gt;).GetEnumerator()
 #             use e2 = (that :&gt; seq&lt;_&gt;).GetEnumerator()
 #             let rec loop () =
@@ -161,15 +152,15 @@ from . import maptree
 #         | _ -&gt; false
 
 #     interface IEnumerable&lt;KeyValuePair&lt;&#39;Key, &#39;Value&gt;&gt; with
-#         member __.GetEnumerator() = MapTree.mkIEnumerator tree
+#         member __.GetEnumerator() = maptree.mkIEnumerator tree
 
 #     interface System.Collections.IEnumerable with
-#         member __.GetEnumerator() = MapTree.mkIEnumerator tree :&gt; System.Collections.IEnumerator
+#         member __.GetEnumerator() = maptree.mkIEnumerator tree :&gt; System.Collections.IEnumerator
 
 #     interface System.IComparable with
-#         member m.CompareTo(obj: obj) =
+#         def CompareTo(obj: obj) =
 #             match obj with
-#             | :? Map&lt;&#39;Key, &#39;Value&gt;  as m2-&gt;
+#             | :? Map[Key, Value]  as m2-&gt;
 #                 Seq.compareWith
 #                    (fun (kvp1 : KeyValuePair&lt;_, _&gt;) (kvp2 : KeyValuePair&lt;_, _&gt;)-&gt;
 #                        let c = comparer.Compare(kvp1.Key, kvp2.Key) in
@@ -179,35 +170,35 @@ from . import maptree
 #                 invalidArg &#34;obj&#34; &#34;not comparable&#34;
 
 #     interface ICollection&lt;KeyValuePair&lt;&#39;Key, &#39;Value&gt;&gt; with
-#         member m.Add x = ignore x; raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
-#         member m.Clear() = raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
-#         member m.Remove x = ignore x; raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
-#         member m.Contains x = m.ContainsKey x.Key &amp;&amp; Unchecked.equals m.[x.Key] x.Value
-#         member m.CopyTo(arr, i) = MapTree.copyToArray tree arr i
-#         member m.IsReadOnly = true
-#         member m.Count = m.Count
+#         def Add x = ignore x; raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
+#         def Clear() = raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
+#         def Remove x = ignore x; raise (System.NotSupportedException(&#34;Map cannot be mutated&#34;))
+#         def Contains x = m.ContainsKey x.Key &amp;&amp; Unchecked.equals m.[x.Key] x.Value
+#         def CopyTo(arr, i) = maptree.copyToArray tree arr i
+#         def IsReadOnly = true
+#         def Count = m.Count
 
 #     interface IReadOnlyCollection&lt;KeyValuePair&lt;&#39;Key, &#39;Value&gt;&gt; with
-#         member m.Count = m.Count
+#         def Count = m.Count
 
 #     // interface IReadOnlyDictionary&lt;&#39;Key, &#39;Value&gt; with
-#     //     member m.Item with get key = m.[key]
-#     //     member m.Keys = seq { for kvp in m -&gt; kvp.Key }
-#     //     member m.TryGetValue(key, value: byref&lt;&#39;Value&gt;) = m.TryGetValue(key, &amp;value)
-#     //     member m.Values = seq { for kvp in m -&gt; kvp.Value }
-#     //     member m.ContainsKey key = m.ContainsKey key
+#     //     def Item with get key = m.[key]
+#     //     def Keys = seq { for kvp in m -&gt; kvp.Key }
+#     //     def TryGetValue(key, value: byref&lt;&#39;Value&gt;) = m.TryGetValue(key, &amp;value)
+#     //     def Values = seq { for kvp in m -&gt; kvp.Value }
+#     //     def ContainsKey key = m.ContainsKey key
 
 #     interface Fable.Core.JS.Map&lt;&#39;Key,&#39;Value&gt; with
-#         member m.size = m.Count
-#         member m.clear() = failwith &#34;Map cannot be mutated&#34;; ()
-#         member m.delete(_) = failwith &#34;Map cannot be mutated&#34;; false
-#         member m.entries() = m |&gt; Seq.map (fun p -&gt; p.Key, p.Value)
-#         member m.get(k) = m.Item(k)
-#         member m.has(k) = m.ContainsKey(k)
-#         member m.keys() = m |&gt; Seq.map (fun p -&gt; p.Key)
-#         member m.set(k, v) = failwith &#34;Map cannot be mutated&#34;; m :&gt; Fable.Core.JS.Map&lt;&#39;Key,&#39;Value&gt;
-#         member m.values() = m |&gt; Seq.map (fun p -&gt; p.Value)
-#         member m.forEach(f, ?thisArg) = m |&gt; Seq.iter (fun p -&gt; f p.Value p.Key m)
+#         def size = m.Count
+#         def clear() = failwith &#34;Map cannot be mutated&#34;; ()
+#         def delete(_) = failwith &#34;Map cannot be mutated&#34;; false
+#         def entries() = m |&gt; Seq.map (fun p -&gt; p.Key, p.Value)
+#         def get(k) = m.Item(k)
+#         def has(k) = m.ContainsKey(k)
+#         def keys() = m |&gt; Seq.map (fun p -&gt; p.Key)
+#         def set(k, v) = failwith &#34;Map cannot be mutated&#34;; m :&gt; Fable.Core.JS.Map&lt;&#39;Key,&#39;Value&gt;
+#         def values() = m |&gt; Seq.map (fun p -&gt; p.Value)
+#         def forEach(f, ?thisArg) = m |&gt; Seq.iter (fun p -&gt; f p.Value p.Key m)
 
 #     override this.ToString() =
 #         let inline toStr (kv: KeyValuePair&lt;&#39;Key,&#39;Value&gt;) = System.String.Format(&#34;({0}, {1})&#34;, kv.Key, kv.Value)
@@ -218,9 +209,9 @@ from . import maptree
 # // [&lt;RequireQualifiedAccess&gt;]
 # // module Map =
 
-# // [&lt;CompiledName(&#34;IsEmpty&#34;)&gt;]
-# let isEmpty (table: Map&lt;_, _&gt;) =
-#     table.IsEmpty
+# // [&lt;CompiledName(&#34;is_empty&#34;)&gt;]
+# let is_empty (table: Map&lt;_, _&gt;) =
+#     table.is_empty
 
 # // [&lt;CompiledName(&#34;Add&#34;)&gt;]
 # let add key value (table: Map&lt;_, _&gt;) =
@@ -282,11 +273,11 @@ from . import maptree
 
 # // [&lt;CompiledName(&#34;Fold&#34;)&gt;]
 # let fold&lt;&#39;Key, &#39;T, &#39;State when &#39;Key : comparison&gt; folder (state:&#39;State) (table: Map&lt;&#39;Key, &#39;T&gt;) =
-#     MapTree.fold folder state table.Tree
+#     maptree.fold folder state table.Tree
 
 # // [&lt;CompiledName(&#34;FoldBack&#34;)&gt;]
 # let foldBack&lt;&#39;Key, &#39;T, &#39;State  when &#39;Key : comparison&gt; folder (table: Map&lt;&#39;Key, &#39;T&gt;) (state:&#39;State) =
-#     MapTree.foldBack folder table.Tree state
+#     maptree.foldBack folder table.Tree state
 
 # // [&lt;CompiledName(&#34;ToSeq&#34;)&gt;]
 # let toSeq (table: Map&lt;_, _&gt;) =
@@ -311,7 +302,7 @@ from . import maptree
 # // [&lt;CompiledName(&#34;OfArray&#34;)&gt;]
 # let ofArray (elements: (&#39;Key * &#39;Value) array) =
 #    let comparer = LanguagePrimitives.FastGenericComparer&lt;&#39;Key&gt;
-#    new Map&lt;_, _&gt;(comparer, MapTree.ofArray comparer elements)
+#    new Map&lt;_, _&gt;(comparer, maptree.ofArray comparer elements)
 
 # // [&lt;CompiledName(&#34;ToList&#34;)&gt;]
 # let toList (table: Map&lt;_, _&gt;) =
@@ -323,7 +314,7 @@ from . import maptree
 
 # // [&lt;CompiledName(&#34;Empty&#34;)&gt;]
 # let empty&lt;&#39;Key, &#39;Value  when &#39;Key : comparison&gt; =
-#     Map&lt;&#39;Key, &#39;Value&gt;.Empty
+#     Map[Key, Value].Empty
 
 # let createMutable (source: KeyValuePair&lt;&#39;Key, &#39;Value&gt; seq) ([&lt;Fable.Core.Inject&gt;] comparer: IEqualityComparer&lt;&#39;Key&gt;) =
 #     let map = Fable.Collections.MutableMap(source, comparer)
@@ -365,6 +356,241 @@ from . import maptree
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="expression.collections.map.Map"><code class="flex name class">
+<span>class <span class="ident">Map</span></span>
+<span>(</span><span>tree: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="maptree.html#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Abstract base class for generic types.</p>
+<p>A generic type is typically declared by inheriting from
+this class parameterized with one or more type variables.
+For example, a generic mapping type might be defined as::</p>
+<p>class Mapping(Generic[KT, VT]):
+def <strong>getitem</strong>(self, key: KT) -&gt; VT:
+&hellip;
+# Etc.</p>
+<p>This class can then be used as follows::</p>
+<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
+try:
+return mapping[key]
+except KeyError:
+return default</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Map(Generic[Key, Value]):
+    def __init__(self, tree: MapTree[Key, Value]) -&gt; None:
+        self._tree = tree
+
+    @staticmethod
+    def empty() -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.empty)
+
+    # @staticmethod
+    # def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
+    #     return Map(maptree.of_seq(ie))
+
+    def add(self, key: Key, value: Value) -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.add(key, value, self._tree))
+
+    #     def Change(key, f) : Map[Key, Value]:
+    #         return Map[Key, Value](comparer, maptree.change comparer key f tree)
+
+    def is_empty(self) -&gt; bool:
+        return maptree.is_empty(self._tree)
+
+    #     def Item
+    #      with get(key : &#39;Key) =
+    #         maptree.find comparer key tree
+
+    #     def TryPick f =
+    #         maptree.tryPick f tree
+
+    #     def Exists predicate =
+    #         maptree.exists predicate tree
+
+    def filter(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.filter(predicate, self._tree))
+
+    #     def ForAll predicate =
+    #         maptree.forall predicate tree
+
+    #     def Fold f acc =
+    #         maptree.foldBack f tree acc
+
+    #     def FoldSection (lo:&#39;Key) (hi:&#39;Key) f (acc:&#39;z) =
+    #         maptree.foldSection comparer lo hi f tree acc
+
+    #     def Iterate f =
+    #         maptree.iter f tree
+
+    #     def MapRange (f:&#39;Value-&gt;&#39;Result) =
+    #         return Map&lt;&#39;Key, &#39;Result&gt;(comparer, maptree.map f tree)
+
+    #     def Map f =
+    #         return Map&lt;&#39;Key, &#39;b&gt;(comparer, maptree.mapi f tree)
+
+    def partition(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Tuple[Map[Key, Value], Map[Key, Value]]&#34;:
+        r1, r2 = maptree.partition(predicate, self._tree)
+        return Map(r1), Map(r2)
+
+    def count(self):
+        return maptree.size(self._tree)
+
+    #     def ContainsKey key =
+    #         maptree.mem comparer key tree
+
+    def remove(self, key: Key) -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.remove(key, self._tree))
+
+    def try_get_value(self, key: Key, value: List[Value]):
+        for v in maptree.try_find(key, self._tree):
+            value.append(v)
+            return True
+        else:
+            return False
+
+    def try_find(self, key: Key) -&gt; Option[Value]:
+        return maptree.try_find(key, self._tree)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.collections.map.Map.empty"><code class="name flex">
+<span>def <span class="ident">empty</span></span>(<span>) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def empty() -&gt; &#34;Map[Key, Value]&#34;:
+    return Map(maptree.empty)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.collections.map.Map.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, key: ~Key, value: ~Value) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add(self, key: Key, value: Value) -&gt; &#34;Map[Key, Value]&#34;:
+    return Map(maptree.add(key, value, self._tree))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.count"><code class="name flex">
+<span>def <span class="ident">count</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def count(self):
+    return maptree.size(self._tree)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.filter"><code class="name flex">
+<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~Key, ~Value], bool]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def filter(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Map[Key, Value]&#34;:
+    return Map(maptree.filter(predicate, self._tree))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.is_empty"><code class="name flex">
+<span>def <span class="ident">is_empty</span></span>(<span>self) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_empty(self) -&gt; bool:
+    return maptree.is_empty(self._tree)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.partition"><code class="name flex">
+<span>def <span class="ident">partition</span></span>(<span>self, predicate: Callable[[~Key, ~Value], bool]) ‑> Tuple[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value], <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def partition(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Tuple[Map[Key, Value], Map[Key, Value]]&#34;:
+    r1, r2 = maptree.partition(predicate, self._tree)
+    return Map(r1), Map(r2)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.remove"><code class="name flex">
+<span>def <span class="ident">remove</span></span>(<span>self, key: ~Key) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove(self, key: Key) -&gt; &#34;Map[Key, Value]&#34;:
+    return Map(maptree.remove(key, self._tree))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.try_find"><code class="name flex">
+<span>def <span class="ident">try_find</span></span>(<span>self, key: ~Key) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def try_find(self, key: Key) -&gt; Option[Value]:
+    return maptree.try_find(key, self._tree)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.try_get_value"><code class="name flex">
+<span>def <span class="ident">try_get_value</span></span>(<span>self, key: ~Key, value: List[~Value])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def try_get_value(self, key: Key, value: List[Value]):
+    for v in maptree.try_find(key, self._tree):
+        value.append(v)
+        return True
+    else:
+        return False</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -376,6 +602,24 @@ from . import maptree
 <li><h3>Super-module</h3>
 <ul>
 <li><code><a title="expression.collections" href="index.html">expression.collections</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a></code></h4>
+<ul class="two-column">
+<li><code><a title="expression.collections.map.Map.add" href="#expression.collections.map.Map.add">add</a></code></li>
+<li><code><a title="expression.collections.map.Map.count" href="#expression.collections.map.Map.count">count</a></code></li>
+<li><code><a title="expression.collections.map.Map.empty" href="#expression.collections.map.Map.empty">empty</a></code></li>
+<li><code><a title="expression.collections.map.Map.filter" href="#expression.collections.map.Map.filter">filter</a></code></li>
+<li><code><a title="expression.collections.map.Map.is_empty" href="#expression.collections.map.Map.is_empty">is_empty</a></code></li>
+<li><code><a title="expression.collections.map.Map.partition" href="#expression.collections.map.Map.partition">partition</a></code></li>
+<li><code><a title="expression.collections.map.Map.remove" href="#expression.collections.map.Map.remove">remove</a></code></li>
+<li><code><a title="expression.collections.map.Map.try_find" href="#expression.collections.map.Map.try_find">try_find</a></code></li>
+<li><code><a title="expression.collections.map.Map.try_get_value" href="#expression.collections.map.Map.try_get_value">try_get_value</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

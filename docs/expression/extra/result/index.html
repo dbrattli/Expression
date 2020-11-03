@@ -26,18 +26,15 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from .traversable import sequence, traverse
+<pre><code class="python">from .pipeline import pipeline
+from .traversable import sequence, traverse
 
-__all__ = [&#34;sequence&#34;, &#34;traverse&#34;]</code></pre>
+__all__ = [&#34;sequence&#34;, &#34;traverse&#34;, &#34;pipeline&#34;]</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="expression.extra.result.pipeline" href="pipeline.html">expression.extra.result.pipeline</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
 <dt><code class="name"><a title="expression.extra.result.traversable" href="traversable.html">expression.extra.result.traversable</a></code></dt>
 <dd>
 <div class="desc"><p>Data structures that can be traversed from left to right, performing an action on each element.</p></div>
@@ -49,6 +46,52 @@ __all__ = [&#34;sequence&#34;, &#34;traverse&#34;]</code></pre>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="expression.extra.result.pipeline"><code class="name flex">
+<span>def <span class="ident">pipeline</span></span>(<span>*fns: Callable[[Any], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[Any, Any]]) ‑> Callable[[Any], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[Any, Any]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>pipeline multiple result returning functions left to right.</p>
+<p>A pipeline kleisli (&gt;=&gt;) composes zero or more functions into a
+functional composition. The functions are composed left to right. A
+composition of zero functions gives back the identity function.</p>
+<pre><code class="python-repl">&gt;&gt;&gt; pipeline()(x) == x
+&gt;&gt;&gt; pipeline(f)(x) == f(x)
+&gt;&gt;&gt; pipeline(f, g)(x) == g(f(x))
+&gt;&gt;&gt; pipeline(f, g, h)(x) == h(g(f(x)))
+...
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>The composed functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipeline(*fns: Callable[[Any], Result[Any, Any]]) -&gt; Callable[[Any], Result[Any, Any]]:
+    &#34;&#34;&#34;pipeline multiple result returning functions left to right.
+
+    A pipeline kleisli (&gt;=&gt;) composes zero or more functions into a
+    functional composition. The functions are composed left to right. A
+    composition of zero functions gives back the identity function.
+
+    &gt;&gt;&gt; pipeline()(x) == x
+    &gt;&gt;&gt; pipeline(f)(x) == f(x)
+    &gt;&gt;&gt; pipeline(f, g)(x) == g(f(x))
+    &gt;&gt;&gt; pipeline(f, g, h)(x) == h(g(f(x)))
+    ...
+
+    Returns:
+        The composed functions.
+    &#34;&#34;&#34;
+
+    def kleisli(source: Any) -&gt; Result[Any, Any]:
+        def reducer(acc: Result[Any, Any], fn: Callable[[Any], Result[Any, Any]]):
+            return fn(cast(Ok[Any, Any], acc).value) if acc.is_ok() else acc
+
+        return reduce(reducer, fns, source)
+
+    return kleisli</code></pre>
+</details>
+</dd>
 <dt id="expression.extra.result.sequence"><code class="name flex">
 <span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[~TSource, ~TError]]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[typing.List[~TSource], ~TError]</span>
 </code></dt>
@@ -114,12 +157,12 @@ sequence of their response.</p></div>
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="expression.extra.result.pipeline" href="pipeline.html">expression.extra.result.pipeline</a></code></li>
 <li><code><a title="expression.extra.result.traversable" href="traversable.html">expression.extra.result.traversable</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="expression.extra.result.pipeline" href="#expression.extra.result.pipeline">pipeline</a></code></li>
 <li><code><a title="expression.extra.result.sequence" href="#expression.extra.result.sequence">sequence</a></code></li>
 <li><code><a title="expression.extra.result.traverse" href="#expression.extra.result.traverse">traverse</a></code></li>
 </ul>

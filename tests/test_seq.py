@@ -59,7 +59,8 @@ def test_seq_yield_for_in(xs: List[int]):
 
 @given(st.lists(st.integers()))
 def test_seq_pipe_map(xs: List[int]):
-    ys = pipe(xs, seq.map(lambda x: x + 1))
+    mapper: Callable[[int], int] = lambda x: x + 1
+    ys = pipe(xs, seq.map(mapper))
 
     assert isinstance(ys, Iterable)
     assert [y for y in ys] == [x + 1 for x in xs]
@@ -86,7 +87,8 @@ def test_seq_head_fluent(xs: List[int]):
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_fold_pipe(xs: List[int], s: int):
-    value = pipe(seq.of(xs), seq.fold(lambda s, v: s + v, s))
+    folder: Callable[[int, int], int] = lambda s, v: s + v
+    value = pipe(seq.of(xs), seq.fold(folder, s))
 
     assert value == sum(xs) + s
 
@@ -100,7 +102,7 @@ def test_seq_fold_fluent(xs: List[int], s: int):
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_scan_pipe(xs: List[int], s: int):
-    func = lambda s, v: s + v
+    func: Callable[[int, int], int] = lambda s, v: s + v
     value = pipe(seq.of(xs), seq.scan(func, s))
 
     assert list(value) == list(accumulate(xs, func, initial=s))
@@ -108,7 +110,7 @@ def test_seq_scan_pipe(xs: List[int], s: int):
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_scan_fluent(xs: List[int], s: int):
-    func = lambda s, v: s + v
+    func: Callable[[int, int], int] = lambda s, v: s + v
     value = seq.of(xs).scan(func, s)
 
     assert list(value) == list(accumulate(xs, func, initial=s))
