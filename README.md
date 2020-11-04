@@ -20,13 +20,14 @@ functions, lambdas, and in many ways favors composition over inheritance.
 > Better Python with F#
 
 Expression tries to make a better Python by providing several functional
-features inspired by [F#](https://fsharp.org) into Python. This serves two purposes:
+features inspired by [F#](https://fsharp.org) into Python. This serves
+two purposes:
 
 - Make it easier for Python programmers to learn F# by starting out in a
   programming language they already know. Then get inspired to [try out
   F#](https://aka.ms/fsharphome) by itself.
-- Make it easier for F# developers to use Python when needed, and re-use many
-  of the concepts and abstractions that they already know and love.
+- Make it easier for F# developers to use Python when needed, and re-use
+  many of the concepts and abstractions that they already know and love.
 
 Expression will enable you to work with Python along with F# using many of
 the same programming concepts and abstractions. This enables concepts
@@ -46,8 +47,8 @@ like Python than C# and F# can also do a lot of things better than Python:
 
 ## Getting Started
 
-You can install the latest `expression` from PyPI by running `pip` (or `pip3`).
-Note that `expression` only works for Python 3.8+.
+You can install the latest `expression` from PyPI by running `pip` (or
+`pip3`). Note that `expression` only works for Python 3.8+.
 
 ```sh
 $ pip3 install expression
@@ -64,32 +65,35 @@ $ pip3 install expression
   [OSlash](https://github.com/dbrattli/OSlash), two functional style libraries
   for Python.
 
-For a long time I'm been wanting to make a "bridge" between these two languages
-and got inspired to write this library after watching "[F# as a Better
-Python](https://www.youtube.com/watch?v=_QnbV6CAWXc)" - Phillip Carter - NDC
-Oslo 2020. Doing a transpiler like [Fable](https://fable.io) for Python is one
-option, but a Python library may give a lower barrier and a better introduction
-to existing Python programmers.
+For a long time I'm been wanting to make a "bridge" between these two
+languages and got inspired to write this library after watching "[F# as
+a Better Python](https://www.youtube.com/watch?v=_QnbV6CAWXc)" - Phillip
+Carter - NDC Oslo 2020. Doing a transpiler like
+[Fable](https://fable.io) for Python is one option, but a Python library
+may give a lower barrier and a better introduction to existing Python
+programmers.
 
 Expression is an F# inspired version of my previously written
-[OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I ported a
-number of Haskell abstractions to Python. I never felt that OSlash was really
-practically usable in Python, but F# is much closer to Python than Haskell, so
-it makes more sense to try and make a functional library inspired by F#
-instead.
+[OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I
+ported a number of Haskell abstractions to Python. I never felt that
+OSlash was really practically usable in Python, but F# is much closer to
+Python than Haskell, so it makes more sense to try and make a functional
+library inspired by F# instead.
 
 ## Goals
 
+- Industrial strength Python library for functional programming
 - The resulting code should look and feel like Python. We want to make a
   better Python, not some obscure DSL or academic Monad tutorial
 - Provide pipelining and pipe friendly methods. Compose all the things!
 - Dot-chaining on objects as an alternative syntax to pipes.
 - Avoid currying, not supported in Python by default and not a well known
   concept by Python programmers.
-- Avoid operator (`|`, `>>`, etc) overloading, this usually confuses more than it helps.
-- Use [type-hints](https://docs.python.org/3/library/typing.html) for all
+- Avoid operator (`|`, `>>`, etc) overloading, this usually confuses
+  more than it helps.
+- Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
-- Code should pass strict static type checking by tools such as
+- Code must pass strict static type checking by
   [mypy](http://mypy-lang.org/) and
   [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
   Pylance is awesome, use it!
@@ -101,28 +105,35 @@ providing a few of the features we think are useful, and will add more
 on-demand as we go along.
 
 - **Option** - for optional stuff and better `None` handling.
-- **Result** - for better error handling and enables railway-oriented programming
-  in Python.
+- **Result** - for better error handling and enables railway-oriented
+  programming in Python.
 - **Collections** - immutable collections.
-  - **Sequence** - a better [itertools](https://docs.python.org/3/library/itertools.html) and fully compatible with Python iterables.
+  - **Sequence** - a better
+    [itertools](https://docs.python.org/3/library/itertools.html) and
+    fully compatible with Python iterables.
   - **FrozenList** - a frozen and immutable list type.
   - **Map** - a frozen and immutable dict type (in progress).
-- **Effects**: - light weight computational expressions for Python. This is actually amazing stuff.
+- **Effects**: - light weight computational expressions for Python. This
+  is actually amazing stuff.
   - **option** - an optional world for working with optional values.
   - **result** - an error handling world for working with result values.
-- **Mailbox Processor**: for lock free programming using the [Actor model](https://en.wikipedia.org/wiki/Actor_model).
-- **Cancellation Token**: for cancellation of asynchronous (and synchronous) workflows.
+- **Mailbox Processor**: for lock free programming using the [Actor
+  model](https://en.wikipedia.org/wiki/Actor_model).
+- **Cancellation Token**: for cancellation of asynchronous (and
+  synchronous) workflows.
 - **Disposable**: For resource management.
 
-Pattern matching is provided by [Pampy](https://github.com/santinic/pampy),
-while we wait for [PEP 634](https://www.python.org/dev/peps/pep-0634/) and
-structural pattern matching for Python.
+Pattern matching is provided by
+[Pampy](https://github.com/santinic/pampy), while we wait for [PEP
+634](https://www.python.org/dev/peps/pep-0634/) and structural pattern
+matching for Python.
 
 ### Pipelining
 
-Expression provides a `pipe` function similar to `|>` in F#. We don't want to
-overload any Python operators e.g `|` so `pipe` is a plain old function taking
-N-arguments and thus lets you pipe a value though any number of functions.
+Expression provides a `pipe` function similar to `|>` in F#. We don't
+want to overload any Python operators e.g `|` so `pipe` is a plain old
+function taking N-arguments and thus lets you pipe a value though any
+number of functions.
 
 ```py
 from expression.core import pipe
@@ -138,8 +149,8 @@ value = pipe(
 assert value == gn(fn(x))
 ```
 
-Expression objects also have a pipe method so you can dot chain pipelines
-directly on the object:
+Expression objects also have a pipe method so you can dot chain
+pipelines directly on the object:
 
 ```py
 from expression.core import pipe
@@ -185,8 +196,8 @@ ys = custom(xs)
 ### Options
 
 The option type is used when an actual value might not exist for a named
-value or variable. An option has an underlying type and can hold a value of
-that type `Some(value)`, or it might not have the value `Nothing`.
+value or variable. An option has an underlying type and can hold a value
+of that type `Some(value)`, or it might not have the value `Nothing`.
 
 ```py
 from expression.core import Some, Nothing, Option
@@ -208,16 +219,16 @@ def exists(x : Option[int]) -> bool:
     )
 ```
 
-Options as decorators for computational expressions. Computational expressions
-in Expression are implemented as coroutines ([enhanced
-generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`, `yield from`
-and `return` to consume or generate optional values:
+Options as decorators for computational expressions. Computational
+expressions in Expression are implemented as coroutines ([enhanced
+generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`,
+`yield from` and `return` to consume or generate optional values:
 
 ```py
-from expression.builders import option
+from expression import effect
 from expression.core import Some
 
-@option
+@effect.option
 def fn():
     x = yield 42
     y = yield from Some(43)
@@ -236,8 +247,8 @@ an option decorated function can either be `Ok(value)` or
 `Error(error_value)`.
 
 ```py
-from expression.core import Some, Nothing
 from expression import effect
+from expression.core import Some, Nothing
 
 @effect.option
 def fn():
@@ -265,8 +276,8 @@ value used for errors, e.g an exception type or similar. This is great
 when you want to know why some operation failed (not just `Nothing`).
 
 ```py
-from expression.core import Result, Ok, Error, pipe
 from expression import effect
+from expression.core import Result, Ok, Error, pipe
 
 @effect.result
 def fn():
