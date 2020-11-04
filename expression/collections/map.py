@@ -6,6 +6,7 @@ from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
 from expression.core import Option
 
 from . import maptree as maptree
+from .frozenlist import FrozenList
 from .maptree import MapTree
 
 Value = TypeVar("Value")
@@ -88,12 +89,12 @@ class Map(Generic[Key, Value]):
     def try_find(self, key: Key) -> Option[Value]:
         return maptree.try_find(key, self._tree)
 
+    def to_list(self) -> FrozenList[Tuple[Key, Value]]:
+        return maptree.to_list(self._tree)
 
-#     def ToList() =
-#         maptree.toList tree
+    def to_seq(self) -> Iterable[Tuple[Key, Value]]:
+        return maptree.to_seq(self._tree)
 
-#     def ToArray() =
-#         maptree.toArray tree
 
 #     static member ofList l : Map[Key, Value]:
 #        let comparer = LanguagePrimitives.FastGenericComparer<'Key>
@@ -142,36 +143,12 @@ class Map(Generic[Key, Value]):
 #             | _ ->
 #                 invalidArg "obj" "not comparable"
 
-#     interface ICollection<KeyValuePair<'Key, 'Value>> with
-#         def Add x = ignore x; raise (System.NotSupportedException("Map cannot be mutated"))
-#         def Clear() = raise (System.NotSupportedException("Map cannot be mutated"))
-#         def Remove x = ignore x; raise (System.NotSupportedException("Map cannot be mutated"))
-#         def Contains x = m.ContainsKey x.Key && Unchecked.equals m.[x.Key] x.Value
-#         def CopyTo(arr, i) = maptree.copyToArray tree arr i
-#         def IsReadOnly = true
-#         def Count = m.Count
-
-#     interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>> with
-#         def Count = m.Count
-
 #     // interface IReadOnlyDictionary<'Key, 'Value> with
 #     //     def Item with get key = m.[key]
 #     //     def Keys = seq { for kvp in m -> kvp.Key }
 #     //     def TryGetValue(key, value: byref<'Value>) = m.TryGetValue(key, &value)
 #     //     def Values = seq { for kvp in m -> kvp.Value }
 #     //     def ContainsKey key = m.ContainsKey key
-
-#     interface Fable.Core.JS.Map<'Key,'Value> with
-#         def size = m.Count
-#         def clear() = failwith "Map cannot be mutated"; ()
-#         def delete(_) = failwith "Map cannot be mutated"; false
-#         def entries() = m |> Seq.map (fun p -> p.Key, p.Value)
-#         def get(k) = m.Item(k)
-#         def has(k) = m.ContainsKey(k)
-#         def keys() = m |> Seq.map (fun p -> p.Key)
-#         def set(k, v) = failwith "Map cannot be mutated"; m :> Fable.Core.JS.Map<'Key,'Value>
-#         def values() = m |> Seq.map (fun p -> p.Value)
-#         def forEach(f, ?thisArg) = m |> Seq.iter (fun p -> f p.Value p.Key m)
 
 #     override this.ToString() =
 #         let inline toStr (kv: KeyValuePair<'Key,'Value>) = System.String.Format("({0}, {1})", kv.Key, kv.Value)
@@ -260,9 +237,10 @@ def map(mapping: Callable[[Value], Result]) -> Callable[[Map[Key, Value]], Map[K
 # let foldBack<'Key, 'T, 'State  when 'Key : comparison> folder (table: Map<'Key, 'T>) (state:'State) =
 #     maptree.foldBack folder table.Tree state
 
-# // [<CompiledName("ToSeq")>]
-# let toSeq (table: Map<_, _>) =
-#     table |> Seq.map (fun kvp -> kvp.Key, kvp.Value)
+
+def to_seq(table: Map[Key, Value]):
+    return Map.to_seq(table)
+
 
 # // [<CompiledName("FindKey")>]
 # let findKey predicate (table : Map<_, _>) =

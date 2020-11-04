@@ -1,13 +1,13 @@
 # Copyright (c) Microsoft Corporation.  All Rights Reserved.
 # See License.txt in the project root for license information.
 
+import inspect
 from dataclasses import dataclass
-from typing import (Any, Callable, Generic, Iterable, Iterator, List, Tuple,
-                    TypeVar, cast)
+from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
 
 from expression.core import Nothing, Option, Some, failwith, pipe
 
-from . import frozenlist
+from . import frozenlist, seq
 from .frozenlist import FrozenList
 
 Value = TypeVar("Value")
@@ -450,15 +450,20 @@ def map(f: Callable[[Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Re
 # let foldSection (comparer: IComparer<Key>) lo hi f m x =
 #     foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
-# let toList (m: MapTree[Key, Value]) =
-#     let rec loop (m: MapTree[Key, Value]) acc =
-#         match m with
-#         | None -> acc
-#         | Some m2 ->
-#             match m2 with
-#             | :? MapTreeNode[Key, Value] as mn -> loop mn.left ((mn.key, mn.value) :: loop mn.right acc)
-#             | _ -> (m2.key, m2.value) :: acc
-#     loop m []
+
+def to_list(m: MapTree[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
+    def loop(m: MapTree[Key, Value], acc: FrozenList[Tuple[Key, Value]]) -> FrozenList[Tuple[Key, Value]]:
+        for m2 in m.to_list():
+            if isinstance(m2, MapTreeNode):
+                mn = cast(MapTreeNode[Key, Value], m2)
+                return loop(mn.left, loop(mn.right, acc).cons((mn.key, mn.value)))
+            else:
+                return acc.cons((m2.key, m2.value))
+        else:
+            return acc
+
+    return loop(m, frozenlist.empty)
+
 
 # let toArray (m: MapTree[Key, Value]): (Key * Value)[] =
 #     m |> toList |> Array.ofList
@@ -520,14 +525,29 @@ def collapseLHS(stack: FrozenList[MapTree[Key, Value]]) -> FrozenList[MapTree[Ke
 class MkIterator(Iterator[Tuple[Key, Value]]):
     def __init__(self, m: MapTree[Key, Value]) -> None:
         self.stack = collapseLHS(frozenlist.singleton(m))
-        self.started = False
 
     def __next__(self) -> Tuple[Key, Value]:
-        raise NotImplementedError
+        if not self.stack:
+            raise StopIteration
 
-# let notStarted() = failwith "enumeration not started"
+        rest = self.stack.tail()
+        for m in self.stack.head():
+            if isinstance(m, MapTreeNode):
+                failwith("Please report error: Map iterator, unexpected stack for next()")
+            else:
+                self.stack = collapseLHS(rest)
+                return m.key, m.value
+        else:
+            failwith("Please report error: Map iterator, unexpected stack for next()")
 
-# let alreadyFinished() = failwith "enumeration already finished"
+
+def not_started() -> None:
+    failwith("enumeration not started")
+
+
+def already_finished():
+    failwith("enumeration already finished")
+
 
 # let current i =
 #     if i.started then
@@ -560,16 +580,20 @@ class MkIterator(Iterator[Tuple[Key, Value]]):
 #         i.started <- true  // The first call to MoveNext "starts" the enumeration.
 #         not i.stack.Is_empty
 
-# def mk_iterator(m: MapTree[Key, Value]) -> Iterator[Tuple[Key, Value]]:
-#     i = MkIterator(m)
-#         interface System.Collections.IEnumerator with
-#             member __.Current = box (current i)
-#             member __.MoveNext() = moveNext i
 
-# def to_seq(s: MapTree[Key, Value]) -> Iterable[Tuple[Key, Value]]:
-#     en = mk_iterator(s)
-#     def folder(en):
-#         if en.MoveNext()
-#         then Some(en.Current, en)
-#         else None)
-#     return pipe(en, Seq.unfold(folder))
+def mk_iterator(m: MapTree[Key, Value]) -> Iterator[Tuple[Key, Value]]:
+    return MkIterator(m)
+
+
+def to_seq(s: MapTree[Key, Value]) -> Iterable[Tuple[Key, Value]]:
+    it = mk_iterator(s)
+
+    def folder(it: Iterator[Tuple[Key, Value]]):
+        try:
+            current = next(it)
+        except StopIteration:
+            return Nothing
+        else:
+            return Some((current, it))
+
+    return pipe(it, seq.unfold(folder))
