@@ -1,21 +1,24 @@
-"""Immutable list module.
+"""A frozen immutable list module.
 
-NOTE: Should only be used for smaller lists, i.e less than 10K elements.
+The FrozenList is implemented using tuples. Tuples in Python are
+immutable and gives us a high performant implementation of immutable
+lists.
 
-This is not the fastest or most space efficient implementation of a
-list. If that is the goal then use the builin mutable list or array
-types instead. Use this list if you need an immutable list for prepend
-operations mostly (`O(1)`).
+What this module gives is a set of useful methods and functions
+for working with immutable lists.
 
 Example:
-    >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
-    >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
+    >>> xs = frozenlist.of_list([1, 2, 3, 4, 5])
+    >>> ys = frozenlist.empty.cons(1).cons(2).cons(3).cons(4).cons(5)
+    >>> zs = pipe(
+...     xs,
+...     frozenlist.filter(lambda x: x<10)
+... )
 """
 
 import builtins
-import sys
-from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, Iterator, Optional, Sized, Tuple, TypeVar, Union, cast, overload
+import functools
+from typing import Any, Callable, Iterable, Tuple, TypeVar, cast, overload
 
 from expression.core.option import Nothing, Option, Some, pipe
 
@@ -28,9 +31,11 @@ T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 T3 = TypeVar("T3")
 T4 = TypeVar("T4")
+T5 = TypeVar("T5")
+T6 = TypeVar("T6")
 
 
-class FrozenList(Iterable[TSource], Sized, ABC):
+class FrozenList(Tuple[TSource]):
     """Immutable list type.
 
     This is not the most space efficient implementation of a list. If
@@ -72,33 +77,55 @@ class FrozenList(Iterable[TSource], Sized, ABC):
     ) -> T4:
         ...
 
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["FrozenList[TSource]"], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+        __fn5: Callable[[T4], T5],
+    ) -> T5:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["FrozenList[TSource]"], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+        __fn5: Callable[[T4], T5],
+        __fn6: Callable[[T5], T6],
+    ) -> T6:
+        ...
+
     def pipe(self, *args: Any) -> Any:
         """Pipe list through the given functions."""
         return pipe(self, *args)
 
-    @abstractmethod
     def append(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
-        raise NotImplementedError
+        return FrozenList(self + other)
 
-    @abstractmethod
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "FrozenList[TResult]":
-        raise NotImplementedError
+        def mapper(x: TSource) -> FrozenList[TResult]:
+            return FrozenList(chooser(x).to_seq())
 
-    @abstractmethod
+        return self.collect(mapper)
+
     def collect(self, mapping: Callable[[TSource], "FrozenList[TResult]"]) -> "FrozenList[TResult]":
-        raise NotImplementedError
+        mapped = builtins.map(mapping, self)
+        xs = (y for x in mapped for y in x)
+        return FrozenList(xs)
 
-    @abstractmethod
     def cons(self, element: TSource) -> "FrozenList[TSource]":
         """Add element to front of List."""
 
-        raise NotImplementedError
+        return FrozenList((element, *self))
 
-    @abstractmethod
     def filter(self, predicate: Callable[[TSource], bool]) -> "FrozenList[TSource]":
-        raise NotImplementedError
+        return FrozenList(builtins.filter(predicate, self))
 
-    @abstractmethod
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
         """Applies a function to each element of the collection,
         threading an accumulator argument through the computation. Take
@@ -118,9 +145,8 @@ class FrozenList(Iterable[TSource], Sized, ABC):
             Partially applied fold function that takes the source list
             and returns the final state value.
         """
-        raise NotImplementedError
+        return functools.reduce(folder, self, state)
 
-    @abstractmethod
     def head(self) -> TSource:
         """Returns the first element of the list.
 
@@ -134,9 +160,9 @@ class FrozenList(Iterable[TSource], Sized, ABC):
             ValueError: Thrown when the list is empty.
         """
 
-        raise NotImplementedError
+        head, *_ = self
+        return head
 
-    @abstractmethod
     def indexed(self, start: int = 0) -> "FrozenList[Tuple[int, TSource]]":
         """Returns a new list whose elements are the corresponding
         elements of the input list paired with the index (from `start`)
@@ -148,9 +174,8 @@ class FrozenList(Iterable[TSource], Sized, ABC):
         Returns:
             The list of indexed elements.
         """
-        raise NotImplementedError
+        return FrozenList(enumerate(self))
 
-    @abstractmethod
     def item(self, index: int) -> TSource:
         """Indexes into the list. The first element has index 0.
 
@@ -160,19 +185,16 @@ class FrozenList(Iterable[TSource], Sized, ABC):
         Returns:
             The value at the given index.
         """
-        raise NotImplementedError
+        return self[index]
 
-    @abstractmethod
     def is_empty(self) -> bool:
         """Return `True` if list is empty."""
 
-        raise NotImplementedError
+        return not bool(self)
 
-    @abstractmethod
     def map(self, mapping: Callable[[TSource], TResult]) -> "FrozenList[TResult]":
-        raise NotImplementedError
+        return FrozenList((*builtins.map(mapping, self),))
 
-    @abstractmethod
     def skip(self, count: int) -> "FrozenList[TSource]":
         """Returns the list after removing the first N elements.
 
@@ -182,93 +204,17 @@ class FrozenList(Iterable[TSource], Sized, ABC):
         Returns:
             The list after removing the first N elements.
         """
-        raise NotImplementedError
+        return FrozenList(self[count:])
 
-    @abstractmethod
     def skip_last(self, count: int) -> "FrozenList[TSource]":
-        raise NotImplementedError
+        return FrozenList(self[:-count])
 
-    def slice(
-        self, start: Optional[int] = None, stop: Optional[int] = None, step: Optional[int] = None
-    ) -> "FrozenList[TSource]":
-        """The slice operator.
-
-        Slices the given list. It is basically a wrapper around the operators
-        - skip
-        - skip_last
-        - take
-        - take_last
-        - filter_indexed
-
-        The following diagram helps you remember how slices works with streams.
-
-        Positive numbers are relative to the start of the events, while negative
-        numbers are relative to the end (close) of the stream.
-
-        ```py
-            r---e---a---c---t---i---v---e---!
-            0   1   2   3   4   5   6   7   8
-           -8  -7  -6  -5  -4  -3  -2  -1   0
-        ```
-
-        Examples:
-            >>> result = xs.slice(1, 10)
-            >>> result = xs.slice(1, -2)
-            >>> result = xs.slice(1, -1, 2)
-
-        Args:
-            source: Observable to slice
-
-        Returns:
-            A sliced list.
-        """
-        res = self
-
-        _start: int = 0 if start is None else start
-        _stop: int = sys.maxsize if stop is None else stop
-        _step: int = 1 if step is None else step
-
-        if _stop >= 0:
-            try:
-                res = res.take(_stop)
-            except ValueError:
-                res = res
-
-        if _start > 0:
-            try:
-                res = res.skip(_start)
-            except ValueError:
-                res = cast(FrozenList[TSource], empty)
-
-        elif _start < 0:
-            try:
-                res = res.take_last(-_start)
-            except ValueError:
-                res = cast(FrozenList[TSource], empty)
-
-        if _stop < 0:
-            try:
-                res = res.skip_last(-_stop)
-            except ValueError:
-                res = cast(FrozenList[TSource], empty)
-
-        if _step > 1:
-            predicate: Callable[[Tuple[int, Any]], bool] = lambda t: t[0] % _step == 0
-            res = res.indexed().filter(predicate)
-
-        elif _step < 0:
-            # Reversing events is not supported
-            raise TypeError("Negative step not supported.")
-
-        return res
-
-    @abstractmethod
     def tail(self) -> "FrozenList[TSource]":
         """Return tail of List."""
 
-        raise NotImplementedError
+        _, *tail = self
+        return FrozenList(tail)
 
-    @abstractmethod
     def take(self, count: int) -> "FrozenList[TSource]":
         """Returns the first N elements of the list.
 
@@ -278,9 +224,8 @@ class FrozenList(Iterable[TSource], Sized, ABC):
         Returns:
             The result list.
         """
-        raise NotImplementedError
+        return FrozenList(self[:count])
 
-    @abstractmethod
     def take_last(self, count: int) -> "FrozenList[TSource]":
         """Returns a specified number of contiguous elements from the
         end of the list.
@@ -291,14 +236,13 @@ class FrozenList(Iterable[TSource], Sized, ABC):
         Returns:
             The result list.
         """
-        raise NotImplementedError
+        return FrozenList(self[-count:])
 
-    @abstractmethod
     def try_head(self) -> Option[TSource]:
         """Returns the first element of the list, or None if the list is
         empty.
         """
-        raise NotImplementedError
+        return Some(self[0]) if self else Nothing
 
     @staticmethod
     def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -> "FrozenList[TSource]":
@@ -333,506 +277,18 @@ class FrozenList(Iterable[TSource], Sized, ABC):
             A single list containing pairs of matching elements from the
             input lists.
         """
-        raise NotImplementedError
+        return FrozenList(builtins.zip(self, other))
 
-    @abstractmethod
-    def __iter__(self) -> Iterator[TSource]:
-        """Return iterator for List."""
-
-        raise NotImplementedError
-
-    @abstractmethod
     def __add__(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
-        """Append list with other list."""
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def __eq__(self, other: Any) -> bool:
-        """Return true if list equals other list."""
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def __len__(self) -> int:
-        """Return length of List."""
-
-        raise NotImplementedError
-
-    @overload
-    def __getitem__(self, key: builtins.slice) -> "FrozenList[TSource]":
-        ...
-
-    @overload
-    def __getitem__(self, key: int) -> TSource:
-        ...
-
-    def __getitem__(self, key: Union[builtins.slice, int]) -> Union["FrozenList[TSource]", TSource]:
-        """
-        Pythonic version of `slice`.
-
-        Slices the given list using Python slice notation. The arguments
-        to slice are `start`, `stop` and `step` given within brackets
-        `[]` and separated by the colons `:`.
-
-        Examples:
-            >>> result = source[1:10]
-            >>> result = source[1:-2]
-            >>> result = source[1:-1:2]
-
-        Args:
-            key: Slice object
-
-        Returns:
-            Sliced observable sequence.
-
-        Raises:
-            TypeError: If key is not of type :code:`int` or :code:`slice`
-        """
-
-        if isinstance(key, slice):
-            start, stop, step = key.start, key.stop, key.step
-            return self.slice(start, stop, step)
-        else:
-            return self.item(key)
-
-
-class Cons(FrozenList[TSource]):
-    def __init__(self, head: TSource, tail: FrozenList[TSource]):
-        self._value = (head, tail)
-        self._len = 1 + len(tail)
-
-    def append(self, other: FrozenList[TSource]) -> FrozenList[TSource]:
-        head, tail = self._value
-        return Cons(head, tail.append(other))
-
-    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> FrozenList[TResult]:
-        head, tail = self._value
-        filtered: FrozenList[TResult] = tail.choose(chooser)
-        return of_option(chooser(head)).append(filtered)
-
-    def collect(self, mapping: Callable[[TSource], FrozenList[TResult]]) -> FrozenList[TResult]:
-        """For each element of the list, applies the given function.
-        Concatenates all the results and return the combined list.
-
-        Args:
-            mapping: he function to transform each input element into
-            a sublist to be concatenated.
-
-        Returns:
-            The concatenation of the transformed sublists.
-        """
-        head, tail = self._value
-        return mapping(head).append(tail.collect(mapping))
-
-    def cons(self, element: TSource) -> FrozenList[TSource]:
-        """Add element to front of List."""
-
-        return Cons(element, self)
-
-    def filter(self, predicate: Callable[[TSource], bool]) -> FrozenList[TSource]:
-        head, tail = self._value
-
-        filtered = tail.filter(predicate)
-        return Cons(head, filtered) if predicate(head) else filtered
-
-    def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
-        """Applies a function to each element of the collection,
-        threading an accumulator argument through the computation. Take
-        the second argument, and apply the function to it and the first
-        element of the list. Then feed this result into the function
-        along with the second element and so on. Return the final
-        result. If the input function is f and the elements are i0...iN
-        then computes f (... (f s i0) i1 ...) iN.
-
-        Args:
-            folder: The function to update the state given the input
-                elements.
-
-            state: The initial state.
-
-        Returns:
-            Partially applied fold function that takes the source list
-            and returns the final state value.
-        """
-        head, tail = self._value
-        return tail.fold(folder, folder(state, head))
-
-    def head(self) -> TSource:
-        """Returns the first element of the list.
-
-        Args:
-            source: The input list.
-
-        Returns:
-            The first element of the list.
-
-        Raises:
-            ValueError: Thrown when the list is empty.
-        """
-
-        head, _ = self._value
-        return head
-
-    def indexed(self, start: int = 0) -> FrozenList[Tuple[int, TSource]]:
-        """Returns a new list whose elements are the corresponding
-        elements of the input list paired with the index (from `start`)
-        of each element.
-
-        Args:
-            start: Optional index to start from. Defaults to 0.
-
-        Returns:
-            The list of indexed elements.
-        """
-        head, tail = self._value
-        return Cons((start, head), tail.indexed(start + 1))
-
-    def item(self, index: int) -> TSource:
-        """Indexes into the list. The first element has index 0.
-
-        Args:
-            index: The index to retrieve.
-
-        Returns:
-            The value at the given index.
-        """
-        head, tail = self._value
-
-        return head if not index else tail.item(index - 1)
-
-    def is_empty(self) -> bool:
-        """Return `True` if list is empty."""
-        return False
-
-    def map(self, mapping: Callable[[TSource], TResult]) -> FrozenList[TResult]:
-        head, tail = self._value
-        return Cons(mapping(head), tail.map(mapping))
-
-    def skip(self, count: int) -> "FrozenList[TSource]":
-        """Returns the list after removing the first N elements."""
-        if count == 0:
-            return self
-
-        if self._len < count:
-            raise ValueError(f"Not enough values to skip (expected at least {count}, got {self._len})")
-
-        _, tail = self._value
-
-        return tail.skip(count - 1)
-
-    def skip_last(self, count: int) -> "FrozenList[TSource]":
-        """Returns the list after removing the last N elements."""
-        if count == 0:
-            return self
-
-        head, tail = self._value
-        queue = tail if tail is Nil else tail.skip_last(count)
-        return Cons(head, queue) if len(tail) >= count else queue
-
-    def tail(self) -> FrozenList[TSource]:
-        """Return tail of List."""
-
-        _, tail = self._value
-        return tail
-
-    def take(self, count: int) -> "FrozenList[TSource]":
-        """Returns the first N elements of the list.
-
-        Args:
-            count: The number of items to take.
-
-        Returns:
-            The result list.
-        """
-
-        if not count:
-            return Nil
-
-        if self._len < count:
-            raise ValueError(f"Not enough values to take (expected at least {count}, got {self._len})")
-
-        head, tail = self._value
-        tail_ = tail.take(count - 1)
-        return Cons(head, tail_)
-
-    def take_last(self, count: int) -> "FrozenList[TSource]":
-        """Returns a specified number of contiguous elements from the
-        end of the list.
-
-        Args:
-            count: The number of items to take.
-
-        Returns:
-            The result list.
-        """
-        if not count:
-            return Nil
-
-        head, tail = self._value
-        queue = tail if tail is Nil else tail.take_last(count)
-        return Cons(head, queue) if len(queue) < count else queue
-
-    def try_head(self) -> Option[TSource]:
-        """Returns the first element of the list, or None if the list is
-        empty.
-        """
-
-        head, _ = self._value
-        return Some(head)
-
-    def zip(self, other: FrozenList[TResult]) -> FrozenList[Tuple[TSource, TResult]]:
-        """Combines the two lists into a list of pairs. The two lists
-        must have equal lengths.
-
-        Args:
-            other: The second input list.
-
-        Returns:
-            A single list containing pairs of matching elements from the
-            input lists.
-        """
-        if other is Nil:
-            raise ValueError("The list must have equal length.")
-
-        head, tail = self._value
-        head_, tail_ = other.head(), other.tail()
-
-        return Cons((head, head_), tail.zip(tail_))
-
-    def __add__(self, other: FrozenList[TSource]) -> FrozenList[TSource]:
         """Append list with other list."""
 
         return self.append(other)
 
-    def __eq__(self, other: Any) -> bool:
-        """Return true if list equals other list."""
-
-        if other is Nil:
-            return False
-
-        head, tail = self._value
-        return head == other.head() and tail == other.tail()
-
-    def __iter__(self):
-        head, tail = self._value
-        yield head
-        yield from tail
-
-    def __len__(self) -> int:
-        """Return length of List."""
-
-        return self._len
-
-
-class _Nil(FrozenList[TSource]):
-    """The List Nil case class.
-
-    Do not use. Use the singleton Nil instead.
-    """
-
-    def append(self, other: FrozenList[TSource]) -> FrozenList[TSource]:
-        return other
-
-    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> FrozenList[TResult]:
-        return Nil
-
-    def collect(self, mapping: Callable[[TSource], FrozenList[TResult]]) -> FrozenList[TResult]:
-        """For each element of the list, applies the given function.
-        Concatenates all the results and return the combined list.
-
-        Args:
-            mapping: he function to transform each input element into
-            a sublist to be concatenated.
-
-        Returns:
-            The concatenation of the transformed sublists.
-        """
-        return Nil
-
-    def cons(self, element: TSource) -> FrozenList[TSource]:
-        """Add element to front of List."""
-
-        return Cons(element, self)
-
-    def filter(self, predicate: Callable[[TSource], bool]) -> FrozenList[TSource]:
-        return Nil
-
-    def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
-        """Applies a function to each element of the collection,
-        threading an accumulator argument through the computation. Take
-        the second argument, and apply the function to it and the first
-        element of the list. Then feed this result into the function
-        along with the second element and so on. Return the final
-        result. If the input function is f and the elements are i0...iN
-        then computes f (... (f s i0) i1 ...) iN.
-
-        Args:
-            folder: The function to update the state given the input
-                elements.
-
-            state: The initial state.
-
-        Returns:
-            Partially applied fold function that takes the source list
-            and returns the final state value.
-        """
-        return state
-
-    def head(self) -> TSource:
-        """Returns the first element of the list.
-
-        Args:
-            source: The input list.
-
-        Returns:
-            The first element of the list.
-
-        Raises:
-            ValueError: Thrown when the list is empty.
-        """
-
-        raise ValueError("List is empty")
-
-    def indexed(self, start: int = 0) -> FrozenList[Tuple[int, TSource]]:
-        """Returns a new list whose elements are the corresponding
-        elements of the input list paired with the index (from `start`)
-        of each element.
-
-        Args:
-            start: Optional index to start from. Defaults to 0.
-
-        Returns:
-            The list of indexed elements.
-        """
-        return Nil
-
-    def item(self, index: int) -> TSource:
-        """Indexes into the list. The first element has index 0.
-
-        Args:
-            index: The index to retrieve.
-
-        Returns:
-            The value at the given index.
-        """
-
-        raise IndexError("list index out of range")
-
-    def is_empty(self) -> bool:
-        """Return `True` if list is empty."""
-        return True
-
-    def map(self, mapping: Callable[[TSource], TResult]) -> FrozenList[TResult]:
-        return Nil
-
-    def skip(self, count: int) -> "FrozenList[TSource]":
-        """Returns the list after removing the first N elements.
-
-        Args:
-            count: The number of elements to skip.
-
-        Returns:
-            The list after removing the first N elements.
-
-        Raises:
-            ValueError if the list is empty.
-        """
-        if count == 0:
-            return self
-
-        raise ValueError("Not enough values to skip.")
-
-    def skip_last(self, count: int) -> "FrozenList[TSource]":
-        if count == 0:
-            return self
-
-        raise ValueError("Not enough values to skip.")
-
-    def tail(self) -> FrozenList[TSource]:
-        """Return tail of List."""
-
-        raise IndexError("List is empty")
-
-    def take(self, count: int) -> "FrozenList[TSource]":
-        """Returns the first N elements of the list.
-
-        Args:
-            count: The number of items to take.
-
-        Returns:
-            The result list.
-
-        Raises:
-            ValueError if the list is empty.
-        """
-        if not count:
-            return Nil
-        raise ValueError("Not enough values to take.")
-
-    def take_last(self, count: int) -> "FrozenList[TSource]":
-        """Returns a specified number of contiguous elements from the
-        end of the list.
-
-        Args:
-            count: The number of items to take.
-
-        Returns:
-            The result list.
-
-        Raises:
-            ValueError if the list is empty.
-        """
-        if not count:
-            return Nil
-        raise ValueError("Not enough values to take.")
-
-    def try_head(self) -> Option[TSource]:
-        """Returns the first element of the list, or None if the list is
-        empty.
-        """
-        return Nothing
-
-    def zip(self, other: FrozenList[TResult]) -> FrozenList[Tuple[TSource, TResult]]:
-        """Combines the two lists into a list of pairs. The two lists
-        must have equal lengths.
-
-        Args:
-            other: The second input list.
-
-        Returns:
-            A single list containing pairs of matching elements from the
-            input lists.
-
-        Raises:
-            ValueError if the list is empty.
-        """
-        if other is Nil:
-            return Nil
-
-        raise ValueError("The list must have equal length.")
-
-    def __add__(self, other: FrozenList[TSource]) -> FrozenList[TSource]:
-        """Append list with other list."""
-
-        return other
-
-    def __eq__(self, other: Any) -> bool:
-        """Return true if list equals other list."""
-
-        return other is Nil
-
-    def __iter__(self):
-        while False:
-            yield
-
-    def __len__(self) -> int:
-        """Return length of List."""
-
-        return 0
-
-
-Nil: FrozenList[Any] = _Nil()
+    def __str__(self) -> str:
+        return f"[{', '.join(self.map(str))}]"
+
+    def __repr__(self) -> str:
+        return str(self)
 
 
 def append(source: FrozenList[TSource]) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
@@ -878,13 +334,18 @@ def collect(mapping: Callable[[TSource], FrozenList[TResult]]) -> Callable[[Froz
 
 
 def concat(sources: Iterable[FrozenList[TSource]]) -> FrozenList[TSource]:
-    def folder(xs: FrozenList[TSource], acc: FrozenList[TSource]) -> FrozenList[TSource]:
-        return xs + acc
+    def reducer(t: FrozenList[TSource], s: FrozenList[TSource]) -> FrozenList[TSource]:
+        return t.append(s)
 
-    return seq.fold_back(folder, sources)(Nil)
+    return pipe(sources, seq.fold(reducer, empty))
 
 
-empty: FrozenList[Any] = Nil
+def cons(head: TSource, tail: FrozenList[TSource]) -> FrozenList[TSource]:
+    return FrozenList(head, *tail)
+
+
+nil: FrozenList[Any] = FrozenList()
+empty: FrozenList[Any] = nil
 """The empty list."""
 
 
@@ -994,10 +455,7 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[FrozenList[TSource]],
 
 
 def of_seq(xs: Iterable[TSource]) -> FrozenList[TSource]:
-    def folder(value: TSource, acc: FrozenList[TSource]) -> FrozenList[TSource]:
-        return Cons(value, acc)
-
-    return seq.fold_back(folder, xs)(Nil)
+    return FrozenList((*xs,))
 
 
 def of_option(option: Option[TSource]) -> FrozenList[TSource]:
@@ -1007,7 +465,7 @@ def of_option(option: Option[TSource]) -> FrozenList[TSource]:
 
 
 def singleton(value: TSource) -> FrozenList[TSource]:
-    return Cons(value, Nil)
+    return FrozenList((value,))
 
 
 def skip(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
@@ -1130,8 +588,6 @@ def zip(other: FrozenList[TResult]) -> Callable[[FrozenList[TSource]], FrozenLis
 
 __all__ = [
     "FrozenList",
-    "Cons",
-    "Nil",
     "append",
     "choose",
     "collect",

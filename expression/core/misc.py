@@ -1,8 +1,9 @@
-from typing import Any, Callable, Optional, Tuple, TypeVar, cast, get_origin
+from typing import Any, Callable, Generic, Optional, Tuple, TypeVar, Union, cast, get_origin
 
 A = TypeVar("A")
 B = TypeVar("B")
 TSource = TypeVar("TSource")
+TResult = TypeVar("TResult")
 Base = TypeVar("Base")
 Derived = TypeVar("Derived")
 
@@ -74,4 +75,28 @@ def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
     return _
 
 
-__all__ = ["identity", "starid", "flip"]
+class Thunk(Generic[TResult]):
+    """Suspended computaton."""
+
+    def __init__(self, name: Callable[..., TResult], *args: Any, **kw: Any):
+        self.run = lambda: name(*args, **kw)
+
+    def __call__(self) -> TResult:
+        return self.run()
+
+
+def trampoline(fn: Callable[..., TResult]) -> Callable[..., TResult]:
+    """Thunk bouncing decorator."""
+
+    def _trampoline(bouncer: Union[Thunk[TResult], Callable[..., TResult]]) -> TResult:
+        while isinstance(bouncer, Thunk):
+            bouncer = bouncer()
+        return bouncer
+
+    def _(*args: Any) -> TResult:
+        return _trampoline(fn(*args))
+
+    return _
+
+
+__all__ = ["identity", "starid", "flip", "Thunk", "trampoline"]

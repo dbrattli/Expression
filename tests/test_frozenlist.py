@@ -2,21 +2,12 @@ from builtins import list as pylist
 from typing import Any, Callable
 from typing import List as PyList
 
-from expression.collections import Cons, FrozenList, Nil, frozenlist
+from expression.collections import FrozenList, frozenlist
 from expression.core import pipe
 from hypothesis import given
 from hypothesis import strategies as st
 
 Func = Callable[[int], int]
-
-
-def test_list_nil():
-    assert isinstance(Nil, FrozenList)
-
-
-def test_list_cons():
-    xs = Cons(42, Nil)
-    assert isinstance(xs, FrozenList)
 
 
 @given(st.integers(min_value=0, max_value=10000))
@@ -74,7 +65,7 @@ def test_list_length(xs: PyList[int]):
 
 @given(st.one_of(st.integers(), st.text()))
 def test_list_cons_head(value: Any):
-    x = pipe(Cons(value, Nil), frozenlist.head)
+    x = pipe(frozenlist.empty.cons(value), frozenlist.head)
     assert x == value
 
 
@@ -116,13 +107,10 @@ def test_list_take(xs: PyList[int], x: int):
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_list_take_last(xs: PyList[int], x: int):
-    expected = xs[-x:] if x else []
+    expected = xs[-x:]
     ys: FrozenList[int]
-    try:
-        ys = frozenlist.of_seq(xs).take_last(x)
-        assert pylist(ys) == expected
-    except ValueError:
-        assert x > len(xs)
+    ys = frozenlist.of_seq(xs).take_last(x)
+    assert pylist(ys) == expected
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
@@ -137,13 +125,10 @@ def test_list_skip(xs: PyList[int], x: int):
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_list_skip_last(xs: PyList[int], x: int):
-    expected = xs[:-x] if x else xs
+    expected = xs[:-x]
     ys: FrozenList[int]
-    try:
-        ys = frozenlist.of_seq(xs).skip_last(x)
-        assert pylist(ys) == expected
-    except ValueError:
-        assert x > len(xs)
+    ys = frozenlist.of_seq(xs).skip_last(x)
+    assert pylist(ys) == expected
 
 
 @given(st.lists(st.integers()), st.integers(), st.integers())
