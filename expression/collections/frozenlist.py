@@ -1,11 +1,11 @@
 """A frozen immutable list module.
 
-The FrozenList is implemented using tuples. Tuples in Python are
+This module provides an immutable list type `FrozenList` and  a set of
+useful methods and functions for working with the list.
+
+A FrozenList is actually a Python tuple. Tuples in Python are
 immutable and gives us a high performant implementation of immutable
 lists.
-
-What this module gives is a set of useful methods and functions
-for working with immutable lists.
 
 Example:
     >>> xs = frozenlist.of_list([1, 2, 3, 4, 5])

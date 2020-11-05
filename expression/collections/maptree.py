@@ -1,7 +1,24 @@
-# Copyright (c) Microsoft Corporation.  All Rights Reserved.
-# See License.txt in the project root for license information.
+# Attribution to original authors of this code
+# --------------------------------------------
+# This code has been originally been ported from the Fable project which
+# was originally ported from the FSharp project.
+#
+# Fable (https://fable.io)
+# - Copyright (c) Alfonso Garcia-Caro and contributors.
+# - MIT License
+# - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/Map.fs
+#
+# F# (https://github.com/dotnet/fsharp)
+# - Copyright (c) Microsoft Corporation. All Rights Reserved.
+# - MIT License
+# - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-import inspect
+"""
+The maptree module contains the internal implementation of the `map`.
+
+Do not use directly. Use the `map` module instead.
+"""
+import builtins
 from dataclasses import dataclass
 from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
 
@@ -10,8 +27,8 @@ from expression.core import Nothing, Option, Some, failwith, pipe
 from . import frozenlist, seq
 from .frozenlist import FrozenList
 
-Value = TypeVar("Value")
 Key = TypeVar("Key")
+Value = TypeVar("Value")
 Result = TypeVar("Result")
 
 
@@ -65,7 +82,7 @@ def height(m: MapTree[Key, Value]) -> int:
         return 0
 
 
-tolerance = 2
+TOLERANCE = 2
 
 
 def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Value]) -> MapTree[Key, Value]:
@@ -81,10 +98,10 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
 def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]) -> MapTree[Key, Value]:
     t1h = height(t1)
     t2h = height(t2)
-    if t2h > t1h + tolerance:  # right is heavier than left
+    if t2h > t1h + TOLERANCE:  # right is heavier than left
         if isinstance(t2.value, MapTreeNode):
             t2_ = cast(MapTreeNode[Key, Value], t2.value)
-            # one of the nodes must have height > height t1 + 1
+            # One of the nodes must have height > height t1 + 1
             if height(t2_.left) > t1h + 1:  # balance left: combination
                 if isinstance(t2_.left.value, MapTreeNode):
                     t2l = cast(MapTreeNode[Key, Value], t2_.left.value)
@@ -92,15 +109,15 @@ def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
                     return mk(mk(t1, k, v, t2l.left), t2l.key, t2l.value, mk(t2l.right, t2_.key, t2_.value, t2_.right))
                 else:
                     failwith("internal error: Map.rebalance")
-            else:  # rotate left
+            else:  # Rotate left
                 return mk(mk(t1, k, v, t2_.left), t2_.key, t2_.value, t2_.right)
         else:
             failwith("internal error: Map.rebalance")
     else:
-        if t1h > t2h + tolerance:  # left is heavier than right
+        if t1h > t2h + TOLERANCE:  # left is heavier than right
             if isinstance(t1.value, MapTreeNode):
                 t1_ = cast(MapTreeNode[Key, Value], t1.value)
-                # one of the nodes must have height > height t2 + 1
+                # One of the nodes must have height > height t2 + 1
                 if height(t1_.right) > t2h + 1:  # balance right: combination
                     if isinstance(t1_.right.value, MapTreeNode):
                         t1r = cast(MapTreeNode[Key, Value], t1_.right.value)
@@ -160,54 +177,56 @@ def find(k: Key, m: MapTree[Key, Value]) -> Value:
 
 
 def partition1(
-    f: Callable[[Key, Value], bool], k: Key, v: Value, acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
+    predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
 ) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     (acc1, acc2) = acc
-    if f(k, v):
+    if predicate(k, v):
         return (add(k, v, acc1), acc2)
     else:
         return (acc1, add(k, v, acc2))
 
 
 def partition_aux(
-    f: Callable[[Key, Value], bool], m: MapTree[Key, Value], acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
+    predicate: Callable[[Key, Value], bool],
+    m: MapTree[Key, Value],
+    acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]],
 ) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     for m2 in m:
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
-            acc = partition_aux(f, mn.right, acc)
-            acc = partition1(f, mn.key, mn.value, acc)
-            return partition_aux(f, mn.left, acc)
+            acc = partition_aux(predicate, mn.right, acc)
+            acc = partition1(predicate, mn.key, mn.value, acc)
+            return partition_aux(predicate, mn.left, acc)
         else:
-            return partition1(f, m2.key, m2.value, acc)
+            return partition1(predicate, m2.key, m2.value, acc)
     else:  # Nothing
         return acc
 
 
 def partition(
-    f: Callable[[Key, Value], bool], m: MapTree[Key, Value]
+    predicate: Callable[[Key, Value], bool], m: MapTree[Key, Value]
 ) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
-    return partition_aux(f, m, (empty, empty))
+    return partition_aux(predicate, m, (empty, empty))
 
 
-def filter1(f: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]) -> MapTree[Key, Value]:
-    if f(k, v):
+def filter1(predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]) -> MapTree[Key, Value]:
+    if predicate(k, v):
         return add(k, v, acc)
     else:
         return acc
 
 
 def filter_aux(
-    f: Callable[[Key, Value], bool], m: MapTree[Key, Value], acc: MapTree[Key, Value]
+    predicate: Callable[[Key, Value], bool], m: MapTree[Key, Value], acc: MapTree[Key, Value]
 ) -> MapTree[Key, Value]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
-            acc = filter_aux(f, mn.left, acc)
-            acc = filter1(f, mn.key, mn.value, acc)
-            return filter_aux(f, mn.right, acc)
+            acc = filter_aux(predicate, mn.left, acc)
+            acc = filter1(predicate, mn.key, mn.value, acc)
+            return filter_aux(predicate, mn.right, acc)
         else:
-            return filter1(f, m2.key, m2.value, acc)
+            return filter1(predicate, m2.key, m2.value, acc)
     else:  # Nothing
         return acc
 
@@ -233,7 +252,6 @@ def splice_out_successor(m: MapTree[Key, Value]) -> Tuple[Key, Value, Option[Map
 
 def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
     for m2 in m.to_list():
-        # let c = comparer.Compare(k, m2.key)
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
             if k < mn.key:
@@ -261,7 +279,6 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
-            # let c = comparer.Compare(k, mn.key)
             if k < mn.key:
                 rebalance(change(k, u, mn.left), mn.key, mn.value, mn.right)
             elif k == mn.key:
@@ -278,7 +295,6 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
             else:
                 rebalance(mn.left, mn.key, mn.value, change(k, u, mn.right))
         else:
-            # let c = comparer.Compare(k, m2.key)
             if k < m2.key:
                 for v in u(Nothing).to_list():
                     return Some(MapTreeNode(k, v, empty, m, 2))
@@ -304,7 +320,6 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
 
 def mem(k: Key, m: MapTree[Key, Value]) -> bool:
     for m2 in m.to_list():
-        # let c = comparer.Compare(k, m2.key)
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
             if k < mn.key:
@@ -317,13 +332,17 @@ def mem(k: Key, m: MapTree[Key, Value]) -> bool:
         return False
 
 
-# let rec iterOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -> ()
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -> iterOpt f mn.left; f.Invoke (mn.key, mn.value); iterOpt f mn.right
-#         | _ -> f.Invoke (m2.key, m2.value)
+def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
+    """Iterate maptree."""
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            iter(fn, mn.left)
+            fn(mn.key, mn.value)
+            iter(fn, mn.right)
+        else:
+            fn(m2.key, m2.value)
+
 
 # let iter f m =
 #     iterOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
@@ -346,13 +365,17 @@ def mem(k: Key, m: MapTree[Key, Value]) -> bool:
 # let tryPick f m =
 #     tryPickOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
-# let rec existsOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -> false
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -> existsOpt f mn.left || f.Invoke (mn.key, mn.value) || existsOpt f mn.right
-#         | _ -> f.Invoke (m2.key, m2.value)
+
+def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            return exists(f, mn.left) or f(mn.key, mn.value) or exists(f, mn.right)
+        else:
+            return f(m2.key, m2.value)
+    else:
+        return False
+
 
 # let exists f m =
 #     existsOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
@@ -383,48 +406,49 @@ def map(f: Callable[[Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Re
         return empty
 
 
-# let rec mapiOpt (f: OptimizedClosures.FSharpFunc<Key, Value, 'Result>) (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -> empty
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn ->
-#             let l2 = mapiOpt f mn.left
-#             let v2 = f.Invoke (mn.key, mn.value)
-#             let r2 = mapiOpt f mn.right
-#             MapTreeNode (mn.key, v2, l2, r2, mn.height) :> MapTreeLeaf<Key, 'Result> |> Some
-#         | _ -> MapTreeLeaf (m2.key, f.Invoke (m2.key, m2.value)) |> Some
+def mapi(f: Callable[[Tuple[Key, Value]], Result], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            l2 = mapi(f, mn.left)
+            v2 = f((mn.key, mn.value))
+            r2 = mapi(f, mn.right)
+            return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
+        else:
+            return Some(MapTreeLeaf(m2.key, f((m2.key, m2.value))))
+    else:
+        return empty
 
-# let mapi f m =
-#     mapiOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
-# let rec foldBackOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree[Key, Value]) x =
-#     match m with
-#     | None -> x
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn ->
-#             let x = foldBackOpt f mn.right x
-#             let x = f.Invoke (mn.key, mn.value, x)
-#             foldBackOpt f mn.left x
-#         | _ -> f.Invoke (m2.key, m2.value, x)
+def fold_back(f: Callable[[Tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result) -> Result:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            x = fold_back(f, mn.right, x)
+            x = f((mn.key, mn.value), x)
+            return fold_back(f, mn.left, x)
+        else:
+            return f((m2.key, m2.value), x)
+    else:
+        return x
+
 
 # let foldBack f m x =
 #     foldBackOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
-# let rec foldOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) x (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -> x
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn ->
-#             let x = foldOpt f x mn.left
-#             let x = f.Invoke (x, mn.key, mn.value)
-#             foldOpt f x mn.right
-#         | _ -> f.Invoke (x, m2.key, m2.value)
 
-# let fold f x m =
-#     foldOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) x m
+def fold(f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]) -> Result:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            x = fold(f, x, mn.left)
+            x = f(x, (mn.key, mn.value))
+            return fold(f, x, mn.right)
+        else:
+            return f(x, (m2.key, m2.value))
+    else:
+        return x
+
 
 # let foldSectionOpt (comparer: IComparer<Key>) lo hi (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree[Key, Value]) x =
 #     let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree[Key, Value]) x =
@@ -465,10 +489,6 @@ def to_list(m: MapTree[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
     return loop(m, frozenlist.empty)
 
 
-# let toArray (m: MapTree[Key, Value]): (Key * Value)[] =
-#     m |> toList |> Array.ofList
-
-
 def of_list(xs: FrozenList[Tuple[Key, Value]]) -> MapTree[Key, Value]:
     def folder(acc: MapTree[Key, Value], kv: Tuple[Key, Value]):
         k, v = kv
@@ -480,7 +500,6 @@ def of_list(xs: FrozenList[Tuple[Key, Value]]) -> MapTree[Key, Value]:
 def mk_from_iterator(acc: MapTree[Key, Value], e: Iterator[Tuple[Key, Value]]) -> MapTree[Key, Value]:
     try:
         (x, y) = next(e)
-        print([x, y])
     except StopIteration:
         return acc
     else:
@@ -492,18 +511,11 @@ def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
         xs = cast(FrozenList[Tuple[Key, Value]], xs)
         return of_list(xs)
     else:
-        ie = iter(xs)
+        ie = builtins.iter(xs)
         return mk_from_iterator(empty, ie)
 
 
-# /// Imperative left-to-right iterators.
-# [<NoEquality; NoComparison>]
-# type MapIterator<Key, Value when Key : comparison > =
-#         { /// invariant: always collapseLHS result
-#         mutable stack: MapTree[Key, Value] list
-
-#         /// true when MoveNext has been called
-#         mutable started : bool }
+# Imperative left-to-right iterators.
 
 # collapseLHS:
 # a) Always returns either [] or a list starting with MapOne.
@@ -515,7 +527,8 @@ def collapseLHS(stack: FrozenList[MapTree[Key, Value]]) -> FrozenList[MapTree[Ke
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
-            return collapseLHS(rest.cons(mn.right).cons(Some(MapTreeLeaf(mn.key, mn.value))).cons(mn.left))
+            tree = Some(MapTreeLeaf(mn.key, mn.value))
+            return collapseLHS(rest.cons(mn.right).cons(tree).cons(mn.left))
         else:
             return stack
     else:
@@ -547,38 +560,6 @@ def not_started() -> None:
 
 def already_finished():
     failwith("enumeration already finished")
-
-
-# let current i =
-#     if i.started then
-#         match i.stack with
-#         | []     -> alreadyFinished()
-#         | None :: _ ->
-#             failwith "Please report error: Map iterator, unexpected stack for current"
-#         | Some m :: _ ->
-#             match m with
-#             | :? MapTreeNode[Key, Value] ->
-#                 failwith "Please report error: Map iterator, unexpected stack for current"
-#             | _ -> new KeyValuePair<_, _>(m.key, m.value)
-#     else
-#         notStarted()
-
-# let rec moveNext i =
-#     if i.started then
-#         match i.stack with
-#         | [] -> false
-#         | None :: rest ->
-#             failwith "Please report error: Map iterator, unexpected stack for moveNext"
-#         | Some m :: rest ->
-#             match m with
-#             | :? MapTreeNode[Key, Value] ->
-#                 failwith "Please report error: Map iterator, unexpected stack for moveNext"
-#             | _ ->
-#                 i.stack <- collapseLHS rest
-#                 not i.stack.Is_empty
-#     else
-#         i.started <- true  // The first call to MoveNext "starts" the enumeration.
-#         not i.stack.Is_empty
 
 
 def mk_iterator(m: MapTree[Key, Value]) -> Iterator[Tuple[Key, Value]]:

@@ -2,7 +2,7 @@ from typing import Callable, Container, Dict, Generator, ItemsView, Iterable, Li
 
 import pytest
 from expression import effect
-from expression.collections import Map, map
+from expression.collections import FrozenList, Map, map
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -34,3 +34,19 @@ def test_map_remove(xs: Dict[str, int]):
         m = m.remove(key)
         count -= 1
     assert m.count() == count == 0
+
+
+@given(st.dictionaries(keys=st.text(), values=st.integers()))
+def test_map_to_seq(xs: Dict[str, int]):
+    items: ItemsView[str, int] = xs.items()
+    ys = map.of_seq(items).to_seq()
+
+    assert sorted(list(items)) == list(ys)
+
+
+@given(st.dictionaries(keys=st.text(), values=st.integers()))
+def test_map_to_list(xs: Dict[str, int]):
+    items = FrozenList(xs.items())
+    ys = map.of_list(items).to_seq()
+
+    assert sorted(list(items)) == list(ys)

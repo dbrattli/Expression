@@ -1,11 +1,23 @@
-# Copyright (c) Microsoft Corporation.  All Rights Reserved.  See
-# License.txt in the project root for license information.
+# Attribution to original authors of this code
+# --------------------------------------------
+# This code has been originally been ported from the Fable project which
+# was originally ported from the FSharp project.
+#
+# Fable (https://fable.io)
+# - Copyright (c) Alfonso Garcia-Caro and contributors.
+# - MIT License
+# - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/Map.fs
+#
+# F# (https://github.com/dotnet/fsharp)
+# - Copyright (c) Microsoft Corporation. All Rights Reserved.
+# - MIT License
+# - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import Callable, Generic, Iterable, List, Tuple, TypeVar
+from typing import Callable, Generic, Iterable, List, Tuple, TypeVar, Union, overload
 
-from expression.core import Option
+from expression.core import Option, pipe
 
-from . import maptree as maptree
+from . import frozenlist, maptree, seq
 from .frozenlist import FrozenList
 from .maptree import MapTree
 
@@ -42,8 +54,8 @@ class Map(Generic[Key, Value]):
     #     def TryPick f =
     #         maptree.tryPick f tree
 
-    #     def Exists predicate =
-    #         maptree.exists predicate tree
+    def exists(self, predicate: Callable[[Key, Value], bool]) -> bool:
+        return maptree.exists(predicate, self._tree)
 
     def filter(self, predicate: Callable[[Key, Value], bool]) -> "Map[Key, Value]":
         return Map(maptree.filter(predicate, self._tree))
@@ -80,7 +92,7 @@ class Map(Generic[Key, Value]):
         return Map(maptree.remove(key, self._tree))
 
     def try_get_value(self, key: Key, value: List[Value]):
-        for v in maptree.try_find(key, self._tree):
+        for v in maptree.try_find(key, self._tree).to_list():
             value.append(v)
             return True
         else:
@@ -95,85 +107,127 @@ class Map(Generic[Key, Value]):
     def to_seq(self) -> Iterable[Tuple[Key, Value]]:
         return maptree.to_seq(self._tree)
 
+    @overload
+    def of_list(lst: FrozenList[Tuple[Key, Value]]) -> "Map[Key, Value]":
+        ...
 
-#     static member ofList l : Map[Key, Value]:
-#        let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-#        return Map<_, _>(comparer, maptree.ofList comparer l)
+    @overload
+    def of_list(lst: List[Tuple[Key, Value]]) -> "Map[Key, Value]":
+        ...
 
-#     member this.ComputeHashCode() =
-#         let combineHash x y = (x <<< 1) + y + 631
-#         let mutable res = 0
-#         for (KeyValue(x, y)) in this do
-#             res <- combineHash res (hash x)
-#             res <- combineHash res (Unchecked.hash y)
-#         res
+    @staticmethod
+    def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -> "Map[Key, Value]":
+        return Map(maptree.of_list(FrozenList(lst)))
 
-#     override this.GetHashCode() = this.ComputeHashCode()
+    #     member this.ComputeHashCode() =
+    #         let combineHash x y = (x <<< 1) + y + 631
+    #         let mutable res = 0
+    #         for (KeyValue(x, y)) in this do
+    #             res <- combineHash res (hash x)
+    #             res <- combineHash res (Unchecked.hash y)
+    #         res
 
-#     override this.Equals that =
-#         match that with
-#         | :? Map[Key, Value] as that ->
-#             use e1 = (this :> seq<_>).GetEnumerator()
-#             use e2 = (that :> seq<_>).GetEnumerator()
-#             let rec loop () =
-#                 let m1 = e1.MoveNext()
-#                 let m2 = e2.MoveNext()
-#                 (m1 = m2) && (not m1 ||
-#                                  (let e1c = e1.Current
-#                                   let e2c = e2.Current
-#                                   ((e1c.Key = e2c.Key) && (Unchecked.equals e1c.Value e2c.Value) && loop())))
-#             loop()
-#         | _ -> false
+    #     override this.GetHashCode() = this.ComputeHashCode()
 
-#     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
-#         member __.GetEnumerator() = maptree.mkIEnumerator tree
+    #     override this.Equals that =
+    #         match that with
+    #         | :? Map[Key, Value] as that ->
+    #             use e1 = (this :> seq<_>).GetEnumerator()
+    #             use e2 = (that :> seq<_>).GetEnumerator()
+    #             let rec loop () =
+    #                 let m1 = e1.MoveNext()
+    #                 let m2 = e2.MoveNext()
+    #                 (m1 = m2) && (not m1 ||
+    #                                  (let e1c = e1.Current
+    #                                   let e2c = e2.Current
+    #                                   ((e1c.Key = e2c.Key) && (Unchecked.equals e1c.Value e2c.Value) && loop())))
+    #             loop()
+    #         | _ -> false
 
-#     interface System.Collections.IEnumerable with
-#         member __.GetEnumerator() = maptree.mkIEnumerator tree :> System.Collections.IEnumerator
+    #     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
+    #         member __.GetEnumerator() = maptree.mkIEnumerator tree
 
-#     interface System.IComparable with
-#         def CompareTo(obj: obj) =
-#             match obj with
-#             | :? Map[Key, Value]  as m2->
-#                 Seq.compareWith
-#                    (fun (kvp1 : KeyValuePair<_, _>) (kvp2 : KeyValuePair<_, _>)->
-#                        let c = comparer.Compare(kvp1.Key, kvp2.Key) in
-#                        if c <> 0 then c else Unchecked.compare kvp1.Value kvp2.Value)
-#                    m m2
-#             | _ ->
-#                 invalidArg "obj" "not comparable"
+    #     interface System.Collections.IEnumerable with
+    #         member __.GetEnumerator() = maptree.mkIEnumerator tree :> System.Collections.IEnumerator
 
-#     // interface IReadOnlyDictionary<'Key, 'Value> with
-#     //     def Item with get key = m.[key]
-#     //     def Keys = seq { for kvp in m -> kvp.Key }
-#     //     def TryGetValue(key, value: byref<'Value>) = m.TryGetValue(key, &value)
-#     //     def Values = seq { for kvp in m -> kvp.Value }
-#     //     def ContainsKey key = m.ContainsKey key
+    #     interface System.IComparable with
+    #         def CompareTo(obj: obj) =
+    #             match obj with
+    #             | :? Map[Key, Value]  as m2->
+    #                 Seq.compareWith
+    #                    (fun (kvp1 : KeyValuePair<_, _>) (kvp2 : KeyValuePair<_, _>)->
+    #                        let c = comparer.Compare(kvp1.Key, kvp2.Key) in
+    #                        if c <> 0 then c else Unchecked.compare kvp1.Value kvp2.Value)
+    #                    m m2
+    #             | _ ->
+    #                 invalidArg "obj" "not comparable"
 
-#     override this.ToString() =
-#         let inline toStr (kv: KeyValuePair<'Key,'Value>) = System.String.Format("({0}, {1})", kv.Key, kv.Value)
-#         let str = this |> Seq.map toStr |> String.concat "; "
-#         "map [" + str + "]"
+    #     // interface IReadOnlyDictionary<'Key, 'Value> with
+    #     //     def Item with get key = m.[key]
+    #     //     def Keys = seq { for kvp in m -> kvp.Key }
+    #     //     def TryGetValue(key, value: byref<'Value>) = m.TryGetValue(key, &value)
+    #     //     def Values = seq { for kvp in m -> kvp.Value }
+    #     //     def ContainsKey key = m.ContainsKey key
 
-# // [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-# // [<RequireQualifiedAccess>]
-# // module Map =
+    def __str__(self) -> str:
+        def to_str(item: Tuple[Key, Value]) -> str:
+            key, value = item
+            key = f'"{key}"' if isinstance(key, str) else key
+            return f"({key}, {value})"
 
-# // [<CompiledName("is_empty")>]
-# let is_empty (table: Map<_, _>) =
-#     table.is_empty
+        items = pipe(self, Map.to_seq, seq.map(to_str))
+        return f"map [{'; '.join(items)}]"
 
-# // [<CompiledName("Add")>]
-# let add key value (table: Map<_, _>) =
-#     table.Add (key, value)
+    def __repr__(self) -> str:
+        return str(self)
 
-# // [<CompiledName("Change")>]
-# let change key f (table: Map<_, _>) =
-#     table.Change (key, f)
 
-# // [<CompiledName("Find")>]
-# let find key (table: Map<_, _>) =
-#     table.[key]
+def is_empty(table: Map[Key, Value]) -> bool:
+    """Is the map empty?
+
+    Args:
+        table: The input map.
+
+    Returns:
+        True if the map is empty.
+    """
+    return table.is_empty()
+
+
+def add(key: Key, value: Value, table: Map[Key, Value]) -> Map[Key, Value]:
+    """Returns a new map with the binding added to the given map. If a
+    binding with the given key already exists in the input map, the
+    existing binding is replaced by the new binding in the result
+    map.
+
+    Args:
+        key: The input key.
+        value: The input value.
+        table: The input table.
+
+    Returns:
+        The resulting map.
+    """
+    return table.add(key, value)
+
+
+def change(key: Key, fn: Callable[[Option[Value]], Option[Value]], table: Map[Key, Value]) -> Map[Key, Value]:
+    """Returns a new map with the value stored under key changed
+    according to f.
+
+    Args:
+        key: The input key.
+        fn: The change function.
+        table: The input table.
+
+    Returns:
+        The input key.
+    """
+    return table.change(key, fn)
+
+
+# def find(key: Key, table: Map[Key, Value]) -> Value:
+#    table.find(key)
 
 # // [<CompiledName("TryFind")>]
 # let tryFind key (table: Map<_, _>) =
@@ -181,6 +235,17 @@ class Map(Generic[Key, Value]):
 
 
 def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+    """Removes an element from the domain of the map. No exception is
+    raised if the element is not present.
+
+    Args:
+        key: The key to remove.
+        table: The table to remove the key from.
+
+    Returns:
+        The resulting map.
+    """
+
     def _remove(table: Map[Key, Value]) -> Map[Key, Value]:
         return table.remove(key)
 
@@ -205,17 +270,26 @@ def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
 #     | None -> raise (KeyNotFoundException())
 #     | Some res -> res
 
-# // [<CompiledName("Exists")>]
-# let exists predicate (table: Map<_, _>) =
-#     table.Exists predicate
 
-# // [<CompiledName("Filter")>]
-# let filter predicate (table: Map<_, _>) =
-#     table.Filter predicate
+def exists(predicate: Callable[[Key, Value], bool], table: Map[Key, Value]) -> bool:
+    return table.exists(predicate)
 
-# // [<CompiledName("Partition")>]
-# let partition predicate (table: Map<_, _>) =
-#     table.Partition predicate
+
+def filter(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+    def _filter(table: Map[Key, Value]) -> Map[Key, Value]:
+        return table.filter(predicate)
+
+    return _filter
+
+
+def partition(
+    predicate: Callable[[Key, Value], bool]
+) -> Callable[[Map[Key, Value]], Tuple[Map[Key, Value], Map[Key, Value]]]:
+    def _partition(table: Map[Key, Value]) -> Tuple[Map[Key, Value], Map[Key, Value]]:
+        return table.partition(predicate)
+
+    return _partition
+
 
 # // [<CompiledName("ForAll")>]
 # let forAll predicate (table: Map<_, _>) =
@@ -250,31 +324,31 @@ def to_seq(table: Map[Key, Value]):
 # let tryFindKey predicate (table : Map<_, _>) =
 #     table |> Seq.tryPick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
 
-# // [<CompiledName("OfList")>]
-# let ofList (elements: ('Key * 'Value) list) =
-#     Map<_, _>.ofList elements
+
+@overload
+def of_list(elements: FrozenList[Tuple[Key, Value]]) -> Map[Key, Value]:
+    ...
+
+
+@overload
+def of_list(elements: List[Tuple[Key, Value]]) -> Map[Key, Value]:
+    ...
+
+
+def of_list(elements: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -> Map[Key, Value]:
+    return Map.of_list(FrozenList(elements))
 
 
 def of_seq(elements: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
     return Map.create(elements)
 
 
-# // [<CompiledName("OfArray")>]
-# let ofArray (elements: ('Key * 'Value) array) =
-#    let comparer = LanguagePrimitives.FastGenericComparer<'Key>
-#    new Map<_, _>(comparer, maptree.ofArray comparer elements)
+def to_list(table: Map[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
+    return table.to_list()
 
-# // [<CompiledName("ToList")>]
-# let toList (table: Map<_, _>) =
-#     table.ToList()
 
-# // [<CompiledName("ToArray")>]
-# let toArray (table: Map<_, _>) =
-#     table.ToArray()
+empty = Map.empty
 
-# // [<CompiledName("Empty")>]
-# let empty<'Key, 'Value  when 'Key : comparison> =
-#     Map[Key, Value].Empty
 
 # let createMutable (source: KeyValuePair<'Key, 'Value> seq) ([<Fable.Core.Inject>] comparer: IEqualityComparer<'Key>) =
 #     let map = Fable.Collections.MutableMap(source, comparer)
@@ -304,6 +378,6 @@ def of_seq(elements: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
 
 #     dict.entries()
 
-# // [<CompiledName("Count")>]
-# let count (table: Map<_, _>) =
-#     table.Count
+
+def count(table: Map[Key, Value]) -> int:
+    return table.count()

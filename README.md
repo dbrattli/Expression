@@ -7,11 +7,11 @@
 
 > Expressions evaluates to a value. Statements do something.
 
-Expression aims to be a solid library for practical functional
-programming in Python 3.8+. By practical we mean that the goal of the
-library if to enable you to do productive and meaningful functional
-programming in Python instead of being a [Monad
-tutorial](https://github.com/dbrattli/OSlash).
+Expression aims to be a solid and high performance library for practical
+functional programming in Python 3.8+. By practical we mean that the
+goal of the library if to use simple abstractions to enable you to do
+productive and meaningful functional programming in Python instead of
+being a [Monad tutorial](https://github.com/dbrattli/OSlash).
 
 Python is a multi-paradigm programming language that also supports
 functional programming constructs such as functions, higher-order
@@ -25,7 +25,8 @@ two purposes:
 
 - Make it easier for Python programmers to learn F# by starting out in a
   programming language they already know. Then get inspired to [try out
-  F#](https://aka.ms/fsharphome) by itself.
+  F#](https://aka.ms/fsharphome) by itself. Everything you learn with
+  Expression can also be used with F#.
 - Make it easier for F# developers to use Python when needed, and re-use
   many of the concepts and abstractions that they already know and love.
 
@@ -82,15 +83,17 @@ library inspired by F# instead.
 
 ## Goals
 
-- Industrial strength Python library for functional programming
+- Industrial strength library for functional programming in Python.
 - The resulting code should look and feel like Python. We want to make a
-  better Python, not some obscure DSL or academic Monad tutorial
+  better Python, not some obscure DSL or academic Monad tutorial.
 - Provide pipelining and pipe friendly methods. Compose all the things!
 - Dot-chaining on objects as an alternative syntax to pipes.
 - Avoid currying, not supported in Python by default and not a well known
   concept by Python programmers.
 - Avoid operator (`|`, `>>`, etc) overloading, this usually confuses
   more than it helps.
+- Avoid recursion. Recursion is not normally used in Python and any use
+  of it should be hidden within the SDK.
 - Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
 - Code must pass strict static type checking by
@@ -112,7 +115,7 @@ on-demand as we go along.
     [itertools](https://docs.python.org/3/library/itertools.html) and
     fully compatible with Python iterables.
   - **FrozenList** - a frozen and immutable list type.
-  - **Map** - a frozen and immutable dict type (in progress).
+  - **Map** - a frozen and immutable dictionary type.
 - **Effects**: - light weight computational expressions for Python. This
   is actually amazing stuff.
   - **option** - an optional world for working with optional values.
@@ -341,7 +344,7 @@ function yourself and use it with Expression. If you think the function
 is also usable for others, then please open a PR to include it with
 Expression.
 
-## Resources
+## Resources and References
 
 - F# (http://fsharp.org)
 - Get Started with F# (https://aka.ms/fsharphome)
@@ -353,6 +356,10 @@ Expression.
 - PEP 342 -- Coroutines via Enhanced Generators (https://www.python.org/dev/peps/pep-0342/)
 - PEP 380 -- Syntax for Delegating to a Subgenerator (https://www.python.org/dev/peps/pep-0380)
 - PEP 479 -- Change StopIteration handling inside generators
+- Thunks, Trampolines and Continuation Passing (https://jtauber.com/blog/2008/03/30/thunks,_trampolines_and_continuation_passing/)
+- Tail Recursion Elimination (http://neopythonic.blogspot.com/2009/04/tail-recursion-elimination.html)
+- Final Words on Tail Calls (http://neopythonic.blogspot.com/2009/04/final-words-on-tail-calls.html)
+- Python is the Haskell You Never Knew You Had: Tail Call Optimization (https://sagnibak.github.io/blog/python-is-haskell-tail-recursion/)
 
 ## How-to Contribute
 
