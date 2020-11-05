@@ -26,11 +26,56 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import Any, Callable, Tuple, TypeVar
+<pre><code class="python">from typing import Any, Callable, Generic, Optional, Tuple, TypeVar, Union, cast, get_origin
 
 A = TypeVar(&#34;A&#34;)
 B = TypeVar(&#34;B&#34;)
 TSource = TypeVar(&#34;TSource&#34;)
+TResult = TypeVar(&#34;TResult&#34;)
+Base = TypeVar(&#34;Base&#34;)
+Derived = TypeVar(&#34;Derived&#34;)
+
+
+def downcast(type: Base, expr: Derived) -&gt; Base:
+    &#34;&#34;&#34;Downcast expression `Derived` to `Base`
+
+    Checks at compile time that the type of expression E is a supertype
+    of T, and checks at runtime that E is in fact an instance of T.
+
+    Note: F# `:?&gt;` or `downcast`.
+    &#34;&#34;&#34;
+    assert isinstance(expr, type), f&#34;The type of expression {expr} is not a supertype of {type}&#34;
+    return expr
+
+
+def upcast(type: Derived, expr: Base) -&gt; Derived:
+    &#34;&#34;&#34;Upcast expression `Base` to `Derived`.
+
+    Check that the `Derived` type is a supertype of Base.
+
+    Note: F# `:&gt;` or `upcast`.
+    &#34;&#34;&#34;
+
+    assert isinstance(expr, type), f&#34;The expression {expr} is not derived from type {type}&#34;
+    return expr
+
+
+def try_upcast(type_: Derived, expr: Base) -&gt; Optional[Derived]:
+    &#34;&#34;&#34;Upcast expression `Base` to `Derived`.
+
+    Check that the `Derived` type is a supertype of `Base`.
+
+    NOTE: Supports generic types.
+
+    Returns:
+        None if `Derived` is not a supertype of `Base`.
+    &#34;&#34;&#34;
+    origin: Optional[Derived] = get_origin(type_) or type_
+    if origin is not None and isinstance(expr, origin):
+        derived = cast(type(type_), expr)
+        return derived
+    else:
+        return None
 
 
 def identity(value: A) -&gt; A:
@@ -58,7 +103,31 @@ def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
     return _
 
 
-__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
+class Thunk(Generic[TResult]):
+    &#34;&#34;&#34;Suspended computaton.&#34;&#34;&#34;
+
+    def __init__(self, name: Callable[..., TResult], *args: Any, **kw: Any):
+        self.run = lambda: name(*args, **kw)
+
+    def __call__(self) -&gt; TResult:
+        return self.run()
+
+
+def trampoline(fn: Callable[..., TResult]) -&gt; Callable[..., TResult]:
+    &#34;&#34;&#34;Thunk bouncing decorator.&#34;&#34;&#34;
+
+    def _trampoline(bouncer: Union[Thunk[TResult], Callable[..., TResult]]) -&gt; TResult:
+        while isinstance(bouncer, Thunk):
+            bouncer = bouncer()
+        return bouncer
+
+    def _(*args: Any) -&gt; TResult:
+        return _trampoline(fn(*args))
+
+    return _
+
+
+__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;Thunk&#34;, &#34;trampoline&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -124,9 +193,59 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
     return value</code></pre>
 </details>
 </dd>
+<dt id="expression.core.misc.trampoline"><code class="name flex">
+<span>def <span class="ident">trampoline</span></span>(<span>fn: Callable[..., ~TResult]) ‑> Callable[..., ~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Thunk bouncing decorator.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def trampoline(fn: Callable[..., TResult]) -&gt; Callable[..., TResult]:
+    &#34;&#34;&#34;Thunk bouncing decorator.&#34;&#34;&#34;
+
+    def _trampoline(bouncer: Union[Thunk[TResult], Callable[..., TResult]]) -&gt; TResult:
+        while isinstance(bouncer, Thunk):
+            bouncer = bouncer()
+        return bouncer
+
+    def _(*args: Any) -&gt; TResult:
+        return _trampoline(fn(*args))
+
+    return _</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="expression.core.misc.Thunk"><code class="flex name class">
+<span>class <span class="ident">Thunk</span></span>
+<span>(</span><span>name: Callable[..., ~TResult], *args: Any, **kw: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Suspended computaton.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Thunk(Generic[TResult]):
+    &#34;&#34;&#34;Suspended computaton.&#34;&#34;&#34;
+
+    def __init__(self, name: Callable[..., TResult], *args: Any, **kw: Any):
+        self.run = lambda: name(*args, **kw)
+
+    def __call__(self) -&gt; TResult:
+        return self.run()</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -145,6 +264,14 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
 <li><code><a title="expression.core.misc.flip" href="#expression.core.misc.flip">flip</a></code></li>
 <li><code><a title="expression.core.misc.identity" href="#expression.core.misc.identity">identity</a></code></li>
 <li><code><a title="expression.core.misc.starid" href="#expression.core.misc.starid">starid</a></code></li>
+<li><code><a title="expression.core.misc.trampoline" href="#expression.core.misc.trampoline">trampoline</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="expression.core.misc.Thunk" href="#expression.core.misc.Thunk">Thunk</a></code></h4>
+</li>
 </ul>
 </li>
 </ul>
