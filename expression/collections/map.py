@@ -3,32 +3,92 @@
 # This code has been originally been ported from the Fable project which
 # was originally ported from the FSharp project.
 #
-# Fable (https://fable.io)
+# Fable:
+#   https://fable.io
 # - Copyright (c) Alfonso Garcia-Caro and contributors.
 # - MIT License
 # - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/Map.fs
 #
-# F# (https://github.com/dotnet/fsharp)
+# F#
+# - https://github.com/dotnet/fsharp
 # - Copyright (c) Microsoft Corporation. All Rights Reserved.
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import Callable, Generic, Iterable, List, Tuple, TypeVar, Union, overload
+from typing import Any, Callable, Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union, cast, overload
 
 from expression.core import Option, pipe
 
-from . import frozenlist, maptree, seq
+from . import maptree, seq
 from .frozenlist import FrozenList
 from .maptree import MapTree
 
 Value = TypeVar("Value")
 Key = TypeVar("Key")
 Result = TypeVar("Result")
+T1 = TypeVar("T1")
+T2 = TypeVar("T2")
+T3 = TypeVar("T3")
+T4 = TypeVar("T4")
+T5 = TypeVar("T5")
+T6 = TypeVar("T6")
 
 
 class Map(Generic[Key, Value]):
-    def __init__(self, tree: MapTree[Key, Value]) -> None:
-        self._tree = tree
+    def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -> None:
+        tree: MapTree[str, Value] = maptree.of_seq(kw.items())
+        self._tree = __tree if __tree is not None else tree
+
+    @overload
+    def pipe(self, __fn1: Callable[["Map[Key, Value]"], Result]) -> Result:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[["Map[Key, Value]"], T1], __fn2: Callable[[T1], T2]) -> T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[["Map[Key, Value]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -> T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["Map[Key, Value]"], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -> T4:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["Map[Key, Value]"], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+        __fn5: Callable[[T4], T5],
+    ) -> T5:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["Map[Key, Value]"], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+        __fn5: Callable[[T4], T5],
+        __fn6: Callable[[T5], T6],
+    ) -> T6:
+        ...
+
+    def pipe(self, *args: Any) -> Any:
+        """Pipe map through the given functions."""
+        return pipe(self, *args)
 
     @staticmethod
     def empty() -> "Map[Key, Value]":
@@ -47,9 +107,8 @@ class Map(Generic[Key, Value]):
     def is_empty(self) -> bool:
         return maptree.is_empty(self._tree)
 
-    #     def Item
-    #      with get(key : 'Key) =
-    #         maptree.find comparer key tree
+    def __getitem__(self, key: Value) -> Value:
+        return maptree.find(key, self._tree)
 
     #     def TryPick f =
     #         maptree.tryPick f tree
@@ -63,9 +122,6 @@ class Map(Generic[Key, Value]):
     #     def ForAll predicate =
     #         maptree.forall predicate tree
 
-    #     def Fold f acc =
-    #         maptree.foldBack f tree acc
-
     #     def FoldSection (lo:'Key) (hi:'Key) f (acc:'z) =
     #         maptree.foldSection comparer lo hi f tree acc
 
@@ -75,15 +131,26 @@ class Map(Generic[Key, Value]):
     #     def MapRange (f:'Value->'Result) =
     #         return Map<'Key, 'Result>(comparer, maptree.map f tree)
 
-    def map(self, f: Callable[[Value], Result]) -> "Map[Key, Result]":
-        return Map(maptree.map(f, self._tree))
+    def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -> Result:
+        return maptree.fold(folder, state, self._tree)
+
+    def map(self, mapping: Callable[[Value], Result]) -> "Map[Key, Result]":
+        """Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection. The key passed to the function indicates the key of
+        element being transformed.
+
+        Args:
+            mapping: The function to transform the key/value pairs
+
+        Returns:
+            The resulting map of keys and transformed values.
+        """
+        return Map(maptree.map(mapping, self._tree))
 
     def partition(self, predicate: Callable[[Key, Value], bool]) -> "Tuple[Map[Key, Value], Map[Key, Value]]":
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
-
-    def count(self):
-        return maptree.size(self._tree)
 
     def contains_key(self, key: Key) -> bool:
         return maptree.mem(key, self._tree)
@@ -105,6 +172,11 @@ class Map(Generic[Key, Value]):
         return maptree.to_list(self._tree)
 
     def to_seq(self) -> Iterable[Tuple[Key, Value]]:
+        """Convert to sequence.
+
+        Returns:
+            Sequenc of key, value tuples.
+        """
         return maptree.to_seq(self._tree)
 
     @overload
@@ -117,6 +189,11 @@ class Map(Generic[Key, Value]):
 
     @staticmethod
     def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -> "Map[Key, Value]":
+        """Generate map from list.
+
+        Returns:
+            New map.
+        """
         return Map(maptree.of_list(FrozenList(lst)))
 
     #     member this.ComputeHashCode() =
@@ -144,30 +221,32 @@ class Map(Generic[Key, Value]):
     #             loop()
     #         | _ -> false
 
-    #     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
-    #         member __.GetEnumerator() = maptree.mkIEnumerator tree
+    def __iter__(self) -> Iterator[Tuple[Key, Value]]:
+        return maptree.mk_iterator(self._tree)
 
-    #     interface System.Collections.IEnumerable with
-    #         member __.GetEnumerator() = maptree.mkIEnumerator tree :> System.Collections.IEnumerator
+    def __len__(self) -> int:
+        """Return the number of bindings in the map."""
+        return maptree.size(self._tree)
 
-    #     interface System.IComparable with
-    #         def CompareTo(obj: obj) =
-    #             match obj with
-    #             | :? Map[Key, Value]  as m2->
-    #                 Seq.compareWith
-    #                    (fun (kvp1 : KeyValuePair<_, _>) (kvp2 : KeyValuePair<_, _>)->
-    #                        let c = comparer.Compare(kvp1.Key, kvp2.Key) in
-    #                        if c <> 0 then c else Unchecked.compare kvp1.Value kvp2.Value)
-    #                    m m2
-    #             | _ ->
-    #                 invalidArg "obj" "not comparable"
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Map):
+            return False
 
-    #     // interface IReadOnlyDictionary<'Key, 'Value> with
-    #     //     def Item with get key = m.[key]
-    #     //     def Keys = seq { for kvp in m -> kvp.Key }
-    #     //     def TryGetValue(key, value: byref<'Value>) = m.TryGetValue(key, &value)
-    #     //     def Values = seq { for kvp in m -> kvp.Value }
-    #     //     def ContainsKey key = m.ContainsKey key
+        other = cast(Map[Any, Any], other)
+        iterator: Iterator[Tuple[Any, Any]] = iter(other.to_seq())
+
+        for kv in self.to_seq():
+            try:
+                kv_other = next(iterator)
+            except StopIteration:
+                return False
+            else:
+                if kv != kv_other:
+                    return False
+        return True
+
+    def __bool__(self) -> bool:
+        return maptree.is_empty(self._tree)
 
     def __str__(self) -> str:
         def to_str(item: Tuple[Key, Value]) -> str:
@@ -182,19 +261,7 @@ class Map(Generic[Key, Value]):
         return str(self)
 
 
-def is_empty(table: Map[Key, Value]) -> bool:
-    """Is the map empty?
-
-    Args:
-        table: The input map.
-
-    Returns:
-        True if the map is empty.
-    """
-    return table.is_empty()
-
-
-def add(key: Key, value: Value, table: Map[Key, Value]) -> Map[Key, Value]:
+def add(key: Key, value: Value) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
     """Returns a new map with the binding added to the given map. If a
     binding with the given key already exists in the input map, the
     existing binding is replaced by the new binding in the result
@@ -208,10 +275,14 @@ def add(key: Key, value: Value, table: Map[Key, Value]) -> Map[Key, Value]:
     Returns:
         The resulting map.
     """
-    return table.add(key, value)
+
+    def _add(table: Map[Key, Value]) -> Map[Key, Value]:
+        return table.add(key, value)
+
+    return _add
 
 
-def change(key: Key, fn: Callable[[Option[Value]], Option[Value]], table: Map[Key, Value]) -> Map[Key, Value]:
+def change(key: Key, fn: Callable[[Option[Value]], Option[Value]]) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
     """Returns a new map with the value stored under key changed
     according to f.
 
@@ -223,33 +294,44 @@ def change(key: Key, fn: Callable[[Option[Value]], Option[Value]], table: Map[Ke
     Returns:
         The input key.
     """
-    return table.change(key, fn)
+
+    def _change(table: Map[Key, Value]) -> Map[Key, Value]:
+        return table.change(key, fn)
+
+    return _change
 
 
-# def find(key: Key, table: Map[Key, Value]) -> Value:
-#    table.find(key)
-
-# // [<CompiledName("TryFind")>]
-# let tryFind key (table: Map<_, _>) =
-#     table.TryFind key
+def count(table: Map[Key, Value]) -> int:
+    """Return the number of bindings in the map."""
+    return len(table)
 
 
-def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
-    """Removes an element from the domain of the map. No exception is
-    raised if the element is not present.
+def find(key: Key) -> Callable[[Map[Key, Value]], Value]:
+    """Lookup an element in the map, raising KeyNotFoundException if no
+    binding exists in the map
 
     Args:
-        key: The key to remove.
-        table: The table to remove the key from.
+        key: The key to find.
+        table: The map to find the key in.
 
-    Returns:
-        The resulting map.
     """
 
-    def _remove(table: Map[Key, Value]) -> Map[Key, Value]:
-        return table.remove(key)
+    def _find(table: Map[Key, Value]) -> Value:
+        return table[key]
 
-    return _remove
+    return _find
+
+
+def is_empty(table: Map[Key, Value]) -> bool:
+    """Is the map empty?
+
+    Args:
+        table: The input map.
+
+    Returns:
+        True if the map is empty.
+    """
+    return table.is_empty()
 
 
 # // [<CompiledName("ContainsKey")>]
@@ -271,8 +353,22 @@ def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
 #     | Some res -> res
 
 
-def exists(predicate: Callable[[Key, Value], bool], table: Map[Key, Value]) -> bool:
-    return table.exists(predicate)
+def exists(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]], bool]:
+    """Returns true if the given predicate returns true for one of the bindings in the map.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        Partially applied function that takes a map table and returns
+        true if the predicate returns true for one of the key/value
+        pairs.
+    """
+
+    def _exists(table: Map[Key, Value]) -> bool:
+        return table.exists(predicate)
+
+    return _exists
 
 
 def filter(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
@@ -280,15 +376,6 @@ def filter(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]
         return table.filter(predicate)
 
     return _filter
-
-
-def partition(
-    predicate: Callable[[Key, Value], bool]
-) -> Callable[[Map[Key, Value]], Tuple[Map[Key, Value], Map[Key, Value]]]:
-    def _partition(table: Map[Key, Value]) -> Tuple[Map[Key, Value], Map[Key, Value]]:
-        return table.partition(predicate)
-
-    return _partition
 
 
 # // [<CompiledName("ForAll")>]
@@ -303,13 +390,43 @@ def map(mapping: Callable[[Value], Result]) -> Callable[[Map[Key, Value]], Map[K
     return _map
 
 
-# // [<CompiledName("Fold")>]
-# let fold<'Key, 'T, 'State when 'Key : comparison> folder (state:'State) (table: Map<'Key, 'T>) =
-#     maptree.fold folder state table.Tree
+def fold(folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -> Callable[[Map[Key, Value]], Result]:
+    def _fold(table: Map[Key, Value]) -> Result:
+        return table.fold(folder, state)
+
+    return _fold
+
 
 # // [<CompiledName("FoldBack")>]
 # let foldBack<'Key, 'T, 'State  when 'Key : comparison> folder (table: Map<'Key, 'T>) (state:'State) =
 #     maptree.foldBack folder table.Tree state
+
+
+def partition(
+    predicate: Callable[[Key, Value], bool]
+) -> Callable[[Map[Key, Value]], Tuple[Map[Key, Value], Map[Key, Value]]]:
+    def _partition(table: Map[Key, Value]) -> Tuple[Map[Key, Value], Map[Key, Value]]:
+        return table.partition(predicate)
+
+    return _partition
+
+
+def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+    """Removes an element from the domain of the map. No exception is
+    raised if the element is not present.
+
+    Args:
+        key: The key to remove.
+        table: The table to remove the key from.
+
+    Returns:
+        The resulting map.
+    """
+
+    def _remove(table: Map[Key, Value]) -> Map[Key, Value]:
+        return table.remove(key)
+
+    return _remove
 
 
 def to_seq(table: Map[Key, Value]):
@@ -347,6 +464,33 @@ def to_list(table: Map[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
     return table.to_list()
 
 
+def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
+    """Lookup an element in the map, returning a `Some` value if the
+    element is in the domain of the map and `Nothing` if not.
+
+    Args:
+        key: The input key.
+
+    Returns:
+        A partially applied `try_find` function that takes a map
+        instance and returns the result.
+    """
+
+    def _try_find(table: Map[Key, Value]):
+        """Lookup an element in the map, returning a `Some` value if the
+        element is in the domain of the map and `Nothing` if not.
+
+        Args:
+            key: The input key.
+
+        Returns:
+            The found `Some` value or `Nothing`.
+        """
+        return table.try_find(key)
+
+    return _try_find
+
+
 empty = Map.empty
 
 
@@ -379,5 +523,21 @@ empty = Map.empty
 #     dict.entries()
 
 
-def count(table: Map[Key, Value]) -> int:
-    return table.count()
+__all__ = [
+    "Map",
+    "add",
+    "change",
+    "count",
+    "exists",
+    "filter",
+    "find",
+    "fold",
+    "is_empty",
+    "map",
+    "of_list",
+    "partition",
+    "remove",
+    "to_list",
+    "to_seq",
+    "try_find",
+]

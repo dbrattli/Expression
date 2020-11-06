@@ -5,7 +5,7 @@
 ![Upload Python Package](https://github.com/dbrattli/expression/workflows/Upload%20Python%20Package/badge.svg)
 [![codecov](https://codecov.io/gh/dbrattli/expression/branch/master/graph/badge.svg)](https://codecov.io/gh/dbrattli/expression)
 
-> Expressions evaluates to a value. Statements do something.
+> *Expressions evaluates to a value. Statements do something.*
 
 Expression aims to be a solid and high performance library for practical
 functional programming in Python 3.8+. By practical we mean that the
@@ -30,8 +30,8 @@ two purposes:
 - Make it easier for F# developers to use Python when needed, and re-use
   many of the concepts and abstractions that they already know and love.
 
-Expression will enable you to work with Python along with F# using many of
-the same programming concepts and abstractions. This enables concepts
+Expression will enable you to work with Python along with F# using many
+of the same programming concepts and abstractions. This enables concepts
 such as [Railway oriented
 programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
 and predictable error handling. Pipelining for workflows, computational
@@ -42,7 +42,8 @@ F# is a functional programming language for .NET that is succinct
 [Pythonic](https://docs.python.org/3/glossary.html). F# looks a lot more
 like Python than C# and F# can also do a lot of things better than Python:
 
-- Strongly typed, if it compiles it usually works
+- Strongly typed, if it compiles it usually works making refactoring
+  much safer.
 - Type inference, the compiler deduces types during compilation
 - Expression based language
 
@@ -63,8 +64,8 @@ $ pip3 install expression
   [Feliz.ViewEngine](https://github.com/dbrattli/Feliz.ViewEngine)
 - I love Python, and know Python really well. I'm the creator of both
   [RxPY](https://github.com/ReactiveX/RxPY) and
-  [OSlash](https://github.com/dbrattli/OSlash), two functional style libraries
-  for Python.
+  [OSlash](https://github.com/dbrattli/OSlash), two functional style
+  libraries for Python.
 
 For a long time I'm been wanting to make a "bridge" between these two
 languages and got inspired to write this library after watching "[F# as
@@ -84,16 +85,18 @@ library inspired by F# instead.
 ## Goals
 
 - Industrial strength library for functional programming in Python.
-- The resulting code should look and feel like Python. We want to make a
-  better Python, not some obscure DSL or academic Monad tutorial.
+- The resulting code should look and feel like Python
+  ([PEP-8](https://www.python.org/dev/peps/pep-0008/)). We want to make
+  a better Python, not some obscure DSL or academic Monad tutorial.
 - Provide pipelining and pipe friendly methods. Compose all the things!
 - Dot-chaining on objects as an alternative syntax to pipes.
-- Avoid currying, not supported in Python by default and not a well known
-  concept by Python programmers.
-- Avoid operator (`|`, `>>`, etc) overloading, this usually confuses
-  more than it helps.
-- Avoid recursion. Recursion is not normally used in Python and any use
-  of it should be hidden within the SDK.
+- Lower the cognitive load on the programmer by:
+  - Avoid currying, not supported in Python by default and not a well
+    known concept by Python programmers.
+  - Avoid operator (`|`, `>>`, etc) overloading, this usually confuses
+    more than it helps.
+  - Avoid recursion. Recursion is not normally used in Python and any
+    use of it should be hidden within the SDK.
 - Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
 - Code must pass strict static type checking by
@@ -116,7 +119,7 @@ on-demand as we go along.
     fully compatible with Python iterables.
   - **FrozenList** - a frozen and immutable list type.
   - **Map** - a frozen and immutable dictionary type.
-- **Effects**: - light weight computational expressions for Python. This
+- **Effects**: - lightweight computational expressions for Python. This
   is actually amazing stuff.
   - **option** - an optional world for working with optional values.
   - **result** - an error handling world for working with result values.
@@ -306,10 +309,11 @@ xs = range(100)
 ys = functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
 # With Expression you pipe the result so it flows from one operator to the next:
-ys = seq.of(xs).pipe(
+ys = pipe(
+    xs,
     seq.map(lambda x: x * 10),
     seq.filter(lambda x: x > 100),
-    seq.fold(lambda s, x: s + x, 0)
+    seq.fold(lambda s, x: s + x, 0),
 )
 assert ys == zs
 ```
@@ -318,7 +322,7 @@ assert ys == zs
 
 In F# you modules are capitalized, in Python they are lowercase
 ([PEP-8](https://www.python.org/dev/peps/pep-0008/#package-and-module-names)).
-E.g in F# `Option` is both a module and a type. In Python the module is
+E.g in F# `Option` is both a module (`OptionModule` internally) and a type. In Python the module is
 `option` and the type is capitalized i.e `Option`.
 
 Thus in Expression you use `option` as the module to access module
@@ -346,6 +350,9 @@ Expression.
 
 ## Resources and References
 
+A collections and resources that were used as reference and inspiration
+for creating this library.
+
 - F# (http://fsharp.org)
 - Get Started with F# (https://aka.ms/fsharphome)
 - F# as a Better Python - Phillip Carter - NDC Oslo 2020
@@ -353,13 +360,20 @@ Expression.
 - Pampy: Pattern Matching for Python (https://github.com/santinic/pampy)
 - OSlash (https://github.com/dbrattli/OSlash)
 - RxPY (https://github.com/ReactiveX/RxPY)
-- PEP 342 -- Coroutines via Enhanced Generators (https://www.python.org/dev/peps/pep-0342/)
-- PEP 380 -- Syntax for Delegating to a Subgenerator (https://www.python.org/dev/peps/pep-0380)
+- PEP 8 -- Style Guide for Python Code (Style Guide for Python Code)
+- PEP 342 -- Coroutines via Enhanced Generators
+  (https://www.python.org/dev/peps/pep-0342/)
+- PEP 380 -- Syntax for Delegating to a Subgenerator
+  (https://www.python.org/dev/peps/pep-0380)
 - PEP 479 -- Change StopIteration handling inside generators
-- Thunks, Trampolines and Continuation Passing (https://jtauber.com/blog/2008/03/30/thunks,_trampolines_and_continuation_passing/)
-- Tail Recursion Elimination (http://neopythonic.blogspot.com/2009/04/tail-recursion-elimination.html)
-- Final Words on Tail Calls (http://neopythonic.blogspot.com/2009/04/final-words-on-tail-calls.html)
-- Python is the Haskell You Never Knew You Had: Tail Call Optimization (https://sagnibak.github.io/blog/python-is-haskell-tail-recursion/)
+- Thunks, Trampolines and Continuation Passing
+  (https://jtauber.com/blog/2008/03/30/thunks,_trampolines_and_continuation_passing/)
+- Tail Recursion Elimination
+  (http://neopythonic.blogspot.com/2009/04/tail-recursion-elimination.html)
+- Final Words on Tail Calls
+  (http://neopythonic.blogspot.com/2009/04/final-words-on-tail-calls.html)
+- Python is the Haskell You Never Knew You Had: Tail Call Optimization
+  (https://sagnibak.github.io/blog/python-is-haskell-tail-recursion/)
 
 ## How-to Contribute
 

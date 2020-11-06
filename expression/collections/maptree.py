@@ -3,18 +3,22 @@
 # This code has been originally been ported from the Fable project which
 # was originally ported from the FSharp project.
 #
-# Fable (https://fable.io)
+# Fable:
+#   https://fable.io
 # - Copyright (c) Alfonso Garcia-Caro and contributors.
 # - MIT License
 # - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/Map.fs
 #
-# F# (https://github.com/dotnet/fsharp)
+# F#
+# - https://github.com/dotnet/fsharp
 # - Copyright (c) Microsoft Corporation. All Rights Reserved.
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
 """
-The maptree module contains the internal implementation of the `map`.
+The maptree module.
+
+Contains the internal tree implementation of the `map`.
 
 Do not use directly. Use the `map` module instead.
 """
@@ -431,10 +435,6 @@ def fold_back(f: Callable[[Tuple[Key, Value], Result], Result], m: MapTree[Key, 
             return f((m2.key, m2.value), x)
     else:
         return x
-
-
-# let foldBack f m x =
-#     foldBackOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
 
 def fold(f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]) -> Result:
