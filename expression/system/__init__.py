@@ -1,5 +1,11 @@
 from .cancellation import CancellationToken, CancellationTokenSource
-from .disposable import AsyncAnonymousDisposable, AsyncCompositeDisposable, AsyncDisposable, Disposable
+from .disposable import (
+    AnonymousDisposable,
+    AsyncAnonymousDisposable,
+    AsyncCompositeDisposable,
+    AsyncDisposable,
+    Disposable,
+)
 from .error import ObjectDisposedException, OperationCanceledError
 
 __all__ = [

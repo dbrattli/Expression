@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
 <title>expression.collections.maptree API documentation</title>
-<meta name="description" content="The maptree module contains the internal implementation of the `map` …" />
+<meta name="description" content="The maptree module …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,7 +22,8 @@
 <h1 class="title">Module <code>expression.collections.maptree</code></h1>
 </header>
 <section id="section-intro">
-<p>The maptree module contains the internal implementation of the <code><a title="expression.collections.maptree.map" href="#expression.collections.maptree.map">map()</a></code>.</p>
+<p>The maptree module.</p>
+<p>Contains the internal tree implementation of the <code><a title="expression.collections.maptree.map" href="#expression.collections.maptree.map">map()</a></code>.</p>
 <p>Do not use directly. Use the <code><a title="expression.collections.maptree.map" href="#expression.collections.maptree.map">map()</a></code> module instead.</p>
 <details class="source">
 <summary>
@@ -33,18 +34,22 @@
 # This code has been originally been ported from the Fable project which
 # was originally ported from the FSharp project.
 #
-# Fable (https://fable.io)
+# Fable:
+#   https://fable.io
 # - Copyright (c) Alfonso Garcia-Caro and contributors.
 # - MIT License
 # - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/Map.fs
 #
-# F# (https://github.com/dotnet/fsharp)
+# F#
+# - https://github.com/dotnet/fsharp
 # - Copyright (c) Microsoft Corporation. All Rights Reserved.
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
 &#34;&#34;&#34;
-The maptree module contains the internal implementation of the `map`.
+The maptree module.
+
+Contains the internal tree implementation of the `map`.
 
 Do not use directly. Use the `map` module instead.
 &#34;&#34;&#34;
@@ -374,26 +379,21 @@ def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -&gt; None:
             fn(m2.key, m2.value)
 
 
-# let iter f m =
-#     iterOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
-
-# let rec tryPickOpt (f: OptimizedClosures.FSharpFunc&lt;_, _, _&gt;) (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -&gt; None
-#     | Some m2 -&gt;
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt;
-#             match tryPickOpt f mn.left with
-#             | Some _ as res -&gt; res
-#             | None -&gt;
-#             match f.Invoke (mn.key, mn.value) with
-#             | Some _ as res -&gt; res
-#             | None -&gt;
-#             tryPickOpt f mn.right
-#         | _ -&gt; f.Invoke (m2.key, m2.value)
-
-# let tryPick f m =
-#     tryPickOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
+def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) -&gt; Option[Result]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            for res in try_pick(f, mn.left).to_list():
+                return res
+            else:
+                for res in f(mn.key, mn.value):
+                    return res
+                else:
+                    return try_pick(f, mn.right)
+        else:
+            return f(m2.key, m2.value)
+    else:
+        return Nothing
 
 
 def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -&gt; bool:
@@ -407,19 +407,15 @@ def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -&gt; bool:
         return False
 
 
-# let exists f m =
-#     existsOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
-
-# let rec forallOpt (f: OptimizedClosures.FSharpFunc&lt;_, _, _&gt;) (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -&gt; true
-#     | Some m2 -&gt;
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -&gt; forallOpt f mn.left &amp;&amp; f.Invoke (mn.key, mn.value) &amp;&amp; forallOpt f mn.right
-#         | _ -&gt; f.Invoke (m2.key, m2.value)
-
-# let forall f m =
-#     forallOpt (OptimizedClosures.FSharpFunc&lt;_, _, _&gt;.Adapt f) m
+def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -&gt; bool:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            return forall(f, mn.left) and f(mn.key, mn.value) and forall(f, mn.right)
+        else:
+            return f(m2.key, m2.value)
+    else:
+        return True
 
 
 def map(f: Callable[[Value], Result], m: MapTree[Key, Value]) -&gt; MapTree[Key, Result]:
@@ -463,10 +459,6 @@ def fold_back(f: Callable[[Tuple[Key, Value], Result], Result], m: MapTree[Key, 
         return x
 
 
-# let foldBack f m x =
-#     foldBackOpt (OptimizedClosures.FSharpFunc&lt;_, _, _, _&gt;.Adapt f) m x
-
-
 def fold(f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]) -&gt; Result:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
@@ -478,31 +470,6 @@ def fold(f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree
             return f(x, (m2.key, m2.value))
     else:
         return x
-
-
-# let foldSectionOpt (comparer: IComparer&lt;Key&gt;) lo hi (f: OptimizedClosures.FSharpFunc&lt;_, _, _, _&gt;) (m: MapTree[Key, Value]) x =
-#     let rec foldFromTo (f: OptimizedClosures.FSharpFunc&lt;_, _, _, _&gt;) (m: MapTree[Key, Value]) x =
-#         match m with
-#         | None -&gt; x
-#         | Some m2 -&gt;
-#             match m2 with
-#             | :? MapTreeNode[Key, Value] as mn -&gt;
-#                 let cLoKey = comparer.Compare(lo, mn.key)
-#                 let cKeyHi = comparer.Compare(mn.key, hi)
-#                 let x = if cLoKey &lt; 0 then foldFromTo f mn.left x else x
-#                 let x = if cLoKey &lt;= 0 &amp;&amp; cKeyHi &lt;= 0 then f.Invoke (mn.key, mn.value, x) else x
-#                 let x = if cKeyHi &lt; 0 then foldFromTo f mn.right x else x
-#                 x
-#             | _ -&gt;
-#                 let cLoKey = comparer.Compare(lo, m2.key)
-#                 let cKeyHi = comparer.Compare(m2.key, hi)
-#                 let x = if cLoKey &lt;= 0 &amp;&amp; cKeyHi &lt;= 0 then f.Invoke (m2.key, m2.value, x) else x
-#                 x
-
-#     if comparer.Compare(lo, hi) = 1 then x else foldFromTo f m x
-
-# let foldSection (comparer: IComparer&lt;Key&gt;) lo hi f m x =
-#     foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc&lt;_, _, _, _&gt;.Adapt f) m x
 
 
 def to_list(m: MapTree[Key, Value]) -&gt; FrozenList[Tuple[Key, Value]]:
@@ -867,6 +834,26 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
             return f((m2.key, m2.value), x)
     else:
         return x</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.maptree.forall"><code class="name flex">
+<span>def <span class="ident">forall</span></span>(<span>f: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -&gt; bool:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            return forall(f, mn.left) and f(mn.key, mn.value) and forall(f, mn.right)
+        else:
+            return f(m2.key, m2.value)
+    else:
+        return True</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.maptree.height"><code class="name flex">
@@ -1358,6 +1345,32 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
         return Nothing</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.maptree.try_pick"><code class="name flex">
+<span>def <span class="ident">try_pick</span></span>(<span>f: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) -&gt; Option[Result]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            for res in try_pick(f, mn.left).to_list():
+                return res
+            else:
+                for res in f(mn.key, mn.value):
+                    return res
+                else:
+                    return try_pick(f, mn.right)
+        else:
+            return f(m2.key, m2.value)
+    else:
+        return Nothing</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -1509,6 +1522,7 @@ return default</p></div>
 <li><code><a title="expression.collections.maptree.find" href="#expression.collections.maptree.find">find</a></code></li>
 <li><code><a title="expression.collections.maptree.fold" href="#expression.collections.maptree.fold">fold</a></code></li>
 <li><code><a title="expression.collections.maptree.fold_back" href="#expression.collections.maptree.fold_back">fold_back</a></code></li>
+<li><code><a title="expression.collections.maptree.forall" href="#expression.collections.maptree.forall">forall</a></code></li>
 <li><code><a title="expression.collections.maptree.height" href="#expression.collections.maptree.height">height</a></code></li>
 <li><code><a title="expression.collections.maptree.is_empty" href="#expression.collections.maptree.is_empty">is_empty</a></code></li>
 <li><code><a title="expression.collections.maptree.iter" href="#expression.collections.maptree.iter">iter</a></code></li>
@@ -1532,6 +1546,7 @@ return default</p></div>
 <li><code><a title="expression.collections.maptree.to_list" href="#expression.collections.maptree.to_list">to_list</a></code></li>
 <li><code><a title="expression.collections.maptree.to_seq" href="#expression.collections.maptree.to_seq">to_seq</a></code></li>
 <li><code><a title="expression.collections.maptree.try_find" href="#expression.collections.maptree.try_find">try_find</a></code></li>
+<li><code><a title="expression.collections.maptree.try_pick" href="#expression.collections.maptree.try_pick">try_pick</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

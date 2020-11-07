@@ -31,32 +31,93 @@
 # This code has been originally been ported from the Fable project which
 # was originally ported from the FSharp project.
 #
-# Fable (https://fable.io)
+# Fable:
+#   https://fable.io
 # - Copyright (c) Alfonso Garcia-Caro and contributors.
 # - MIT License
 # - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/Map.fs
 #
-# F# (https://github.com/dotnet/fsharp)
+# F#
+# - https://github.com/dotnet/fsharp
 # - Copyright (c) Microsoft Corporation. All Rights Reserved.
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import Callable, Generic, Iterable, List, Tuple, TypeVar, Union, overload
+from typing import (Any, Callable, Generic, Iterable, Iterator, List, Optional,
+                    Tuple, TypeVar, Union, cast, overload)
 
 from expression.core import Option, pipe
 
-from . import frozenlist, maptree, seq
+from . import maptree, seq
 from .frozenlist import FrozenList
 from .maptree import MapTree
 
 Value = TypeVar(&#34;Value&#34;)
 Key = TypeVar(&#34;Key&#34;)
 Result = TypeVar(&#34;Result&#34;)
+T1 = TypeVar(&#34;T1&#34;)
+T2 = TypeVar(&#34;T2&#34;)
+T3 = TypeVar(&#34;T3&#34;)
+T4 = TypeVar(&#34;T4&#34;)
+T5 = TypeVar(&#34;T5&#34;)
+T6 = TypeVar(&#34;T6&#34;)
 
 
 class Map(Generic[Key, Value]):
-    def __init__(self, tree: MapTree[Key, Value]) -&gt; None:
-        self._tree = tree
+    def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -&gt; None:
+        tree: MapTree[str, Value] = maptree.of_seq(kw.items())
+        self._tree = __tree if __tree is not None else tree
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Map[Key, Value]&#34;], Result]) -&gt; Result:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+        __fn5: Callable[[T4], T5],
+    ) -&gt; T5:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+        __fn5: Callable[[T4], T5],
+        __fn6: Callable[[T5], T6],
+    ) -&gt; T6:
+        ...
+
+    def pipe(self, *args: Any) -&gt; Any:
+        &#34;&#34;&#34;Pipe map through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     @staticmethod
     def empty() -&gt; &#34;Map[Key, Value]&#34;:
@@ -75,12 +136,8 @@ class Map(Generic[Key, Value]):
     def is_empty(self) -&gt; bool:
         return maptree.is_empty(self._tree)
 
-    #     def Item
-    #      with get(key : &#39;Key) =
-    #         maptree.find comparer key tree
-
-    #     def TryPick f =
-    #         maptree.tryPick f tree
+    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -&gt; Option[Result]:
+        return maptree.try_pick(chooser, self._tree)
 
     def exists(self, predicate: Callable[[Key, Value], bool]) -&gt; bool:
         return maptree.exists(predicate, self._tree)
@@ -88,30 +145,45 @@ class Map(Generic[Key, Value]):
     def filter(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Map[Key, Value]&#34;:
         return Map(maptree.filter(predicate, self._tree))
 
-    #     def ForAll predicate =
-    #         maptree.forall predicate tree
+    def for_all(self, predicate: Callable[[Key, Value], bool]) -&gt; bool:
+        &#34;&#34;&#34;Returns true if the given predicate returns true for all of
+        the bindings in the map.
 
-    #     def Fold f acc =
-    #         maptree.foldBack f tree acc
+        Args:
+            predicate: The function to test the input elements.
 
-    #     def FoldSection (lo:&#39;Key) (hi:&#39;Key) f (acc:&#39;z) =
-    #         maptree.foldSection comparer lo hi f tree acc
+        Returns:
+            True if the predicate evaluates to true for all of the
+            bindings in the map.
+        &#34;&#34;&#34;
+        return maptree.forall(predicate, self._tree)
 
-    #     def Iterate f =
-    #         maptree.iter f tree
+    def iterate(self, f: Callable[[Key, Value], None]) -&gt; None:
+        return maptree.iter(f, self._tree)
 
     #     def MapRange (f:&#39;Value-&gt;&#39;Result) =
     #         return Map&lt;&#39;Key, &#39;Result&gt;(comparer, maptree.map f tree)
 
-    def map(self, f: Callable[[Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
-        return Map(maptree.map(f, self._tree))
+    def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -&gt; Result:
+        return maptree.fold(folder, state, self._tree)
+
+    def map(self, mapping: Callable[[Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
+        &#34;&#34;&#34;Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection. The key passed to the function indicates the key of
+        element being transformed.
+
+        Args:
+            mapping: The function to transform the key/value pairs
+
+        Returns:
+            The resulting map of keys and transformed values.
+        &#34;&#34;&#34;
+        return Map(maptree.map(mapping, self._tree))
 
     def partition(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Tuple[Map[Key, Value], Map[Key, Value]]&#34;:
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
-
-    def count(self):
-        return maptree.size(self._tree)
 
     def contains_key(self, key: Key) -&gt; bool:
         return maptree.mem(key, self._tree)
@@ -133,6 +205,11 @@ class Map(Generic[Key, Value]):
         return maptree.to_list(self._tree)
 
     def to_seq(self) -&gt; Iterable[Tuple[Key, Value]]:
+        &#34;&#34;&#34;Convert to sequence.
+
+        Returns:
+            Sequenc of key, value tuples.
+        &#34;&#34;&#34;
         return maptree.to_seq(self._tree)
 
     @overload
@@ -145,57 +222,52 @@ class Map(Generic[Key, Value]):
 
     @staticmethod
     def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -&gt; &#34;Map[Key, Value]&#34;:
+        &#34;&#34;&#34;Generate map from list.
+
+        Returns:
+            New map.
+        &#34;&#34;&#34;
         return Map(maptree.of_list(FrozenList(lst)))
 
-    #     member this.ComputeHashCode() =
-    #         let combineHash x y = (x &lt;&lt;&lt; 1) + y + 631
-    #         let mutable res = 0
-    #         for (KeyValue(x, y)) in this do
-    #             res &lt;- combineHash res (hash x)
-    #             res &lt;- combineHash res (Unchecked.hash y)
-    #         res
+    def __hash__(self) -&gt; int:
+        def combine_hash(x: int, y: int) -&gt; int:
+            return (x &lt;&lt; 1) + y + 631
 
-    #     override this.GetHashCode() = this.ComputeHashCode()
+        res = 0
+        for x, y in self:
+            res = combine_hash(res, hash(x))
+            res = combine_hash(res, hash(y))
+        return res
 
-    #     override this.Equals that =
-    #         match that with
-    #         | :? Map[Key, Value] as that -&gt;
-    #             use e1 = (this :&gt; seq&lt;_&gt;).GetEnumerator()
-    #             use e2 = (that :&gt; seq&lt;_&gt;).GetEnumerator()
-    #             let rec loop () =
-    #                 let m1 = e1.MoveNext()
-    #                 let m2 = e2.MoveNext()
-    #                 (m1 = m2) &amp;&amp; (not m1 ||
-    #                                  (let e1c = e1.Current
-    #                                   let e2c = e2.Current
-    #                                   ((e1c.Key = e2c.Key) &amp;&amp; (Unchecked.equals e1c.Value e2c.Value) &amp;&amp; loop())))
-    #             loop()
-    #         | _ -&gt; false
+    def __getitem__(self, key: Value) -&gt; Value:
+        return maptree.find(key, self._tree)
 
-    #     interface IEnumerable&lt;KeyValuePair&lt;&#39;Key, &#39;Value&gt;&gt; with
-    #         member __.GetEnumerator() = maptree.mkIEnumerator tree
+    def __iter__(self) -&gt; Iterator[Tuple[Key, Value]]:
+        return maptree.mk_iterator(self._tree)
 
-    #     interface System.Collections.IEnumerable with
-    #         member __.GetEnumerator() = maptree.mkIEnumerator tree :&gt; System.Collections.IEnumerator
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
+        return maptree.size(self._tree)
 
-    #     interface System.IComparable with
-    #         def CompareTo(obj: obj) =
-    #             match obj with
-    #             | :? Map[Key, Value]  as m2-&gt;
-    #                 Seq.compareWith
-    #                    (fun (kvp1 : KeyValuePair&lt;_, _&gt;) (kvp2 : KeyValuePair&lt;_, _&gt;)-&gt;
-    #                        let c = comparer.Compare(kvp1.Key, kvp2.Key) in
-    #                        if c &lt;&gt; 0 then c else Unchecked.compare kvp1.Value kvp2.Value)
-    #                    m m2
-    #             | _ -&gt;
-    #                 invalidArg &#34;obj&#34; &#34;not comparable&#34;
+    def __eq__(self, other: Any) -&gt; bool:
+        if not isinstance(other, Map):
+            return False
 
-    #     // interface IReadOnlyDictionary&lt;&#39;Key, &#39;Value&gt; with
-    #     //     def Item with get key = m.[key]
-    #     //     def Keys = seq { for kvp in m -&gt; kvp.Key }
-    #     //     def TryGetValue(key, value: byref&lt;&#39;Value&gt;) = m.TryGetValue(key, &amp;value)
-    #     //     def Values = seq { for kvp in m -&gt; kvp.Value }
-    #     //     def ContainsKey key = m.ContainsKey key
+        other = cast(Map[Any, Any], other)
+        iterator: Iterator[Tuple[Any, Any]] = iter(other.to_seq())
+
+        for kv in self.to_seq():
+            try:
+                kv_other = next(iterator)
+            except StopIteration:
+                return False
+            else:
+                if kv != kv_other:
+                    return False
+        return True
+
+    def __bool__(self) -&gt; bool:
+        return maptree.is_empty(self._tree)
 
     def __str__(self) -&gt; str:
         def to_str(item: Tuple[Key, Value]) -&gt; str:
@@ -210,19 +282,7 @@ class Map(Generic[Key, Value]):
         return str(self)
 
 
-def is_empty(table: Map[Key, Value]) -&gt; bool:
-    &#34;&#34;&#34;Is the map empty?
-
-    Args:
-        table: The input map.
-
-    Returns:
-        True if the map is empty.
-    &#34;&#34;&#34;
-    return table.is_empty()
-
-
-def add(key: Key, value: Value, table: Map[Key, Value]) -&gt; Map[Key, Value]:
+def add(key: Key, value: Value) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
     &#34;&#34;&#34;Returns a new map with the binding added to the given map. If a
     binding with the given key already exists in the input map, the
     existing binding is replaced by the new binding in the result
@@ -236,10 +296,14 @@ def add(key: Key, value: Value, table: Map[Key, Value]) -&gt; Map[Key, Value]:
     Returns:
         The resulting map.
     &#34;&#34;&#34;
-    return table.add(key, value)
+
+    def _add(table: Map[Key, Value]) -&gt; Map[Key, Value]:
+        return table.add(key, value)
+
+    return _add
 
 
-def change(key: Key, fn: Callable[[Option[Value]], Option[Value]], table: Map[Key, Value]) -&gt; Map[Key, Value]:
+def change(key: Key, fn: Callable[[Option[Value]], Option[Value]]) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
     &#34;&#34;&#34;Returns a new map with the value stored under key changed
     according to f.
 
@@ -251,15 +315,146 @@ def change(key: Key, fn: Callable[[Option[Value]], Option[Value]], table: Map[Ke
     Returns:
         The input key.
     &#34;&#34;&#34;
-    return table.change(key, fn)
+
+    def _change(table: Map[Key, Value]) -&gt; Map[Key, Value]:
+        return table.change(key, fn)
+
+    return _change
 
 
-# def find(key: Key, table: Map[Key, Value]) -&gt; Value:
-#    table.find(key)
+def count(table: Map[Key, Value]) -&gt; int:
+    &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
+    return len(table)
 
-# // [&lt;CompiledName(&#34;TryFind&#34;)&gt;]
-# let tryFind key (table: Map&lt;_, _&gt;) =
-#     table.TryFind key
+
+def find(key: Key) -&gt; Callable[[Map[Key, Value]], Value]:
+    &#34;&#34;&#34;Lookup an element in the map, raising KeyNotFoundException if no
+    binding exists in the map
+
+    Args:
+        key: The key to find.
+        table: The map to find the key in.
+
+    &#34;&#34;&#34;
+
+    def _find(table: Map[Key, Value]) -&gt; Value:
+        return table[key]
+
+    return _find
+
+
+def is_empty(table: Map[Key, Value]) -&gt; bool:
+    &#34;&#34;&#34;Is the map empty?
+
+    Args:
+        table: The input map.
+
+    Returns:
+        True if the map is empty.
+    &#34;&#34;&#34;
+    return table.is_empty()
+
+
+def contains_key(key: Key) -&gt; Callable[[Map[Key, Value]], bool]:
+    def _contains_key(table: Map[Key, Value]) -&gt; bool:
+        return table.contains_key(key)
+
+    return _contains_key
+
+
+def iterate(action: Callable[[Key, Value], None]) -&gt; Callable[[Map[Key, Value]], None]:
+    def _iterate(table: Map[Key, Value]) -&gt; None:
+        return table.iterate(action)
+
+    return _iterate
+
+
+def try_pick(chooser: Callable[[Key, Value], Option[Result]]) -&gt; Callable[[Map[Key, Value]], Option[Result]]:
+    &#34;&#34;&#34;Searches the map looking for the first element where the given
+    function returns a Some value.
+
+    Args:
+        chooser: The function to generate options from the key/value
+            pairs.
+    Returns:
+        Partially applied `try_pick` function that takes the input map
+        and returns the first result.
+    &#34;&#34;&#34;
+
+    def _try_pick(table: Map[Key, Value]) -&gt; Option[Result]:
+        return table.try_pick(chooser)
+
+    return _try_pick
+
+
+def pick(chooser: Callable[[Key, Value], Option[Result]]) -&gt; Callable[[Map[Key, Value]], Option[Result]]:
+    def _try_pick(table: Map[Key, Value]) -&gt; Option[Result]:
+        for res in table.try_pick(chooser):
+            return res
+        else:
+            raise KeyError()
+
+    return _try_pick
+
+
+def exists(predicate: Callable[[Key, Value], bool]) -&gt; Callable[[Map[Key, Value]], bool]:
+    &#34;&#34;&#34;Returns true if the given predicate returns true for one of the bindings in the map.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        Partially applied function that takes a map table and returns
+        true if the predicate returns true for one of the key/value
+        pairs.
+    &#34;&#34;&#34;
+
+    def _exists(table: Map[Key, Value]) -&gt; bool:
+        return table.exists(predicate)
+
+    return _exists
+
+
+def filter(predicate: Callable[[Key, Value], bool]) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
+    def _filter(table: Map[Key, Value]) -&gt; Map[Key, Value]:
+        return table.filter(predicate)
+
+    return _filter
+
+
+def for_all(predicate: Callable[[Key, Value], bool]) -&gt; Callable[[Map[Key, Value]], bool]:
+    def _for_all(table: Map[Key, Value]) -&gt; bool:
+        return table.for_all(predicate)
+
+    return _for_all
+
+
+def map(mapping: Callable[[Value], Result]) -&gt; Callable[[Map[Key, Value]], Map[Key, Result]]:
+    def _map(table: Map[Key, Value]) -&gt; Map[Key, Result]:
+        return table.map(mapping)
+
+    return _map
+
+
+def fold(folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -&gt; Callable[[Map[Key, Value]], Result]:
+    def _fold(table: Map[Key, Value]) -&gt; Result:
+        return table.fold(folder, state)
+
+    return _fold
+
+
+# // [&lt;CompiledName(&#34;FoldBack&#34;)&gt;]
+# let foldBack&lt;&#39;Key, &#39;T, &#39;State  when &#39;Key : comparison&gt; folder (table: Map&lt;&#39;Key, &#39;T&gt;) (state:&#39;State) =
+#     maptree.foldBack folder table.Tree state
+
+
+def partition(
+    predicate: Callable[[Key, Value], bool]
+) -&gt; Callable[[Map[Key, Value]], Tuple[Map[Key, Value], Map[Key, Value]]]:
+    def _partition(table: Map[Key, Value]) -&gt; Tuple[Map[Key, Value], Map[Key, Value]]:
+        return table.partition(predicate)
+
+    return _partition
 
 
 def remove(key: Key) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
@@ -278,66 +473,6 @@ def remove(key: Key) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
         return table.remove(key)
 
     return _remove
-
-
-# // [&lt;CompiledName(&#34;ContainsKey&#34;)&gt;]
-# let containsKey key (table: Map&lt;_, _&gt;) =
-#     table.ContainsKey key
-
-# // [&lt;CompiledName(&#34;Iterate&#34;)&gt;]
-# let iterate action (table: Map&lt;_, _&gt;) =
-#     table.Iterate action
-
-# // [&lt;CompiledName(&#34;TryPick&#34;)&gt;]
-# let tryPick chooser (table: Map&lt;_, _&gt;) =
-#     table.TryPick chooser
-
-# // [&lt;CompiledName(&#34;Pick&#34;)&gt;]
-# let pick chooser (table: Map&lt;_, _&gt;) =
-#     match tryPick chooser table with
-#     | None -&gt; raise (KeyNotFoundException())
-#     | Some res -&gt; res
-
-
-def exists(predicate: Callable[[Key, Value], bool], table: Map[Key, Value]) -&gt; bool:
-    return table.exists(predicate)
-
-
-def filter(predicate: Callable[[Key, Value], bool]) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
-    def _filter(table: Map[Key, Value]) -&gt; Map[Key, Value]:
-        return table.filter(predicate)
-
-    return _filter
-
-
-def partition(
-    predicate: Callable[[Key, Value], bool]
-) -&gt; Callable[[Map[Key, Value]], Tuple[Map[Key, Value], Map[Key, Value]]]:
-    def _partition(table: Map[Key, Value]) -&gt; Tuple[Map[Key, Value], Map[Key, Value]]:
-        return table.partition(predicate)
-
-    return _partition
-
-
-# // [&lt;CompiledName(&#34;ForAll&#34;)&gt;]
-# let forAll predicate (table: Map&lt;_, _&gt;) =
-#     table.ForAll predicate
-
-
-def map(mapping: Callable[[Value], Result]) -&gt; Callable[[Map[Key, Value]], Map[Key, Result]]:
-    def _map(table: Map[Key, Value]) -&gt; Map[Key, Result]:
-        return table.map(mapping)
-
-    return _map
-
-
-# // [&lt;CompiledName(&#34;Fold&#34;)&gt;]
-# let fold&lt;&#39;Key, &#39;T, &#39;State when &#39;Key : comparison&gt; folder (state:&#39;State) (table: Map&lt;&#39;Key, &#39;T&gt;) =
-#     maptree.fold folder state table.Tree
-
-# // [&lt;CompiledName(&#34;FoldBack&#34;)&gt;]
-# let foldBack&lt;&#39;Key, &#39;T, &#39;State  when &#39;Key : comparison&gt; folder (table: Map&lt;&#39;Key, &#39;T&gt;) (state:&#39;State) =
-#     maptree.foldBack folder table.Tree state
 
 
 def to_seq(table: Map[Key, Value]):
@@ -375,12 +510,34 @@ def to_list(table: Map[Key, Value]) -&gt; FrozenList[Tuple[Key, Value]]:
     return table.to_list()
 
 
+def try_find(key: Key) -&gt; Callable[[Map[Key, Value]], Option[Value]]:
+    &#34;&#34;&#34;Lookup an element in the map, returning a `Some` value if the
+    element is in the domain of the map and `Nothing` if not.
+
+    Args:
+        key: The input key.
+
+    Returns:
+        A partially applied `try_find` function that takes a map
+        instance and returns the result.
+    &#34;&#34;&#34;
+
+    def _try_find(table: Map[Key, Value]):
+        &#34;&#34;&#34;Lookup an element in the map, returning a `Some` value if the
+        element is in the domain of the map and `Nothing` if not.
+
+        Args:
+            key: The input key.
+
+        Returns:
+            The found `Some` value or `Nothing`.
+        &#34;&#34;&#34;
+        return table.try_find(key)
+
+    return _try_find
+
+
 empty = Map.empty
-
-
-# let createMutable (source: KeyValuePair&lt;&#39;Key, &#39;Value&gt; seq) ([&lt;Fable.Core.Inject&gt;] comparer: IEqualityComparer&lt;&#39;Key&gt;) =
-#     let map = Fable.Collections.MutableMap(source, comparer)
-#     map :&gt; Fable.Core.JS.Map&lt;_,_&gt;
 
 # let groupBy (projection: &#39;T -&gt; &#39;Key) (xs: &#39;T seq) ([&lt;Fable.Core.Inject&gt;] comparer: IEqualityComparer&lt;&#39;Key&gt;): (&#39;Key * &#39;T seq) seq =
 #     let dict: Fable.Core.JS.Map&lt;_,ResizeArray&lt;&#39;T&gt;&gt; = createMutable Seq.empty comparer
@@ -407,8 +564,30 @@ empty = Map.empty
 #     dict.entries()
 
 
-def count(table: Map[Key, Value]) -&gt; int:
-    return table.count()</code></pre>
+__all__ = [
+    &#34;Map&#34;,
+    &#34;add&#34;,
+    &#34;change&#34;,
+    &#34;contains_key&#34;,
+    &#34;count&#34;,
+    &#34;empty&#34;,
+    &#34;exists&#34;,
+    &#34;filter&#34;,
+    &#34;find&#34;,
+    &#34;fold&#34;,
+    &#34;for_all&#34;,
+    &#34;is_empty&#34;,
+    &#34;iterate&#34;,
+    &#34;map&#34;,
+    &#34;of_list&#34;,
+    &#34;partition&#34;,
+    &#34;pick&#34;,
+    &#34;remove&#34;,
+    &#34;to_list&#34;,
+    &#34;to_seq&#34;,
+    &#34;try_find&#34;,
+    &#34;try_pick&#34;,
+]</code></pre>
 </details>
 </section>
 <section>
@@ -419,7 +598,7 @@ def count(table: Map[Key, Value]) -&gt; int:
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.collections.map.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>key: ~Key, value: ~Value, table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">add</span></span>(<span>key: ~Key, value: ~Value) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a new map with the binding added to the given map. If a
@@ -441,7 +620,7 @@ map.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def add(key: Key, value: Value, table: Map[Key, Value]) -&gt; Map[Key, Value]:
+<pre><code class="python">def add(key: Key, value: Value) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
     &#34;&#34;&#34;Returns a new map with the binding added to the given map. If a
     binding with the given key already exists in the input map, the
     existing binding is replaced by the new binding in the result
@@ -455,11 +634,15 @@ map.</p>
     Returns:
         The resulting map.
     &#34;&#34;&#34;
-    return table.add(key, value)</code></pre>
+
+    def _add(table: Map[Key, Value]) -&gt; Map[Key, Value]:
+        return table.add(key, value)
+
+    return _add</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.change"><code class="name flex">
-<span>def <span class="ident">change</span></span>(<span>key: ~Key, fn: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]], table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">change</span></span>(<span>key: ~Key, fn: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a new map with the value stored under key changed
@@ -479,7 +662,7 @@ according to f.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def change(key: Key, fn: Callable[[Option[Value]], Option[Value]], table: Map[Key, Value]) -&gt; Map[Key, Value]:
+<pre><code class="python">def change(key: Key, fn: Callable[[Option[Value]], Option[Value]]) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
     &#34;&#34;&#34;Returns a new map with the value stored under key changed
     according to f.
 
@@ -491,11 +674,15 @@ according to f.</p>
     Returns:
         The input key.
     &#34;&#34;&#34;
-    return table.change(key, fn)</code></pre>
+
+    def _change(table: Map[Key, Value]) -&gt; Map[Key, Value]:
+        return table.change(key, fn)
+
+    return _change</code></pre>
 </details>
 </dd>
-<dt id="expression.collections.map.count"><code class="name flex">
-<span>def <span class="ident">count</span></span>(<span>table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]) ‑> int</span>
+<dt id="expression.collections.map.contains_key"><code class="name flex">
+<span>def <span class="ident">contains_key</span></span>(<span>key: ~Key) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], bool]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -503,8 +690,25 @@ according to f.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
+<pre><code class="python">def contains_key(key: Key) -&gt; Callable[[Map[Key, Value]], bool]:
+    def _contains_key(table: Map[Key, Value]) -&gt; bool:
+        return table.contains_key(key)
+
+    return _contains_key</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.count"><code class="name flex">
+<span>def <span class="ident">count</span></span>(<span>table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return the number of bindings in the map.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
 <pre><code class="python">def count(table: Map[Key, Value]) -&gt; int:
-    return table.count()</code></pre>
+    &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
+    return len(table)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.empty"><code class="name flex">
@@ -522,16 +726,39 @@ def empty() -&gt; &#34;Map[Key, Value]&#34;:
 </details>
 </dd>
 <dt id="expression.collections.map.exists"><code class="name flex">
-<span>def <span class="ident">exists</span></span>(<span>predicate: Callable[[~Key, ~Value], bool], table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]) ‑> bool</span>
+<span>def <span class="ident">exists</span></span>(<span>predicate: Callable[[~Key, ~Value], bool]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], bool]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns true if the given predicate returns true for one of the bindings in the map.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>predicate</code></strong></dt>
+<dd>The function to test the input elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Partially applied function that takes a map table and returns
+true if the predicate returns true for one of the key/value
+pairs.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def exists(predicate: Callable[[Key, Value], bool], table: Map[Key, Value]) -&gt; bool:
-    return table.exists(predicate)</code></pre>
+<pre><code class="python">def exists(predicate: Callable[[Key, Value], bool]) -&gt; Callable[[Map[Key, Value]], bool]:
+    &#34;&#34;&#34;Returns true if the given predicate returns true for one of the bindings in the map.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        Partially applied function that takes a map table and returns
+        true if the predicate returns true for one of the key/value
+        pairs.
+    &#34;&#34;&#34;
+
+    def _exists(table: Map[Key, Value]) -&gt; bool:
+        return table.exists(predicate)
+
+    return _exists</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.filter"><code class="name flex">
@@ -548,6 +775,71 @@ def empty() -&gt; &#34;Map[Key, Value]&#34;:
         return table.filter(predicate)
 
     return _filter</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.find"><code class="name flex">
+<span>def <span class="ident">find</span></span>(<span>key: ~Key) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], ~Value]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Lookup an element in the map, raising KeyNotFoundException if no
+binding exists in the map</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>key</code></strong></dt>
+<dd>The key to find.</dd>
+<dt><strong><code>table</code></strong></dt>
+<dd>The map to find the key in.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find(key: Key) -&gt; Callable[[Map[Key, Value]], Value]:
+    &#34;&#34;&#34;Lookup an element in the map, raising KeyNotFoundException if no
+    binding exists in the map
+
+    Args:
+        key: The key to find.
+        table: The map to find the key in.
+
+    &#34;&#34;&#34;
+
+    def _find(table: Map[Key, Value]) -&gt; Value:
+        return table[key]
+
+    return _find</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.fold"><code class="name flex">
+<span>def <span class="ident">fold</span></span>(<span>folder: Callable[[~Result, Tuple[~Key, ~Value]], ~Result], state: ~Result) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], ~Result]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fold(folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -&gt; Callable[[Map[Key, Value]], Result]:
+    def _fold(table: Map[Key, Value]) -&gt; Result:
+        return table.fold(folder, state)
+
+    return _fold</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.for_all"><code class="name flex">
+<span>def <span class="ident">for_all</span></span>(<span>predicate: Callable[[~Key, ~Value], bool]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], bool]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def for_all(predicate: Callable[[Key, Value], bool]) -&gt; Callable[[Map[Key, Value]], bool]:
+    def _for_all(table: Map[Key, Value]) -&gt; bool:
+        return table.for_all(predicate)
+
+    return _for_all</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.is_empty"><code class="name flex">
@@ -576,6 +868,22 @@ def empty() -&gt; &#34;Map[Key, Value]&#34;:
         True if the map is empty.
     &#34;&#34;&#34;
     return table.is_empty()</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.iterate"><code class="name flex">
+<span>def <span class="ident">iterate</span></span>(<span>action: Callable[[~Key, ~Value], NoneType]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], NoneType]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def iterate(action: Callable[[Key, Value], None]) -&gt; Callable[[Map[Key, Value]], None]:
+    def _iterate(table: Map[Key, Value]) -&gt; None:
+        return table.iterate(action)
+
+    return _iterate</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.map"><code class="name flex">
@@ -607,19 +915,6 @@ def empty() -&gt; &#34;Map[Key, Value]&#34;:
     return Map.of_list(FrozenList(elements))</code></pre>
 </details>
 </dd>
-<dt id="expression.collections.map.of_seq"><code class="name flex">
-<span>def <span class="ident">of_seq</span></span>(<span>elements: Iterable[Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def of_seq(elements: Iterable[Tuple[Key, Value]]) -&gt; Map[Key, Value]:
-    return Map.create(elements)</code></pre>
-</details>
-</dd>
 <dt id="expression.collections.map.partition"><code class="name flex">
 <span>def <span class="ident">partition</span></span>(<span>predicate: Callable[[~Key, ~Value], bool]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], Tuple[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value], <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]]]</span>
 </code></dt>
@@ -636,6 +931,25 @@ def empty() -&gt; &#34;Map[Key, Value]&#34;:
         return table.partition(predicate)
 
     return _partition</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.pick"><code class="name flex">
+<span>def <span class="ident">pick</span></span>(<span>chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pick(chooser: Callable[[Key, Value], Option[Result]]) -&gt; Callable[[Map[Key, Value]], Option[Result]]:
+    def _try_pick(table: Map[Key, Value]) -&gt; Option[Result]:
+        for res in table.try_pick(chooser):
+            return res
+        else:
+            raise KeyError()
+
+    return _try_pick</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.remove"><code class="name flex">
@@ -701,6 +1015,88 @@ raised if the element is not present.</p>
     return Map.to_seq(table)</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.map.try_find"><code class="name flex">
+<span>def <span class="ident">try_find</span></span>(<span>key: ~Key) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Lookup an element in the map, returning a <code>Some</code> value if the
+element is in the domain of the map and <code>Nothing</code> if not.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>key</code></strong></dt>
+<dd>The input key.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A partially applied <code><a title="expression.collections.map.try_find" href="#expression.collections.map.try_find">try_find()</a></code> function that takes a map
+instance and returns the result.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def try_find(key: Key) -&gt; Callable[[Map[Key, Value]], Option[Value]]:
+    &#34;&#34;&#34;Lookup an element in the map, returning a `Some` value if the
+    element is in the domain of the map and `Nothing` if not.
+
+    Args:
+        key: The input key.
+
+    Returns:
+        A partially applied `try_find` function that takes a map
+        instance and returns the result.
+    &#34;&#34;&#34;
+
+    def _try_find(table: Map[Key, Value]):
+        &#34;&#34;&#34;Lookup an element in the map, returning a `Some` value if the
+        element is in the domain of the map and `Nothing` if not.
+
+        Args:
+            key: The input key.
+
+        Returns:
+            The found `Some` value or `Nothing`.
+        &#34;&#34;&#34;
+        return table.try_find(key)
+
+    return _try_find</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.try_pick"><code class="name flex">
+<span>def <span class="ident">try_pick</span></span>(<span>chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Searches the map looking for the first element where the given
+function returns a Some value.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>chooser</code></strong></dt>
+<dd>The function to generate options from the key/value
+pairs.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Partially applied <code><a title="expression.collections.map.try_pick" href="#expression.collections.map.try_pick">try_pick()</a></code> function that takes the input map
+and returns the first result.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def try_pick(chooser: Callable[[Key, Value], Option[Result]]) -&gt; Callable[[Map[Key, Value]], Option[Result]]:
+    &#34;&#34;&#34;Searches the map looking for the first element where the given
+    function returns a Some value.
+
+    Args:
+        chooser: The function to generate options from the key/value
+            pairs.
+    Returns:
+        Partially applied `try_pick` function that takes the input map
+        and returns the first result.
+    &#34;&#34;&#34;
+
+    def _try_pick(table: Map[Key, Value]) -&gt; Option[Result]:
+        return table.try_pick(chooser)
+
+    return _try_pick</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -708,7 +1104,7 @@ raised if the element is not present.</p>
 <dl>
 <dt id="expression.collections.map.Map"><code class="flex name class">
 <span>class <span class="ident">Map</span></span>
-<span>(</span><span>tree: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="maptree.html#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]])</span>
+<span>(</span><span>**kw: ~Value)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for generic types.</p>
@@ -730,8 +1126,60 @@ return default</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Map(Generic[Key, Value]):
-    def __init__(self, tree: MapTree[Key, Value]) -&gt; None:
-        self._tree = tree
+    def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -&gt; None:
+        tree: MapTree[str, Value] = maptree.of_seq(kw.items())
+        self._tree = __tree if __tree is not None else tree
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Map[Key, Value]&#34;], Result]) -&gt; Result:
+        ...
+
+    @overload
+    def pipe(self, __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+        ...
+
+    @overload
+    def pipe(
+        self, __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+    ) -&gt; T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+    ) -&gt; T4:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+        __fn5: Callable[[T4], T5],
+    ) -&gt; T5:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[&#34;Map[Key, Value]&#34;], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+        __fn4: Callable[[T3], T4],
+        __fn5: Callable[[T4], T5],
+        __fn6: Callable[[T5], T6],
+    ) -&gt; T6:
+        ...
+
+    def pipe(self, *args: Any) -&gt; Any:
+        &#34;&#34;&#34;Pipe map through the given functions.&#34;&#34;&#34;
+        return pipe(self, *args)
 
     @staticmethod
     def empty() -&gt; &#34;Map[Key, Value]&#34;:
@@ -750,12 +1198,8 @@ return default</p></div>
     def is_empty(self) -&gt; bool:
         return maptree.is_empty(self._tree)
 
-    #     def Item
-    #      with get(key : &#39;Key) =
-    #         maptree.find comparer key tree
-
-    #     def TryPick f =
-    #         maptree.tryPick f tree
+    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -&gt; Option[Result]:
+        return maptree.try_pick(chooser, self._tree)
 
     def exists(self, predicate: Callable[[Key, Value], bool]) -&gt; bool:
         return maptree.exists(predicate, self._tree)
@@ -763,30 +1207,45 @@ return default</p></div>
     def filter(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Map[Key, Value]&#34;:
         return Map(maptree.filter(predicate, self._tree))
 
-    #     def ForAll predicate =
-    #         maptree.forall predicate tree
+    def for_all(self, predicate: Callable[[Key, Value], bool]) -&gt; bool:
+        &#34;&#34;&#34;Returns true if the given predicate returns true for all of
+        the bindings in the map.
 
-    #     def Fold f acc =
-    #         maptree.foldBack f tree acc
+        Args:
+            predicate: The function to test the input elements.
 
-    #     def FoldSection (lo:&#39;Key) (hi:&#39;Key) f (acc:&#39;z) =
-    #         maptree.foldSection comparer lo hi f tree acc
+        Returns:
+            True if the predicate evaluates to true for all of the
+            bindings in the map.
+        &#34;&#34;&#34;
+        return maptree.forall(predicate, self._tree)
 
-    #     def Iterate f =
-    #         maptree.iter f tree
+    def iterate(self, f: Callable[[Key, Value], None]) -&gt; None:
+        return maptree.iter(f, self._tree)
 
     #     def MapRange (f:&#39;Value-&gt;&#39;Result) =
     #         return Map&lt;&#39;Key, &#39;Result&gt;(comparer, maptree.map f tree)
 
-    def map(self, f: Callable[[Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
-        return Map(maptree.map(f, self._tree))
+    def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -&gt; Result:
+        return maptree.fold(folder, state, self._tree)
+
+    def map(self, mapping: Callable[[Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
+        &#34;&#34;&#34;Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection. The key passed to the function indicates the key of
+        element being transformed.
+
+        Args:
+            mapping: The function to transform the key/value pairs
+
+        Returns:
+            The resulting map of keys and transformed values.
+        &#34;&#34;&#34;
+        return Map(maptree.map(mapping, self._tree))
 
     def partition(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Tuple[Map[Key, Value], Map[Key, Value]]&#34;:
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
-
-    def count(self):
-        return maptree.size(self._tree)
 
     def contains_key(self, key: Key) -&gt; bool:
         return maptree.mem(key, self._tree)
@@ -808,6 +1267,11 @@ return default</p></div>
         return maptree.to_list(self._tree)
 
     def to_seq(self) -&gt; Iterable[Tuple[Key, Value]]:
+        &#34;&#34;&#34;Convert to sequence.
+
+        Returns:
+            Sequenc of key, value tuples.
+        &#34;&#34;&#34;
         return maptree.to_seq(self._tree)
 
     @overload
@@ -820,57 +1284,52 @@ return default</p></div>
 
     @staticmethod
     def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -&gt; &#34;Map[Key, Value]&#34;:
+        &#34;&#34;&#34;Generate map from list.
+
+        Returns:
+            New map.
+        &#34;&#34;&#34;
         return Map(maptree.of_list(FrozenList(lst)))
 
-    #     member this.ComputeHashCode() =
-    #         let combineHash x y = (x &lt;&lt;&lt; 1) + y + 631
-    #         let mutable res = 0
-    #         for (KeyValue(x, y)) in this do
-    #             res &lt;- combineHash res (hash x)
-    #             res &lt;- combineHash res (Unchecked.hash y)
-    #         res
+    def __hash__(self) -&gt; int:
+        def combine_hash(x: int, y: int) -&gt; int:
+            return (x &lt;&lt; 1) + y + 631
 
-    #     override this.GetHashCode() = this.ComputeHashCode()
+        res = 0
+        for x, y in self:
+            res = combine_hash(res, hash(x))
+            res = combine_hash(res, hash(y))
+        return res
 
-    #     override this.Equals that =
-    #         match that with
-    #         | :? Map[Key, Value] as that -&gt;
-    #             use e1 = (this :&gt; seq&lt;_&gt;).GetEnumerator()
-    #             use e2 = (that :&gt; seq&lt;_&gt;).GetEnumerator()
-    #             let rec loop () =
-    #                 let m1 = e1.MoveNext()
-    #                 let m2 = e2.MoveNext()
-    #                 (m1 = m2) &amp;&amp; (not m1 ||
-    #                                  (let e1c = e1.Current
-    #                                   let e2c = e2.Current
-    #                                   ((e1c.Key = e2c.Key) &amp;&amp; (Unchecked.equals e1c.Value e2c.Value) &amp;&amp; loop())))
-    #             loop()
-    #         | _ -&gt; false
+    def __getitem__(self, key: Value) -&gt; Value:
+        return maptree.find(key, self._tree)
 
-    #     interface IEnumerable&lt;KeyValuePair&lt;&#39;Key, &#39;Value&gt;&gt; with
-    #         member __.GetEnumerator() = maptree.mkIEnumerator tree
+    def __iter__(self) -&gt; Iterator[Tuple[Key, Value]]:
+        return maptree.mk_iterator(self._tree)
 
-    #     interface System.Collections.IEnumerable with
-    #         member __.GetEnumerator() = maptree.mkIEnumerator tree :&gt; System.Collections.IEnumerator
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
+        return maptree.size(self._tree)
 
-    #     interface System.IComparable with
-    #         def CompareTo(obj: obj) =
-    #             match obj with
-    #             | :? Map[Key, Value]  as m2-&gt;
-    #                 Seq.compareWith
-    #                    (fun (kvp1 : KeyValuePair&lt;_, _&gt;) (kvp2 : KeyValuePair&lt;_, _&gt;)-&gt;
-    #                        let c = comparer.Compare(kvp1.Key, kvp2.Key) in
-    #                        if c &lt;&gt; 0 then c else Unchecked.compare kvp1.Value kvp2.Value)
-    #                    m m2
-    #             | _ -&gt;
-    #                 invalidArg &#34;obj&#34; &#34;not comparable&#34;
+    def __eq__(self, other: Any) -&gt; bool:
+        if not isinstance(other, Map):
+            return False
 
-    #     // interface IReadOnlyDictionary&lt;&#39;Key, &#39;Value&gt; with
-    #     //     def Item with get key = m.[key]
-    #     //     def Keys = seq { for kvp in m -&gt; kvp.Key }
-    #     //     def TryGetValue(key, value: byref&lt;&#39;Value&gt;) = m.TryGetValue(key, &amp;value)
-    #     //     def Values = seq { for kvp in m -&gt; kvp.Value }
-    #     //     def ContainsKey key = m.ContainsKey key
+        other = cast(Map[Any, Any], other)
+        iterator: Iterator[Tuple[Any, Any]] = iter(other.to_seq())
+
+        for kv in self.to_seq():
+            try:
+                kv_other = next(iterator)
+            except StopIteration:
+                return False
+            else:
+                if kv != kv_other:
+                    return False
+        return True
+
+    def __bool__(self) -&gt; bool:
+        return maptree.is_empty(self._tree)
 
     def __str__(self) -&gt; str:
         def to_str(item: Tuple[Key, Value]) -&gt; str:
@@ -922,13 +1381,20 @@ def empty() -&gt; &#34;Map[Key, Value]&#34;:
 <span>def <span class="ident">of_list</span></span>(<span>lst: Union[List[Tuple[~Key, ~Value]], <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[Tuple[~Key, ~Value]]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Generate map from list.</p>
+<h2 id="returns">Returns</h2>
+<p>New map.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
 def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -&gt; &#34;Map[Key, Value]&#34;:
+    &#34;&#34;&#34;Generate map from list.
+
+    Returns:
+        New map.
+    &#34;&#34;&#34;
     return Map(maptree.of_list(FrozenList(lst)))</code></pre>
 </details>
 </dd>
@@ -974,19 +1440,6 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
     return maptree.mem(key, self._tree)</code></pre>
 </details>
 </dd>
-<dt id="expression.collections.map.Map.count"><code class="name flex">
-<span>def <span class="ident">count</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def count(self):
-    return maptree.size(self._tree)</code></pre>
-</details>
-</dd>
 <dt id="expression.collections.map.Map.exists"><code class="name flex">
 <span>def <span class="ident">exists</span></span>(<span>self, predicate: Callable[[~Key, ~Value], bool]) ‑> bool</span>
 </code></dt>
@@ -1013,6 +1466,51 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
     return Map(maptree.filter(predicate, self._tree))</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.map.Map.fold"><code class="name flex">
+<span>def <span class="ident">fold</span></span>(<span>self, folder: Callable[[~Result, Tuple[~Key, ~Value]], ~Result], state: ~Result) ‑> ~Result</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -&gt; Result:
+    return maptree.fold(folder, state, self._tree)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.for_all"><code class="name flex">
+<span>def <span class="ident">for_all</span></span>(<span>self, predicate: Callable[[~Key, ~Value], bool]) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns true if the given predicate returns true for all of
+the bindings in the map.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>predicate</code></strong></dt>
+<dd>The function to test the input elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>True if the predicate evaluates to true for all of the
+bindings in the map.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def for_all(self, predicate: Callable[[Key, Value], bool]) -&gt; bool:
+    &#34;&#34;&#34;Returns true if the given predicate returns true for all of
+    the bindings in the map.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        True if the predicate evaluates to true for all of the
+        bindings in the map.
+    &#34;&#34;&#34;
+    return maptree.forall(predicate, self._tree)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.map.Map.is_empty"><code class="name flex">
 <span>def <span class="ident">is_empty</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -1026,8 +1524,8 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
     return maptree.is_empty(self._tree)</code></pre>
 </details>
 </dd>
-<dt id="expression.collections.map.Map.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, f: Callable[[~Value], ~Result]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Result]</span>
+<dt id="expression.collections.map.Map.iterate"><code class="name flex">
+<span>def <span class="ident">iterate</span></span>(<span>self, f: Callable[[~Key, ~Value], NoneType]) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1035,8 +1533,42 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(self, f: Callable[[Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
-    return Map(maptree.map(f, self._tree))</code></pre>
+<pre><code class="python">def iterate(self, f: Callable[[Key, Value], None]) -&gt; None:
+    return maptree.iter(f, self._tree)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.map"><code class="name flex">
+<span>def <span class="ident">map</span></span>(<span>self, mapping: Callable[[~Value], ~Result]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Result]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Builds a new collection whose elements are the results of
+applying the given function to each of the elements of the
+collection. The key passed to the function indicates the key of
+element being transformed.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mapping</code></strong></dt>
+<dd>The function to transform the key/value pairs</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The resulting map of keys and transformed values.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def map(self, mapping: Callable[[Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
+    &#34;&#34;&#34;Builds a new collection whose elements are the results of
+    applying the given function to each of the elements of the
+    collection. The key passed to the function indicates the key of
+    element being transformed.
+
+    Args:
+        mapping: The function to transform the key/value pairs
+
+    Returns:
+        The resulting map of keys and transformed values.
+    &#34;&#34;&#34;
+    return Map(maptree.map(mapping, self._tree))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.Map.partition"><code class="name flex">
@@ -1051,6 +1583,20 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 <pre><code class="python">def partition(self, predicate: Callable[[Key, Value], bool]) -&gt; &#34;Tuple[Map[Key, Value], Map[Key, Value]]&#34;:
     r1, r2 = maptree.partition(predicate, self._tree)
     return Map(r1), Map(r2)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.Map.pipe"><code class="name flex">
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipe map through the given functions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe(self, *args: Any) -&gt; Any:
+    &#34;&#34;&#34;Pipe map through the given functions.&#34;&#34;&#34;
+    return pipe(self, *args)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.Map.remove"><code class="name flex">
@@ -1083,12 +1629,19 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 <span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[Tuple[~Key, ~Value]]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Convert to sequence.</p>
+<h2 id="returns">Returns</h2>
+<p>Sequenc of key, value tuples.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def to_seq(self) -&gt; Iterable[Tuple[Key, Value]]:
+    &#34;&#34;&#34;Convert to sequence.
+
+    Returns:
+        Sequenc of key, value tuples.
+    &#34;&#34;&#34;
     return maptree.to_seq(self._tree)</code></pre>
 </details>
 </dd>
@@ -1122,6 +1675,19 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
         return False</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.map.Map.try_pick"><code class="name flex">
+<span>def <span class="ident">try_pick</span></span>(<span>self, chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -&gt; Option[Result]:
+    return maptree.try_pick(chooser, self._tree)</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1142,18 +1708,25 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 <ul class="two-column">
 <li><code><a title="expression.collections.map.add" href="#expression.collections.map.add">add</a></code></li>
 <li><code><a title="expression.collections.map.change" href="#expression.collections.map.change">change</a></code></li>
+<li><code><a title="expression.collections.map.contains_key" href="#expression.collections.map.contains_key">contains_key</a></code></li>
 <li><code><a title="expression.collections.map.count" href="#expression.collections.map.count">count</a></code></li>
 <li><code><a title="expression.collections.map.empty" href="#expression.collections.map.empty">empty</a></code></li>
 <li><code><a title="expression.collections.map.exists" href="#expression.collections.map.exists">exists</a></code></li>
 <li><code><a title="expression.collections.map.filter" href="#expression.collections.map.filter">filter</a></code></li>
+<li><code><a title="expression.collections.map.find" href="#expression.collections.map.find">find</a></code></li>
+<li><code><a title="expression.collections.map.fold" href="#expression.collections.map.fold">fold</a></code></li>
+<li><code><a title="expression.collections.map.for_all" href="#expression.collections.map.for_all">for_all</a></code></li>
 <li><code><a title="expression.collections.map.is_empty" href="#expression.collections.map.is_empty">is_empty</a></code></li>
+<li><code><a title="expression.collections.map.iterate" href="#expression.collections.map.iterate">iterate</a></code></li>
 <li><code><a title="expression.collections.map.map" href="#expression.collections.map.map">map</a></code></li>
 <li><code><a title="expression.collections.map.of_list" href="#expression.collections.map.of_list">of_list</a></code></li>
-<li><code><a title="expression.collections.map.of_seq" href="#expression.collections.map.of_seq">of_seq</a></code></li>
 <li><code><a title="expression.collections.map.partition" href="#expression.collections.map.partition">partition</a></code></li>
+<li><code><a title="expression.collections.map.pick" href="#expression.collections.map.pick">pick</a></code></li>
 <li><code><a title="expression.collections.map.remove" href="#expression.collections.map.remove">remove</a></code></li>
 <li><code><a title="expression.collections.map.to_list" href="#expression.collections.map.to_list">to_list</a></code></li>
 <li><code><a title="expression.collections.map.to_seq" href="#expression.collections.map.to_seq">to_seq</a></code></li>
+<li><code><a title="expression.collections.map.try_find" href="#expression.collections.map.try_find">try_find</a></code></li>
+<li><code><a title="expression.collections.map.try_pick" href="#expression.collections.map.try_pick">try_pick</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -1164,20 +1737,24 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 <li><code><a title="expression.collections.map.Map.add" href="#expression.collections.map.Map.add">add</a></code></li>
 <li><code><a title="expression.collections.map.Map.change" href="#expression.collections.map.Map.change">change</a></code></li>
 <li><code><a title="expression.collections.map.Map.contains_key" href="#expression.collections.map.Map.contains_key">contains_key</a></code></li>
-<li><code><a title="expression.collections.map.Map.count" href="#expression.collections.map.Map.count">count</a></code></li>
 <li><code><a title="expression.collections.map.Map.create" href="#expression.collections.map.Map.create">create</a></code></li>
 <li><code><a title="expression.collections.map.Map.empty" href="#expression.collections.map.Map.empty">empty</a></code></li>
 <li><code><a title="expression.collections.map.Map.exists" href="#expression.collections.map.Map.exists">exists</a></code></li>
 <li><code><a title="expression.collections.map.Map.filter" href="#expression.collections.map.Map.filter">filter</a></code></li>
+<li><code><a title="expression.collections.map.Map.fold" href="#expression.collections.map.Map.fold">fold</a></code></li>
+<li><code><a title="expression.collections.map.Map.for_all" href="#expression.collections.map.Map.for_all">for_all</a></code></li>
 <li><code><a title="expression.collections.map.Map.is_empty" href="#expression.collections.map.Map.is_empty">is_empty</a></code></li>
+<li><code><a title="expression.collections.map.Map.iterate" href="#expression.collections.map.Map.iterate">iterate</a></code></li>
 <li><code><a title="expression.collections.map.Map.map" href="#expression.collections.map.Map.map">map</a></code></li>
 <li><code><a title="expression.collections.map.Map.of_list" href="#expression.collections.map.Map.of_list">of_list</a></code></li>
 <li><code><a title="expression.collections.map.Map.partition" href="#expression.collections.map.Map.partition">partition</a></code></li>
+<li><code><a title="expression.collections.map.Map.pipe" href="#expression.collections.map.Map.pipe">pipe</a></code></li>
 <li><code><a title="expression.collections.map.Map.remove" href="#expression.collections.map.Map.remove">remove</a></code></li>
 <li><code><a title="expression.collections.map.Map.to_list" href="#expression.collections.map.Map.to_list">to_list</a></code></li>
 <li><code><a title="expression.collections.map.Map.to_seq" href="#expression.collections.map.Map.to_seq">to_seq</a></code></li>
 <li><code><a title="expression.collections.map.Map.try_find" href="#expression.collections.map.Map.try_find">try_find</a></code></li>
 <li><code><a title="expression.collections.map.Map.try_get_value" href="#expression.collections.map.Map.try_get_value">try_get_value</a></code></li>
+<li><code><a title="expression.collections.map.Map.try_pick" href="#expression.collections.map.Map.try_pick">try_pick</a></code></li>
 </ul>
 </li>
 </ul>

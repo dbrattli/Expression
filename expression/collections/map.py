@@ -15,7 +15,8 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import Any, Callable, Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union, cast, overload
+from typing import (Any, Callable, Generic, Iterable, Iterator, List, Optional,
+                    Tuple, TypeVar, Union, cast, overload)
 
 from expression.core import Option, pipe
 

@@ -27,7 +27,13 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">from .cancellation import CancellationToken, CancellationTokenSource
-from .disposable import AsyncAnonymousDisposable, AsyncCompositeDisposable, AsyncDisposable, Disposable
+from .disposable import (
+    AnonymousDisposable,
+    AsyncAnonymousDisposable,
+    AsyncCompositeDisposable,
+    AsyncDisposable,
+    Disposable,
+)
 from .error import ObjectDisposedException, OperationCanceledError
 
 __all__ = [
@@ -67,6 +73,79 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="expression.system.AnonymousDisposable"><code class="flex name class">
+<span>class <span class="ident">AnonymousDisposable</span></span>
+<span>(</span><span>action: Callable[[], NoneType])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A disposable class with a context manager. Must implement the
+dispose method. Will dispoose on exit.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class AnonymousDisposable(Disposable):
+    def __init__(self, action: Callable[[], None]):
+        self._is_disposed = False
+        self._action = action
+        self._lock = RLock()
+
+    def dispose(self) -&gt; None:
+        &#34;&#34;&#34;Performs the task of cleaning up resources.&#34;&#34;&#34;
+
+        dispose = False
+        with self._lock:
+            if not self._is_disposed:
+                dispose = True
+                self._is_disposed = True
+
+        if dispose:
+            self._action()
+
+    def __enter__(self) -&gt; Disposable:
+        if self._is_disposed:
+            raise ObjectDisposedException()
+        return self</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.system.AnonymousDisposable.dispose"><code class="name flex">
+<span>def <span class="ident">dispose</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Performs the task of cleaning up resources.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dispose(self) -&gt; None:
+    &#34;&#34;&#34;Performs the task of cleaning up resources.&#34;&#34;&#34;
+
+    dispose = False
+    with self._lock:
+        if not self._is_disposed:
+            dispose = True
+            self._is_disposed = True
+
+    if dispose:
+        self._action()</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.system.disposable.Disposable.create" href="disposable.html#expression.system.disposable.Disposable.create">create</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
 <dt id="expression.system.AsyncAnonymousDisposable"><code class="flex name class">
 <span>class <span class="ident">AsyncAnonymousDisposable</span></span>
 <span>(</span><span>action: Callable[[], Awaitable[NoneType]])</span>
@@ -736,6 +815,12 @@ def dispose(self) -&gt; None:
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
+<li>
+<h4><code><a title="expression.system.AnonymousDisposable" href="#expression.system.AnonymousDisposable">AnonymousDisposable</a></code></h4>
+<ul class="">
+<li><code><a title="expression.system.AnonymousDisposable.dispose" href="#expression.system.AnonymousDisposable.dispose">dispose</a></code></li>
+</ul>
+</li>
 <li>
 <h4><code><a title="expression.system.AsyncAnonymousDisposable" href="#expression.system.AsyncAnonymousDisposable">AsyncAnonymousDisposable</a></code></h4>
 <ul class="">
