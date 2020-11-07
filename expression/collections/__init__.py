@@ -1,7 +1,7 @@
 """
 Collection abstractions.
 """
-from . import frozenlist, map, seq
+from . import asyncseq, frozenlist, map, seq
 from .frozenlist import FrozenList
 from .map import Map
 from .seq import Seq
