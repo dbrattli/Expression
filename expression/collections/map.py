@@ -107,11 +107,8 @@ class Map(Generic[Key, Value]):
     def is_empty(self) -> bool:
         return maptree.is_empty(self._tree)
 
-    def __getitem__(self, key: Value) -> Value:
-        return maptree.find(key, self._tree)
-
-    #     def TryPick f =
-    #         maptree.tryPick f tree
+    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -> Option[Result]:
+        return maptree.try_pick(chooser, self._tree)
 
     def exists(self, predicate: Callable[[Key, Value], bool]) -> bool:
         return maptree.exists(predicate, self._tree)
@@ -119,14 +116,21 @@ class Map(Generic[Key, Value]):
     def filter(self, predicate: Callable[[Key, Value], bool]) -> "Map[Key, Value]":
         return Map(maptree.filter(predicate, self._tree))
 
-    #     def ForAll predicate =
-    #         maptree.forall predicate tree
+    def for_all(self, predicate: Callable[[Key, Value], bool]) -> bool:
+        """Returns true if the given predicate returns true for all of
+        the bindings in the map.
 
-    #     def FoldSection (lo:'Key) (hi:'Key) f (acc:'z) =
-    #         maptree.foldSection comparer lo hi f tree acc
+        Args:
+            predicate: The function to test the input elements.
 
-    #     def Iterate f =
-    #         maptree.iter f tree
+        Returns:
+            True if the predicate evaluates to true for all of the
+            bindings in the map.
+        """
+        return maptree.forall(predicate, self._tree)
+
+    def iterate(self, f: Callable[[Key, Value], None]) -> None:
+        return maptree.iter(f, self._tree)
 
     #     def MapRange (f:'Value->'Result) =
     #         return Map<'Key, 'Result>(comparer, maptree.map f tree)
@@ -196,30 +200,18 @@ class Map(Generic[Key, Value]):
         """
         return Map(maptree.of_list(FrozenList(lst)))
 
-    #     member this.ComputeHashCode() =
-    #         let combineHash x y = (x <<< 1) + y + 631
-    #         let mutable res = 0
-    #         for (KeyValue(x, y)) in this do
-    #             res <- combineHash res (hash x)
-    #             res <- combineHash res (Unchecked.hash y)
-    #         res
+    def __hash__(self) -> int:
+        def combine_hash(x: int, y: int) -> int:
+            return (x << 1) + y + 631
 
-    #     override this.GetHashCode() = this.ComputeHashCode()
+        res = 0
+        for x, y in self:
+            res = combine_hash(res, hash(x))
+            res = combine_hash(res, hash(y))
+        return res
 
-    #     override this.Equals that =
-    #         match that with
-    #         | :? Map[Key, Value] as that ->
-    #             use e1 = (this :> seq<_>).GetEnumerator()
-    #             use e2 = (that :> seq<_>).GetEnumerator()
-    #             let rec loop () =
-    #                 let m1 = e1.MoveNext()
-    #                 let m2 = e2.MoveNext()
-    #                 (m1 = m2) && (not m1 ||
-    #                                  (let e1c = e1.Current
-    #                                   let e2c = e2.Current
-    #                                   ((e1c.Key = e2c.Key) && (Unchecked.equals e1c.Value e2c.Value) && loop())))
-    #             loop()
-    #         | _ -> false
+    def __getitem__(self, key: Value) -> Value:
+        return maptree.find(key, self._tree)
 
     def __iter__(self) -> Iterator[Tuple[Key, Value]]:
         return maptree.mk_iterator(self._tree)
@@ -334,23 +326,46 @@ def is_empty(table: Map[Key, Value]) -> bool:
     return table.is_empty()
 
 
-# // [<CompiledName("ContainsKey")>]
-# let containsKey key (table: Map<_, _>) =
-#     table.ContainsKey key
+def contains_key(key: Key) -> Callable[[Map[Key, Value]], bool]:
+    def _contains_key(table: Map[Key, Value]) -> bool:
+        return table.contains_key(key)
 
-# // [<CompiledName("Iterate")>]
-# let iterate action (table: Map<_, _>) =
-#     table.Iterate action
+    return _contains_key
 
-# // [<CompiledName("TryPick")>]
-# let tryPick chooser (table: Map<_, _>) =
-#     table.TryPick chooser
 
-# // [<CompiledName("Pick")>]
-# let pick chooser (table: Map<_, _>) =
-#     match tryPick chooser table with
-#     | None -> raise (KeyNotFoundException())
-#     | Some res -> res
+def iterate(action: Callable[[Key, Value], None]) -> Callable[[Map[Key, Value]], None]:
+    def _iterate(table: Map[Key, Value]) -> None:
+        return table.iterate(action)
+
+    return _iterate
+
+
+def try_pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[Key, Value]], Option[Result]]:
+    """Searches the map looking for the first element where the given
+    function returns a Some value.
+
+    Args:
+        chooser: The function to generate options from the key/value
+            pairs.
+    Returns:
+        Partially applied `try_pick` function that takes the input map
+        and returns the first result.
+    """
+
+    def _try_pick(table: Map[Key, Value]) -> Option[Result]:
+        return table.try_pick(chooser)
+
+    return _try_pick
+
+
+def pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[Key, Value]], Option[Result]]:
+    def _try_pick(table: Map[Key, Value]) -> Option[Result]:
+        for res in table.try_pick(chooser):
+            return res
+        else:
+            raise KeyError()
+
+    return _try_pick
 
 
 def exists(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]], bool]:
@@ -378,9 +393,11 @@ def filter(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]
     return _filter
 
 
-# // [<CompiledName("ForAll")>]
-# let forAll predicate (table: Map<_, _>) =
-#     table.ForAll predicate
+def for_all(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]], bool]:
+    def _for_all(table: Map[Key, Value]) -> bool:
+        return table.for_all(predicate)
+
+    return _for_all
 
 
 def map(mapping: Callable[[Value], Result]) -> Callable[[Map[Key, Value]], Map[Key, Result]]:
@@ -493,11 +510,6 @@ def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
 
 empty = Map.empty
 
-
-# let createMutable (source: KeyValuePair<'Key, 'Value> seq) ([<Fable.Core.Inject>] comparer: IEqualityComparer<'Key>) =
-#     let map = Fable.Collections.MutableMap(source, comparer)
-#     map :> Fable.Core.JS.Map<_,_>
-
 # let groupBy (projection: 'T -> 'Key) (xs: 'T seq) ([<Fable.Core.Inject>] comparer: IEqualityComparer<'Key>): ('Key * 'T seq) seq =
 #     let dict: Fable.Core.JS.Map<_,ResizeArray<'T>> = createMutable Seq.empty comparer
 
@@ -527,17 +539,23 @@ __all__ = [
     "Map",
     "add",
     "change",
+    "contains_key",
     "count",
+    "empty",
     "exists",
     "filter",
     "find",
     "fold",
+    "for_all",
     "is_empty",
+    "iterate",
     "map",
     "of_list",
     "partition",
+    "pick",
     "remove",
     "to_list",
     "to_seq",
     "try_find",
+    "try_pick",
 ]

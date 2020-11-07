@@ -348,26 +348,21 @@ def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
             fn(m2.key, m2.value)
 
 
-# let iter f m =
-#     iterOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
-
-# let rec tryPickOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -> None
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn ->
-#             match tryPickOpt f mn.left with
-#             | Some _ as res -> res
-#             | None ->
-#             match f.Invoke (mn.key, mn.value) with
-#             | Some _ as res -> res
-#             | None ->
-#             tryPickOpt f mn.right
-#         | _ -> f.Invoke (m2.key, m2.value)
-
-# let tryPick f m =
-#     tryPickOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
+def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) -> Option[Result]:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            for res in try_pick(f, mn.left).to_list():
+                return res
+            else:
+                for res in f(mn.key, mn.value):
+                    return res
+                else:
+                    return try_pick(f, mn.right)
+        else:
+            return f(m2.key, m2.value)
+    else:
+        return Nothing
 
 
 def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
@@ -381,19 +376,15 @@ def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
         return False
 
 
-# let exists f m =
-#     existsOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
-
-# let rec forallOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree[Key, Value]) =
-#     match m with
-#     | None -> true
-#     | Some m2 ->
-#         match m2 with
-#         | :? MapTreeNode[Key, Value] as mn -> forallOpt f mn.left && f.Invoke (mn.key, mn.value) && forallOpt f mn.right
-#         | _ -> f.Invoke (m2.key, m2.value)
-
-# let forall f m =
-#     forallOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
+def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
+    for m2 in m.to_list():
+        if isinstance(m2, MapTreeNode):
+            mn = cast(MapTreeNode[Key, Value], m2)
+            return forall(f, mn.left) and f(mn.key, mn.value) and forall(f, mn.right)
+        else:
+            return f(m2.key, m2.value)
+    else:
+        return True
 
 
 def map(f: Callable[[Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
@@ -448,31 +439,6 @@ def fold(f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree
             return f(x, (m2.key, m2.value))
     else:
         return x
-
-
-# let foldSectionOpt (comparer: IComparer<Key>) lo hi (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree[Key, Value]) x =
-#     let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree[Key, Value]) x =
-#         match m with
-#         | None -> x
-#         | Some m2 ->
-#             match m2 with
-#             | :? MapTreeNode[Key, Value] as mn ->
-#                 let cLoKey = comparer.Compare(lo, mn.key)
-#                 let cKeyHi = comparer.Compare(mn.key, hi)
-#                 let x = if cLoKey < 0 then foldFromTo f mn.left x else x
-#                 let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (mn.key, mn.value, x) else x
-#                 let x = if cKeyHi < 0 then foldFromTo f mn.right x else x
-#                 x
-#             | _ ->
-#                 let cLoKey = comparer.Compare(lo, m2.key)
-#                 let cKeyHi = comparer.Compare(m2.key, hi)
-#                 let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (m2.key, m2.value, x) else x
-#                 x
-
-#     if comparer.Compare(lo, hi) = 1 then x else foldFromTo f m x
-
-# let foldSection (comparer: IComparer<Key>) lo hi f m x =
-#     foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
 
 def to_list(m: MapTree[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
