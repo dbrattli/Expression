@@ -15,8 +15,7 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import (Any, Callable, Generic, Iterable, Iterator, List, Optional,
-                    Tuple, TypeVar, Union, cast, overload)
+from typing import Any, Callable, Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union, cast, overload
 
 from expression.core import Option, pipe
 
@@ -509,7 +508,7 @@ def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
     return _try_find
 
 
-empty = Map.empty
+empty: Map[Any, Any] = Map.empty
 
 # let groupBy (projection: 'T -> 'Key) (xs: 'T seq) ([<Fable.Core.Inject>] comparer: IEqualityComparer<'Key>): ('Key * 'T seq) seq =
 #     let dict: Fable.Core.JS.Map<_,ResizeArray<'T>> = createMutable Seq.empty comparer

@@ -7,11 +7,12 @@
 
 > *Expressions evaluates to a value. Statements do something.*
 
-Expression aims to be a solid and high performance library for practical
-functional programming in Python 3.8+. By practical we mean that the
-goal of the library if to use simple abstractions to enable you to do
-productive and meaningful functional programming in Python instead of
-being a [Monad tutorial](https://github.com/dbrattli/OSlash).
+Expression aims to be a solid, type safe and high performance library
+for practical functional programming in Python 3.8+. By practical we
+mean that the goal of the library is to use simple abstractions to
+enable you to do productive and meaningful functional programming in
+Python (instead of being a [Monad
+tutorial](https://github.com/dbrattli/OSlash)).
 
 Python is a multi-paradigm programming language that also supports
 functional programming constructs such as functions, higher-order
@@ -119,6 +120,7 @@ on-demand as we go along.
     fully compatible with Python iterables.
   - **FrozenList** - a frozen and immutable list type.
   - **Map** - a frozen and immutable dictionary type.
+  - **AsyncSeq** - Asynchronous iterables.
 - **Effects**: - lightweight computational expressions for Python. This
   is actually amazing stuff.
   - **option** - an optional world for working with optional values.

@@ -86,4 +86,16 @@ async def sleep(msecs: int) -> None:
     return await asyncio.sleep(msecs / 1000.0)
 
 
-__all__ = ["singleton"]
+async def empty() -> None:
+    """Async no-op of Awaitale[None]"""
+    pass
+
+
+__all__ = [
+    "empty",
+    "from_continuations",
+    "singleton",
+    "sleep",
+    "start",
+    "start_immediate",
+]
