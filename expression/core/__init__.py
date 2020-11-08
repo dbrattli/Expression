@@ -7,6 +7,7 @@ from .builder import Builder
 from .compose import compose
 from .curry import curried
 from .error import EffectError, failwith
+from .fn import TailCall, recursive, recursive_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .misc import flip, identity
 from .option import Nothing, Nothing_, Option, Some
@@ -33,7 +34,10 @@ __all__ = [
     "pipe",
     "pipe2",
     "pipe3",
-    "Result",
+    "recursive",
+    "recursive_async",
     "result",
+    "Result",
     "Some",
+    "TailCall",
 ]

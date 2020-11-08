@@ -97,7 +97,7 @@ class MailboxProcessor(Generic[Msg]):
 
         return from_continuations(callback)
 
-    def receive(self) -> Awaitable[Msg]:
+    async def receive(self) -> Msg:
         """Return an asynchronous computation which will consume the
         first message in arrival order. No thread is blocked while
         waiting for further messages. Raise a TimeoutException if the
@@ -112,7 +112,7 @@ class MailboxProcessor(Generic[Msg]):
             self.continuation = done
             self.__process_events()
 
-        return from_continuations(callback)
+        return await from_continuations(callback)
 
     def __process_events(self):
         if self.continuation is None:

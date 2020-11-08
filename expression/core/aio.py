@@ -1,5 +1,11 @@
-"""The aio (asyncio) module contains asynchronous functions similar to
-the F# `Async` module.
+"""The aio (async) module.
+
+The aio (asyncio) module contains asynchronous utility functions for
+working with async / await.
+
+The module is inspired by the F# `Async` module, but builds on top of
+Python async / await instead of providing an asynchronous IO mechanism
+by itself.
 """
 import asyncio
 from asyncio import Future
@@ -86,10 +92,12 @@ async def sleep(msecs: int) -> None:
     return await asyncio.sleep(msecs / 1000.0)
 
 
-async def empty() -> None:
-    """Async no-op of Awaitale[None]"""
+async def _empty() -> None:
+    """Async no-op"""
     pass
 
+
+empty: Awaitable[None] = _empty()
 
 __all__ = [
     "empty",

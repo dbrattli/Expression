@@ -23,9 +23,10 @@ from . import maptree, seq
 from .frozenlist import FrozenList
 from .maptree import MapTree
 
-Value = TypeVar("Value")
 Key = TypeVar("Key")
+Value = TypeVar("Value")
 Result = TypeVar("Result")
+
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 T3 = TypeVar("T3")
@@ -35,6 +36,8 @@ T6 = TypeVar("T6")
 
 
 class Map(Generic[Key, Value]):
+    """The immutable map class."""
+
     def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -> None:
         tree: MapTree[str, Value] = maptree.of_seq(kw.items())
         self._tree = __tree if __tree is not None else tree
@@ -508,7 +511,7 @@ def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
     return _try_find
 
 
-empty: Map[Any, Any] = Map.empty
+empty: Map[Any, Any] = Map.empty()
 
 # let groupBy (projection: 'T -> 'Key) (xs: 'T seq) ([<Fable.Core.Inject>] comparer: IEqualityComparer<'Key>): ('Key * 'T seq) seq =
 #     let dict: Fable.Core.JS.Map<_,ResizeArray<'T>> = createMutable Seq.empty comparer
