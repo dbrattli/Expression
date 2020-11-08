@@ -66,7 +66,7 @@ def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
     """Flips the arguments for a function taking two arguments.
 
     Example:
-        >>> fn(a, b) == flip(fn(b, a)) ==
+        >>> fn(a, b) == flip(fn)(b, a)
     """
 
     def _(b: B, a: A) -> Any:
