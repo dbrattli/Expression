@@ -81,6 +81,10 @@ class AsyncDisposable(ABC):
         return AsyncAnonymousDisposable(action)
 
     @staticmethod
+    def composite(*disposables: "AsyncDisposable") -> "AsyncDisposable":
+        return AsyncCompositeDisposable(*disposables)
+
+    @staticmethod
     def empty() -> "AsyncDisposable":
         async def anoop() -> None:
             pass
@@ -111,7 +115,7 @@ class AsyncCompositeDisposable(AsyncDisposable):
     def __init__(self, *disposables: AsyncDisposable) -> None:
         self._disposables = disposables
 
-    async def adispose(self) -> None:
+    async def dispose_async(self) -> None:
         for disposable in self._disposables:
             await disposable.dispose_async()
 
