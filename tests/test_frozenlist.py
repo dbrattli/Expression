@@ -1,7 +1,7 @@
-from builtins import list as pylist
-from typing import Any, Callable
-from typing import List as PyList
+from builtins import list as list
+from typing import Any, Callable, List
 
+from attr import frozen
 from expression.collections import FrozenList, frozenlist
 from expression.core import pipe
 from hypothesis import given
@@ -58,7 +58,7 @@ def test_list_length_non_empty():
 
 
 @given(st.lists(st.integers()))
-def test_list_length(xs: PyList[int]):
+def test_list_length(xs: List[int]):
     ys = frozenlist.of_seq(xs)
     assert len(xs) == len(ys)
 
@@ -70,7 +70,7 @@ def test_list_cons_head(value: Any):
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))
-def test_list_item(xs: PyList[int], index: int):
+def test_list_item(xs: List[int], index: int):
     ys = frozenlist.of_seq(xs)
     while index and index >= len(xs):
         index //= 2
@@ -78,7 +78,7 @@ def test_list_item(xs: PyList[int], index: int):
 
 
 @given(st.lists(st.integers()))
-def test_list_pipe_map(xs: PyList[int]):
+def test_list_pipe_map(xs: List[int]):
     def mapper(x: int):
         return x + 1
 
@@ -90,55 +90,66 @@ def test_list_pipe_map(xs: PyList[int]):
 
 
 @given(st.lists(st.integers()))
-def test_list_len(xs: PyList[int]):
+def test_list_len(xs: List[int]):
     ys = frozenlist.of_seq(xs)
     assert len(xs) == len(ys)
 
 
+@given(st.lists(st.integers()), st.lists(st.integers()))
+def test_list_append(xs: List[int], ys: List[int]):
+    expected = xs + ys
+    fx = frozenlist.of_seq(xs)
+    fy = frozenlist.of_seq(ys)
+    fz = fx.append(fy)
+    fh = fx + fy
+
+    assert list(fz) == list(fh) == expected
+
+
 @given(st.lists(st.integers()), st.integers(min_value=0))
-def test_list_take(xs: PyList[int], x: int):
+def test_list_take(xs: List[int], x: int):
     ys: FrozenList[int]
     try:
         ys = frozenlist.of_seq(xs).take(x)
-        assert pylist(ys) == xs[:x]
+        assert list(ys) == xs[:x]
     except ValueError:
         assert x > len(xs)
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
-def test_list_take_last(xs: PyList[int], x: int):
+def test_list_take_last(xs: List[int], x: int):
     expected = xs[-x:]
     ys: FrozenList[int]
     ys = frozenlist.of_seq(xs).take_last(x)
-    assert pylist(ys) == expected
+    assert list(ys) == expected
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
-def test_list_skip(xs: PyList[int], x: int):
+def test_list_skip(xs: List[int], x: int):
     ys: FrozenList[int]
     try:
         ys = frozenlist.of_seq(xs).skip(x)
-        assert pylist(ys) == xs[x:]
+        assert list(ys) == xs[x:]
     except ValueError:
         assert x > len(xs)
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
-def test_list_skip_last(xs: PyList[int], x: int):
+def test_list_skip_last(xs: List[int], x: int):
     expected = xs[:-x]
     ys: FrozenList[int]
     ys = frozenlist.of_seq(xs).skip_last(x)
-    assert pylist(ys) == expected
+    assert list(ys) == expected
 
 
 @given(st.lists(st.integers()), st.integers(), st.integers())
-def test_list_slice(xs: PyList[int], x: int, y: int):
+def test_list_slice(xs: List[int], x: int, y: int):
     expected = xs[x:y]
 
-    ys: FrozenList[int]
-    ys = frozenlist.of_seq(xs)[x:y]
+    ys: FrozenList[int] = frozenlist.of_seq(xs)
+    zs = ys[x:y]
 
-    assert pylist(ys) == expected
+    assert list(zs) == expected
 
 
 rtn: Callable[[int], FrozenList[int]] = frozenlist.singleton
@@ -209,7 +220,7 @@ def test_list_monad_law_associativity_empty(value: int):
 
 
 @given(st.lists(st.integers()))
-def test_list_monad_law_associativity_iterable(xs: PyList[int]):
+def test_list_monad_law_associativity_iterable(xs: List[int]):
     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + 10)
     g: Callable[[int], FrozenList[int]] = lambda y: rtn(y * 42)

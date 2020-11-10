@@ -279,10 +279,10 @@ class FrozenList(Tuple[TSource]):
         """
         return FrozenList(builtins.zip(self, other))
 
-    def __add__(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
-        """Append list with other list."""
+    # def __add__(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
+    #    """Append list with other list."""
 
-        return self.append(other)
+    #   return self.append(other)
 
     def __str__(self) -> str:
         return f"[{', '.join(self.map(str))}]"
