@@ -3,6 +3,8 @@
 This module provides an immutable list type `FrozenList` and  a set of
 useful methods and functions for working with the list.
 
+Named "FrozenList" to avoid conflicts with the builtin Python List type.
+
 A FrozenList is actually a Python tuple. Tuples in Python are
 immutable and gives us a high performant implementation of immutable
 lists.
@@ -278,11 +280,6 @@ class FrozenList(Tuple[TSource]):
             input lists.
         """
         return FrozenList(builtins.zip(self, other))
-
-    # def __add__(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
-    #    """Append list with other list."""
-
-    #   return self.append(other)
 
     def __str__(self) -> str:
         return f"[{', '.join(self.map(str))}]"

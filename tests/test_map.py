@@ -8,6 +8,20 @@ from hypothesis import strategies as st
 from .utils import CustomException, throw
 
 
+def test_map_empty():
+    m: Map[str, int] = map.empty
+    assert map.is_empty(m)
+    assert len(m) == 0
+    assert not m
+
+
+def test_map_non_empty():
+    m: Map[str, int] = map.empty.add("test", 42)
+    assert not map.is_empty(m)
+    assert len(m) == 1
+    assert m
+
+
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_create(xs: Dict[str, int]):
     items: ItemsView[str, int] = xs.items()

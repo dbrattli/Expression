@@ -241,7 +241,7 @@ class Map(Generic[Key, Value]):
         return True
 
     def __bool__(self) -> bool:
-        return maptree.is_empty(self._tree)
+        return not maptree.is_empty(self._tree)
 
     def __str__(self) -> str:
         def to_str(item: Tuple[Key, Value]) -> str:
