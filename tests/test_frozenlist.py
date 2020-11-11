@@ -47,14 +47,18 @@ def test_list_list_fluent():
     assert 42 == xs.head().head()
 
 
-def test_list_length_empty():
+def test_list_empty():
     xs = frozenlist.empty
     assert len(xs) == 0
+    assert not xs
+    assert pipe(xs, frozenlist.is_empty)
 
 
-def test_list_length_non_empty():
+def test_list_non_empty():
     xs = frozenlist.singleton(42)
     assert len(xs) == 1
+    assert xs
+    assert not pipe(xs, frozenlist.is_empty)
 
 
 @given(st.lists(st.integers()))
@@ -152,7 +156,31 @@ def test_list_slice(xs: List[int], x: int, y: int):
     assert list(zs) == expected
 
 
-@given(st.lists(st.integers(), min_size=1))
+@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))
+def test_list_index(xs: List[int], x: int):
+
+    x = x % len(xs) if x > 0 else x
+    expected = xs[x]
+
+    ys: FrozenList[int] = frozenlist.of_seq(xs)
+    y = ys[x]
+    h = pipe(ys, frozenlist.item(x))
+
+    assert y == h == expected
+
+
+@given(st.lists(st.integers()))
+def test_list_indexed(xs: List[int]):
+
+    expected = list(enumerate(xs))
+
+    ys: FrozenList[int] = frozenlist.of_seq(xs)
+    zs = frozenlist.indexed(ys)
+
+    assert list(zs) == expected
+
+
+@given(st.lists(st.integers()))
 def test_list_fold(xs: List[int]):
     def folder(x: int, y: int) -> int:
         return x + y
@@ -163,6 +191,16 @@ def test_list_fold(xs: List[int]):
     result = pipe(ys, frozenlist.fold(folder, 0))
 
     assert result == expected
+
+
+@given(st.lists(st.integers()), st.integers())
+def test_list_filter(xs: List[int], limit: int):
+    expected = filter(lambda x: x < limit, xs)
+
+    ys: FrozenList[int] = frozenlist.of_seq(xs)
+    result = pipe(ys, frozenlist.filter(lambda x: x < limit))
+
+    assert list(result) == list(expected)
 
 
 rtn: Callable[[int], FrozenList[int]] = frozenlist.singleton

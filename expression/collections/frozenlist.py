@@ -445,6 +445,18 @@ def is_empty(source: FrozenList[TSource]) -> bool:
 
 
 def map(mapper: Callable[[TSource], TResult]) -> Callable[[FrozenList[TSource]], FrozenList[TResult]]:
+    """Map list.
+
+    Builds a new collection whose elements are the results of applying
+    the given function to each of the elements of the collection.
+
+    Args:
+        mapper: The function to transform elements from the input list.
+
+    Returns:
+        The list of transformed elements.
+    """
+
     def _map(source: FrozenList[TSource]) -> FrozenList[TResult]:
         return source.map(mapper)
 
