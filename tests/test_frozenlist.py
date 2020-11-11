@@ -1,7 +1,7 @@
+import functools
 from builtins import list as list
 from typing import Any, Callable, List
 
-from attr import frozen
 from expression.collections import FrozenList, frozenlist
 from expression.core import pipe
 from hypothesis import given
@@ -150,6 +150,19 @@ def test_list_slice(xs: List[int], x: int, y: int):
     zs = ys[x:y]
 
     assert list(zs) == expected
+
+
+@given(st.lists(st.integers(), min_size=1))
+def test_list_fold(xs: List[int]):
+    def folder(x: int, y: int) -> int:
+        return x + y
+
+    expected: int = functools.reduce(folder, xs, 0)
+
+    ys: FrozenList[int] = frozenlist.of_seq(xs)
+    result = pipe(ys, frozenlist.fold(folder, 0))
+
+    assert result == expected
 
 
 rtn: Callable[[int], FrozenList[int]] = frozenlist.singleton

@@ -392,7 +392,7 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -> Callable
     """
 
     def _fold(source: FrozenList[TSource]) -> TState:
-        return source.fold(folder, folder(state, head))
+        return source.fold(folder, state)
 
     return _fold
 
@@ -452,6 +452,7 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[FrozenList[TSource]],
 
 
 def of_seq(xs: Iterable[TSource]) -> FrozenList[TSource]:
+    """Create list from iterable sequence."""
     return FrozenList((*xs,))
 
 
