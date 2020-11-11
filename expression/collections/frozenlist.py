@@ -110,6 +110,20 @@ class FrozenList(Tuple[TSource]):
         return FrozenList(self + other)
 
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "FrozenList[TResult]":
+        """Choose items from the list.
+
+        Applies the given function to each element of the list. Returns
+        the list comprised of the results x for each element where the
+        function returns `Some(x)`.
+
+        Args:
+            chooser: The function to generate options from the elements.
+
+        Returns:
+            The list comprising the values selected from the chooser
+            function.
+        """
+
         def mapper(x: TSource) -> FrozenList[TResult]:
             return FrozenList(chooser(x).to_seq())
 
@@ -126,6 +140,18 @@ class FrozenList(Tuple[TSource]):
         return FrozenList((element, *self))
 
     def filter(self, predicate: Callable[[TSource], bool]) -> "FrozenList[TSource]":
+        """Filter list.
+
+        Returns a new collection containing only the elements of the
+        collection for which the given predicate returns `True`.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            A list containing only the elements that satisfy the
+            predicate.
+        """
         return FrozenList(builtins.filter(predicate, self))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
@@ -195,6 +221,19 @@ class FrozenList(Tuple[TSource]):
         return not bool(self)
 
     def map(self, mapping: Callable[[TSource], TResult]) -> "FrozenList[TResult]":
+        """Map list.
+
+        Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection.
+
+        Args:
+            mapping: The function to transform elements from the input
+                list.
+
+        Returns:
+            The list of transformed elements.
+        """
         return FrozenList((*builtins.map(mapping, self),))
 
     def skip(self, count: int) -> "FrozenList[TSource]":
@@ -546,6 +585,16 @@ def take_last(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]
 
 
 def try_head(source: FrozenList[TSource]) -> Option[TSource]:
+    """Try to get the first element from the list.
+
+    Returns the first element of the list, or None if the list is empty.
+
+    Args:
+        source: The input list.
+
+    Returns:
+        The first element of the list or `Nothing`.
+    """
     return source.try_head()
 
 

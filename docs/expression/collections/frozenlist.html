@@ -26,6 +26,7 @@
 <p>This module provides an immutable list type <code><a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a></code> and
 a set of
 useful methods and functions for working with the list.</p>
+<p>Named "FrozenList" to avoid conflicts with the builtin Python List type.</p>
 <p>A FrozenList is actually a Python tuple. Tuples in Python are
 immutable and gives us a high performant implementation of immutable
 lists.</p>
@@ -45,6 +46,8 @@ lists.</p>
 
 This module provides an immutable list type `FrozenList` and  a set of
 useful methods and functions for working with the list.
+
+Named &#34;FrozenList&#34; to avoid conflicts with the builtin Python List type.
 
 A FrozenList is actually a Python tuple. Tuples in Python are
 immutable and gives us a high performant implementation of immutable
@@ -151,6 +154,20 @@ class FrozenList(Tuple[TSource]):
         return FrozenList(self + other)
 
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;FrozenList[TResult]&#34;:
+        &#34;&#34;&#34;Choose items from the list.
+
+        Applies the given function to each element of the list. Returns
+        the list comprised of the results x for each element where the
+        function returns `Some(x)`.
+
+        Args:
+            chooser: The function to generate options from the elements.
+
+        Returns:
+            The list comprising the values selected from the chooser
+            function.
+        &#34;&#34;&#34;
+
         def mapper(x: TSource) -&gt; FrozenList[TResult]:
             return FrozenList(chooser(x).to_seq())
 
@@ -167,6 +184,18 @@ class FrozenList(Tuple[TSource]):
         return FrozenList((element, *self))
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;FrozenList[TSource]&#34;:
+        &#34;&#34;&#34;Filter list.
+
+        Returns a new collection containing only the elements of the
+        collection for which the given predicate returns `True`.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            A list containing only the elements that satisfy the
+            predicate.
+        &#34;&#34;&#34;
         return FrozenList(builtins.filter(predicate, self))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
@@ -236,6 +265,19 @@ class FrozenList(Tuple[TSource]):
         return not bool(self)
 
     def map(self, mapping: Callable[[TSource], TResult]) -&gt; &#34;FrozenList[TResult]&#34;:
+        &#34;&#34;&#34;Map list.
+
+        Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection.
+
+        Args:
+            mapping: The function to transform elements from the input
+                list.
+
+        Returns:
+            The list of transformed elements.
+        &#34;&#34;&#34;
         return FrozenList((*builtins.map(mapping, self),))
 
     def skip(self, count: int) -&gt; &#34;FrozenList[TSource]&#34;:
@@ -321,11 +363,6 @@ class FrozenList(Tuple[TSource]):
             input lists.
         &#34;&#34;&#34;
         return FrozenList(builtins.zip(self, other))
-
-    def __add__(self, other: &#34;FrozenList[TSource]&#34;) -&gt; &#34;FrozenList[TSource]&#34;:
-        &#34;&#34;&#34;Append list with other list.&#34;&#34;&#34;
-
-        return self.append(other)
 
     def __str__(self) -&gt; str:
         return f&#34;[{&#39;, &#39;.join(self.map(str))}]&#34;
@@ -438,7 +475,7 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Calla
     &#34;&#34;&#34;
 
     def _fold(source: FrozenList[TSource]) -&gt; TState:
-        return source.fold(folder, folder(state, head))
+        return source.fold(folder, state)
 
     return _fold
 
@@ -491,6 +528,18 @@ def is_empty(source: FrozenList[TSource]) -&gt; bool:
 
 
 def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[FrozenList[TSource]], FrozenList[TResult]]:
+    &#34;&#34;&#34;Map list.
+
+    Builds a new collection whose elements are the results of applying
+    the given function to each of the elements of the collection.
+
+    Args:
+        mapper: The function to transform elements from the input list.
+
+    Returns:
+        The list of transformed elements.
+    &#34;&#34;&#34;
+
     def _map(source: FrozenList[TSource]) -&gt; FrozenList[TResult]:
         return source.map(mapper)
 
@@ -498,6 +547,7 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[FrozenList[TSource
 
 
 def of_seq(xs: Iterable[TSource]) -&gt; FrozenList[TSource]:
+    &#34;&#34;&#34;Create list from iterable sequence.&#34;&#34;&#34;
     return FrozenList((*xs,))
 
 
@@ -579,6 +629,16 @@ def take_last(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSour
 
 
 def try_head(source: FrozenList[TSource]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Try to get the first element from the list.
+
+    Returns the first element of the list, or None if the list is empty.
+
+    Args:
+        source: The input list.
+
+    Returns:
+        The first element of the list or `Nothing`.
+    &#34;&#34;&#34;
     return source.try_head()
 
 
@@ -854,7 +914,7 @@ and returns the final state value.</p></div>
     &#34;&#34;&#34;
 
     def _fold(source: FrozenList[TSource]) -&gt; TState:
-        return source.fold(folder, folder(state, head))
+        return source.fold(folder, state)
 
     return _fold</code></pre>
 </details>
@@ -969,12 +1029,33 @@ of each element.</p>
 <span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[<a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]], <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TResult]]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Map list.</p>
+<p>Builds a new collection whose elements are the results of applying
+the given function to each of the elements of the collection.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mapper</code></strong></dt>
+<dd>The function to transform elements from the input list.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The list of transformed elements.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[FrozenList[TSource]], FrozenList[TResult]]:
+    &#34;&#34;&#34;Map list.
+
+    Builds a new collection whose elements are the results of applying
+    the given function to each of the elements of the collection.
+
+    Args:
+        mapper: The function to transform elements from the input list.
+
+    Returns:
+        The list of transformed elements.
+    &#34;&#34;&#34;
+
     def _map(source: FrozenList[TSource]) -&gt; FrozenList[TResult]:
         return source.map(mapper)
 
@@ -1000,12 +1081,13 @@ of each element.</p>
 <span>def <span class="ident">of_seq</span></span>(<span>xs: Iterable[~TSource]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Create list from iterable sequence.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def of_seq(xs: Iterable[TSource]) -&gt; FrozenList[TSource]:
+    &#34;&#34;&#34;Create list from iterable sequence.&#34;&#34;&#34;
     return FrozenList((*xs,))</code></pre>
 </details>
 </dd>
@@ -1167,12 +1249,30 @@ the list.</p>
 <span>def <span class="ident">try_head</span></span>(<span>source: <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~TSource]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Try to get the first element from the list.</p>
+<p>Returns the first element of the list, or None if the list is empty.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>source</code></strong></dt>
+<dd>The input list.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The first element of the list or <code>Nothing</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def try_head(source: FrozenList[TSource]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Try to get the first element from the list.
+
+    Returns the first element of the list, or None if the list is empty.
+
+    Args:
+        source: The input list.
+
+    Returns:
+        The first element of the list or `Nothing`.
+    &#34;&#34;&#34;
     return source.try_head()</code></pre>
 </details>
 </dd>
@@ -1360,6 +1460,20 @@ operations mostly (<code>O(1)</code>).</p>
         return FrozenList(self + other)
 
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;FrozenList[TResult]&#34;:
+        &#34;&#34;&#34;Choose items from the list.
+
+        Applies the given function to each element of the list. Returns
+        the list comprised of the results x for each element where the
+        function returns `Some(x)`.
+
+        Args:
+            chooser: The function to generate options from the elements.
+
+        Returns:
+            The list comprising the values selected from the chooser
+            function.
+        &#34;&#34;&#34;
+
         def mapper(x: TSource) -&gt; FrozenList[TResult]:
             return FrozenList(chooser(x).to_seq())
 
@@ -1376,6 +1490,18 @@ operations mostly (<code>O(1)</code>).</p>
         return FrozenList((element, *self))
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;FrozenList[TSource]&#34;:
+        &#34;&#34;&#34;Filter list.
+
+        Returns a new collection containing only the elements of the
+        collection for which the given predicate returns `True`.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            A list containing only the elements that satisfy the
+            predicate.
+        &#34;&#34;&#34;
         return FrozenList(builtins.filter(predicate, self))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
@@ -1445,6 +1571,19 @@ operations mostly (<code>O(1)</code>).</p>
         return not bool(self)
 
     def map(self, mapping: Callable[[TSource], TResult]) -&gt; &#34;FrozenList[TResult]&#34;:
+        &#34;&#34;&#34;Map list.
+
+        Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection.
+
+        Args:
+            mapping: The function to transform elements from the input
+                list.
+
+        Returns:
+            The list of transformed elements.
+        &#34;&#34;&#34;
         return FrozenList((*builtins.map(mapping, self),))
 
     def skip(self, count: int) -&gt; &#34;FrozenList[TSource]&#34;:
@@ -1531,11 +1670,6 @@ operations mostly (<code>O(1)</code>).</p>
         &#34;&#34;&#34;
         return FrozenList(builtins.zip(self, other))
 
-    def __add__(self, other: &#34;FrozenList[TSource]&#34;) -&gt; &#34;FrozenList[TSource]&#34;:
-        &#34;&#34;&#34;Append list with other list.&#34;&#34;&#34;
-
-        return self.append(other)
-
     def __str__(self) -&gt; str:
         return f&#34;[{&#39;, &#39;.join(self.map(str))}]&#34;
 
@@ -1614,12 +1748,37 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
 <span>def <span class="ident">choose</span></span>(<span>self, chooser: Callable[[~TSource], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~TResult]]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Choose items from the list.</p>
+<p>Applies the given function to each element of the list. Returns
+the list comprised of the results x for each element where the
+function returns <code>Some(x)</code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>chooser</code></strong></dt>
+<dd>The function to generate options from the elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The list comprising the values selected from the chooser
+function.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;FrozenList[TResult]&#34;:
+    &#34;&#34;&#34;Choose items from the list.
+
+    Applies the given function to each element of the list. Returns
+    the list comprised of the results x for each element where the
+    function returns `Some(x)`.
+
+    Args:
+        chooser: The function to generate options from the elements.
+
+    Returns:
+        The list comprising the values selected from the chooser
+        function.
+    &#34;&#34;&#34;
+
     def mapper(x: TSource) -&gt; FrozenList[TResult]:
         return FrozenList(chooser(x).to_seq())
 
@@ -1660,12 +1819,34 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
 <span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~TSource], bool]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Filter list.</p>
+<p>Returns a new collection containing only the elements of the
+collection for which the given predicate returns <code>True</code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>predicate</code></strong></dt>
+<dd>The function to test the input elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A list containing only the elements that satisfy the
+predicate.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;FrozenList[TSource]&#34;:
+    &#34;&#34;&#34;Filter list.
+
+    Returns a new collection containing only the elements of the
+    collection for which the given predicate returns `True`.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        A list containing only the elements that satisfy the
+        predicate.
+    &#34;&#34;&#34;
     return FrozenList(builtins.filter(predicate, self))</code></pre>
 </details>
 </dd>
@@ -1834,12 +2015,36 @@ of each element.</p>
 <span>def <span class="ident">map</span></span>(<span>self, mapping: Callable[[~TSource], ~TResult]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Map list.</p>
+<p>Builds a new collection whose elements are the results of
+applying the given function to each of the elements of the
+collection.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mapping</code></strong></dt>
+<dd>The function to transform elements from the input
+list.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The list of transformed elements.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def map(self, mapping: Callable[[TSource], TResult]) -&gt; &#34;FrozenList[TResult]&#34;:
+    &#34;&#34;&#34;Map list.
+
+    Builds a new collection whose elements are the results of
+    applying the given function to each of the elements of the
+    collection.
+
+    Args:
+        mapping: The function to transform elements from the input
+            list.
+
+    Returns:
+        The list of transformed elements.
+    &#34;&#34;&#34;
     return FrozenList((*builtins.map(mapping, self),))</code></pre>
 </details>
 </dd>

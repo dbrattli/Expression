@@ -385,7 +385,7 @@ documentation. But submit a PR even if you should feel unsure.
 
 Code, doc-strings and comments should also follow the [Google Python
 Style Guide](https://google.github.io/styleguide/pyguide.html). Code is
-formatted using [Black](https://github.com/psf/black)
+formatted using [Black](https://github.com/psf/black).
 
 ## License
 

@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
 <title>expression.core.aio API documentation</title>
-<meta name="description" content="The aio (asyncio) module contains asynchronous functions similar to
-the F# `Async` module." />
+<meta name="description" content="The aio (async) module …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -23,14 +22,24 @@ the F# `Async` module." />
 <h1 class="title">Module <code>expression.core.aio</code></h1>
 </header>
 <section id="section-intro">
-<p>The aio (asyncio) module contains asynchronous functions similar to
-the F# <code>Async</code> module.</p>
+<p>The aio (async) module.</p>
+<p>The aio (asyncio) module contains asynchronous utility functions for
+working with async / await.</p>
+<p>The module is inspired by the F# <code>Async</code> module, but builds on top of
+Python async / await instead of providing an asynchronous IO mechanism
+by itself.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">&#34;&#34;&#34;The aio (asyncio) module contains asynchronous functions similar to
-the F# `Async` module.
+<pre><code class="python">&#34;&#34;&#34;The aio (async) module.
+
+The aio (asyncio) module contains asynchronous utility functions for
+working with async / await.
+
+The module is inspired by the F# `Async` module, but builds on top of
+Python async / await instead of providing an asynchronous IO mechanism
+by itself.
 &#34;&#34;&#34;
 import asyncio
 from asyncio import Future
@@ -117,7 +126,21 @@ async def sleep(msecs: int) -&gt; None:
     return await asyncio.sleep(msecs / 1000.0)
 
 
-__all__ = [&#34;singleton&#34;]</code></pre>
+async def _empty() -&gt; None:
+    &#34;&#34;&#34;Async no-op&#34;&#34;&#34;
+    pass
+
+
+empty: Awaitable[None] = _empty()
+
+__all__ = [
+    &#34;empty&#34;,
+    &#34;from_continuations&#34;,
+    &#34;singleton&#34;,
+    &#34;sleep&#34;,
+    &#34;start&#34;,
+    &#34;start_immediate&#34;,
+]</code></pre>
 </details>
 </section>
 <section>
@@ -127,6 +150,56 @@ __all__ = [&#34;singleton&#34;]</code></pre>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="expression.core.aio.from_continuations"><code class="name flex">
+<span>def <span class="ident">from_continuations</span></span>(<span>callback: Callable[[Callable[[~TSource], NoneType], Callable[[Exception], NoneType], Callable[[<a title="expression.system.error.OperationCanceledError" href="../system/error.html#expression.system.error.OperationCanceledError">OperationCanceledError</a>], NoneType]], NoneType]) ‑> Awaitable[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates an asynchronous computation that captures the current
+success, exception and cancellation continuations. The callback must
+eventually call exactly one of the given continuations.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>callback</code></strong></dt>
+<dd>The function that accepts the current success,
+exception, and cancellation continuations.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>An asynchronous computation that provides the callback with
+the current continuations.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def from_continuations(
+    callback: Callable[[Continuation[TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
+) -&gt; Awaitable[TSource]:
+    &#34;&#34;&#34;Creates an asynchronous computation that captures the current
+    success, exception and cancellation continuations. The callback must
+    eventually call exactly one of the given continuations.
+
+    Args:
+        callback: The function that accepts the current success,
+            exception, and cancellation continuations.
+
+    Returns:
+        An asynchronous computation that provides the callback with
+        the current continuations.
+    &#34;&#34;&#34;
+    future: Future[Any] = asyncio.Future()
+
+    def done(value: TSource) -&gt; None:
+        future.set_result(value)
+
+    def error(error: Exception) -&gt; None:
+        future.set_exception(error)
+
+    def cancel(cancel: OperationCanceledError) -&gt; None:
+        future.cancel()
+
+    callback(done, error, cancel)
+    return asyncio.ensure_future(future)</code></pre>
+</details>
+</dd>
 <dt id="expression.core.aio.singleton"><code class="name flex">
 <span>async def <span class="ident">singleton</span></span>(<span>value: ~TSource) ‑> ~TSource</span>
 </code></dt>
@@ -139,6 +212,72 @@ __all__ = [&#34;singleton&#34;]</code></pre>
 <pre><code class="python">async def singleton(value: TSource) -&gt; TSource:
     &#34;&#34;&#34;Async function that returns a single value.&#34;&#34;&#34;
     return value</code></pre>
+</details>
+</dd>
+<dt id="expression.core.aio.sleep"><code class="name flex">
+<span>async def <span class="ident">sleep</span></span>(<span>msecs: int) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates an asynchronous computation that will sleep for the given
+time. This is scheduled using a System.Threading.Timer object. The
+operation will not block operating system threads for the duration
+of the wait.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def sleep(msecs: int) -&gt; None:
+    &#34;&#34;&#34;Creates an asynchronous computation that will sleep for the given
+    time. This is scheduled using a System.Threading.Timer object. The
+    operation will not block operating system threads for the duration
+    of the wait.&#34;&#34;&#34;
+    return await asyncio.sleep(msecs / 1000.0)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.aio.start"><code class="name flex">
+<span>def <span class="ident">start</span></span>(<span>computation: Awaitable[Any], token: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType] = None) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Starts the asynchronous computation in the event loop. Do not await its result.</p>
+<p>If no cancellation token is provided then the default cancellation token
+is used.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -&gt; None:
+    &#34;&#34;&#34;Starts the asynchronous computation in the event loop. Do not await its result.
+
+    If no cancellation token is provided then the default cancellation token
+    is used.&#34;&#34;&#34;
+    task = asyncio.create_task(computation)
+
+    def cb():
+        task.cancel()
+
+    if token:
+        token.register(cb)
+    return None</code></pre>
+</details>
+</dd>
+<dt id="expression.core.aio.start_immediate"><code class="name flex">
+<span>def <span class="ident">start_immediate</span></span>(<span>computation: Awaitable[Any], token: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType] = None) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def start_immediate(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -&gt; None:
+    task = asyncio.create_task(computation)
+
+    def cb():
+        task.cancel()
+
+    if token:
+        token.register(cb)
+    return None</code></pre>
 </details>
 </dd>
 </dl>
@@ -159,7 +298,11 @@ __all__ = [&#34;singleton&#34;]</code></pre>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="expression.core.aio.from_continuations" href="#expression.core.aio.from_continuations">from_continuations</a></code></li>
 <li><code><a title="expression.core.aio.singleton" href="#expression.core.aio.singleton">singleton</a></code></li>
+<li><code><a title="expression.core.aio.sleep" href="#expression.core.aio.sleep">sleep</a></code></li>
+<li><code><a title="expression.core.aio.start" href="#expression.core.aio.start">start</a></code></li>
+<li><code><a title="expression.core.aio.start_immediate" href="#expression.core.aio.start_immediate">start_immediate</a></code></li>
 </ul>
 </li>
 </ul>

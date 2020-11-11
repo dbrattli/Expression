@@ -43,8 +43,7 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import (Any, Callable, Generic, Iterable, Iterator, List, Optional,
-                    Tuple, TypeVar, Union, cast, overload)
+from typing import Any, Callable, Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union, cast, overload
 
 from expression.core import Option, pipe
 
@@ -52,9 +51,10 @@ from . import maptree, seq
 from .frozenlist import FrozenList
 from .maptree import MapTree
 
-Value = TypeVar(&#34;Value&#34;)
 Key = TypeVar(&#34;Key&#34;)
+Value = TypeVar(&#34;Value&#34;)
 Result = TypeVar(&#34;Result&#34;)
+
 T1 = TypeVar(&#34;T1&#34;)
 T2 = TypeVar(&#34;T2&#34;)
 T3 = TypeVar(&#34;T3&#34;)
@@ -64,6 +64,8 @@ T6 = TypeVar(&#34;T6&#34;)
 
 
 class Map(Generic[Key, Value]):
+    &#34;&#34;&#34;The immutable map class.&#34;&#34;&#34;
+
     def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -&gt; None:
         tree: MapTree[str, Value] = maptree.of_seq(kw.items())
         self._tree = __tree if __tree is not None else tree
@@ -267,7 +269,7 @@ class Map(Generic[Key, Value]):
         return True
 
     def __bool__(self) -&gt; bool:
-        return maptree.is_empty(self._tree)
+        return not maptree.is_empty(self._tree)
 
     def __str__(self) -&gt; str:
         def to_str(item: Tuple[Key, Value]) -&gt; str:
@@ -537,7 +539,7 @@ def try_find(key: Key) -&gt; Callable[[Map[Key, Value]], Option[Value]]:
     return _try_find
 
 
-empty = Map.empty
+empty: Map[Any, Any] = Map.empty()
 
 # let groupBy (projection: &#39;T -&gt; &#39;Key) (xs: &#39;T seq) ([&lt;Fable.Core.Inject&gt;] comparer: IEqualityComparer&lt;&#39;Key&gt;): (&#39;Key * &#39;T seq) seq =
 #     let dict: Fable.Core.JS.Map&lt;_,ResizeArray&lt;&#39;T&gt;&gt; = createMutable Seq.empty comparer
@@ -709,20 +711,6 @@ according to f.</p>
 <pre><code class="python">def count(table: Map[Key, Value]) -&gt; int:
     &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
     return len(table)</code></pre>
-</details>
-</dd>
-<dt id="expression.collections.map.empty"><code class="name flex">
-<span>def <span class="ident">empty</span></span>(<span>) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@staticmethod
-def empty() -&gt; &#34;Map[Key, Value]&#34;:
-    return Map(maptree.empty)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.exists"><code class="name flex">
@@ -1107,25 +1095,14 @@ and returns the first result.</p></div>
 <span>(</span><span>**kw: ~Value)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
+<div class="desc"><p>The immutable map class.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Map(Generic[Key, Value]):
+    &#34;&#34;&#34;The immutable map class.&#34;&#34;&#34;
+
     def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -&gt; None:
         tree: MapTree[str, Value] = maptree.of_seq(kw.items())
         self._tree = __tree if __tree is not None else tree
@@ -1329,7 +1306,7 @@ return default</p></div>
         return True
 
     def __bool__(self) -&gt; bool:
-        return maptree.is_empty(self._tree)
+        return not maptree.is_empty(self._tree)
 
     def __str__(self) -&gt; str:
         def to_str(item: Tuple[Key, Value]) -&gt; str:
@@ -1710,7 +1687,6 @@ element being transformed.</p>
 <li><code><a title="expression.collections.map.change" href="#expression.collections.map.change">change</a></code></li>
 <li><code><a title="expression.collections.map.contains_key" href="#expression.collections.map.contains_key">contains_key</a></code></li>
 <li><code><a title="expression.collections.map.count" href="#expression.collections.map.count">count</a></code></li>
-<li><code><a title="expression.collections.map.empty" href="#expression.collections.map.empty">empty</a></code></li>
 <li><code><a title="expression.collections.map.exists" href="#expression.collections.map.exists">exists</a></code></li>
 <li><code><a title="expression.collections.map.filter" href="#expression.collections.map.filter">filter</a></code></li>
 <li><code><a title="expression.collections.map.find" href="#expression.collections.map.find">find</a></code></li>

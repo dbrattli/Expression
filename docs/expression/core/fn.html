@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.1" />
-<title>expression.core.misc API documentation</title>
+<title>expression.core.fn API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,91 +19,68 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>expression.core.misc</code></h1>
+<h1 class="title">Module <code>expression.core.fn</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import Any, Callable, Optional, Tuple, TypeVar, cast, get_origin
+<pre><code class="python">import functools
+from typing import Any, Awaitable, Callable, TypeVar
 
-A = TypeVar(&#34;A&#34;)
-B = TypeVar(&#34;B&#34;)
-TSource = TypeVar(&#34;TSource&#34;)
+from .result import Error, Ok, Result
+
 TResult = TypeVar(&#34;TResult&#34;)
-Base = TypeVar(&#34;Base&#34;)
-Derived = TypeVar(&#34;Derived&#34;)
 
 
-def downcast(type: Base, expr: Derived) -&gt; Base:
-    &#34;&#34;&#34;Downcast expression `Derived` to `Base`
+class TailCall(Ok[TResult, Exception]):
+    &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
 
-    Checks at compile time that the type of expression E is a supertype
-    of T, and checks at runtime that E is in fact an instance of T.
-
-    Note: F# `:?&gt;` or `downcast`.
-    &#34;&#34;&#34;
-    assert isinstance(expr, type), f&#34;The type of expression {expr} is not a supertype of {type}&#34;
-    return expr
+    def __init__(self, *args: Any, **kw: Any):
+        self.args = args
+        self.kw = kw
 
 
-def upcast(type: Derived, expr: Base) -&gt; Derived:
-    &#34;&#34;&#34;Upcast expression `Base` to `Derived`.
+def recursive(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
+    &#34;&#34;&#34;Tail call bouncing decorator.&#34;&#34;&#34;
 
-    Check that the `Derived` type is a supertype of Base.
+    def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+        while isinstance(bouncer, TailCall):
+            try:
+                bouncer = fn(*bouncer.args, **bouncer.kw)
+            except Exception as ex:
+                bouncer = Error(ex)
 
-    Note: F# `:&gt;` or `upcast`.
-    &#34;&#34;&#34;
+        for value in bouncer:
+            return value
 
-    assert isinstance(expr, type), f&#34;The expression {expr} is not derived from type {type}&#34;
-    return expr
+    @functools.wraps(fn)
+    def wrapper(*args: Any, **kw: Any) -&gt; TResult:
+        return _trampoline(fn(*args, **kw))
 
-
-def try_upcast(type_: Derived, expr: Base) -&gt; Optional[Derived]:
-    &#34;&#34;&#34;Upcast expression `Base` to `Derived`.
-
-    Check that the `Derived` type is a supertype of `Base`.
-
-    NOTE: Supports generic types.
-
-    Returns:
-        None if `Derived` is not a supertype of `Base`.
-    &#34;&#34;&#34;
-    origin: Optional[Derived] = get_origin(type_) or type_
-    if origin is not None and isinstance(expr, origin):
-        derived = cast(type(type_), expr)
-        return derived
-    else:
-        return None
+    return wrapper
 
 
-def identity(value: A) -&gt; A:
-    &#34;&#34;&#34;Identity function.
+def recursive_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
+    &#34;&#34;&#34;Thunk bouncing async decorator.&#34;&#34;&#34;
 
-    Returns value given as argument.
-    &#34;&#34;&#34;
-    return value
+    async def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+        while isinstance(bouncer, TailCall):
+            bouncer = await fn(*bouncer.args, **bouncer.kw)
 
+        for value in bouncer:
+            return value
 
-def starid(*value: Any) -&gt; Tuple[Any, ...]:
-    return value
-
-
-def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
-    &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
-
-    Example:
-        &gt;&gt;&gt; fn(a, b) == flip(fn)(b, a)
-    &#34;&#34;&#34;
-
-    def _(b: B, a: A) -&gt; Any:
-        return fn(a, b)
+    @functools.wraps(fn)
+    async def _(*args: Any) -&gt; TResult:
+        result = await fn(*args)
+        return await _trampoline(result)
 
     return _
 
 
-__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
+__all__ = [&#34;TailCall&#34;, &#34;recursive&#34;, &#34;recursive_async&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -113,65 +90,103 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="expression.core.misc.flip"><code class="name flex">
-<span>def <span class="ident">flip</span></span>(<span>fn: Callable[[~A, ~B], Any]) ‑> Callable[[~B, ~A], Any]</span>
+<dt id="expression.core.fn.recursive"><code class="name flex">
+<span>def <span class="ident">recursive</span></span>(<span>fn: Callable[..., <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, Exception]]) ‑> Callable[..., ~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Flips the arguments for a function taking two arguments.</p>
-<h2 id="example">Example</h2>
-<pre><code class="python-repl">&gt;&gt;&gt; fn(a, b) == flip(fn)(b, a)
-</code></pre></div>
+<div class="desc"><p>Tail call bouncing decorator.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
-    &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
+<pre><code class="python">def recursive(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
+    &#34;&#34;&#34;Tail call bouncing decorator.&#34;&#34;&#34;
 
-    Example:
-        &gt;&gt;&gt; fn(a, b) == flip(fn)(b, a)
-    &#34;&#34;&#34;
+    def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+        while isinstance(bouncer, TailCall):
+            try:
+                bouncer = fn(*bouncer.args, **bouncer.kw)
+            except Exception as ex:
+                bouncer = Error(ex)
 
-    def _(b: B, a: A) -&gt; Any:
-        return fn(a, b)
+        for value in bouncer:
+            return value
+
+    @functools.wraps(fn)
+    def wrapper(*args: Any, **kw: Any) -&gt; TResult:
+        return _trampoline(fn(*args, **kw))
+
+    return wrapper</code></pre>
+</details>
+</dd>
+<dt id="expression.core.fn.recursive_async"><code class="name flex">
+<span>def <span class="ident">recursive_async</span></span>(<span>fn: Callable[..., Awaitable[~TResult]]) ‑> Callable[..., Awaitable[~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Thunk bouncing async decorator.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def recursive_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
+    &#34;&#34;&#34;Thunk bouncing async decorator.&#34;&#34;&#34;
+
+    async def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+        while isinstance(bouncer, TailCall):
+            bouncer = await fn(*bouncer.args, **bouncer.kw)
+
+        for value in bouncer:
+            return value
+
+    @functools.wraps(fn)
+    async def _(*args: Any) -&gt; TResult:
+        result = await fn(*args)
+        return await _trampoline(result)
 
     return _</code></pre>
-</details>
-</dd>
-<dt id="expression.core.misc.identity"><code class="name flex">
-<span>def <span class="ident">identity</span></span>(<span>value: ~A) ‑> ~A</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Identity function.</p>
-<p>Returns value given as argument.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def identity(value: A) -&gt; A:
-    &#34;&#34;&#34;Identity function.
-
-    Returns value given as argument.
-    &#34;&#34;&#34;
-    return value</code></pre>
-</details>
-</dd>
-<dt id="expression.core.misc.starid"><code class="name flex">
-<span>def <span class="ident">starid</span></span>(<span>*value: Any) ‑> Tuple[Any, ...]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def starid(*value: Any) -&gt; Tuple[Any, ...]:
-    return value</code></pre>
 </details>
 </dd>
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="expression.core.fn.TailCall"><code class="flex name class">
+<span>class <span class="ident">TailCall</span></span>
+<span>(</span><span>*args: Any, **kw: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a tail call.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TailCall(Ok[TResult, Exception]):
+    &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
+
+    def __init__(self, *args: Any, **kw: Any):
+        self.args = args
+        self.kw = kw</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></li>
+<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
+<li>collections.abc.Iterable</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.result.Ok.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Ok.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -187,9 +202,15 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="expression.core.misc.flip" href="#expression.core.misc.flip">flip</a></code></li>
-<li><code><a title="expression.core.misc.identity" href="#expression.core.misc.identity">identity</a></code></li>
-<li><code><a title="expression.core.misc.starid" href="#expression.core.misc.starid">starid</a></code></li>
+<li><code><a title="expression.core.fn.recursive" href="#expression.core.fn.recursive">recursive</a></code></li>
+<li><code><a title="expression.core.fn.recursive_async" href="#expression.core.fn.recursive_async">recursive_async</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="expression.core.fn.TailCall" href="#expression.core.fn.TailCall">TailCall</a></code></h4>
+</li>
 </ul>
 </li>
 </ul>

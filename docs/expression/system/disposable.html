@@ -109,6 +109,10 @@ class AsyncDisposable(ABC):
         return AsyncAnonymousDisposable(action)
 
     @staticmethod
+    def composite(*disposables: &#34;AsyncDisposable&#34;) -&gt; &#34;AsyncDisposable&#34;:
+        return AsyncCompositeDisposable(*disposables)
+
+    @staticmethod
     def empty() -&gt; &#34;AsyncDisposable&#34;:
         async def anoop() -&gt; None:
             pass
@@ -139,7 +143,7 @@ class AsyncCompositeDisposable(AsyncDisposable):
     def __init__(self, *disposables: AsyncDisposable) -&gt; None:
         self._disposables = disposables
 
-    async def adispose(self) -&gt; None:
+    async def dispose_async(self) -&gt; None:
         for disposable in self._disposables:
             await disposable.dispose_async()
 
@@ -304,7 +308,7 @@ dispose method. Will dispoose on exit.</p></div>
     def __init__(self, *disposables: AsyncDisposable) -&gt; None:
         self._disposables = disposables
 
-    async def adispose(self) -&gt; None:
+    async def dispose_async(self) -&gt; None:
         for disposable in self._disposables:
             await disposable.dispose_async()</code></pre>
 </details>
@@ -315,8 +319,8 @@ dispose method. Will dispoose on exit.</p></div>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="expression.system.disposable.AsyncCompositeDisposable.adispose"><code class="name flex">
-<span>async def <span class="ident">adispose</span></span>(<span>self) ‑> NoneType</span>
+<dt id="expression.system.disposable.AsyncCompositeDisposable.dispose_async"><code class="name flex">
+<span>async def <span class="ident">dispose_async</span></span>(<span>self) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -324,7 +328,7 @@ dispose method. Will dispoose on exit.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">async def adispose(self) -&gt; None:
+<pre><code class="python">async def dispose_async(self) -&gt; None:
     for disposable in self._disposables:
         await disposable.dispose_async()</code></pre>
 </details>
@@ -364,6 +368,10 @@ dispose method. Will dispoose on exit.</p></div>
         return AsyncAnonymousDisposable(action)
 
     @staticmethod
+    def composite(*disposables: &#34;AsyncDisposable&#34;) -&gt; &#34;AsyncDisposable&#34;:
+        return AsyncCompositeDisposable(*disposables)
+
+    @staticmethod
     def empty() -&gt; &#34;AsyncDisposable&#34;:
         async def anoop() -&gt; None:
             pass
@@ -381,6 +389,20 @@ dispose method. Will dispoose on exit.</p></div>
 </ul>
 <h3>Static methods</h3>
 <dl>
+<dt id="expression.system.disposable.AsyncDisposable.composite"><code class="name flex">
+<span>def <span class="ident">composite</span></span>(<span>*disposables: <a title="expression.system.disposable.AsyncDisposable" href="#expression.system.disposable.AsyncDisposable">AsyncDisposable</a>) ‑> <a title="expression.system.disposable.AsyncDisposable" href="#expression.system.disposable.AsyncDisposable">AsyncDisposable</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def composite(*disposables: &#34;AsyncDisposable&#34;) -&gt; &#34;AsyncDisposable&#34;:
+    return AsyncCompositeDisposable(*disposables)</code></pre>
+</details>
+</dd>
 <dt id="expression.system.disposable.AsyncDisposable.create"><code class="name flex">
 <span>def <span class="ident">create</span></span>(<span>action: Callable[[], Awaitable[NoneType]]) ‑> <a title="expression.system.disposable.AsyncDisposable" href="#expression.system.disposable.AsyncDisposable">AsyncDisposable</a></span>
 </code></dt>
@@ -545,12 +567,13 @@ def dispose(self) -&gt; None:
 <li>
 <h4><code><a title="expression.system.disposable.AsyncCompositeDisposable" href="#expression.system.disposable.AsyncCompositeDisposable">AsyncCompositeDisposable</a></code></h4>
 <ul class="">
-<li><code><a title="expression.system.disposable.AsyncCompositeDisposable.adispose" href="#expression.system.disposable.AsyncCompositeDisposable.adispose">adispose</a></code></li>
+<li><code><a title="expression.system.disposable.AsyncCompositeDisposable.dispose_async" href="#expression.system.disposable.AsyncCompositeDisposable.dispose_async">dispose_async</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="expression.system.disposable.AsyncDisposable" href="#expression.system.disposable.AsyncDisposable">AsyncDisposable</a></code></h4>
 <ul class="">
+<li><code><a title="expression.system.disposable.AsyncDisposable.composite" href="#expression.system.disposable.AsyncDisposable.composite">composite</a></code></li>
 <li><code><a title="expression.system.disposable.AsyncDisposable.create" href="#expression.system.disposable.AsyncDisposable.create">create</a></code></li>
 <li><code><a title="expression.system.disposable.AsyncDisposable.dispose_async" href="#expression.system.disposable.AsyncDisposable.dispose_async">dispose_async</a></code></li>
 <li><code><a title="expression.system.disposable.AsyncDisposable.empty" href="#expression.system.disposable.AsyncDisposable.empty">empty</a></code></li>

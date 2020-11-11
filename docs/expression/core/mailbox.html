@@ -125,7 +125,7 @@ class MailboxProcessor(Generic[Msg]):
 
         return from_continuations(callback)
 
-    def receive(self) -&gt; Awaitable[Msg]:
+    async def receive(self) -&gt; Msg:
         &#34;&#34;&#34;Return an asynchronous computation which will consume the
         first message in arrival order. No thread is blocked while
         waiting for further messages. Raise a TimeoutException if the
@@ -140,7 +140,7 @@ class MailboxProcessor(Generic[Msg]):
             self.continuation = done
             self.__process_events()
 
-        return from_continuations(callback)
+        return await from_continuations(callback)
 
     def __process_events(self):
         if self.continuation is None:
@@ -313,7 +313,7 @@ return default</p></div>
 
         return from_continuations(callback)
 
-    def receive(self) -&gt; Awaitable[Msg]:
+    async def receive(self) -&gt; Msg:
         &#34;&#34;&#34;Return an asynchronous computation which will consume the
         first message in arrival order. No thread is blocked while
         waiting for further messages. Raise a TimeoutException if the
@@ -328,7 +328,7 @@ return default</p></div>
             self.continuation = done
             self.__process_events()
 
-        return from_continuations(callback)
+        return await from_continuations(callback)
 
     def __process_events(self):
         if self.continuation is None:
@@ -475,7 +475,7 @@ Returns: The reply from mailbox processor.</p></div>
 </details>
 </dd>
 <dt id="expression.core.mailbox.MailboxProcessor.receive"><code class="name flex">
-<span>def <span class="ident">receive</span></span>(<span>self) ‑> Awaitable[~Msg]</span>
+<span>async def <span class="ident">receive</span></span>(<span>self) ‑> ~Msg</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return an asynchronous computation which will consume the
@@ -486,7 +486,7 @@ timeout is exceeded.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def receive(self) -&gt; Awaitable[Msg]:
+<pre><code class="python">async def receive(self) -&gt; Msg:
     &#34;&#34;&#34;Return an asynchronous computation which will consume the
     first message in arrival order. No thread is blocked while
     waiting for further messages. Raise a TimeoutException if the
@@ -501,7 +501,7 @@ timeout is exceeded.</p></div>
         self.continuation = done
         self.__process_events()
 
-    return from_continuations(callback)</code></pre>
+    return await from_continuations(callback)</code></pre>
 </details>
 </dd>
 </dl>
