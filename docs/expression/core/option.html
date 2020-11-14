@@ -42,6 +42,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
 
 from .error import EffectError
+from .match import Matchable
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
@@ -52,7 +53,7 @@ T3 = TypeVar(&#34;T3&#34;)
 T4 = TypeVar(&#34;T4&#34;)
 
 
-class Option(Iterable[TSource], ABC):
+class Option(Iterable[TSource], ABC, Matchable[TSource]):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -83,11 +84,6 @@ class Option(Iterable[TSource], ABC):
         &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
-
-        return match(self, *args, **kw)  # type: ignore
-
     def default_value(self, value: TSource) -&gt; TSource:
         &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
@@ -104,6 +100,19 @@ class Option(Iterable[TSource], ABC):
 
     @abstractmethod
     def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -174,6 +183,19 @@ class Some(Option[TSource]):
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         return mapper(self._value)
 
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
@@ -193,6 +215,20 @@ class Some(Option[TSource]):
         A `ValueError` is raised if the option is `Nothing`.
         &#34;&#34;&#34;
         return self._value
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        print(&#34;__match__&#34;, pattern)
+
+        if self == pattern:
+            return [self.value]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
 
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
@@ -236,6 +272,19 @@ class Nothing_(Option[TSource], EffectError):
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         return Nothing
 
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
@@ -256,6 +305,12 @@ class Nothing_(Option[TSource], EffectError):
         &#34;&#34;&#34;
 
         raise ValueError(&#34;There is no value.&#34;)
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self is pattern:
+            return [Nothing]
+
+        return []
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for the `Nothing` case.
@@ -287,6 +342,21 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 
 
 def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
+    &#34;&#34;&#34;Bind option.
+
+    Applies and returns the result of the mapper if the value is
+    `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+    Args:
+        mapper: A function that takes the value of type TSource from
+            an option and transforms it into an option containing a
+            value of type TResult.
+
+    Returns:
+        A partially applied function that takes an option and returns an
+        option of the output type of the mapper.
+    &#34;&#34;&#34;
+
     def _bind(option: Option[TSource]) -&gt; Option[TResult]:
         return option.bind(mapper)
 
@@ -419,12 +489,39 @@ return True</p></div>
 <span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Bind option.</p>
+<p>Applies and returns the result of the mapper if the value is
+<code><a title="expression.core.option.Some" href="#expression.core.option.Some">Some</a></code>. If the value is <code><a title="expression.core.option.Nothing" href="#expression.core.option.Nothing">Nothing</a></code> then <code><a title="expression.core.option.Nothing" href="#expression.core.option.Nothing">Nothing</a></code> is returned.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mapper</code></strong></dt>
+<dd>A function that takes the value of type TSource from
+an option and transforms it into an option containing a
+value of type TResult.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>A partially applied function that takes an option and returns an
+option of the output type of the mapper.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
+    &#34;&#34;&#34;Bind option.
+
+    Applies and returns the result of the mapper if the value is
+    `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+    Args:
+        mapper: A function that takes the value of type TSource from
+            an option and transforms it into an option containing a
+            value of type TResult.
+
+    Returns:
+        A partially applied function that takes an option and returns an
+        option of the output type of the mapper.
+    &#34;&#34;&#34;
+
     def _bind(option: Option[TSource]) -&gt; Option[TResult]:
         return option.bind(mapper)
 
@@ -674,6 +771,19 @@ return True</p></div>
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         return Nothing
 
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
@@ -694,6 +804,12 @@ return True</p></div>
         &#34;&#34;&#34;
 
         raise ValueError(&#34;There is no value.&#34;)
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self is pattern:
+            return [Nothing]
+
+        return []
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for the `Nothing` case.
@@ -716,27 +832,16 @@ return True</p></div>
 <ul class="hlist">
 <li><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
 <li>abc.ABC</li>
+<li>expression.core.match.Matchable</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 <li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="expression.core.option.Nothing_.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
-    return Nothing</code></pre>
-</details>
-</dd>
 <dt id="expression.core.option.Nothing_.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -836,6 +941,7 @@ return True</p></div>
 <ul class="hlist">
 <li><code><b><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
+<li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Option.default_value" href="#expression.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.value" href="#expression.core.option.Option.value">value</a></code></li>
@@ -845,7 +951,7 @@ return True</p></div>
 </dd>
 <dt id="expression.core.option.Option"><code class="flex name class">
 <span>class <span class="ident">Option</span></span>
-<span>(</span><span>*args, **kwds)</span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Option abstract base class.</p></div>
@@ -853,7 +959,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Option(Iterable[TSource], ABC):
+<pre><code class="python">class Option(Iterable[TSource], ABC, Matchable[TSource]):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -884,11 +990,6 @@ return True</p></div>
         &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
-
-        return match(self, *args, **kw)  # type: ignore
-
     def default_value(self, value: TSource) -&gt; TSource:
         &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
@@ -905,6 +1006,19 @@ return True</p></div>
 
     @abstractmethod
     def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -948,8 +1062,10 @@ return True</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
 <li>abc.ABC</li>
+<li>expression.core.match.Matchable</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -982,13 +1098,37 @@ def value(self) -&gt; TSource:
 <span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TResult]')]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Bind option.</p>
+<p>Applies and returns the result of the mapper if the value is
+<code><a title="expression.core.option.Some" href="#expression.core.option.Some">Some</a></code>. If the value is <code><a title="expression.core.option.Nothing" href="#expression.core.option.Nothing">Nothing</a></code> then <code><a title="expression.core.option.Nothing" href="#expression.core.option.Nothing">Nothing</a></code> is returned.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mapper</code></strong></dt>
+<dd>A function that takes the value of type TSource from
+an option and transforms it into an option containing a
+value of type TResult.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>An option of the output type of the mapper.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+    &#34;&#34;&#34;Bind option.
+
+    Applies and returns the result of the mapper if the value is
+    `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+    Args:
+        mapper: A function that takes the value of type TSource from
+            an option and transforms it into an option containing a
+            value of type TResult.
+
+    Returns:
+        An option of the output type of the mapper.
+    &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -1065,21 +1205,6 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#
 <pre><code class="python">@abstractmethod
 def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
     raise NotImplementedError</code></pre>
-</details>
-</dd>
-<dt id="expression.core.option.Option.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
-    from pampy import match  # type: ignore
-
-    return match(self, *args, **kw)  # type: ignore</code></pre>
 </details>
 </dd>
 <dt id="expression.core.option.Option.or_else"><code class="name flex">
@@ -1180,6 +1305,19 @@ def to_seq(self) -&gt; Iterable[TSource]:
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         return mapper(self._value)
 
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
@@ -1200,6 +1338,20 @@ def to_seq(self) -&gt; Iterable[TSource]:
         &#34;&#34;&#34;
         return self._value
 
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        print(&#34;__match__&#34;, pattern)
+
+        if self == pattern:
+            return [self.value]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
+
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
             return self._value == other._value  # type: ignore
@@ -1215,24 +1367,13 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <ul class="hlist">
 <li><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
 <li>abc.ABC</li>
+<li>expression.core.match.Matchable</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="expression.core.option.Some.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
-    return mapper(self._value)</code></pre>
-</details>
-</dd>
 <dt id="expression.core.option.Some.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -1334,6 +1475,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <ul class="hlist">
 <li><code><b><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
+<li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Option.default_value" href="#expression.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.value" href="#expression.core.option.Option.value">value</a></code></li>
@@ -1380,7 +1522,6 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <li>
 <h4><code><a title="expression.core.option.Nothing_" href="#expression.core.option.Nothing_">Nothing_</a></code></h4>
 <ul class="two-column">
-<li><code><a title="expression.core.option.Nothing_.bind" href="#expression.core.option.Nothing_.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.is_none" href="#expression.core.option.Nothing_.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.is_some" href="#expression.core.option.Nothing_.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.map" href="#expression.core.option.Nothing_.map">map</a></code></li>
@@ -1399,7 +1540,6 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <li><code><a title="expression.core.option.Option.is_some" href="#expression.core.option.Option.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.option.Option.map" href="#expression.core.option.Option.map">map</a></code></li>
 <li><code><a title="expression.core.option.Option.map2" href="#expression.core.option.Option.map2">map2</a></code></li>
-<li><code><a title="expression.core.option.Option.match" href="#expression.core.option.Option.match">match</a></code></li>
 <li><code><a title="expression.core.option.Option.or_else" href="#expression.core.option.Option.or_else">or_else</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.to_list" href="#expression.core.option.Option.to_list">to_list</a></code></li>
@@ -1410,7 +1550,6 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <li>
 <h4><code><a title="expression.core.option.Some" href="#expression.core.option.Some">Some</a></code></h4>
 <ul class="two-column">
-<li><code><a title="expression.core.option.Some.bind" href="#expression.core.option.Some.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Some.is_none" href="#expression.core.option.Some.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.option.Some.is_some" href="#expression.core.option.Some.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.option.Some.map" href="#expression.core.option.Some.map">map</a></code></li>

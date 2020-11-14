@@ -40,9 +40,10 @@ Programming.
 &#34;&#34;&#34;
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Generic, Iterable, Iterator, TypeVar, Union, overload
+from typing import Any, Callable, Generator, Generic, Iterable, Iterator, Type, TypeVar, Union, overload
 
 from .error import EffectError
+from .match import Match
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
@@ -56,11 +57,6 @@ T4 = TypeVar(&#34;T4&#34;)
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
-
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
-
-        return match(self, *args, **kw)  # type: ignore
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
@@ -103,6 +99,26 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     @abstractmethod
     def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
         raise NotImplementedError
+
+    @overload
+    def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Error[TSource, TError]&#34;) -&gt; Iterable[TError]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Ok[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Error[TSource, TError]]&#34;) -&gt; Iterable[TError]:
+        ...
+
+    def match(self, pattern: Any) -&gt; Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @abstractmethod
     def is_error(self) -&gt; bool:
@@ -150,6 +166,18 @@ class Ok(Result[TSource, TError]):
     def is_ok(self) -&gt; bool:
         return True
 
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self == pattern:
+            return [self.value]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
+
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Ok):
             return self.value == other.value  # type: ignore
@@ -195,6 +223,18 @@ class Error(Result[TSource, TError], ResultException):
 
     def is_ok(self) -&gt; bool:
         return False
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TError]:
+        if self == pattern:
+            return [self.error]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.error]
+        except TypeError:
+            pass
+
+        return []
 
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Error):
@@ -312,6 +352,18 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 
     def is_ok(self) -&gt; bool:
         return False
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TError]:
+        if self == pattern:
+            return [self.error]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.error]
+        except TypeError:
+            pass
+
+        return []
 
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Error):
@@ -454,6 +506,18 @@ def error(self) -&gt; TError:
     def is_ok(self) -&gt; bool:
         return True
 
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self == pattern:
+            return [self.value]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
+
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Ok):
             return self.value == other.value  # type: ignore
@@ -570,11 +634,6 @@ def value(self) -&gt; TSource:
 <pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
-
-        return match(self, *args, **kw)  # type: ignore
-
     @overload
     def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
         ...
@@ -616,6 +675,26 @@ def value(self) -&gt; TSource:
     @abstractmethod
     def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
         raise NotImplementedError
+
+    @overload
+    def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Error[TSource, TError]&#34;) -&gt; Iterable[TError]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Ok[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Error[TSource, TError]]&#34;) -&gt; Iterable[TError]:
+        ...
+
+    def match(self, pattern: Any) -&gt; Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @abstractmethod
     def is_error(self) -&gt; bool:
@@ -722,7 +801,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </details>
 </dd>
 <dt id="expression.core.result.Result.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -730,10 +809,9 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
-    from pampy import match  # type: ignore
-
-    return match(self, *args, **kw)  # type: ignore</code></pre>
+<pre><code class="python">def match(self, pattern: Any) -&gt; Any:
+    m: Match[TSource] = Match(self)
+    return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
 <dt id="expression.core.result.Result.pipe"><code class="name flex">

@@ -7,9 +7,10 @@ Programming.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Generic, Iterable, Iterator, TypeVar, Union, overload
+from typing import Any, Callable, Generator, Generic, Iterable, Iterator, Type, TypeVar, Union, overload
 
 from .error import EffectError
+from .match import Match
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
@@ -23,11 +24,6 @@ T4 = TypeVar("T4")
 
 class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     """The result abstract base class."""
-
-    def match(self, *args: Any, **kw: Any) -> Any:
-        from pampy import match  # type: ignore
-
-        return match(self, *args, **kw)  # type: ignore
 
     @overload
     def pipe(self, __fn1: Callable[["Result[TSource, TError]"], TResult]) -> TResult:
@@ -70,6 +66,26 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     @abstractmethod
     def bind(self, mapper: Callable[[TSource], "Result[TResult, TError]"]) -> "Result[TResult, TError]":
         raise NotImplementedError
+
+    @overload
+    def match(self, pattern: "Ok[TSource, TError]") -> Iterable[TSource]:
+        ...
+
+    @overload
+    def match(self, pattern: "Error[TSource, TError]") -> Iterable[TError]:
+        ...
+
+    @overload
+    def match(self, pattern: "Type[Ok[TSource, TError]]") -> Iterable[TSource]:
+        ...
+
+    @overload
+    def match(self, pattern: "Type[Error[TSource, TError]]") -> Iterable[TError]:
+        ...
+
+    def match(self, pattern: Any) -> Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @abstractmethod
     def is_error(self) -> bool:
@@ -117,6 +133,18 @@ class Ok(Result[TSource, TError]):
     def is_ok(self) -> bool:
         return True
 
+    def __match__(self, pattern: Any) -> Iterable[TSource]:
+        if self == pattern:
+            return [self.value]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
+
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Ok):
             return self.value == other.value  # type: ignore
@@ -162,6 +190,18 @@ class Error(Result[TSource, TError], ResultException):
 
     def is_ok(self) -> bool:
         return False
+
+    def __match__(self, pattern: Any) -> Iterable[TError]:
+        if self == pattern:
+            return [self.error]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.error]
+        except TypeError:
+            pass
+
+        return []
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Error):

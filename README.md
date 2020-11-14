@@ -192,13 +192,11 @@ def keep_positive(a: int) -> Option[int]:
 ```
 
 ```py
-from pampy import _
-
 def exists(x : Option[int]) -> bool:
-    return x.match(
-        Some, lambda some: True,
-        _, False
-    )
+    for value in x.match(Ok):
+        return True
+    else:
+        return False
 ```
 
 Options as decorators for computational expressions. Computational
@@ -296,38 +294,47 @@ assert ys == zs
 
 ### Pattern Matching
 
-Pattern matching is tricky for a language like Python. We are waiting
-for [PEP 634](https://www.python.org/dev/peps/pep-0634/) and structural
-pattern matching for Python. But at the same time we need something to
-work safely with e.g optional values and results.
+Pattern matching is a bit tricky for a language like Python. We are
+waiting for [PEP 634](https://www.python.org/dev/peps/pep-0634/) and
+structural pattern matching for Python. But we need something that can
+by handled by static type checkers and will also unwrap inner e.g
+optional values and results.
 
 Goals for pattern matching:
 
-- Type safe
-- Case handling is inline, i.e we can avoid lambdas which is great if we
-  e.g. want to write async code.
-- Unpacking of wrapped values
+- Type safety
+- Case handling must be inline, i.e we want to avoid lambdas which would
+  make things difficult for async code.
+- Unpacking of wrapped values, e.g options and results.
 - Pythonic. Is it possible?
 - Check multiple cases with default handling.
 
-The current solution is based on singleton iterables:
+The solution we propose is based on for-loops and singleton iterables.
+This lets us write code inline, unwrap inner values and also effectively
+skip cases that doesn't match.
 
 ```py
-  m = match("expression")
+from expression.core import match
 
-  for _ in m.case("rxpy"):
-      assert False
+m = match("expression")
 
-  for value in m.case("expression"):
-      assert value == "expression"
+for _ in m.case("rxpy"):
+    assert False
 
-  for value in m.case("aioreactive"):
-      assert False
+for value in m.case("expression"):
+    assert value == "expression"
 
-  for _ in m.default():
+for value in m.case("aioreactive"):
+    assert False
+
+for _ in m.default():
       assert False
 ```
-Classes may also support `match` with pattern directly, i.e: `xs.match(pattern)` is the same as `match(xs).case(pattern)`.
+Classes may also support `match` with pattern directly, i.e:
+`xs.match(pattern)` is effectively the same as
+`match(xs).case(pattern)`. For multiple cases you will need to use
+`match` to get a match object (since the match object will keep state to
+know if it has found a match or not).
 
 ```py
   xs = Some(42)
@@ -338,6 +345,20 @@ Classes may also support `match` with pattern directly, i.e: `xs.match(pattern)`
       break
   else:
       assert False
+```
+
+Classes may decide to support more advance pattern matching by
+subclassing or implementing the matching protocol:
+
+```py
+class Matchable(Protocol[TSource]):
+    """Pattern matching protocol."""
+
+    @abstractmethod
+    def __match__(self, pattern: Any) -> Iterable[TSource]:
+        """Return a singleton iterable item (e.g `[ value ]`) if pattern
+        matches, else an empty iterable (e.g. `[]`)."""
+        raise NotImplementedError
 ```
 
 ## Notable Differences
@@ -405,7 +426,6 @@ for creating this library.
 - Get Started with F# (https://aka.ms/fsharphome)
 - F# as a Better Python - Phillip Carter - NDC Oslo 2020
   (https://www.youtube.com/watch?v=_QnbV6CAWXc)
-- Pampy: Pattern Matching for Python (https://github.com/santinic/pampy)
 - OSlash (https://github.com/dbrattli/OSlash)
 - RxPY (https://github.com/ReactiveX/RxPY)
 - PEP 8 -- Style Guide for Python Code (Style Guide for Python Code)

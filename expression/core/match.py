@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Any, Generic, Iterable, Protocol, TypeVar, Union, cast, overload
+from typing import (Any, Generic, Iterable, Protocol, TypeVar, Union, cast,
+                    overload)
 
 TSource = TypeVar("TSource")
 
@@ -11,6 +12,9 @@ class Matchable(Protocol[TSource]):
 
     @abstractmethod
     def __match__(self, pattern: Any) -> Iterable[TSource]:
+        """Return a singleton iterable item (e.g `[ value ]`) if pattern
+        matches, else an empty iterable (e.g. `[]`)."""
+
         raise NotImplementedError
 
     @overload
@@ -73,4 +77,4 @@ def match(value: TSource) -> Match[TSource]:
     return Match(value)
 
 
-__all__ = ["match", "Match", "Matching"]
+__all__ = ["match", "Match", "Matchable"]

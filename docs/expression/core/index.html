@@ -38,6 +38,7 @@ from .curry import curried
 from .error import EffectError, failwith
 from .fn import TailCall, recursive, recursive_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
+from .match import Match, Matchable, match
 from .misc import flip, identity
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
@@ -55,6 +56,9 @@ __all__ = [
     &#34;flip&#34;,
     &#34;identity&#34;,
     &#34;MailboxProcessor&#34;,
+    &#34;match&#34;,
+    &#34;Match&#34;,
+    &#34;Matching&#34;,
     &#34;Nothing&#34;,
     &#34;Nothing_&#34;,
     &#34;Ok&#34;,
@@ -277,6 +281,20 @@ assert add(3)(4) == 7</p></div>
     Returns value given as argument.
     &#34;&#34;&#34;
     return value</code></pre>
+</details>
+</dd>
+<dt id="expression.core.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>value: ~TSource) ‑> expression.core.match.Match[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convenience create method to get typing right</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(value: TSource) -&gt; Match[TSource]:
+    &#34;&#34;&#34;Convenience create method to get typing right&#34;&#34;&#34;
+    return Match(value)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.pipe"><code class="name flex">
@@ -693,6 +711,18 @@ yielding nothing will be silently ignored.</p></div>
     def is_ok(self) -&gt; bool:
         return False
 
+    def __match__(self, pattern: Any) -&gt; Iterable[TError]:
+        if self == pattern:
+            return [self.error]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.error]
+        except TypeError:
+            pass
+
+        return []
+
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Error):
             return self.error == other.error  # type: ignore
@@ -1078,6 +1108,114 @@ timeout is exceeded.</p></div>
 </dd>
 </dl>
 </dd>
+<dt id="expression.core.Match"><code class="flex name class">
+<span>class <span class="ident">Match</span></span>
+<span>(</span><span>value: Union[Any, expression.core.match.Matchable[~TSource]])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pattern matching.</p>
+<p>Matches a value with type, instance or uses matching protocol
+if supported by value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Match(Generic[TSource]):
+    &#34;&#34;&#34;Pattern matching.
+
+    Matches a value with type, instance or uses matching protocol
+    if supported by value.
+    &#34;&#34;&#34;
+
+    def __init__(self, value: Union[Any, Matchable[TSource]]):
+        self.is_matched = False
+        self.value = value
+
+    def case(self, pattern: Any) -&gt; Iterable[TSource]:
+        value = self.value
+
+        if self.is_matched:
+            return []
+
+        if hasattr(value, &#34;__match__&#34;):
+            value_ = cast(Matchable[TSource], value)
+            matched = value_.__match__(pattern)
+            if matched:
+                self.is_matched = True
+            return matched
+
+        try:
+            if value is pattern or isinstance(value, pattern):
+                self.is_matched = True
+                return [value]
+        except TypeError:
+            pass
+
+        return []
+
+    def default(self) -&gt; Iterable[Union[Any, Matchable[TSource]]]:
+        if self.is_matched:
+            return []
+        return [self.value]
+
+    def __bool__(self):
+        return self.is_matched</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Match.case"><code class="name flex">
+<span>def <span class="ident">case</span></span>(<span>self, pattern: Any) ‑> Iterable[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def case(self, pattern: Any) -&gt; Iterable[TSource]:
+    value = self.value
+
+    if self.is_matched:
+        return []
+
+    if hasattr(value, &#34;__match__&#34;):
+        value_ = cast(Matchable[TSource], value)
+        matched = value_.__match__(pattern)
+        if matched:
+            self.is_matched = True
+        return matched
+
+    try:
+        if value is pattern or isinstance(value, pattern):
+            self.is_matched = True
+            return [value]
+    except TypeError:
+        pass
+
+    return []</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Match.default"><code class="name flex">
+<span>def <span class="ident">default</span></span>(<span>self) ‑> Iterable[Union[Any, expression.core.match.Matchable[~TSource]]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default(self) -&gt; Iterable[Union[Any, Matchable[TSource]]]:
+    if self.is_matched:
+        return []
+    return [self.value]</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="expression.core.Nothing_"><code class="flex name class">
 <span>class <span class="ident">Nothing_</span></span>
 <span>(</span><span>*args, **kwargs)</span>
@@ -1123,6 +1261,19 @@ return True</p></div>
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         return Nothing
 
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
@@ -1143,6 +1294,12 @@ return True</p></div>
         &#34;&#34;&#34;
 
         raise ValueError(&#34;There is no value.&#34;)
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self is pattern:
+            return [Nothing]
+
+        return []
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for the `Nothing` case.
@@ -1165,27 +1322,16 @@ return True</p></div>
 <ul class="hlist">
 <li><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
 <li>abc.ABC</li>
+<li>expression.core.match.Matchable</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 <li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="expression.core.Nothing_.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
-    return Nothing</code></pre>
-</details>
-</dd>
 <dt id="expression.core.Nothing_.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -1285,6 +1431,7 @@ return True</p></div>
 <ul class="hlist">
 <li><code><b><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
+<li><code><a title="expression.core.option.Option.bind" href="option.html#expression.core.option.Option.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Option.default_value" href="option.html#expression.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="option.html#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.value" href="option.html#expression.core.option.Option.value">value</a></code></li>
@@ -1328,6 +1475,18 @@ return True</p></div>
 
     def is_ok(self) -&gt; bool:
         return True
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self == pattern:
+            return [self.value]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
 
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Ok):
@@ -1434,7 +1593,7 @@ def value(self) -&gt; TSource:
 </dd>
 <dt id="expression.core.Option"><code class="flex name class">
 <span>class <span class="ident">Option</span></span>
-<span>(</span><span>*args, **kwds)</span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Option abstract base class.</p></div>
@@ -1442,7 +1601,7 @@ def value(self) -&gt; TSource:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Option(Iterable[TSource], ABC):
+<pre><code class="python">class Option(Iterable[TSource], ABC, Matchable[TSource]):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -1473,11 +1632,6 @@ def value(self) -&gt; TSource:
         &#34;&#34;&#34;Pipe option through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
-
-        return match(self, *args, **kw)  # type: ignore
-
     def default_value(self, value: TSource) -&gt; TSource:
         &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
@@ -1494,6 +1648,19 @@ def value(self) -&gt; TSource:
 
     @abstractmethod
     def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -1537,8 +1704,10 @@ def value(self) -&gt; TSource:
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
 <li>abc.ABC</li>
+<li>expression.core.match.Matchable</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -1571,13 +1740,37 @@ def value(self) -&gt; TSource:
 <span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.Option" href="#expression.core.Option">Option</a>[TResult]')]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Bind option.</p>
+<p>Applies and returns the result of the mapper if the value is
+<code><a title="expression.core.Some" href="#expression.core.Some">Some</a></code>. If the value is <code>Nothing</code> then <code>Nothing</code> is returned.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mapper</code></strong></dt>
+<dd>A function that takes the value of type TSource from
+an option and transforms it into an option containing a
+value of type TResult.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>An option of the output type of the mapper.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+    &#34;&#34;&#34;Bind option.
+
+    Applies and returns the result of the mapper if the value is
+    `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+    Args:
+        mapper: A function that takes the value of type TSource from
+            an option and transforms it into an option containing a
+            value of type TResult.
+
+    Returns:
+        An option of the output type of the mapper.
+    &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -1656,21 +1849,6 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
     raise NotImplementedError</code></pre>
 </details>
 </dd>
-<dt id="expression.core.Option.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
-    from pampy import match  # type: ignore
-
-    return match(self, *args, **kw)  # type: ignore</code></pre>
-</details>
-</dd>
 <dt id="expression.core.Option.or_else"><code class="name flex">
 <span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TSource]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TSource]</span>
 </code></dt>
@@ -1743,11 +1921,6 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
-
-        return match(self, *args, **kw)  # type: ignore
-
     @overload
     def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
         ...
@@ -1789,6 +1962,26 @@ def to_seq(self) -&gt; Iterable[TSource]:
     @abstractmethod
     def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
         raise NotImplementedError
+
+    @overload
+    def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Error[TSource, TError]&#34;) -&gt; Iterable[TError]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Ok[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Error[TSource, TError]]&#34;) -&gt; Iterable[TError]:
+        ...
+
+    def match(self, pattern: Any) -&gt; Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @abstractmethod
     def is_error(self) -&gt; bool:
@@ -1895,7 +2088,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </details>
 </dd>
 <dt id="expression.core.Result.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1903,10 +2096,9 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
-    from pampy import match  # type: ignore
-
-    return match(self, *args, **kw)  # type: ignore</code></pre>
+<pre><code class="python">def match(self, pattern: Any) -&gt; Any:
+    m: Match[TSource] = Match(self)
+    return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
 <dt id="expression.core.Result.pipe"><code class="name flex">
@@ -1964,6 +2156,19 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
+        &#34;&#34;&#34;Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        &#34;&#34;&#34;
         return mapper(self._value)
 
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
@@ -1984,6 +2189,20 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         &#34;&#34;&#34;
         return self._value
 
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        print(&#34;__match__&#34;, pattern)
+
+        if self == pattern:
+            return [self.value]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
+
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
             return self._value == other._value  # type: ignore
@@ -1999,24 +2218,13 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <ul class="hlist">
 <li><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
 <li>abc.ABC</li>
+<li>expression.core.match.Matchable</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="expression.core.Some.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>[~TResult]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
-    return mapper(self._value)</code></pre>
-</details>
-</dd>
 <dt id="expression.core.Some.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -2118,6 +2326,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <ul class="hlist">
 <li><code><b><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
+<li><code><a title="expression.core.option.Option.bind" href="option.html#expression.core.option.Option.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Option.default_value" href="option.html#expression.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="option.html#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.value" href="option.html#expression.core.option.Option.value">value</a></code></li>
@@ -2194,6 +2403,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.failwith" href="#expression.core.failwith">failwith</a></code></li>
 <li><code><a title="expression.core.flip" href="#expression.core.flip">flip</a></code></li>
 <li><code><a title="expression.core.identity" href="#expression.core.identity">identity</a></code></li>
+<li><code><a title="expression.core.match" href="#expression.core.match">match</a></code></li>
 <li><code><a title="expression.core.pipe" href="#expression.core.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.pipe2" href="#expression.core.pipe2">pipe2</a></code></li>
 <li><code><a title="expression.core.pipe3" href="#expression.core.pipe3">pipe3</a></code></li>
@@ -2242,9 +2452,15 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </ul>
 </li>
 <li>
+<h4><code><a title="expression.core.Match" href="#expression.core.Match">Match</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Match.case" href="#expression.core.Match.case">case</a></code></li>
+<li><code><a title="expression.core.Match.default" href="#expression.core.Match.default">default</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="expression.core.Nothing_" href="#expression.core.Nothing_">Nothing_</a></code></h4>
 <ul class="two-column">
-<li><code><a title="expression.core.Nothing_.bind" href="#expression.core.Nothing_.bind">bind</a></code></li>
 <li><code><a title="expression.core.Nothing_.is_none" href="#expression.core.Nothing_.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.Nothing_.is_some" href="#expression.core.Nothing_.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.Nothing_.map" href="#expression.core.Nothing_.map">map</a></code></li>
@@ -2273,7 +2489,6 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.Option.is_some" href="#expression.core.Option.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.Option.map" href="#expression.core.Option.map">map</a></code></li>
 <li><code><a title="expression.core.Option.map2" href="#expression.core.Option.map2">map2</a></code></li>
-<li><code><a title="expression.core.Option.match" href="#expression.core.Option.match">match</a></code></li>
 <li><code><a title="expression.core.Option.or_else" href="#expression.core.Option.or_else">or_else</a></code></li>
 <li><code><a title="expression.core.Option.pipe" href="#expression.core.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.Option.to_list" href="#expression.core.Option.to_list">to_list</a></code></li>
@@ -2296,7 +2511,6 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li>
 <h4><code><a title="expression.core.Some" href="#expression.core.Some">Some</a></code></h4>
 <ul class="two-column">
-<li><code><a title="expression.core.Some.bind" href="#expression.core.Some.bind">bind</a></code></li>
 <li><code><a title="expression.core.Some.is_none" href="#expression.core.Some.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.Some.is_some" href="#expression.core.Some.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.Some.map" href="#expression.core.Some.map">map</a></code></li>
