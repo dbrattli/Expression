@@ -41,7 +41,8 @@ expressions, etc.
 F# is a functional programming language for .NET that is succinct
 (concise, readable and type-safe) and kind of
 [Pythonic](https://docs.python.org/3/glossary.html). F# looks a lot more
-like Python than C# and F# can also do a lot of things better than Python:
+like Python than C# and F# can also do a lot of things better than
+Python:
 
 - Strongly typed, if it compiles it usually works making refactoring
   much safer.
@@ -56,32 +57,6 @@ You can install the latest `expression` from PyPI by running `pip` (or
 ```sh
 $ pip3 install expression
 ```
-
-## Why
-
-- I love F#, and know F# quite well. I'm the creator of projects such as
-  [Oryx](https://github.com/cognitedata/oryx),
-  [Fable.Reaction](https://github.com/dbrattli/Fable.Reaction) and
-  [Feliz.ViewEngine](https://github.com/dbrattli/Feliz.ViewEngine)
-- I love Python, and know Python really well. I'm the creator of both
-  [RxPY](https://github.com/ReactiveX/RxPY) and
-  [OSlash](https://github.com/dbrattli/OSlash), two functional style
-  libraries for Python.
-
-For a long time I'm been wanting to make a "bridge" between these two
-languages and got inspired to write this library after watching "[F# as
-a Better Python](https://www.youtube.com/watch?v=_QnbV6CAWXc)" - Phillip
-Carter - NDC Oslo 2020. Doing a transpiler like
-[Fable](https://fable.io) for Python is one option, but a Python library
-may give a lower barrier and a better introduction to existing Python
-programmers.
-
-Expression is an F# inspired version of my previously written
-[OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I
-ported a number of Haskell abstractions to Python. I never felt that
-OSlash was really practically usable in Python, but F# is much closer to
-Python than Haskell, so it makes more sense to try and make a functional
-library inspired by F# instead.
 
 ## Goals
 
@@ -111,6 +86,10 @@ Expression will never provide you with all the features of F# and .NET. We are
 providing a few of the features we think are useful, and will add more
 on-demand as we go along.
 
+- **Pipelining** -
+- **Compisition** -
+- **Pattern Matching** -
+
 - **Option** - for optional stuff and better `None` handling.
 - **Result** - for better error handling and enables railway-oriented
   programming in Python.
@@ -130,11 +109,6 @@ on-demand as we go along.
 - **Cancellation Token**: for cancellation of asynchronous (and
   synchronous) workflows.
 - **Disposable**: For resource management.
-
-Pattern matching is provided by
-[Pampy](https://github.com/santinic/pampy), while we wait for [PEP
-634](https://www.python.org/dev/peps/pep-0634/) and structural pattern
-matching for Python.
 
 ### Pipelining
 
@@ -320,6 +294,52 @@ ys = pipe(
 assert ys == zs
 ```
 
+### Pattern Matching
+
+Pattern matching is tricky for a language like Python. We are waiting
+for [PEP 634](https://www.python.org/dev/peps/pep-0634/) and structural
+pattern matching for Python. But at the same time we need something to
+work safely with e.g optional values and results.
+
+Goals for pattern matching:
+
+- Type safe
+- Case handling is inline, i.e we can avoid lambdas which is great if we
+  e.g. want to write async code.
+- Unpacking of wrapped values
+- Pythonic. Is it possible?
+- Check multiple cases with default handling.
+
+The current solution is based on singleton iterables:
+
+```py
+  m = match("expression")
+
+  for _ in m.case("rxpy"):
+      assert False
+
+  for value in m.case("expression"):
+      assert value == "expression"
+
+  for value in m.case("aioreactive"):
+      assert False
+
+  for _ in m.default():
+      assert False
+```
+Classes may also support `match` with pattern directly, i.e: `xs.match(pattern)` is the same as `match(xs).case(pattern)`.
+
+```py
+  xs = Some(42)
+  ys = xs.map(lambda x: x + 1)
+
+  for value in ys.match(Some):
+      assert value == 43
+      break
+  else:
+      assert False
+```
+
 ## Notable Differences
 
 In F# you modules are capitalized, in Python they are lowercase
@@ -338,6 +358,32 @@ itself.
 >>> option
 <module 'expression.core.option' from '/Users/dbrattli/Developer/Github/Expression/expression/core/option.py'>
 ```
+
+## Why
+
+- I love F#, and know F# quite well. I'm the creator of projects such as
+  [Oryx](https://github.com/cognitedata/oryx),
+  [Fable.Reaction](https://github.com/dbrattli/Fable.Reaction) and
+  [Feliz.ViewEngine](https://github.com/dbrattli/Feliz.ViewEngine)
+- I love Python, and know Python really well. I'm the creator of both
+  [RxPY](https://github.com/ReactiveX/RxPY) and
+  [OSlash](https://github.com/dbrattli/OSlash), two functional style
+  libraries for Python.
+
+For a long time I'm been wanting to make a "bridge" between these two
+languages and got inspired to write this library after watching "[F# as
+a Better Python](https://www.youtube.com/watch?v=_QnbV6CAWXc)" - Phillip
+Carter - NDC Oslo 2020. Doing a transpiler like
+[Fable](https://fable.io) for Python is one option, but a Python library
+may give a lower barrier and a better introduction to existing Python
+programmers.
+
+Expression is an F# inspired version of my previously written
+[OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I
+ported a number of Haskell abstractions to Python. I never felt that
+OSlash was really practically usable in Python, but F# is much closer to
+Python than Haskell, so it makes more sense to try and make a functional
+library inspired by F# instead.
 
 ## Common Gotchas and Pitfalls
 
