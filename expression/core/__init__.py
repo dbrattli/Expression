@@ -9,6 +9,7 @@ from .curry import curried
 from .error import EffectError, failwith
 from .fn import TailCall, recursive, recursive_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
+from .match import Match, Matchable, match
 from .misc import flip, identity
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
@@ -26,6 +27,9 @@ __all__ = [
     "flip",
     "identity",
     "MailboxProcessor",
+    "match",
+    "Match",
+    "Matching",
     "Nothing",
     "Nothing_",
     "Ok",

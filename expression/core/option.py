@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
 
 from .error import EffectError
+from .match import Matchable
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
@@ -19,7 +20,7 @@ T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 
 
-class Option(Iterable[TSource], ABC):
+class Option(Iterable[TSource], ABC, Matchable[TSource]):
     """Option abstract base class."""
 
     @overload
@@ -50,11 +51,6 @@ class Option(Iterable[TSource], ABC):
         """Pipe option through the given functions."""
         return pipe(self, *args)
 
-    def match(self, *args: Any, **kw: Any) -> Any:
-        from pampy import match  # type: ignore
-
-        return match(self, *args, **kw)  # type: ignore
-
     def default_value(self, value: TSource) -> TSource:
         """Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
@@ -71,6 +67,19 @@ class Option(Iterable[TSource], ABC):
 
     @abstractmethod
     def bind(self, mapper: Callable[[TSource], "Option[TResult]"]) -> "Option[TResult]":
+        """Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -141,6 +150,19 @@ class Some(Option[TSource]):
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
+        """Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        """
         return mapper(self._value)
 
     def or_else(self, if_none: Option[TSource]) -> Option[TSource]:
@@ -160,6 +182,20 @@ class Some(Option[TSource]):
         A `ValueError` is raised if the option is `Nothing`.
         """
         return self._value
+
+    def __match__(self, pattern: Any) -> Iterable[TSource]:
+        print("__match__", pattern)
+
+        if self == pattern:
+            return [self.value]
+
+        try:
+            if isinstance(self, pattern):
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Some):
@@ -203,6 +239,19 @@ class Nothing_(Option[TSource], EffectError):
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
+        """Bind option.
+
+        Applies and returns the result of the mapper if the value is
+        `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an option and transforms it into an option containing a
+                value of type TResult.
+
+        Returns:
+            An option of the output type of the mapper.
+        """
         return Nothing
 
     def or_else(self, if_none: Option[TSource]) -> Option[TSource]:
@@ -223,6 +272,12 @@ class Nothing_(Option[TSource], EffectError):
         """
 
         raise ValueError("There is no value.")
+
+    def __match__(self, pattern: Any) -> Iterable[TSource]:
+        if self is pattern:
+            return [Nothing]
+
+        return []
 
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for the `Nothing` case.
@@ -254,6 +309,21 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 
 
 def bind(mapper: Callable[[TSource], Option[TResult]]) -> Callable[[Option[TSource]], Option[TResult]]:
+    """Bind option.
+
+    Applies and returns the result of the mapper if the value is
+    `Some`. If the value is `Nothing` then `Nothing` is returned.
+
+    Args:
+        mapper: A function that takes the value of type TSource from
+            an option and transforms it into an option containing a
+            value of type TResult.
+
+    Returns:
+        A partially applied function that takes an option and returns an
+        option of the output type of the mapper.
+    """
+
     def _bind(option: Option[TSource]) -> Option[TResult]:
         return option.bind(mapper)
 
