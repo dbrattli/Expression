@@ -347,6 +347,14 @@ know if it has found a match or not).
       assert False
 ```
 
+Pattern matching can also be used with destructuring of e.g iterables:
+
+```py
+xs: FrozenList[int] = empty.cons(42)
+for (head, *_) in xs.match(FrozenList):
+    assert head == 42
+```
+
 Classes may decide to support more advance pattern matching by
 subclassing or implementing the matching protocol:
 
