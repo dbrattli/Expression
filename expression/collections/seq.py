@@ -22,7 +22,7 @@ import itertools
 import sys
 from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar, overload
 
-from expression.core import Option, identity, pipe
+from expression.core import Match, Option, identity, pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -90,10 +90,17 @@ class Seq(Iterable[TSource]):
 
         return Seq(map(mapper)(self))
 
-    def match(self, *args: Any, **kw: Any) -> Any:
-        from pampy import match  # type: ignore
+    @overload
+    def match(self) -> "Match[TSource]":
+        ...
 
-        return match(self, *args, **kw)  # type: ignore
+    @overload
+    def match(self, pattern: Any) -> Iterable[Iterable[TSource]]:
+        ...
+
+    def match(self, pattern: Any) -> Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @overload
     def pipe(self, __fn1: Callable[["Seq[TSource]"], TResult]) -> TResult:

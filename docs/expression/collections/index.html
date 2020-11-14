@@ -108,10 +108,17 @@ operations mostly (<code>O(1)</code>).</p>
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
+    @overload
+    def match(self) -&gt; &#34;Match[TSource]&#34;:
+        ...
 
-        return match(self, *args, **kw)  # type: ignore
+    @overload
+    def match(self, pattern: Any) -&gt; Iterable[List[TSource]]:
+        ...
+
+    def match(self, pattern: Any) -&gt; Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;FrozenList[TSource]&#34;], TResult]) -&gt; TResult:
@@ -377,6 +384,18 @@ operations mostly (<code>O(1)</code>).</p>
             input lists.
         &#34;&#34;&#34;
         return FrozenList(builtins.zip(self, other))
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self == pattern:
+            return [[val for val in self]]
+
+        try:
+            if isinstance(self, pattern):
+                return [[val for val in self]]
+        except TypeError:
+            pass
+
+        return []
 
     def __str__(self) -&gt; str:
         return f&#34;[{&#39;, &#39;.join(self.map(str))}]&#34;
@@ -757,7 +776,7 @@ list.</dd>
 </details>
 </dd>
 <dt id="expression.collections.FrozenList.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -765,10 +784,9 @@ list.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
-    from pampy import match  # type: ignore
-
-    return match(self, *args, **kw)  # type: ignore</code></pre>
+<pre><code class="python">def match(self, pattern: Any) -&gt; Any:
+    m: Match[TSource] = Match(self)
+    return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.FrozenList.pipe"><code class="name flex">
@@ -1601,10 +1619,17 @@ sequences.</p>
 
         return Seq(map(mapper)(self))
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
+    @overload
+    def match(self) -&gt; &#34;Match[TSource]&#34;:
+        ...
 
-        return match(self, *args, **kw)  # type: ignore
+    @overload
+    def match(self, pattern: Any) -&gt; Iterable[Iterable[TSource]]:
+        ...
+
+    def match(self, pattern: Any) -&gt; Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], TResult]) -&gt; TResult:
@@ -1863,7 +1888,7 @@ collection.</p>
 </details>
 </dd>
 <dt id="expression.collections.Seq.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1871,10 +1896,9 @@ collection.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
-    from pampy import match  # type: ignore
-
-    return match(self, *args, **kw)  # type: ignore</code></pre>
+<pre><code class="python">def match(self, pattern: Any) -&gt; Any:
+    m: Match[TSource] = Match(self)
+    return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.Seq.pipe"><code class="name flex">

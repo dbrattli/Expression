@@ -86,9 +86,9 @@ Expression will never provide you with all the features of F# and .NET. We are
 providing a few of the features we think are useful, and will add more
 on-demand as we go along.
 
-- **Pipelining** -
-- **Compisition** -
-- **Pattern Matching** -
+- **Pipelining** - for creating workflows.
+- **Composition** - for composing and creating new operators
+- **Pattern Matching** - a better of testing than if-elif-else.
 
 - **Option** - for optional stuff and better `None` handling.
 - **Result** - for better error handling and enables railway-oriented
@@ -321,10 +321,10 @@ m = match("expression")
 for _ in m.case("rxpy"):
     assert False
 
-for value in m.case("expression"):
+for value in m.case(str):
     assert value == "expression"
 
-for value in m.case("aioreactive"):
+for value in m.case(float):
     assert False
 
 for _ in m.default():

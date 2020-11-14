@@ -31,6 +31,12 @@ def test_list_head_fluent():
     assert x == 42
 
 
+def test_list_head_match():
+    xs: FrozenList[int] = empty.cons(42)
+    for (head, *_) in xs.match(FrozenList):
+        assert head == 42
+
+
 @given(st.text(), st.text())
 def test_list_tail_head_fluent(a: str, b: str):
     xs = frozenlist.empty.cons(b).cons(a)

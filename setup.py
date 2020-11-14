@@ -38,7 +38,7 @@ setuptools.setup(
     python_requires=">=3.8",
     install_requires=[],
     setup_requires=["pytest-runner"],
-    tests_require=["pytest", "pytest-cov", "pytest-asyncio", "hypothesis", "pampy"],
+    tests_require=["pytest", "pytest-cov", "pytest-asyncio", "hypothesis"],
     package_data={"expression": ["py.typed"]},
     packages=setuptools.find_packages(),
     package_dir={"expression": "expression"},

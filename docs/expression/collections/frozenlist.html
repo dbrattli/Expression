@@ -64,9 +64,9 @@ Example:
 
 import builtins
 import functools
-from typing import Any, Callable, Iterable, Tuple, TypeVar, cast, overload
+from typing import Any, Callable, Iterable, List, Tuple, TypeVar, cast, overload
 
-from expression.core.option import Nothing, Option, Some, pipe
+from expression.core import Match, Nothing, Option, Some, pipe
 
 from . import seq
 
@@ -94,10 +94,17 @@ class FrozenList(Tuple[TSource]):
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
+    @overload
+    def match(self) -&gt; &#34;Match[TSource]&#34;:
+        ...
 
-        return match(self, *args, **kw)  # type: ignore
+    @overload
+    def match(self, pattern: Any) -&gt; Iterable[List[TSource]]:
+        ...
+
+    def match(self, pattern: Any) -&gt; Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;FrozenList[TSource]&#34;], TResult]) -&gt; TResult:
@@ -363,6 +370,18 @@ class FrozenList(Tuple[TSource]):
             input lists.
         &#34;&#34;&#34;
         return FrozenList(builtins.zip(self, other))
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self == pattern:
+            return [[val for val in self]]
+
+        try:
+            if isinstance(self, pattern):
+                return [[val for val in self]]
+        except TypeError:
+            pass
+
+        return []
 
     def __str__(self) -&gt; str:
         return f&#34;[{&#39;, &#39;.join(self.map(str))}]&#34;
@@ -1400,10 +1419,17 @@ operations mostly (<code>O(1)</code>).</p>
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
-    def match(self, *args: Any, **kw: Any) -&gt; Any:
-        from pampy import match  # type: ignore
+    @overload
+    def match(self) -&gt; &#34;Match[TSource]&#34;:
+        ...
 
-        return match(self, *args, **kw)  # type: ignore
+    @overload
+    def match(self, pattern: Any) -&gt; Iterable[List[TSource]]:
+        ...
+
+    def match(self, pattern: Any) -&gt; Any:
+        m: Match[TSource] = Match(self)
+        return m.case(pattern) if pattern else m
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;FrozenList[TSource]&#34;], TResult]) -&gt; TResult:
@@ -1669,6 +1695,18 @@ operations mostly (<code>O(1)</code>).</p>
             input lists.
         &#34;&#34;&#34;
         return FrozenList(builtins.zip(self, other))
+
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        if self == pattern:
+            return [[val for val in self]]
+
+        try:
+            if isinstance(self, pattern):
+                return [[val for val in self]]
+        except TypeError:
+            pass
+
+        return []
 
     def __str__(self) -&gt; str:
         return f&#34;[{&#39;, &#39;.join(self.map(str))}]&#34;
@@ -2049,7 +2087,7 @@ list.</dd>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.FrozenList.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, *args: Any, **kw: Any) ‑> Any</span>
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2057,10 +2095,9 @@ list.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, *args: Any, **kw: Any) -&gt; Any:
-    from pampy import match  # type: ignore
-
-    return match(self, *args, **kw)  # type: ignore</code></pre>
+<pre><code class="python">def match(self, pattern: Any) -&gt; Any:
+    m: Match[TSource] = Match(self)
+    return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.FrozenList.pipe"><code class="name flex">
