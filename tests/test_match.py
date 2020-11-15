@@ -1,8 +1,9 @@
-from expression.core import match
+from expression.core import Matcher, match
 
 
 def test_default_matches():
-    m = match(42)
+    m = Matcher.of(42)
+
     for value in m.default():
         assert value == 42
 
@@ -66,7 +67,7 @@ def test_match_isinstance():
 def test_not_match_isinstance():
     m = match(A())
 
-    for _ in m.case(B):
+    while m.case(B):
         assert False
     else:
         assert True
@@ -75,7 +76,7 @@ def test_not_match_isinstance():
 def test_match_multiple_cases():
     m = match("expression")
 
-    for _ in m.case("rxpy"):
+    while m.case("rxpy"):
         assert False
 
     for value in m.case(str):
@@ -84,18 +85,42 @@ def test_match_multiple_cases():
     for value in m.case("aioreactive"):
         assert False
 
-    for _ in m.default():
+    while m.default():
+        assert False
+
+
+def test_match_multiple_cases_return_value():
+    def matcher(value: str):
+        m = match(value)
+
+        while m.case("rxpy"):
+            assert False
+
+        for value in m.case(str):
+            assert value == "expression"
+            yield value
+
+        for value in m.case("aioreactive"):
+            assert False
+
+        while m.default():
+            assert False
+
+    for result in matcher("expression"):
+        assert result == "expression"
+        break
+    else:
         assert False
 
 
 def test_match_multiple_only_matches_first():
     m = match("expression")
 
-    for value in m.case("expression"):
+    for value in m.case(str):
         assert value == "expression"
 
-    for value in m.case("expression"):
+    for value in m.case(str):
         assert False
 
-    for _ in m.default():
+    while m.default():
         assert False

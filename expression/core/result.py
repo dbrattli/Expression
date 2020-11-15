@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Generator, Generic, Iterable, Iterator, Type, TypeVar, Union, overload
 
 from .error import EffectError
-from .match import Match
+from .match import Matcher
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
@@ -84,7 +84,7 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         ...
 
     def match(self, pattern: Any) -> Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod

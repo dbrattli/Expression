@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Generic, Iterable, Optional, Protocol, TypeVar, Union, cast, overload
+from typing import Any, Callable, Generator, Generic, Iterable, Optional, Protocol, TypeVar, Union, cast, overload
 
 TSource = TypeVar("TSource")
 
@@ -15,20 +15,26 @@ class Matchable(Protocol[TSource]):
         raise NotImplementedError
 
     @overload
-    def match(self) -> "Match[TSource]":
+    def match(self) -> "Matcher[TSource]":
         ...
 
     @overload
     def match(self, pattern: Any) -> Iterable[TSource]:
         ...
 
-    def match(self, pattern: Optional[Any]) -> "Union[Match[TSource], Iterable[TSource]]":
-        m: Match[TSource] = Match(self)
+    def match(self, pattern: Optional[Any]) -> "Union[Matcher[TSource], Iterable[TSource]]":
+        """Match with pattern.
+
+        NOTE: You most often need to add this methods plus the
+        appropriate overloads to your own matchable class to get typing
+        correctly."""
+
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
 
-class Match(Generic[TSource]):
-    """Pattern matching.
+class Matcher(Generic[TSource]):
+    """Pattern matcher.
 
     Matches a value with type, instance or uses matching protocol
     if supported by value.
@@ -39,10 +45,10 @@ class Match(Generic[TSource]):
         self.value = value
 
     def case(self, pattern: Any) -> Iterable[Any]:
-        value = self.value
-
         if self.is_matched:
             return []
+
+        value = self.value
 
         if hasattr(value, "__match__"):
             value_ = cast(Matchable[TSource], value)
@@ -65,13 +71,32 @@ class Match(Generic[TSource]):
             return []
         return [self.value]
 
+    @staticmethod
+    def of(value: TSource) -> "Matcher[TSource]":
+        """Convenience create method to get typing right"""
+        return Matcher(value)
+
     def __bool__(self):
         return self.is_matched
 
 
-def match(value: TSource) -> Match[TSource]:
-    """Convenience create method to get typing right"""
-    return Match(value)
+def match(value: TSource) -> Matcher[TSource]:
+    """Convenience create method to get typing right
+
+    Same as `Matcher.of(value)`
+    """
+    return Matcher(value)
 
 
-__all__ = ["match", "Match", "Matchable"]
+# def matcher(value: TSource) -> Callable[[Callable[..., Any]], Callable[[TSource], Generator[TSource, None, None]]]:
+#     def wrap(fn: Callable[..., Any]) -> Callable[..., Generator[TSource, None, None]]:
+#         def inner(*args: Any, **kw: Any) -> Generator[TSource, None, None]:
+#             m = Matcher.of(value)
+#             return fn(m, *args, **kw)
+
+#         return inner
+
+#     return wrap
+
+
+__all__ = ["match", "Matcher", "Matchable"]

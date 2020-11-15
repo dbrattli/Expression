@@ -294,42 +294,63 @@ assert ys == zs
 
 ### Pattern Matching
 
-Pattern matching is a bit tricky for a language like Python. We are
+Pattern matching is tricky for a language like Python. We are
 waiting for [PEP 634](https://www.python.org/dev/peps/pep-0634/) and
 structural pattern matching for Python. But we need something that can
 by handled by static type checkers and will also unwrap inner e.g
 optional values and results.
 
-Goals for pattern matching:
+What we want to achieve with pattern matching:
 
-- Type safety
+- Check multiple cases with default handling if no match is found.
+- Only one case will ever match. This reduces the cognitive load on the
+  programmer.
+- Type safety. We need the code to pass static type checkers.
+- Decomposing of wrapped values, e.g options and results.
 - Case handling must be inline, i.e we want to avoid lambdas which would
-  make things difficult for async code.
-- Unpacking of wrapped values, e.g options and results.
-- Pythonic. Is it possible?
-- Check multiple cases with default handling.
+  make things difficult for e.g async code.
+- Pythonic. Is it possible to use something that still looks like Python
+  code?
 
-The solution we propose is based on for-loops and singleton iterables.
-This lets us write code inline, unwrap inner values and also effectively
-skip cases that doesn't match.
+The solution we propose is based on loops, singleton iterables and
+generators. This lets us write our code inline, decompose and unwrap
+inner values, and also effectively skip the cases that doesn't match.
 
 ```py
 from expression.core import match
 
 m = match("expression")
 
-for _ in m.case("rxpy"):
+while m.case("rxpy"):  # will not match
     assert False
 
-for value in m.case(str):
+for value in m.case(str):  # will match
     assert value == "expression"
 
-for value in m.case(float):
+for value in m.case(float):  # will not match
     assert False
 
-for _ in m.default():
+while m.default():  # will run if any previous case does not match
       assert False
 ```
+
+Test cases may be additionally be wrapped in a generator to have a match
+expression that returns a value:
+
+```py
+def matcher(value):
+  m = match(value)
+
+  for value in m.case(Some):
+      yield 42
+
+  while m.default():
+      yield 43
+
+for result in matcher(42).
+    ...
+```
+
 Classes may also support `match` with pattern directly, i.e:
 `xs.match(pattern)` is effectively the same as
 `match(xs).case(pattern)`. For multiple cases you will need to use
@@ -355,8 +376,8 @@ for (head, *_) in xs.match(FrozenList):
     assert head == 42
 ```
 
-Classes may decide to support more advance pattern matching by
-subclassing or implementing the matching protocol:
+Classes can support more advance pattern matching and decompose inner
+values by subclassing or implementing the matching protocol:
 
 ```py
 class Matchable(Protocol[TSource]):
@@ -364,7 +385,7 @@ class Matchable(Protocol[TSource]):
 
     @abstractmethod
     def __match__(self, pattern: Any) -> Iterable[TSource]:
-        """Return a singleton iterable item (e.g `[ value ]`) if pattern
+        """Return a singleton iterable item (e.g `[value]`) if pattern
         matches, else an empty iterable (e.g. `[]`)."""
         raise NotImplementedError
 ```

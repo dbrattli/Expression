@@ -22,7 +22,7 @@ import builtins
 import functools
 from typing import Any, Callable, Iterable, List, Tuple, TypeVar, cast, overload
 
-from expression.core import Match, Nothing, Option, Some, pipe
+from expression.core import Matcher, Nothing, Option, Some, pipe
 
 from . import seq
 
@@ -51,7 +51,7 @@ class FrozenList(Tuple[TSource]):
     """
 
     @overload
-    def match(self) -> "Match[TSource]":
+    def match(self) -> "Matcher[TSource]":
         ...
 
     @overload
@@ -59,7 +59,7 @@ class FrozenList(Tuple[TSource]):
         ...
 
     def match(self, pattern: Any) -> Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
