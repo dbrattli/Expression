@@ -84,6 +84,10 @@ def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
     functions are composed left to right. A composition of zero
     functions gives back the identity function.
 
+    >>> x = 42
+    >>> f = lambda a: a * 10
+    >>> g = lambda b: b + 3
+    >>> h = lambda c: c / 2
     >>> compose()(x) == x
     >>> compose(f)(x) == f(x)
     >>> compose(f, g)(x) == g(f(x))
@@ -94,11 +98,11 @@ def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
         The composed function.
     """
 
-    def compose(source: Any) -> Any:
+    def _compose(source: Any) -> Any:
         """Return a pipeline of composed functions."""
         return reduce(lambda acc, f: f(acc), fns, source)
 
-    return compose
+    return _compose
 
 
 __all__ = ["compose"]

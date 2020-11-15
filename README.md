@@ -73,8 +73,8 @@ $ pip3 install expression
     more than it helps.
   - Avoid recursion. Recursion is not normally used in Python and any
     use of it should be hidden within the SDK.
-- Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
-  functions and methods.
+- Provide [type-hints](https://docs.python.org/3/library/typing.html)
+  for all functions and methods.
 - Code must pass strict static type checking by
   [mypy](http://mypy-lang.org/) and
   [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
@@ -88,7 +88,7 @@ on-demand as we go along.
 
 - **Pipelining** - for creating workflows.
 - **Composition** - for composing and creating new operators
-- **Pattern Matching** - a better of testing than if-elif-else.
+- **Pattern Matching** - a better way of flow control than if-elif-else.
 
 - **Option** - for optional stuff and better `None` handling.
 - **Result** - for better error handling and enables railway-oriented
@@ -373,8 +373,9 @@ class Matchable(Protocol[TSource]):
 
 In F# you modules are capitalized, in Python they are lowercase
 ([PEP-8](https://www.python.org/dev/peps/pep-0008/#package-and-module-names)).
-E.g in F# `Option` is both a module (`OptionModule` internally) and a type. In Python the module is
-`option` and the type is capitalized i.e `Option`.
+E.g in F# `Option` is both a module (`OptionModule` internally) and a
+type. In Python the module is `option` and the type is capitalized i.e
+`Option`.
 
 Thus in Expression you use `option` as the module to access module
 functions such as `option.map` and the name `Option` for the type
@@ -436,12 +437,13 @@ for creating this library.
   (https://www.youtube.com/watch?v=_QnbV6CAWXc)
 - OSlash (https://github.com/dbrattli/OSlash)
 - RxPY (https://github.com/ReactiveX/RxPY)
-- PEP 8 -- Style Guide for Python Code (Style Guide for Python Code)
+- PEP 8 -- Style Guide for Python Code (https://www.python.org/dev/peps/pep-0008/)
 - PEP 342 -- Coroutines via Enhanced Generators
   (https://www.python.org/dev/peps/pep-0342/)
 - PEP 380 -- Syntax for Delegating to a Subgenerator
   (https://www.python.org/dev/peps/pep-0380)
-- PEP 479 -- Change StopIteration handling inside generators
+- PEP 479 -- Change StopIteration handling inside generators (https://www.python.org/dev/peps/pep-0479/)
+- PEP 634 -- Structural Pattern Matching (https://www.python.org/dev/peps/pep-0634/)
 - Thunks, Trampolines and Continuation Passing
   (https://jtauber.com/blog/2008/03/30/thunks,_trampolines_and_continuation_passing/)
 - Tail Recursion Elimination

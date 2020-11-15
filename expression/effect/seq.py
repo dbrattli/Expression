@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, TypeVar
+from typing import Callable, Iterable, TypeVar
 
 from expression.collections import seq
 from expression.core import Builder, identity

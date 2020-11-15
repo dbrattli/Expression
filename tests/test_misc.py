@@ -1,8 +1,6 @@
 from typing import Any, List
 
 from expression.core.misc import downcast, try_upcast, upcast
-from hypothesis import given
-from hypothesis import strategies as st
 
 
 class Base:

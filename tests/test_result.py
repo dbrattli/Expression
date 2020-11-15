@@ -2,13 +2,12 @@ from typing import Callable, Generator, List, Optional
 
 import pytest
 from expression import effect
-from expression.core import Error, Ok, Result, match, result
-from expression.core.result import ResultException
+from expression.core import Error, Ok, Result, result
 from expression.extra.result import sequence
 from hypothesis import given
 from hypothesis import strategies as st
 
-from .utils import CustomException, throw
+from .utils import CustomException
 
 
 def test_result_ok():
@@ -48,11 +47,12 @@ def test_result_error():
 
 
 def test_result_error_iterate():
-    with pytest.raises(Error) as excinfo:
-        for x in Error("err"):
-            assert x == 42
+    with pytest.raises(Error) as excinfo:  # type: ignore
+        error: Error[int, str] = Error("err")
+        for _ in error:
+            assert False
 
-    assert excinfo.value.error == "err"
+    assert excinfo.value.error == "err"  # type: ignore
 
 
 @given(st.integers(), st.integers())

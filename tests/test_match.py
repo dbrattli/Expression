@@ -78,7 +78,7 @@ def test_match_multiple_cases():
     for _ in m.case("rxpy"):
         assert False
 
-    for value in m.case("expression"):
+    for value in m.case(str):
         assert value == "expression"
 
     for value in m.case("aioreactive"):

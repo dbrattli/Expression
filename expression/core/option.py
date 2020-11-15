@@ -112,7 +112,8 @@ class Option(Iterable[TSource], ABC, Matchable[TSource]):
     def __repr__(self) -> str:
         return self.__str__()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def value(self) -> TSource:
         """Returns the value wrapped by the option.
 
@@ -286,7 +287,8 @@ class Nothing_(Option[TSource], EffectError):
         something to signal fail.
         """
         raise Nothing
-        yield
+        while False:
+            yield
 
     def __eq__(self, other: Any) -> bool:
         if other is Nothing:

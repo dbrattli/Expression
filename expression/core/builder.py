@@ -60,7 +60,7 @@ class Builder(Generic[TOuter, TInner], ABC):
 
         Enables the use of computational expressions using coroutines.
         Thus inside the coroutine the keywords `yield` and `yield from`
-        reasembles `yield` and `yield!` from F#.
+        reassembles `yield` and `yield!` from F#.
 
         Args:
             fn: A function that contains a computational expression and

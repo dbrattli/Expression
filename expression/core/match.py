@@ -1,10 +1,7 @@
 from abc import abstractmethod
-from typing import (Any, Generic, Iterable, Protocol, TypeVar, Union, cast,
-                    overload)
+from typing import Any, Generic, Iterable, Optional, Protocol, TypeVar, Union, cast, overload
 
 TSource = TypeVar("TSource")
-
-TG = Generic
 
 
 class Matchable(Protocol[TSource]):
@@ -25,7 +22,7 @@ class Matchable(Protocol[TSource]):
     def match(self, pattern: Any) -> Iterable[TSource]:
         ...
 
-    def match(self, pattern: Any) -> Any:
+    def match(self, pattern: Optional[Any]) -> "Union[Match[TSource], Iterable[TSource]]":
         m: Match[TSource] = Match(self)
         return m.case(pattern) if pattern else m
 
@@ -41,7 +38,7 @@ class Match(Generic[TSource]):
         self.is_matched = False
         self.value = value
 
-    def case(self, pattern: Any) -> Iterable[TSource]:
+    def case(self, pattern: Any) -> Iterable[Any]:
         value = self.value
 
         if self.is_matched:

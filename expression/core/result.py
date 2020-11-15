@@ -211,7 +211,8 @@ class Error(Result[TSource, TError], ResultException):
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for Error case."""
         raise Error(self._error)
-        yield
+        while False:
+            yield
 
     def __str__(self):
         return f"Error {self._error}"

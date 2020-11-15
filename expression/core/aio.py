@@ -38,10 +38,10 @@ def from_continuations(
     def done(value: TSource) -> None:
         future.set_result(value)
 
-    def error(error: Exception) -> None:
-        future.set_exception(error)
+    def error(err: Exception) -> None:
+        future.set_exception(err)
 
-    def cancel(cancel: OperationCanceledError) -> None:
+    def cancel(_: OperationCanceledError) -> None:
         future.cancel()
 
     callback(done, error, cancel)
@@ -100,6 +100,7 @@ async def _empty() -> None:
 empty: Awaitable[None] = _empty()
 
 __all__ = [
+    "Continuation",
     "empty",
     "from_continuations",
     "singleton",

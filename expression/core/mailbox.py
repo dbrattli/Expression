@@ -33,12 +33,12 @@ class AsyncReplyChannel(Generic[Reply]):
 
 
 class MailboxProcessor(Generic[Msg]):
-    def __init__(self, cancellationToken: Optional[CancellationToken]) -> None:
+    def __init__(self, cancellation_token: Optional[CancellationToken]) -> None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
         self.continuation: Optional[
             Continuation[Msg]
         ] = None  # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
-        self.token = cancellationToken or CancellationToken.none()
+        self.token = cancellation_token or CancellationToken.none()
         self.lock = RLock()
         self.loop = asyncio.get_event_loop()
 
@@ -88,9 +88,7 @@ class MailboxProcessor(Generic[Msg]):
         self.messages.put(build_message(reply_channel))
         self.__process_events()
 
-        def callback(
-            done: Continuation[Reply], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
-        ):
+        def callback(done: Continuation[Reply], _: Continuation[Exception], __: Continuation[OperationCanceledError]):
             nonlocal continuation
             continuation = done
             check_completion()
@@ -135,3 +133,6 @@ class MailboxProcessor(Generic[Msg]):
         mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
         start_immediate(body(mbox), cancellation_token)
         return mbox
+
+
+__all__ = ["AsyncReplyChannel", "MailboxProcessor"]

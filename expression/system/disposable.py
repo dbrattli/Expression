@@ -64,7 +64,7 @@ class AsyncDisposable(ABC):
 
     @abstractmethod
     async def dispose_async(self) -> None:
-        return NotImplemented
+        raise NotImplementedError
 
     async def __aenter__(self) -> "AsyncDisposable":
         """Enter context management."""

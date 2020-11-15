@@ -349,29 +349,7 @@ def test_option_builder_throws():
         raise CustomException(error)
         yield
 
-    with pytest.raises(CustomException) as ex:  # type: ignore
+    with pytest.raises(CustomException) as ex:
         fn()
 
     assert ex.value.message == error
-
-
-"""
-Idea: for applicative
-def gather(a, b):
-    return a
-
-
-def test_option_builder_applicative():
-    @effect.option
-    def fn():
-        x, y = yield from gather(Some(2), Some(43))
-
-        return x + y
-
-    xs = fn()
-    assert match(
-        xs,
-        Some, lambda some: some.value,
-        _, None
-    ) is None
- """

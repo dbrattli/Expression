@@ -10,6 +10,7 @@ class TailCall(Ok[TResult, Exception]):
     """Returns a tail call."""
 
     def __init__(self, *args: Any, **kw: Any):
+        super().__init__(args)  # Keep linters happy.
         self.args = args
         self.kw = kw
 

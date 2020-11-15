@@ -21,6 +21,9 @@ class ResultBuilder(Builder[Result[TSource, TError], TSource]):
         binder: Callable[[Any], Result[TSource, TError]] = lambda _: ys
         return pipe(xs, result.bind(binder))
 
+    def zero(self) -> Result[TSource, TError]:
+        raise NotImplementedError
+
 
 result_effect: ResultBuilder[Any, Any] = ResultBuilder()
 
