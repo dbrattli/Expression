@@ -187,10 +187,12 @@ class Map(Generic[Key, Value]):
         return maptree.to_seq(self._tree)
 
     @overload
+    @staticmethod
     def of_list(lst: FrozenList[Tuple[Key, Value]]) -> "Map[Key, Value]":
         ...
 
     @overload
+    @staticmethod
     def of_list(lst: List[Tuple[Key, Value]]) -> "Map[Key, Value]":
         ...
 
@@ -257,7 +259,9 @@ class Map(Generic[Key, Value]):
 
 
 def add(key: Key, value: Value) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
-    """Returns a new map with the binding added to the given map. If a
+    """Add key with value to map.
+
+    Returns a new map with the binding added to the given map. If a
     binding with the given key already exists in the input map, the
     existing binding is replaced by the new binding in the result
     map.
@@ -265,13 +269,26 @@ def add(key: Key, value: Value) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
     Args:
         key: The input key.
         value: The input value.
-        table: The input table.
 
     Returns:
-        The resulting map.
+        A partially applied add function that takes the input map and returns
+        the output map.
     """
 
     def _add(table: Map[Key, Value]) -> Map[Key, Value]:
+        """Add the partially applied key with value to map.
+
+        Returns a new map with the binding added to the given map. If a
+        binding with the given key already exists in the input map, the
+        existing binding is replaced by the new binding in the result
+        map.
+
+        Args:
+            table: The input table.
+
+        Returns:
+            The resulting map.
+        """
         return table.add(key, value)
 
     return _add

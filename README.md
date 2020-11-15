@@ -172,7 +172,6 @@ custom = compose(
 )
 
 ys = custom(xs)
-
 ```
 
 ### Options
@@ -312,9 +311,9 @@ What we want to achieve with pattern matching:
 - Pythonic. Is it possible to use something that still looks like Python
   code?
 
-The solution we propose is based on loops, singleton iterables and
-generators. This lets us write our code inline, decompose and unwrap
-inner values, and also effectively skip the cases that doesn't match.
+The solution we propose is based on loops, singleton and iterables. This
+lets us write our code inline, decompose and unwrap inner values, and
+also effectively skip the cases that doesn't match.
 
 ```py
 from expression.core import match
@@ -334,7 +333,7 @@ while m.default():  # will run if any previous case does not match
       assert False
 ```
 
-Test cases may be additionally be wrapped in a generator to have a match
+Test cases may be additionally be wrapped in a function to have a match
 expression that returns a value:
 
 ```py
@@ -342,13 +341,12 @@ def matcher(value):
   m = match(value)
 
   for value in m.case(Some):
-      yield 42
+      return 42
 
   while m.default():
-      yield 43
+      return 43
 
-for result in matcher(42).
-    ...
+result = matcher(42).
 ```
 
 Classes may also support `match` with pattern directly, i.e:
@@ -358,14 +356,14 @@ Classes may also support `match` with pattern directly, i.e:
 know if it has found a match or not).
 
 ```py
-  xs = Some(42)
-  ys = xs.map(lambda x: x + 1)
+        xs = Some(42)
+    ys = xs.map(lambda x: x + 1)
 
-  for value in ys.match(Some):
-      assert value == 43
-      break
-  else:
-      assert False
+    for value in ys.match(Some):
+        assert value == 43
+        break
+    else:
+        assert False
 ```
 
 Pattern matching can also be used with destructuring of e.g iterables:

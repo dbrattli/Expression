@@ -90,7 +90,7 @@ def test_match_multiple_cases():
 
 
 def test_match_multiple_cases_return_value():
-    def matcher(value: str):
+    def matcher(value: str) -> str:
         m = match(value)
 
         while m.case("rxpy"):
@@ -98,7 +98,7 @@ def test_match_multiple_cases_return_value():
 
         for value in m.case(str):
             assert value == "expression"
-            yield value
+            return value
 
         for value in m.case("aioreactive"):
             assert False
@@ -106,11 +106,8 @@ def test_match_multiple_cases_return_value():
         while m.default():
             assert False
 
-    for result in matcher("expression"):
-        assert result == "expression"
-        break
-    else:
-        assert False
+    result = matcher("expression")
+    assert result == "expression"
 
 
 def test_match_multiple_only_matches_first():

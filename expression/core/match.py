@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Callable, Generator, Generic, Iterable, Optional, Protocol, TypeVar, Union, cast, overload
+from typing import Any, Generic, Iterable, Optional, Protocol, TypeVar, Union, cast, overload
 
 TSource = TypeVar("TSource")
 
@@ -22,7 +22,7 @@ class Matchable(Protocol[TSource]):
     def match(self, pattern: Any) -> Iterable[TSource]:
         ...
 
-    def match(self, pattern: Optional[Any]) -> "Union[Matcher[TSource], Iterable[TSource]]":
+    def match(self, pattern: Optional[Any] = None) -> "Union[Matcher[TSource], Iterable[TSource]]":
         """Match with pattern.
 
         NOTE: You most often need to add this methods plus the

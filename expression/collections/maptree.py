@@ -185,9 +185,9 @@ def partition1(
 ) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     (acc1, acc2) = acc
     if predicate(k, v):
-        return (add(k, v, acc1), acc2)
+        return add(k, v, acc1), acc2
     else:
-        return (acc1, add(k, v, acc2))
+        return acc1, add(k, v, acc2)
 
 
 def partition_aux(
@@ -244,12 +244,12 @@ def splice_out_successor(m: MapTree[Key, Value]) -> Tuple[Key, Value, Option[Map
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
             if is_empty(mn.left):
-                return (mn.key, mn.value, mn.right)
+                return mn.key, mn.value, mn.right
             else:
                 k3, v3, l_ = splice_out_successor(mn.left)
-                return (k3, v3, mk(l_, mn.key, mn.value, mn.right))
+                return k3, v3, mk(l_, mn.key, mn.value, mn.right)
         else:
-            return (m2.key, m2.value, empty)
+            return m2.key, m2.value, empty
     else:  # Nothing
         failwith("internal error: Map.splice_out_successor")
 
