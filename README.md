@@ -332,8 +332,9 @@ with match("expression") as m:
         assert False
 ```
 
-Using `match` as a context manager will make sure that a case was
-actually handled, so you will always need a default handler.
+Using `match` as a context manager will make sure that a case was found.
+You might need need to have a default handler to avoid
+`MatchFailureError`.
 
 Test cases may be additionally be wrapped in a function to have a match
 expression that returns a value:

@@ -65,8 +65,9 @@ def test_not_match_isinstance():
     with match(A()) as m:
         while m.case(B):
             assert False
-        else:
-            assert m.default()
+
+        while m.default():
+            assert True
 
 
 def test_match_multiple_cases():
@@ -100,7 +101,7 @@ def test_match_multiple_cases_return_value():
             while m.default():
                 assert False
 
-            return Nothing
+        return Nothing
 
     result = matcher("expression")
     assert result.value == "expression"

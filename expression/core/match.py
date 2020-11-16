@@ -86,13 +86,11 @@ class Matcher(Generic[TSource]):
 
     def __exit__(
         self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
-    ):
+    ) -> None:
         """Exit context management."""
 
         if not self.is_matched:
             raise MatchFailureError(self.value)
-
-        return False
 
     def __bool__(self):
         return self.is_matched
