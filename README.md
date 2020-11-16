@@ -332,16 +332,22 @@ with match("expression") as m:
         assert False
 ```
 
+Using `match` as a context manager will make sure that a case was
+actually handled, so you will always need a default handler.
+
 Test cases may be additionally be wrapped in a function to have a match
 expression that returns a value:
 
 ```py
-def matcher(value):
-    with match(value) as Option[m]:
+def matcher(value) -> Option[int]:
+    with match(value) as m:
         for value in m.case(Some):
             return Some(42)
 
-        return Nothing
+        while m.default():
+            return Some(2)
+
+    return Nothing
 
 result = matcher(42).
 ```
