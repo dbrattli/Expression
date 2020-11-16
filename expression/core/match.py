@@ -1,5 +1,8 @@
 from abc import abstractmethod
-from typing import Any, Generic, Iterable, Optional, Protocol, TypeVar, Union, cast, overload
+from types import TracebackType
+from typing import Any, Generic, Iterable, Optional, Protocol, Type, TypeVar, Union, cast, overload
+
+from .error import MatchFailureError
 
 TSource = TypeVar("TSource")
 
@@ -69,12 +72,27 @@ class Matcher(Generic[TSource]):
     def default(self) -> Iterable[Union[Any, Matchable[TSource]]]:
         if self.is_matched:
             return []
+        self.is_matched = True
         return [self.value]
 
     @staticmethod
     def of(value: TSource) -> "Matcher[TSource]":
         """Convenience create method to get typing right"""
         return Matcher(value)
+
+    def __enter__(self) -> "Matcher[TSource]":
+        """Enter context management."""
+        return self
+
+    def __exit__(
+        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+    ):
+        """Exit context management."""
+
+        if not self.is_matched:
+            raise MatchFailureError(self.value)
+
+        return False
 
     def __bool__(self):
         return self.is_matched

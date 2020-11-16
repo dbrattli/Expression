@@ -318,19 +318,18 @@ also effectively skip the cases that doesn't match.
 ```py
 from expression.core import match
 
-m = match("expression")
+with match("expression") as m:
+    while m.case("rxpy"):  # will not match
+        assert False
 
-while m.case("rxpy"):  # will not match
-    assert False
+    for value in m.case(str):  # will match
+        assert value == "expression"
 
-for value in m.case(str):  # will match
-    assert value == "expression"
+    for value in m.case(float):  # will not match
+        assert False
 
-for value in m.case(float):  # will not match
-    assert False
-
-while m.default():  # will run if any previous case does not match
-      assert False
+    while m.default():  # will run if any previous case does not match
+        assert False
 ```
 
 Test cases may be additionally be wrapped in a function to have a match
@@ -338,13 +337,11 @@ expression that returns a value:
 
 ```py
 def matcher(value):
-  m = match(value)
+    with match(value) as Option[m]:
+        for value in m.case(Some):
+            return Some(42)
 
-  for value in m.case(Some):
-      return 42
-
-  while m.default():
-      return 43
+        return Nothing
 
 result = matcher(42).
 ```
@@ -356,7 +353,7 @@ Classes may also support `match` with pattern directly, i.e:
 know if it has found a match or not).
 
 ```py
-        xs = Some(42)
+    xs = Some(42)
     ys = xs.map(lambda x: x + 1)
 
     for value in ys.match(Some):

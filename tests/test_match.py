@@ -1,4 +1,4 @@
-from expression.core import Matcher, match
+from expression.core import Matcher, Nothing, Option, Some, match
 
 
 def test_default_matches():
@@ -9,41 +9,39 @@ def test_default_matches():
 
 
 def test_match_type():
-    m = match(42)
-
-    for value in m.case(int):
-        assert value == 42
-        break
-    else:
-        assert False
+    with match(42) as m:
+        for value in m.case(int):
+            assert value == 42
+            break
+        else:
+            assert False
 
 
 def test_not_match_type():
-    m = match(42)
+    with match(42) as m:
+        while m.case(float):
+            assert False
 
-    for _ in m.case(float):
-        assert False
-    else:
-        assert True
+        while m.default():
+            assert True
 
 
 def test_match_instance():
-    m = match(42)
-
-    for value in m.case(42):
-        assert value == 42
-        break
-    else:
-        assert False
+    with match(42) as m:
+        for value in m.case(42):
+            assert value == 42
+            break
+        else:
+            assert False
 
 
 def test_not_match_instance():
-    m = match(42)
+    with match(42) as m:
+        while m.case(43):
+            assert False
 
-    for _ in m.case(43):
-        assert False
-    else:
-        assert True
+        while m.default():
+            assert True
 
 
 class A:
@@ -55,69 +53,66 @@ class B(A):
 
 
 def test_match_isinstance():
-    m = match(B())
-
-    for _ in m.case(A):
-        assert True
-        break
-    else:
-        assert False
+    with match(B()) as m:
+        for _ in m.case(A):
+            assert True
+            break
+        else:
+            assert False
 
 
 def test_not_match_isinstance():
-    m = match(A())
-
-    while m.case(B):
-        assert False
-    else:
-        assert True
+    with match(A()) as m:
+        while m.case(B):
+            assert False
+        else:
+            assert m.default()
 
 
 def test_match_multiple_cases():
-    m = match("expression")
-
-    while m.case("rxpy"):
-        assert False
-
-    for value in m.case(str):
-        assert value == "expression"
-
-    for value in m.case("aioreactive"):
-        assert False
-
-    while m.default():
-        assert False
-
-
-def test_match_multiple_cases_return_value():
-    def matcher(value: str) -> str:
-        m = match(value)
-
+    with match("expression") as m:
         while m.case("rxpy"):
             assert False
 
         for value in m.case(str):
             assert value == "expression"
-            return value
 
-        for value in m.case("aioreactive"):
+        for value in m.case(float):
             assert False
 
         while m.default():
             assert False
 
+
+def test_match_multiple_cases_return_value():
+    def matcher(value: str) -> Option[str]:
+        with match(value) as m:
+            while m.case("rxpy"):
+                assert False
+
+            for value in m.case(str):
+                assert value == "expression"
+                return Some(value)
+
+            for value in m.case("aioreactive"):
+                assert False
+
+            while m.default():
+                assert False
+
+            return Nothing
+
     result = matcher("expression")
-    assert result == "expression"
+    assert result.value == "expression"
 
 
 def test_match_multiple_only_matches_first():
-    m = match("expression")
+    with match("expression") as m:
+        for value in m.case(str):
+            assert value == "expression"
 
-    for value in m.case(str):
-        assert value == "expression"
+        for value in m.case(str):
+            assert False
 
-    for value in m.case(str):
-        assert False
-
-    while m.default():
-        assert False
+        while m.default():
+            assert False

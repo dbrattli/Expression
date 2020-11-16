@@ -1,4 +1,4 @@
-from typing import NoReturn
+from typing import Any, NoReturn
 
 
 class EffectError(Exception):
@@ -7,6 +7,14 @@ class EffectError(Exception):
     We use this to detect if sub-generators causes an exit, since
     yielding nothing will be silently ignored.
     """
+
+
+class MatchFailureError(Exception):
+    """Pattern match failure error."""
+
+    def __init__(self, expr: Any):
+        msg = f"Incomplete pattern matches on this expression. {expr} did not match any cases."
+        super().__init__(msg)
 
 
 def failwith(message: str) -> NoReturn:

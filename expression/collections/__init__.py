@@ -7,6 +7,7 @@ from .map import Map
 from .seq import Seq
 
 __all__ = [
+    "asyncseq",
     "FrozenList",
     "frozenlist",
     "Map",
