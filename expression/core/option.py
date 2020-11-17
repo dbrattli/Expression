@@ -286,7 +286,7 @@ class Nothing_(Option[TSource], EffectError):
         We basically want to return nothing, but we have to return
         something to signal fail.
         """
-        raise Nothing
+        raise cast(Nothing_[TSource], Nothing)
         while False:
             yield
 
@@ -301,7 +301,7 @@ class Nothing_(Option[TSource], EffectError):
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
 # avoid conflicts with the builtin `None` value.
-Nothing: Nothing_[Any] = Nothing_()
+Nothing: Option[Any] = Nothing_()
 """Singleton `Nothing` object.
 
 Since Nothing is a singleton it can be tested e.g using `is`:

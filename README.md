@@ -5,13 +5,13 @@
 ![Upload Python Package](https://github.com/dbrattli/expression/workflows/Upload%20Python%20Package/badge.svg)
 [![codecov](https://codecov.io/gh/dbrattli/expression/branch/master/graph/badge.svg)](https://codecov.io/gh/dbrattli/expression)
 
-> *Expressions evaluates to a value. Statements do something.*
+> Pragmatic functional programming
 
-Expression aims to be a solid, type safe and high performance library
-for practical functional programming in Python 3.8+. By practical we
-mean that the goal of the library is to use simple abstractions to
-enable you to do productive and meaningful functional programming in
-Python (instead of being a [Monad
+Expression aims to be a solid, type safe, pragmatic and high performance
+library for practical functional programming in Python 3.8+. By
+pragmatic we mean that the goal of the library is to use simple
+abstractions to enable you to do practical and productive functional
+programming in Python (instead of being a [Monad
 tutorial](https://github.com/dbrattli/OSlash)).
 
 Python is a multi-paradigm programming language that also supports
@@ -43,6 +43,8 @@ F# is a functional programming language for .NET that is succinct
 [Pythonic](https://docs.python.org/3/glossary.html). F# looks a lot more
 like Python than C# and F# can also do a lot of things better than
 Python:
+
+*Expressions evaluates to a value. Statements do something.*
 
 - Strongly typed, if it compiles it usually works making refactoring
   much safer.
@@ -311,7 +313,7 @@ What we want to achieve with pattern matching:
 - Pythonic. Is it possible to use something that still looks like Python
   code?
 
-The solution we propose is based on loops, singleton and iterables. This
+The solution we propose is based on loops, and singleton iterables. This
 lets us write our code inline, decompose and unwrap inner values, and
 also effectively skip the cases that doesn't match.
 
@@ -332,8 +334,8 @@ with match("expression") as m:
         assert False
 ```
 
-Using `match` as a context manager will make sure that a case was found.
-You might need need to have a default handler to avoid
+Using `match` as a context manager will make sure that a case was
+actually found. You might need need to have a default handler to avoid
 `MatchFailureError`.
 
 Test cases may be additionally be wrapped in a function to have a match
@@ -374,7 +376,7 @@ Pattern matching can also be used with destructuring of e.g iterables:
 
 ```py
 xs: FrozenList[int] = empty.cons(42)
-for (head, *_) in xs.match(FrozenList):
+for (head, *tail) in xs.match(FrozenList):
     assert head == 42
 ```
 
@@ -386,7 +388,7 @@ class Matchable(Protocol[TSource]):
     """Pattern matching protocol."""
 
     @abstractmethod
-    def __match__(self, pattern: Any) -> Iterable[TSource]:
+    def __match__(s elf, pattern: Any) -> Iterable[TSource]:
         """Return a singleton iterable item (e.g `[value]`) if pattern
         matches, else an empty iterable (e.g. `[]`)."""
         raise NotImplementedError

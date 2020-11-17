@@ -10,7 +10,7 @@ from .error import EffectError, failwith
 from .fn import TailCall, recursive, recursive_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .match import Matchable, Matcher, match
-from .misc import flip, identity
+from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
@@ -25,6 +25,7 @@ __all__ = [
     "Error",
     "failwith",
     "flip",
+    "fst",
     "identity",
     "MailboxProcessor",
     "match",
@@ -42,6 +43,7 @@ __all__ = [
     "recursive_async",
     "result",
     "Result",
+    "snd",
     "Some",
     "TailCall",
 ]

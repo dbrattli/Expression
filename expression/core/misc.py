@@ -75,4 +75,16 @@ def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
     return _
 
 
-__all__ = ["identity", "starid", "flip"]
+def snd(value: Tuple[A, B]) -> B:
+    """Return second argument of tuple."""
+    _, b = value
+    return b
+
+
+def fst(value: Tuple[A, B]) -> A:
+    """Return first argument of tuple."""
+    a, _ = value
+    return a
+
+
+__all__ = ["fst", "identity", "starid", "flip", "snd"]

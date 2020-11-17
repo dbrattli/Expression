@@ -92,12 +92,10 @@ async def sleep(msecs: int) -> None:
     return await asyncio.sleep(msecs / 1000.0)
 
 
-async def _empty() -> None:
+async def empty() -> None:
     """Async no-op"""
     pass
 
-
-empty: Awaitable[None] = _empty()
 
 __all__ = [
     "Continuation",
