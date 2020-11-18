@@ -18,7 +18,7 @@ from typing import Any, Awaitable, Callable, Generic, Optional, TypeVar
 
 from expression.system import CancellationToken, OperationCanceledError
 
-from .aio import Continuation, from_continuations, start_immediate
+from .aiotools import Continuation, from_continuations, start_immediate
 
 Msg = TypeVar("Msg")
 Reply = TypeVar("Reply")

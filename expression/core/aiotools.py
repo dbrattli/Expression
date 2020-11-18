@@ -1,4 +1,4 @@
-"""The aio (async) module.
+"""The aiotools (async) module.
 
 The aio (asyncio) module contains asynchronous utility functions for
 working with async / await.

@@ -2,7 +2,7 @@
 Core abstractions such as pipes, options and results.
 """
 
-from . import aio, option, result
+from . import aiotools, option, result
 from .builder import Builder
 from .compose import compose
 from .curry import curried
@@ -16,7 +16,7 @@ from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
 
 __all__ = [
-    "aio",
+    "aiotools",
     "AsyncReplyChannel",
     "Builder",
     "compose",
