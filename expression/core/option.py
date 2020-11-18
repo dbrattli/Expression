@@ -6,7 +6,8 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
+from typing import (Any, Callable, Generator, Iterable, Iterator, List,
+                    Optional, TypeVar, cast, overload)
 
 from .error import EffectError
 from .match import Matchable
@@ -301,7 +302,8 @@ class Nothing_(Option[TSource], EffectError):
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
 # avoid conflicts with the builtin `None` value.
-Nothing: Option[Any] = Nothing_()
+# Note to self: Must be of type `Nothing_` or pattern matching will not work.
+Nothing: Nothing_[Any] = Nothing_()
 """Singleton `Nothing` object.
 
 Since Nothing is a singleton it can be tested e.g using `is`:
