@@ -100,10 +100,11 @@ class AsyncAnonymousDisposable(AsyncDisposable):
         self._action = action
 
     async def dispose_async(self) -> None:
-        if not self._is_disposed:
-            self._is_disposed = True
+        if self._is_disposed:
+            return
 
-            await self._action()
+        self._is_disposed = True
+        await self._action()
 
     async def __aenter__(self) -> AsyncDisposable:
         if self._is_disposed:
