@@ -40,15 +40,14 @@ T6 = TypeVar("T6")
 class FrozenList(Tuple[TSource]):
     """Immutable list type.
 
-    This is not the most space efficient implementation of a list. If
-    that is the goal then use the builin mutable list or array types
-    instead. Use this list if you need an immutable list for prepend
-    operations mostly (`O(1)`).
-
     Example:
         >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
+
+    @staticmethod
+    def of_seq(source: Iterable[TSource]) -> "FrozenList[TSource]":
+        return FrozenList(source)
 
     @overload
     def match(self) -> "Matcher[TSource]":
@@ -209,7 +208,7 @@ class FrozenList(Tuple[TSource]):
         Returns:
             The list of indexed elements.
         """
-        return FrozenList(enumerate(self))
+        return FrozenList.of_seq(enumerate(self))
 
     def item(self, index: int) -> TSource:
         """Indexes into the list. The first element has index 0.
@@ -308,7 +307,7 @@ class FrozenList(Tuple[TSource]):
             The result list.
         """
 
-        result: Option[Tuple[TSource, TState]] = generator(state)
+        result = generator(state)
         for (item, state_) in result.to_list():
             return FrozenList.unfold(generator, state_).cons(item)
         else:
@@ -325,7 +324,7 @@ class FrozenList(Tuple[TSource]):
             A single list containing pairs of matching elements from the
             input lists.
         """
-        return FrozenList(builtins.zip(self, other))
+        return FrozenList.of_seq(builtins.zip(self, other))
 
     def __match__(self, pattern: Any) -> Iterable[TSource]:
         if self == pattern:

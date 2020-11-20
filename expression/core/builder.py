@@ -6,14 +6,13 @@ from .error import EffectError
 
 TInner = TypeVar("TInner")
 TOuter = TypeVar("TOuter")
-TOuter2 = TypeVar("TOuter2")
 TResult = TypeVar("TResult")
 
 
 class Builder(Generic[TOuter, TInner], ABC):
     """Effect builder."""
 
-    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -> TOuter2:
+    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter]) -> TOuter:
         raise NotImplementedError("Builder does not implement a bind method")
 
     def return_(self, x: TInner) -> TOuter:
@@ -93,4 +92,4 @@ class Builder(Generic[TOuter, TInner], ABC):
 
             return result
 
-        return wrapper
+        return cast(Callable[..., TOuter], wrapper)

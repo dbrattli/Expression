@@ -8,8 +8,10 @@ TError = TypeVar("TError")
 
 
 class ResultBuilder(Builder[Result[TSource, TError], TSource]):
-    def bind(self, xs: TSource, fn: Callable[[TSource], Result[TResult, TError]]) -> Result[TResult, TError]:
-        return result.bind(fn)(xs)
+    def bind(
+        self, xs: Result[TSource, TError], fn: Callable[[TSource], Result[TResult, TError]]
+    ) -> Result[TResult, TError]:
+        return pipe(xs, result.bind(fn))
 
     def return_(self, x: TSource) -> Result[TSource, TError]:
         return Ok(x)

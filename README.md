@@ -7,9 +7,9 @@
 
 > Pragmatic functional programming
 
-Expression aims to be a solid, type safe, pragmatic and high performance
-library for practical functional programming in Python 3.8+. By
-pragmatic we mean that the goal of the library is to use simple
+Expression aims to be a solid, type-safe, pragmatic, and high
+performance library for practical functional programming in Python 3.8+.
+By pragmatic we mean that the goal of the library is to use simple
 abstractions to enable you to do practical and productive functional
 programming in Python (instead of being a [Monad
 tutorial](https://github.com/dbrattli/OSlash)).
@@ -39,7 +39,7 @@ and predictable error handling. Pipelining for workflows, computational
 expressions, etc.
 
 F# is a functional programming language for .NET that is succinct
-(concise, readable and type-safe) and kind of
+(concise, readable, and type-safe) and kind of
 [Pythonic](https://docs.python.org/3/glossary.html). F# looks a lot more
 like Python than C# and F# can also do a lot of things better than
 Python:
@@ -90,7 +90,7 @@ on-demand as we go along.
 
 - **Pipelining** - for creating workflows.
 - **Composition** - for composing and creating new operators
-- **Pattern Matching** - a better way of flow control than if-elif-else.
+- **Pattern Matching** - a better way of flow control than `if-elif-else`.
 
 - **Option** - for optional stuff and better `None` handling.
 - **Result** - for better error handling and enables railway-oriented
@@ -103,7 +103,7 @@ on-demand as we go along.
   - **Map** - a frozen and immutable dictionary type.
   - **AsyncSeq** - Asynchronous iterables.
 - **Effects**: - lightweight computational expressions for Python. This
-  is actually amazing stuff.
+  is amazing stuff.
   - **option** - an optional world for working with optional values.
   - **result** - an error handling world for working with result values.
 - **Mailbox Processor**: for lock free programming using the [Actor
@@ -116,7 +116,7 @@ on-demand as we go along.
 
 Expression provides a `pipe` function similar to `|>` in F#. We don't
 want to overload any Python operators e.g `|` so `pipe` is a plain old
-function taking N-arguments and thus lets you pipe a value though any
+function taking N-arguments and thus lets you pipe a value through any
 number of functions.
 
 ```py
@@ -315,7 +315,7 @@ What we want to achieve with pattern matching:
 
 The solution we propose is based on loops, and singleton iterables. This
 lets us write our code inline, decompose and unwrap inner values, and
-also effectively skip the cases that doesn't match.
+also effectively skip the cases that do not match.
 
 ```py
 from expression.core import match
@@ -335,7 +335,7 @@ with match("expression") as m:
 ```
 
 Using `match` as a context manager will make sure that a case was
-actually found. You might need need to have a default handler to avoid
+actually found. You might need to have a default handler to avoid
 `MatchFailureError`.
 
 Test cases may be additionally be wrapped in a function to have a match
@@ -380,7 +380,7 @@ for (head, *tail) in xs.match(FrozenList):
     assert head == 42
 ```
 
-Classes can support more advance pattern matching and decompose inner
+Classes can support more advanced pattern matching and decompose inner
 values by subclassing or implementing the matching protocol:
 
 ```py
@@ -414,6 +414,10 @@ itself.
 <module 'expression.core.option' from '/Users/dbrattli/Developer/Github/Expression/expression/core/option.py'>
 ```
 
+F# pattern matching is awesome and the alternative we present here
+cannot be compared. But it helps us match and decompose without having
+to type-cast every time.
+
 ## Why
 
 - I love F#, and know F# quite well. I'm the creator of projects such as
@@ -444,7 +448,7 @@ library inspired by F# instead.
 
 A list of common problems and how you may solve it:
 
-### Expression is missing the function / operator I need
+### Expression is missing the function/operator I need
 
 Remember that everything is a function, so you can easily implement the
 function yourself and use it with Expression. If you think the function
@@ -453,7 +457,7 @@ Expression.
 
 ## Resources and References
 
-A collections and resources that were used as reference and inspiration
+A collection of resources that were used as reference and inspiration
 for creating this library.
 
 - F# (http://fsharp.org)
@@ -484,7 +488,7 @@ You are very welcome to contribute with PRs :heart_eyes: It is nice if
 you can try to align the code with F# modules, functions and
 documentation. But submit a PR even if you should feel unsure.
 
-Code, doc-strings and comments should also follow the [Google Python
+Code, doc-strings, and comments should also follow the [Google Python
 Style Guide](https://google.github.io/styleguide/pyguide.html). Code is
 formatted using [Black](https://github.com/psf/black).
 
