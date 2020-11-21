@@ -66,7 +66,7 @@ import builtins
 import functools
 from typing import Any, Callable, Iterable, List, Tuple, TypeVar, cast, overload
 
-from expression.core import Match, Nothing, Option, Some, pipe
+from expression.core import Matcher, Nothing, Option, Some, pipe
 
 from . import seq
 
@@ -84,18 +84,17 @@ T6 = TypeVar(&#34;T6&#34;)
 class FrozenList(Tuple[TSource]):
     &#34;&#34;&#34;Immutable list type.
 
-    This is not the most space efficient implementation of a list. If
-    that is the goal then use the builin mutable list or array types
-    instead. Use this list if you need an immutable list for prepend
-    operations mostly (`O(1)`).
-
     Example:
         &gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
+    @staticmethod
+    def of_seq(source: Iterable[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
+        return FrozenList(source)
+
     @overload
-    def match(self) -&gt; &#34;Match[TSource]&#34;:
+    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
         ...
 
     @overload
@@ -103,7 +102,7 @@ class FrozenList(Tuple[TSource]):
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
@@ -253,7 +252,7 @@ class FrozenList(Tuple[TSource]):
         Returns:
             The list of indexed elements.
         &#34;&#34;&#34;
-        return FrozenList(enumerate(self))
+        return FrozenList.of_seq(enumerate(self))
 
     def item(self, index: int) -&gt; TSource:
         &#34;&#34;&#34;Indexes into the list. The first element has index 0.
@@ -352,7 +351,7 @@ class FrozenList(Tuple[TSource]):
             The result list.
         &#34;&#34;&#34;
 
-        result: Option[Tuple[TSource, TState]] = generator(state)
+        result = generator(state)
         for (item, state_) in result.to_list():
             return FrozenList.unfold(generator, state_).cons(item)
         else:
@@ -369,7 +368,7 @@ class FrozenList(Tuple[TSource]):
             A single list containing pairs of matching elements from the
             input lists.
         &#34;&#34;&#34;
-        return FrozenList(builtins.zip(self, other))
+        return FrozenList.of_seq(builtins.zip(self, other))
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
         if self == pattern:
@@ -1394,10 +1393,6 @@ the input lists.</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Immutable list type.</p>
-<p>This is not the most space efficient implementation of a list. If
-that is the goal then use the builin mutable list or array types
-instead. Use this list if you need an immutable list for prepend
-operations mostly (<code>O(1)</code>).</p>
 <h2 id="example">Example</h2>
 <pre><code class="python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
 &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
@@ -1409,18 +1404,17 @@ operations mostly (<code>O(1)</code>).</p>
 <pre><code class="python">class FrozenList(Tuple[TSource]):
     &#34;&#34;&#34;Immutable list type.
 
-    This is not the most space efficient implementation of a list. If
-    that is the goal then use the builin mutable list or array types
-    instead. Use this list if you need an immutable list for prepend
-    operations mostly (`O(1)`).
-
     Example:
         &gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
+    @staticmethod
+    def of_seq(source: Iterable[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
+        return FrozenList(source)
+
     @overload
-    def match(self) -&gt; &#34;Match[TSource]&#34;:
+    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
         ...
 
     @overload
@@ -1428,7 +1422,7 @@ operations mostly (<code>O(1)</code>).</p>
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
@@ -1578,7 +1572,7 @@ operations mostly (<code>O(1)</code>).</p>
         Returns:
             The list of indexed elements.
         &#34;&#34;&#34;
-        return FrozenList(enumerate(self))
+        return FrozenList.of_seq(enumerate(self))
 
     def item(self, index: int) -&gt; TSource:
         &#34;&#34;&#34;Indexes into the list. The first element has index 0.
@@ -1677,7 +1671,7 @@ operations mostly (<code>O(1)</code>).</p>
             The result list.
         &#34;&#34;&#34;
 
-        result: Option[Tuple[TSource, TState]] = generator(state)
+        result = generator(state)
         for (item, state_) in result.to_list():
             return FrozenList.unfold(generator, state_).cons(item)
         else:
@@ -1694,7 +1688,7 @@ operations mostly (<code>O(1)</code>).</p>
             A single list containing pairs of matching elements from the
             input lists.
         &#34;&#34;&#34;
-        return FrozenList(builtins.zip(self, other))
+        return FrozenList.of_seq(builtins.zip(self, other))
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
         if self == pattern:
@@ -1721,6 +1715,20 @@ operations mostly (<code>O(1)</code>).</p>
 </ul>
 <h3>Static methods</h3>
 <dl>
+<dt id="expression.collections.frozenlist.FrozenList.of_seq"><code class="name flex">
+<span>def <span class="ident">of_seq</span></span>(<span>source: Iterable[~TSource]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of_seq(source: Iterable[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
+    return FrozenList(source)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.frozenlist.FrozenList.unfold"><code class="name flex">
 <span>def <span class="ident">unfold</span></span>(<span>generator: Callable[[~TState], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[Tuple[~TSource, ~TState]]], state: ~TState) ‑> <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]</span>
 </code></dt>
@@ -1759,7 +1767,7 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
         The result list.
     &#34;&#34;&#34;
 
-    result: Option[Tuple[TSource, TState]] = generator(state)
+    result = generator(state)
     for (item, state_) in result.to_list():
         return FrozenList.unfold(generator, state_).cons(item)
     else:
@@ -2003,7 +2011,7 @@ of each element.</p>
     Returns:
         The list of indexed elements.
     &#34;&#34;&#34;
-    return FrozenList(enumerate(self))</code></pre>
+    return FrozenList.of_seq(enumerate(self))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.FrozenList.is_empty"><code class="name flex">
@@ -2096,7 +2104,7 @@ list.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m: Match[TSource] = Match(self)
+    m: Matcher[TSource] = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
@@ -2275,7 +2283,7 @@ input lists.</p></div>
         A single list containing pairs of matching elements from the
         input lists.
     &#34;&#34;&#34;
-    return FrozenList(builtins.zip(self, other))</code></pre>
+    return FrozenList.of_seq(builtins.zip(self, other))</code></pre>
 </details>
 </dd>
 </dl>
@@ -2342,6 +2350,7 @@ input lists.</p></div>
 <li><code><a title="expression.collections.frozenlist.FrozenList.item" href="#expression.collections.frozenlist.FrozenList.item">item</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.map" href="#expression.collections.frozenlist.FrozenList.map">map</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.match" href="#expression.collections.frozenlist.FrozenList.match">match</a></code></li>
+<li><code><a title="expression.collections.frozenlist.FrozenList.of_seq" href="#expression.collections.frozenlist.FrozenList.of_seq">of_seq</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.pipe" href="#expression.collections.frozenlist.FrozenList.pipe">pipe</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.skip" href="#expression.collections.frozenlist.FrozenList.skip">skip</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.skip_last" href="#expression.collections.frozenlist.FrozenList.skip_last">skip_last</a></code></li>

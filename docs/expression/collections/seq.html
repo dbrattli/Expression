@@ -64,7 +64,7 @@ import itertools
 import sys
 from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar, overload
 
-from expression.core import Match, Option, identity, pipe
+from expression.core import Matcher, Option, identity, pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -133,7 +133,7 @@ class Seq(Iterable[TSource]):
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -&gt; &#34;Match[TSource]&#34;:
+    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
         ...
 
     @overload
@@ -141,7 +141,7 @@ class Seq(Iterable[TSource]):
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
@@ -1227,7 +1227,7 @@ sequences.</p>
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -&gt; &#34;Match[TSource]&#34;:
+    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
         ...
 
     @overload
@@ -1235,7 +1235,7 @@ sequences.</p>
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
@@ -1504,7 +1504,7 @@ collection.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m: Match[TSource] = Match(self)
+    m: Matcher[TSource] = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>

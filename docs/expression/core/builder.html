@@ -34,14 +34,13 @@ from .error import EffectError
 
 TInner = TypeVar(&#34;TInner&#34;)
 TOuter = TypeVar(&#34;TOuter&#34;)
-TOuter2 = TypeVar(&#34;TOuter2&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
 
 
 class Builder(Generic[TOuter, TInner], ABC):
     &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
 
-    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
+    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter]) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
 
     def return_(self, x: TInner) -&gt; TOuter:
@@ -88,7 +87,7 @@ class Builder(Generic[TOuter, TInner], ABC):
 
         Enables the use of computational expressions using coroutines.
         Thus inside the coroutine the keywords `yield` and `yield from`
-        reasembles `yield` and `yield!` from F#.
+        reassembles `yield` and `yield!` from F#.
 
         Args:
             fn: A function that contains a computational expression and
@@ -121,7 +120,7 @@ class Builder(Generic[TOuter, TInner], ABC):
 
             return result
 
-        return wrapper</code></pre>
+        return cast(Callable[..., TOuter], wrapper)</code></pre>
 </details>
 </section>
 <section>
@@ -146,7 +145,7 @@ class Builder(Generic[TOuter, TInner], ABC):
 <pre><code class="python">class Builder(Generic[TOuter, TInner], ABC):
     &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
 
-    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
+    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter]) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
 
     def return_(self, x: TInner) -&gt; TOuter:
@@ -193,7 +192,7 @@ class Builder(Generic[TOuter, TInner], ABC):
 
         Enables the use of computational expressions using coroutines.
         Thus inside the coroutine the keywords `yield` and `yield from`
-        reasembles `yield` and `yield!` from F#.
+        reassembles `yield` and `yield!` from F#.
 
         Args:
             fn: A function that contains a computational expression and
@@ -226,7 +225,7 @@ class Builder(Generic[TOuter, TInner], ABC):
 
             return result
 
-        return wrapper</code></pre>
+        return cast(Callable[..., TOuter], wrapper)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -242,7 +241,7 @@ class Builder(Generic[TOuter, TInner], ABC):
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.builder.Builder.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, xs: ~TOuter, fn: Callable[[~TInner], ~TOuter2]) ‑> ~TOuter2</span>
+<span>def <span class="ident">bind</span></span>(<span>self, xs: ~TOuter, fn: Callable[[~TInner], ~TOuter]) ‑> ~TOuter</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -250,7 +249,7 @@ class Builder(Generic[TOuter, TInner], ABC):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
+<pre><code class="python">def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter]) -&gt; TOuter:
     raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)</code></pre>
 </details>
 </dd>

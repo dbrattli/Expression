@@ -38,6 +38,7 @@ class TailCall(Ok[TResult, Exception]):
     &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
 
     def __init__(self, *args: Any, **kw: Any):
+        super().__init__(args)  # Keep linters happy.
         self.args = args
         self.kw = kw
 
@@ -165,6 +166,7 @@ __all__ = [&#34;TailCall&#34;, &#34;recursive&#34;, &#34;recursive_async&#34;]</
     &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
 
     def __init__(self, *args: Any, **kw: Any):
+        super().__init__(args)  # Keep linters happy.
         self.args = args
         self.kw = kw</code></pre>
 </details>

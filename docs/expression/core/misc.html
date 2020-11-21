@@ -103,7 +103,19 @@ def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
     return _
 
 
-__all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
+def snd(value: Tuple[A, B]) -&gt; B:
+    &#34;&#34;&#34;Return second argument of tuple.&#34;&#34;&#34;
+    _, b = value
+    return b
+
+
+def fst(value: Tuple[A, B]) -&gt; A:
+    &#34;&#34;&#34;Return first argument of tuple.&#34;&#34;&#34;
+    a, _ = value
+    return a
+
+
+__all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, &#34;snd&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -138,6 +150,21 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
     return _</code></pre>
 </details>
 </dd>
+<dt id="expression.core.misc.fst"><code class="name flex">
+<span>def <span class="ident">fst</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~A</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return first argument of tuple.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fst(value: Tuple[A, B]) -&gt; A:
+    &#34;&#34;&#34;Return first argument of tuple.&#34;&#34;&#34;
+    a, _ = value
+    return a</code></pre>
+</details>
+</dd>
 <dt id="expression.core.misc.identity"><code class="name flex">
 <span>def <span class="ident">identity</span></span>(<span>value: ~A) ‑> ~A</span>
 </code></dt>
@@ -154,6 +181,21 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
     Returns value given as argument.
     &#34;&#34;&#34;
     return value</code></pre>
+</details>
+</dd>
+<dt id="expression.core.misc.snd"><code class="name flex">
+<span>def <span class="ident">snd</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~B</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return second argument of tuple.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def snd(value: Tuple[A, B]) -&gt; B:
+    &#34;&#34;&#34;Return second argument of tuple.&#34;&#34;&#34;
+    _, b = value
+    return b</code></pre>
 </details>
 </dd>
 <dt id="expression.core.misc.starid"><code class="name flex">
@@ -188,7 +230,9 @@ __all__ = [&#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;]</code></pre>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="expression.core.misc.flip" href="#expression.core.misc.flip">flip</a></code></li>
+<li><code><a title="expression.core.misc.fst" href="#expression.core.misc.fst">fst</a></code></li>
 <li><code><a title="expression.core.misc.identity" href="#expression.core.misc.identity">identity</a></code></li>
+<li><code><a title="expression.core.misc.snd" href="#expression.core.misc.snd">snd</a></code></li>
 <li><code><a title="expression.core.misc.starid" href="#expression.core.misc.starid">starid</a></code></li>
 </ul>
 </li>

@@ -26,7 +26,7 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import NoReturn
+<pre><code class="python">from typing import Any, NoReturn
 
 
 class EffectError(Exception):
@@ -35,6 +35,14 @@ class EffectError(Exception):
     We use this to detect if sub-generators causes an exit, since
     yielding nothing will be silently ignored.
     &#34;&#34;&#34;
+
+
+class MatchFailureError(Exception):
+    &#34;&#34;&#34;Pattern match failure error.&#34;&#34;&#34;
+
+    def __init__(self, expr: Any):
+        msg = f&#34;Incomplete pattern matches on this expression. {expr} did not match any cases.&#34;
+        super().__init__(msg)
 
 
 def failwith(message: str) -&gt; NoReturn:

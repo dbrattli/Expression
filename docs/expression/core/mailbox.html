@@ -46,7 +46,7 @@ from typing import Any, Awaitable, Callable, Generic, Optional, TypeVar
 
 from expression.system import CancellationToken, OperationCanceledError
 
-from .aio import Continuation, from_continuations, start_immediate
+from .aiotools import Continuation, from_continuations, start_immediate
 
 Msg = TypeVar(&#34;Msg&#34;)
 Reply = TypeVar(&#34;Reply&#34;)
@@ -61,12 +61,12 @@ class AsyncReplyChannel(Generic[Reply]):
 
 
 class MailboxProcessor(Generic[Msg]):
-    def __init__(self, cancellationToken: Optional[CancellationToken]) -&gt; None:
+    def __init__(self, cancellation_token: Optional[CancellationToken]) -&gt; None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
         self.continuation: Optional[
             Continuation[Msg]
         ] = None  # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
-        self.token = cancellationToken or CancellationToken.none()
+        self.token = cancellation_token or CancellationToken.none()
         self.lock = RLock()
         self.loop = asyncio.get_event_loop()
 
@@ -116,9 +116,7 @@ class MailboxProcessor(Generic[Msg]):
         self.messages.put(build_message(reply_channel))
         self.__process_events()
 
-        def callback(
-            done: Continuation[Reply], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
-        ):
+        def callback(done: Continuation[Reply], _: Continuation[Exception], __: Continuation[OperationCanceledError]):
             nonlocal continuation
             continuation = done
             check_completion()
@@ -162,7 +160,10 @@ class MailboxProcessor(Generic[Msg]):
     ) -&gt; &#34;MailboxProcessor[Any]&#34;:
         mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
         start_immediate(body(mbox), cancellation_token)
-        return mbox</code></pre>
+        return mbox
+
+
+__all__ = [&#34;AsyncReplyChannel&#34;, &#34;MailboxProcessor&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -227,7 +228,7 @@ return default</p></div>
 </dd>
 <dt id="expression.core.mailbox.MailboxProcessor"><code class="flex name class">
 <span>class <span class="ident">MailboxProcessor</span></span>
-<span>(</span><span>cancellationToken: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType])</span>
+<span>(</span><span>cancellation_token: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for generic types.</p>
@@ -249,12 +250,12 @@ return default</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class MailboxProcessor(Generic[Msg]):
-    def __init__(self, cancellationToken: Optional[CancellationToken]) -&gt; None:
+    def __init__(self, cancellation_token: Optional[CancellationToken]) -&gt; None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
         self.continuation: Optional[
             Continuation[Msg]
         ] = None  # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
-        self.token = cancellationToken or CancellationToken.none()
+        self.token = cancellation_token or CancellationToken.none()
         self.lock = RLock()
         self.loop = asyncio.get_event_loop()
 
@@ -304,9 +305,7 @@ return default</p></div>
         self.messages.put(build_message(reply_channel))
         self.__process_events()
 
-        def callback(
-            done: Continuation[Reply], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
-        ):
+        def callback(done: Continuation[Reply], _: Continuation[Exception], __: Continuation[OperationCanceledError]):
             nonlocal continuation
             continuation = done
             check_completion()
@@ -464,9 +463,7 @@ Returns: The reply from mailbox processor.</p></div>
     self.messages.put(build_message(reply_channel))
     self.__process_events()
 
-    def callback(
-        done: Continuation[Reply], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
-    ):
+    def callback(done: Continuation[Reply], _: Continuation[Exception], __: Continuation[OperationCanceledError]):
         nonlocal continuation
         continuation = done
         check_completion()

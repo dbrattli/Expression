@@ -92,7 +92,7 @@ class AsyncDisposable(ABC):
 
     @abstractmethod
     async def dispose_async(self) -&gt; None:
-        return NotImplemented
+        raise NotImplementedError
 
     async def __aenter__(self) -&gt; &#34;AsyncDisposable&#34;:
         &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
@@ -128,10 +128,11 @@ class AsyncAnonymousDisposable(AsyncDisposable):
         self._action = action
 
     async def dispose_async(self) -&gt; None:
-        if not self._is_disposed:
-            self._is_disposed = True
+        if self._is_disposed:
+            return
 
-            await self._action()
+        self._is_disposed = True
+        await self._action()
 
     async def __aenter__(self) -&gt; AsyncDisposable:
         if self._is_disposed:
@@ -258,10 +259,11 @@ dispose method. Will dispoose on exit.</p></div>
         self._action = action
 
     async def dispose_async(self) -&gt; None:
-        if not self._is_disposed:
-            self._is_disposed = True
+        if self._is_disposed:
+            return
 
-            await self._action()
+        self._is_disposed = True
+        await self._action()
 
     async def __aenter__(self) -&gt; AsyncDisposable:
         if self._is_disposed:
@@ -285,10 +287,11 @@ dispose method. Will dispoose on exit.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">async def dispose_async(self) -&gt; None:
-    if not self._is_disposed:
-        self._is_disposed = True
+    if self._is_disposed:
+        return
 
-        await self._action()</code></pre>
+    self._is_disposed = True
+    await self._action()</code></pre>
 </details>
 </dd>
 </dl>
@@ -351,7 +354,7 @@ dispose method. Will dispoose on exit.</p></div>
 
     @abstractmethod
     async def dispose_async(self) -&gt; None:
-        return NotImplemented
+        raise NotImplementedError
 
     async def __aenter__(self) -&gt; &#34;AsyncDisposable&#34;:
         &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
@@ -448,7 +451,7 @@ def empty() -&gt; &#34;AsyncDisposable&#34;:
 </summary>
 <pre><code class="python">@abstractmethod
 async def dispose_async(self) -&gt; None:
-    return NotImplemented</code></pre>
+    raise NotImplementedError</code></pre>
 </details>
 </dd>
 </dl>

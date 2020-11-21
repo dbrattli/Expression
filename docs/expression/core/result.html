@@ -43,7 +43,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Generator, Generic, Iterable, Iterator, Type, TypeVar, Union, overload
 
 from .error import EffectError
-from .match import Match
+from .match import Matcher
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
@@ -117,7 +117,7 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
@@ -244,7 +244,8 @@ class Error(Result[TSource, TError], ResultException):
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for Error case.&#34;&#34;&#34;
         raise Error(self._error)
-        yield
+        while False:
+            yield
 
     def __str__(self):
         return f&#34;Error {self._error}&#34;
@@ -373,7 +374,8 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for Error case.&#34;&#34;&#34;
         raise Error(self._error)
-        yield
+        while False:
+            yield
 
     def __str__(self):
         return f&#34;Error {self._error}&#34;</code></pre>
@@ -693,7 +695,7 @@ def value(self) -&gt; TSource:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
@@ -810,7 +812,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m: Match[TSource] = Match(self)
+    m: Matcher[TSource] = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>

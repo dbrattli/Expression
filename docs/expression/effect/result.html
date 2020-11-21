@@ -36,8 +36,10 @@ TError = TypeVar(&#34;TError&#34;)
 
 
 class ResultBuilder(Builder[Result[TSource, TError], TSource]):
-    def bind(self, xs: TSource, fn: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
-        return result.bind(fn)(xs)
+    def bind(
+        self, xs: Result[TSource, TError], fn: Callable[[TSource], Result[TResult, TError]]
+    ) -&gt; Result[TResult, TError]:
+        return pipe(xs, result.bind(fn))
 
     def return_(self, x: TSource) -&gt; Result[TSource, TError]:
         return Ok(x)
@@ -48,6 +50,9 @@ class ResultBuilder(Builder[Result[TSource, TError], TSource]):
     def combine(self, xs: Result[TSource, TError], ys: Result[TSource, TError]) -&gt; Result[TSource, TError]:
         binder: Callable[[Any], Result[TSource, TError]] = lambda _: ys
         return pipe(xs, result.bind(binder))
+
+    def zero(self) -&gt; Result[TSource, TError]:
+        raise NotImplementedError
 
 
 result_effect: ResultBuilder[Any, Any] = ResultBuilder()

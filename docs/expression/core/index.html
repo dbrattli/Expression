@@ -31,21 +31,21 @@
 Core abstractions such as pipes, options and results.
 &#34;&#34;&#34;
 
-from . import aio, option, result
+from . import aiotools, option, result
 from .builder import Builder
 from .compose import compose
 from .curry import curried
 from .error import EffectError, failwith
 from .fn import TailCall, recursive, recursive_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
-from .match import Match, Matchable, match
-from .misc import flip, identity
+from .match import Matchable, Matcher, match
+from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
 
 __all__ = [
-    &#34;aio&#34;,
+    &#34;aiotools&#34;,
     &#34;AsyncReplyChannel&#34;,
     &#34;Builder&#34;,
     &#34;compose&#34;,
@@ -54,11 +54,12 @@ __all__ = [
     &#34;Error&#34;,
     &#34;failwith&#34;,
     &#34;flip&#34;,
+    &#34;fst&#34;,
     &#34;identity&#34;,
     &#34;MailboxProcessor&#34;,
     &#34;match&#34;,
-    &#34;Match&#34;,
-    &#34;Matching&#34;,
+    &#34;Matcher&#34;,
+    &#34;Matchable&#34;,
     &#34;Nothing&#34;,
     &#34;Nothing_&#34;,
     &#34;Ok&#34;,
@@ -71,6 +72,7 @@ __all__ = [
     &#34;recursive_async&#34;,
     &#34;result&#34;,
     &#34;Result&#34;,
+    &#34;snd&#34;,
     &#34;Some&#34;,
     &#34;TailCall&#34;,
 ]</code></pre>
@@ -79,9 +81,9 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="expression.core.aio" href="aio.html">expression.core.aio</a></code></dt>
+<dt><code class="name"><a title="expression.core.aiotools" href="aiotools.html">expression.core.aiotools</a></code></dt>
 <dd>
-<div class="desc"><p>The aio (async) module …</p></div>
+<div class="desc"><p>The aiotools (async) module …</p></div>
 </dd>
 <dt><code class="name"><a title="expression.core.builder" href="builder.html">expression.core.builder</a></code></dt>
 <dd>
@@ -130,7 +132,11 @@ __all__ = [
 <p>Composes zero or more functions into a functional composition. The
 functions are composed left to right. A composition of zero
 functions gives back the identity function.</p>
-<pre><code class="python-repl">&gt;&gt;&gt; compose()(x) == x
+<pre><code class="python-repl">&gt;&gt;&gt; x = 42
+&gt;&gt;&gt; f = lambda a: a * 10
+&gt;&gt;&gt; g = lambda b: b + 3
+&gt;&gt;&gt; h = lambda c: c / 2
+&gt;&gt;&gt; compose()(x) == x
 &gt;&gt;&gt; compose(f)(x) == f(x)
 &gt;&gt;&gt; compose(f, g)(x) == g(f(x))
 &gt;&gt;&gt; compose(f, g, h)(x) == h(g(f(x)))
@@ -149,6 +155,10 @@ functions gives back the identity function.</p>
     functions are composed left to right. A composition of zero
     functions gives back the identity function.
 
+    &gt;&gt;&gt; x = 42
+    &gt;&gt;&gt; f = lambda a: a * 10
+    &gt;&gt;&gt; g = lambda b: b + 3
+    &gt;&gt;&gt; h = lambda c: c / 2
     &gt;&gt;&gt; compose()(x) == x
     &gt;&gt;&gt; compose(f)(x) == f(x)
     &gt;&gt;&gt; compose(f, g)(x) == g(f(x))
@@ -159,11 +169,11 @@ functions gives back the identity function.</p>
         The composed function.
     &#34;&#34;&#34;
 
-    def compose(source: Any) -&gt; Any:
+    def _compose(source: Any) -&gt; Any:
         &#34;&#34;&#34;Return a pipeline of composed functions.&#34;&#34;&#34;
         return reduce(lambda acc, f: f(acc), fns, source)
 
-    return compose</code></pre>
+    return _compose</code></pre>
 </details>
 </dd>
 <dt id="expression.core.curried"><code class="name flex">
@@ -265,6 +275,21 @@ assert add(3)(4) == 7</p></div>
     return _</code></pre>
 </details>
 </dd>
+<dt id="expression.core.fst"><code class="name flex">
+<span>def <span class="ident">fst</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~A</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return first argument of tuple.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fst(value: Tuple[A, B]) -&gt; A:
+    &#34;&#34;&#34;Return first argument of tuple.&#34;&#34;&#34;
+    a, _ = value
+    return a</code></pre>
+</details>
+</dd>
 <dt id="expression.core.identity"><code class="name flex">
 <span>def <span class="ident">identity</span></span>(<span>value: ~A) ‑> ~A</span>
 </code></dt>
@@ -284,17 +309,21 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>value: ~TSource) ‑> expression.core.match.Match[~TSource]</span>
+<span>def <span class="ident">match</span></span>(<span>value: ~TSource) ‑> expression.core.match.Matcher[~TSource]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Convenience create method to get typing right</p></div>
+<div class="desc"><p>Convenience create method to get typing right</p>
+<p>Same as <code><a title="expression.core.Matcher.of" href="#expression.core.Matcher.of">Matcher.of()</a>(value)</code></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(value: TSource) -&gt; Match[TSource]:
-    &#34;&#34;&#34;Convenience create method to get typing right&#34;&#34;&#34;
-    return Match(value)</code></pre>
+<pre><code class="python">def match(value: TSource) -&gt; Matcher[TSource]:
+    &#34;&#34;&#34;Convenience create method to get typing right
+
+    Same as `Matcher.of(value)`
+    &#34;&#34;&#34;
+    return Matcher(value)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.pipe"><code class="name flex">
@@ -408,6 +437,21 @@ assert add(3)(4) == 7</p></div>
     return _</code></pre>
 </details>
 </dd>
+<dt id="expression.core.snd"><code class="name flex">
+<span>def <span class="ident">snd</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~B</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return second argument of tuple.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def snd(value: Tuple[A, B]) -&gt; B:
+    &#34;&#34;&#34;Return second argument of tuple.&#34;&#34;&#34;
+    _, b = value
+    return b</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -477,7 +521,7 @@ return default</p></div>
 <pre><code class="python">class Builder(Generic[TOuter, TInner], ABC):
     &#34;&#34;&#34;Effect builder.&#34;&#34;&#34;
 
-    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
+    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter]) -&gt; TOuter:
         raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)
 
     def return_(self, x: TInner) -&gt; TOuter:
@@ -524,7 +568,7 @@ return default</p></div>
 
         Enables the use of computational expressions using coroutines.
         Thus inside the coroutine the keywords `yield` and `yield from`
-        reasembles `yield` and `yield!` from F#.
+        reassembles `yield` and `yield!` from F#.
 
         Args:
             fn: A function that contains a computational expression and
@@ -557,7 +601,7 @@ return default</p></div>
 
             return result
 
-        return wrapper</code></pre>
+        return cast(Callable[..., TOuter], wrapper)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -573,7 +617,7 @@ return default</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.Builder.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, xs: ~TOuter, fn: Callable[[~TInner], ~TOuter2]) ‑> ~TOuter2</span>
+<span>def <span class="ident">bind</span></span>(<span>self, xs: ~TOuter, fn: Callable[[~TInner], ~TOuter]) ‑> ~TOuter</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -581,7 +625,7 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter2]) -&gt; TOuter2:
+<pre><code class="python">def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter]) -&gt; TOuter:
     raise NotImplementedError(&#34;Builder does not implement a bind method&#34;)</code></pre>
 </details>
 </dd>
@@ -731,7 +775,8 @@ yielding nothing will be silently ignored.</p></div>
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for Error case.&#34;&#34;&#34;
         raise Error(self._error)
-        yield
+        while False:
+            yield
 
     def __str__(self):
         return f&#34;Error {self._error}&#34;</code></pre>
@@ -829,7 +874,7 @@ def error(self) -&gt; TError:
 </dd>
 <dt id="expression.core.MailboxProcessor"><code class="flex name class">
 <span>class <span class="ident">MailboxProcessor</span></span>
-<span>(</span><span>cancellationToken: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType])</span>
+<span>(</span><span>cancellation_token: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for generic types.</p>
@@ -851,12 +896,12 @@ return default</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class MailboxProcessor(Generic[Msg]):
-    def __init__(self, cancellationToken: Optional[CancellationToken]) -&gt; None:
+    def __init__(self, cancellation_token: Optional[CancellationToken]) -&gt; None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
         self.continuation: Optional[
             Continuation[Msg]
         ] = None  # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
-        self.token = cancellationToken or CancellationToken.none()
+        self.token = cancellation_token or CancellationToken.none()
         self.lock = RLock()
         self.loop = asyncio.get_event_loop()
 
@@ -906,9 +951,7 @@ return default</p></div>
         self.messages.put(build_message(reply_channel))
         self.__process_events()
 
-        def callback(
-            done: Continuation[Reply], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
-        ):
+        def callback(done: Continuation[Reply], _: Continuation[Exception], __: Continuation[OperationCanceledError]):
             nonlocal continuation
             continuation = done
             check_completion()
@@ -1066,9 +1109,7 @@ Returns: The reply from mailbox processor.</p></div>
     self.messages.put(build_message(reply_channel))
     self.__process_events()
 
-    def callback(
-        done: Continuation[Reply], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
-    ):
+    def callback(done: Continuation[Reply], _: Continuation[Exception], __: Continuation[OperationCanceledError]):
         nonlocal continuation
         continuation = done
         check_completion()
@@ -1108,20 +1149,94 @@ timeout is exceeded.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="expression.core.Match"><code class="flex name class">
-<span>class <span class="ident">Match</span></span>
+<dt id="expression.core.Matchable"><code class="flex name class">
+<span>class <span class="ident">Matchable</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pattern matching protocol.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Matchable(Protocol[TSource]):
+    &#34;&#34;&#34;Pattern matching protocol.&#34;&#34;&#34;
+
+    @abstractmethod
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Return a singleton iterable item (e.g `[ value ]`) if pattern
+        matches, else an empty iterable (e.g. `[]`).&#34;&#34;&#34;
+
+        raise NotImplementedError
+
+    @overload
+    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
+        ...
+
+    @overload
+    def match(self, pattern: Any) -&gt; Iterable[TSource]:
+        ...
+
+    def match(self, pattern: Optional[Any] = None) -&gt; &#34;Union[Matcher[TSource], Iterable[TSource]]&#34;:
+        &#34;&#34;&#34;Match with pattern.
+
+        NOTE: You most often need to add this methods plus the
+        appropriate overloads to your own matchable class to get typing
+        correctly.&#34;&#34;&#34;
+
+        m: Matcher[TSource] = Matcher(self)
+        return m.case(pattern) if pattern else m</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Matchable.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Union[Any, NoneType] = None) ‑> Union[expression.core.match.Matcher[~TSource], Iterable[~TSource]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Match with pattern.</p>
+<p>NOTE: You most often need to add this methods plus the
+appropriate overloads to your own matchable class to get typing
+correctly.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def match(self, pattern: Optional[Any] = None) -&gt; &#34;Union[Matcher[TSource], Iterable[TSource]]&#34;:
+    &#34;&#34;&#34;Match with pattern.
+
+    NOTE: You most often need to add this methods plus the
+    appropriate overloads to your own matchable class to get typing
+    correctly.&#34;&#34;&#34;
+
+    m: Matcher[TSource] = Matcher(self)
+    return m.case(pattern) if pattern else m</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Matcher"><code class="flex name class">
+<span>class <span class="ident">Matcher</span></span>
 <span>(</span><span>value: Union[Any, expression.core.match.Matchable[~TSource]])</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Pattern matching.</p>
+<div class="desc"><p>Pattern matcher.</p>
 <p>Matches a value with type, instance or uses matching protocol
 if supported by value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Match(Generic[TSource]):
-    &#34;&#34;&#34;Pattern matching.
+<pre><code class="python">class Matcher(Generic[TSource]):
+    &#34;&#34;&#34;Pattern matcher.
 
     Matches a value with type, instance or uses matching protocol
     if supported by value.
@@ -1131,11 +1246,11 @@ if supported by value.</p></div>
         self.is_matched = False
         self.value = value
 
-    def case(self, pattern: Any) -&gt; Iterable[TSource]:
-        value = self.value
-
+    def case(self, pattern: Any) -&gt; Iterable[Any]:
         if self.is_matched:
             return []
+
+        value = self.value
 
         if hasattr(value, &#34;__match__&#34;):
             value_ = cast(Matchable[TSource], value)
@@ -1156,7 +1271,25 @@ if supported by value.</p></div>
     def default(self) -&gt; Iterable[Union[Any, Matchable[TSource]]]:
         if self.is_matched:
             return []
+        self.is_matched = True
         return [self.value]
+
+    @staticmethod
+    def of(value: TSource) -&gt; &#34;Matcher[TSource]&#34;:
+        &#34;&#34;&#34;Convenience create method to get typing right&#34;&#34;&#34;
+        return Matcher(value)
+
+    def __enter__(self) -&gt; &#34;Matcher[TSource]&#34;:
+        &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
+        return self
+
+    def __exit__(
+        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+    ) -&gt; None:
+        &#34;&#34;&#34;Exit context management.&#34;&#34;&#34;
+
+        if not self.is_matched:
+            raise MatchFailureError(self.value)
 
     def __bool__(self):
         return self.is_matched</code></pre>
@@ -1165,10 +1298,28 @@ if supported by value.</p></div>
 <ul class="hlist">
 <li>typing.Generic</li>
 </ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.Matcher.of"><code class="name flex">
+<span>def <span class="ident">of</span></span>(<span>value: ~TSource) ‑> expression.core.match.Matcher[~TSource]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convenience create method to get typing right</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of(value: TSource) -&gt; &#34;Matcher[TSource]&#34;:
+    &#34;&#34;&#34;Convenience create method to get typing right&#34;&#34;&#34;
+    return Matcher(value)</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
-<dt id="expression.core.Match.case"><code class="name flex">
-<span>def <span class="ident">case</span></span>(<span>self, pattern: Any) ‑> Iterable[~TSource]</span>
+<dt id="expression.core.Matcher.case"><code class="name flex">
+<span>def <span class="ident">case</span></span>(<span>self, pattern: Any) ‑> Iterable[Any]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1176,11 +1327,11 @@ if supported by value.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def case(self, pattern: Any) -&gt; Iterable[TSource]:
-    value = self.value
-
+<pre><code class="python">def case(self, pattern: Any) -&gt; Iterable[Any]:
     if self.is_matched:
         return []
+
+    value = self.value
 
     if hasattr(value, &#34;__match__&#34;):
         value_ = cast(Matchable[TSource], value)
@@ -1199,7 +1350,7 @@ if supported by value.</p></div>
     return []</code></pre>
 </details>
 </dd>
-<dt id="expression.core.Match.default"><code class="name flex">
+<dt id="expression.core.Matcher.default"><code class="name flex">
 <span>def <span class="ident">default</span></span>(<span>self) ‑> Iterable[Union[Any, expression.core.match.Matchable[~TSource]]]</span>
 </code></dt>
 <dd>
@@ -1211,6 +1362,7 @@ if supported by value.</p></div>
 <pre><code class="python">def default(self) -&gt; Iterable[Union[Any, Matchable[TSource]]]:
     if self.is_matched:
         return []
+    self.is_matched = True
     return [self.value]</code></pre>
 </details>
 </dd>
@@ -1307,8 +1459,9 @@ return True</p></div>
         We basically want to return nothing, but we have to return
         something to signal fail.
         &#34;&#34;&#34;
-        raise Nothing
-        yield
+        raise cast(Nothing_[TSource], Nothing)
+        while False:
+            yield
 
     def __eq__(self, other: Any) -&gt; bool:
         if other is Nothing:
@@ -1693,7 +1846,8 @@ def value(self) -&gt; TSource:
     def __repr__(self) -&gt; str:
         return self.__str__()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def value(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the value wrapped by the option.
 
@@ -1724,7 +1878,8 @@ def value(self) -&gt; TSource:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@abstractproperty
+<pre><code class="python">@property
+@abstractmethod
 def value(self) -&gt; TSource:
     &#34;&#34;&#34;Returns the value wrapped by the option.
 
@@ -1980,7 +2135,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Match[TSource] = Match(self)
+        m: Matcher[TSource] = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
@@ -2097,7 +2252,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m: Match[TSource] = Match(self)
+    m: Matcher[TSource] = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
@@ -2348,6 +2503,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
     &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
 
     def __init__(self, *args: Any, **kw: Any):
+        super().__init__(args)  # Keep linters happy.
         self.args = args
         self.kw = kw</code></pre>
 </details>
@@ -2385,7 +2541,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="expression.core.aio" href="aio.html">expression.core.aio</a></code></li>
+<li><code><a title="expression.core.aiotools" href="aiotools.html">expression.core.aiotools</a></code></li>
 <li><code><a title="expression.core.builder" href="builder.html">expression.core.builder</a></code></li>
 <li><code><a title="expression.core.curry" href="curry.html">expression.core.curry</a></code></li>
 <li><code><a title="expression.core.error" href="error.html">expression.core.error</a></code></li>
@@ -2402,6 +2558,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.curried" href="#expression.core.curried">curried</a></code></li>
 <li><code><a title="expression.core.failwith" href="#expression.core.failwith">failwith</a></code></li>
 <li><code><a title="expression.core.flip" href="#expression.core.flip">flip</a></code></li>
+<li><code><a title="expression.core.fst" href="#expression.core.fst">fst</a></code></li>
 <li><code><a title="expression.core.identity" href="#expression.core.identity">identity</a></code></li>
 <li><code><a title="expression.core.match" href="#expression.core.match">match</a></code></li>
 <li><code><a title="expression.core.pipe" href="#expression.core.pipe">pipe</a></code></li>
@@ -2409,6 +2566,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.pipe3" href="#expression.core.pipe3">pipe3</a></code></li>
 <li><code><a title="expression.core.recursive" href="#expression.core.recursive">recursive</a></code></li>
 <li><code><a title="expression.core.recursive_async" href="#expression.core.recursive_async">recursive_async</a></code></li>
+<li><code><a title="expression.core.snd" href="#expression.core.snd">snd</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -2452,10 +2610,17 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </ul>
 </li>
 <li>
-<h4><code><a title="expression.core.Match" href="#expression.core.Match">Match</a></code></h4>
+<h4><code><a title="expression.core.Matchable" href="#expression.core.Matchable">Matchable</a></code></h4>
 <ul class="">
-<li><code><a title="expression.core.Match.case" href="#expression.core.Match.case">case</a></code></li>
-<li><code><a title="expression.core.Match.default" href="#expression.core.Match.default">default</a></code></li>
+<li><code><a title="expression.core.Matchable.match" href="#expression.core.Matchable.match">match</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Matcher" href="#expression.core.Matcher">Matcher</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Matcher.case" href="#expression.core.Matcher.case">case</a></code></li>
+<li><code><a title="expression.core.Matcher.default" href="#expression.core.Matcher.default">default</a></code></li>
+<li><code><a title="expression.core.Matcher.of" href="#expression.core.Matcher.of">of</a></code></li>
 </ul>
 </li>
 <li>

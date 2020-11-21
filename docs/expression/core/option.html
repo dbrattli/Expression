@@ -38,8 +38,9 @@ options. All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 &#34;&#34;&#34;
-from abc import ABC, abstractmethod, abstractproperty
-from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
+from abc import ABC, abstractmethod
+from typing import (Any, Callable, Generator, Iterable, Iterator, List,
+                    Optional, TypeVar, cast, overload)
 
 from .error import EffectError
 from .match import Matchable
@@ -145,7 +146,8 @@ class Option(Iterable[TSource], ABC, Matchable[TSource]):
     def __repr__(self) -&gt; str:
         return self.__str__()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def value(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the value wrapped by the option.
 
@@ -318,8 +320,9 @@ class Nothing_(Option[TSource], EffectError):
         We basically want to return nothing, but we have to return
         something to signal fail.
         &#34;&#34;&#34;
-        raise Nothing
-        yield
+        raise cast(Nothing_[TSource], Nothing)
+        while False:
+            yield
 
     def __eq__(self, other: Any) -&gt; bool:
         if other is Nothing:
@@ -332,6 +335,7 @@ class Nothing_(Option[TSource], EffectError):
 
 # The singleton None class. We use the name &#39;Nothing&#39; here instead of `None` to
 # avoid conflicts with the builtin `None` value.
+# Note to self: Must be of type `Nothing_` or pattern matching will not work.
 Nothing: Nothing_[Any] = Nothing_()
 &#34;&#34;&#34;Singleton `Nothing` object.
 
@@ -817,8 +821,9 @@ return True</p></div>
         We basically want to return nothing, but we have to return
         something to signal fail.
         &#34;&#34;&#34;
-        raise Nothing
-        yield
+        raise cast(Nothing_[TSource], Nothing)
+        while False:
+            yield
 
     def __eq__(self, other: Any) -&gt; bool:
         if other is Nothing:
@@ -1051,7 +1056,8 @@ return True</p></div>
     def __repr__(self) -&gt; str:
         return self.__str__()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def value(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the value wrapped by the option.
 
@@ -1082,7 +1088,8 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@abstractproperty
+<pre><code class="python">@property
+@abstractmethod
 def value(self) -&gt; TSource:
     &#34;&#34;&#34;Returns the value wrapped by the option.
 

@@ -215,10 +215,12 @@ class Map(Generic[Key, Value]):
         return maptree.to_seq(self._tree)
 
     @overload
+    @staticmethod
     def of_list(lst: FrozenList[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         ...
 
     @overload
+    @staticmethod
     def of_list(lst: List[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         ...
 
@@ -285,7 +287,9 @@ class Map(Generic[Key, Value]):
 
 
 def add(key: Key, value: Value) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
-    &#34;&#34;&#34;Returns a new map with the binding added to the given map. If a
+    &#34;&#34;&#34;Add key with value to map.
+
+    Returns a new map with the binding added to the given map. If a
     binding with the given key already exists in the input map, the
     existing binding is replaced by the new binding in the result
     map.
@@ -293,13 +297,26 @@ def add(key: Key, value: Value) -&gt; Callable[[Map[Key, Value]], Map[Key, Value
     Args:
         key: The input key.
         value: The input value.
-        table: The input table.
 
     Returns:
-        The resulting map.
+        A partially applied add function that takes the input map and returns
+        the output map.
     &#34;&#34;&#34;
 
     def _add(table: Map[Key, Value]) -&gt; Map[Key, Value]:
+        &#34;&#34;&#34;Add the partially applied key with value to map.
+
+        Returns a new map with the binding added to the given map. If a
+        binding with the given key already exists in the input map, the
+        existing binding is replaced by the new binding in the result
+        map.
+
+        Args:
+            table: The input table.
+
+        Returns:
+            The resulting map.
+        &#34;&#34;&#34;
         return table.add(key, value)
 
     return _add
@@ -603,7 +620,8 @@ __all__ = [
 <span>def <span class="ident">add</span></span>(<span>key: ~Key, value: ~Value) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a new map with the binding added to the given map. If a
+<div class="desc"><p>Add key with value to map.</p>
+<p>Returns a new map with the binding added to the given map. If a
 binding with the given key already exists in the input map, the
 existing binding is replaced by the new binding in the result
 map.</p>
@@ -613,17 +631,18 @@ map.</p>
 <dd>The input key.</dd>
 <dt><strong><code>value</code></strong></dt>
 <dd>The input value.</dd>
-<dt><strong><code>table</code></strong></dt>
-<dd>The input table.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
-<p>The resulting map.</p></div>
+<p>A partially applied add function that takes the input map and returns
+the output map.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def add(key: Key, value: Value) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
-    &#34;&#34;&#34;Returns a new map with the binding added to the given map. If a
+    &#34;&#34;&#34;Add key with value to map.
+
+    Returns a new map with the binding added to the given map. If a
     binding with the given key already exists in the input map, the
     existing binding is replaced by the new binding in the result
     map.
@@ -631,13 +650,26 @@ map.</p>
     Args:
         key: The input key.
         value: The input value.
-        table: The input table.
 
     Returns:
-        The resulting map.
+        A partially applied add function that takes the input map and returns
+        the output map.
     &#34;&#34;&#34;
 
     def _add(table: Map[Key, Value]) -&gt; Map[Key, Value]:
+        &#34;&#34;&#34;Add the partially applied key with value to map.
+
+        Returns a new map with the binding added to the given map. If a
+        binding with the given key already exists in the input map, the
+        existing binding is replaced by the new binding in the result
+        map.
+
+        Args:
+            table: The input table.
+
+        Returns:
+            The resulting map.
+        &#34;&#34;&#34;
         return table.add(key, value)
 
     return _add</code></pre>
@@ -1252,10 +1284,12 @@ and returns the first result.</p></div>
         return maptree.to_seq(self._tree)
 
     @overload
+    @staticmethod
     def of_list(lst: FrozenList[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         ...
 
     @overload
+    @staticmethod
     def of_list(lst: List[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         ...
 
