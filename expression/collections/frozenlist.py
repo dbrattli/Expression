@@ -20,7 +20,8 @@ Example:
 
 import builtins
 import functools
-from typing import Any, Callable, Iterable, List, Tuple, TypeVar, cast, overload
+from typing import (Any, Callable, Iterable, List, Tuple, TypeVar, cast,
+                    overload)
 
 from expression.core import Matcher, Nothing, Option, Some, pipe
 
@@ -490,10 +491,10 @@ def item(index: int) -> Callable[[FrozenList[TSource]], TSource]:
         The value at the given index.
     """
 
-    def _(source: FrozenList[TSource]) -> TSource:
+    def _item(source: FrozenList[TSource]) -> TSource:
         return source.item(index)
 
-    return _
+    return _item
 
 
 def is_empty(source: FrozenList[TSource]) -> bool:

@@ -22,32 +22,34 @@ functions, lambdas, and in many ways favors composition over inheritance.
 
 Expression tries to make a better Python by providing several functional
 features inspired by [F#](https://fsharp.org) into Python. This serves
-two purposes:
+several purposes:
 
-- Make it easier for Python programmers to learn F# by starting out in a
-  programming language they already know. Then get inspired to [try out
-  F#](https://aka.ms/fsharphome) by itself. Everything you learn with
-  Expression can also be used with F#.
+- Enable functional programming in a Pythonic way. I.e make sure we are
+  not over-abstracting things. Expressions will not be anywhere close to e.g
+  Haskell.
+- Everything you learn with Expression can also be used with F#. Learn
+  F# by starting in a programming language they already know. Perhaps
+  get inspired to also [try out F#](https://aka.ms/fsharphome) by
+  itself.
 - Make it easier for F# developers to use Python when needed, and re-use
-  many of the concepts and abstractions that they already know and love.
+  many of the concepts and abstractions they already know and love.
 
-Expression will enable you to work with Python along with F# using many
-of the same programming concepts and abstractions. This enables concepts
-such as [Railway oriented
-programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
-and predictable error handling. Pipelining for workflows, computational
-expressions, etc.
+Expression will enable you to work with Python using many of the same
+programming concepts and abstractions. This enables concepts such as
+[Railway oriented programming](https://fsharpforfunandprofit.com/rop/)
+(ROP) for better and predictable error handling. Pipelining for
+workflows, computational expressions, etc.
 
 F# is a functional programming language for .NET that is succinct
 (concise, readable, and type-safe) and kind of
-[Pythonic](https://docs.python.org/3/glossary.html). F# looks a lot more
-like Python than C# and F# can also do a lot of things better than
+[Pythonic](https://docs.python.org/3/glossary.html). F# is in many ways
+very similar to Python, but F# can also do a lot of things better than
 Python:
 
 *Expressions evaluates to a value. Statements do something.*
 
 - Strongly typed, if it compiles it usually works making refactoring
-  much safer.
+  much safer. You can trust the type system. With mypy or Pylance you often wonder who is right and who is wrong.
 - Type inference, the compiler deduces types during compilation
 - Expression based language
 
@@ -84,13 +86,14 @@ $ pip3 install expression
 
 ## Supported features
 
-Expression will never provide you with all the features of F# and .NET. We are
-providing a few of the features we think are useful, and will add more
-on-demand as we go along.
+Expression will never provide you with all the features of F# and .NET.
+We are providing a few of the features we think are useful, and will add
+more on-demand as we go along.
 
 - **Pipelining** - for creating workflows.
 - **Composition** - for composing and creating new operators
-- **Pattern Matching** - a better way of flow control than `if-elif-else`.
+- **Pattern Matching** - an alternative flow control to
+  `if-elif-else`.
 
 - **Option** - for optional stuff and better `None` handling.
 - **Result** - for better error handling and enables railway-oriented
@@ -116,7 +119,7 @@ on-demand as we go along.
 
 Expression provides a `pipe` function similar to `|>` in F#. We don't
 want to overload any Python operators e.g `|` so `pipe` is a plain old
-function taking N-arguments and thus lets you pipe a value through any
+function taking N-arguments, and will let you pipe a value through any
 number of functions.
 
 ```py
@@ -252,7 +255,7 @@ For more information about options:
 ### Results
 
 The `Result[T, TError]` type lets you write error-tolerant code that can
-be composed. Result works similar to `Option` but lets you define the
+be composed. A Result works similar to `Option` but lets you define the
 value used for errors, e.g an exception type or similar. This is great
 when you want to know why some operation failed (not just `Nothing`).
 

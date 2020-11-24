@@ -30,8 +30,8 @@ def from_continuations(
             exception, and cancellation continuations.
 
     Returns:
-        An asynchronous computation that provides the callback with
-        the current continuations.
+        An asynchronous computation that provides the callback with the
+        current continuations.
     """
     future: Future[Any] = asyncio.Future()
 
@@ -49,10 +49,13 @@ def from_continuations(
 
 
 def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -> None:
-    """Starts the asynchronous computation in the event loop. Do not await its result.
+    """Starts the asynchronous computation in the event loop. Do not
+    await its result.
 
-    If no cancellation token is provided then the default cancellation token
-    is used."""
+    If no cancellation token is provided then the default cancellation
+    token is used.
+    """
+
     task = asyncio.create_task(computation)
 
     def cb():

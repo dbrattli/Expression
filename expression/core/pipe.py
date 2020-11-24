@@ -1,8 +1,7 @@
-from typing import TypeVar, Callable, Tuple, Any, overload
+from typing import Any, Callable, Tuple, TypeVar, overload
 
 from .compose import compose
 from .misc import starid
-
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -12,6 +11,8 @@ E = TypeVar("E")
 F = TypeVar("F")
 G = TypeVar("G")
 H = TypeVar("H")
+T = TypeVar("T")
+J = TypeVar("J")
 
 
 @overload
@@ -84,6 +85,37 @@ def pipe(
     ...
 
 
+@overload
+def pipe(
+    value: A,
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
+    __fn6: Callable[[F], G],
+    __fn7: Callable[[G], H],
+    __fn8: Callable[[H], T],
+) -> H:
+    ...
+
+
+@overload
+def pipe(
+    value: A,
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
+    __fn6: Callable[[F], G],
+    __fn7: Callable[[G], H],
+    __fn8: Callable[[H], T],
+    __fn9: Callable[[T], J],
+) -> J:
+    ...
+
+
 def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:
     """Functional pipe (`|>`)
 
@@ -118,15 +150,15 @@ def pipe2(value: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D
     ...
 
 
-def pipe2(args, *fns):
+def pipe2(args: Any, *fns: Any):
     return starpipe(args, *fns)
 
 
-def pipe3(args, *fns):
+def pipe3(args: Any, *fns: Any):
     return starpipe(args, *fns)
 
 
-def starpipe(args, *fns):
+def starpipe(args: Any, *fns: Any):
     """Functional pipe_n (`||>`, `||>`, `|||>`, etc)
 
     Allows the use of function arguments on the left side of the

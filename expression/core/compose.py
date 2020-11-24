@@ -1,5 +1,5 @@
 from functools import reduce
-from typing import Callable, Any, TypeVar, overload
+from typing import Any, Callable, TypeVar, overload
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -9,6 +9,8 @@ E = TypeVar("E")
 F = TypeVar("F")
 G = TypeVar("G")
 H = TypeVar("H")
+T = TypeVar("T")
+J = TypeVar("J")
 
 
 @overload
@@ -74,6 +76,35 @@ def compose(
     __fn6: Callable[[F], G],
     __fn7: Callable[[G], H],
 ) -> Callable[[A], H]:
+    ...
+
+
+@overload
+def compose(
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
+    __fn6: Callable[[F], G],
+    __fn7: Callable[[G], H],
+    __fn8: Callable[[H], T],
+) -> Callable[[A], T]:
+    ...
+
+
+@overload
+def compose(
+    __fn1: Callable[[A], B],
+    __fn2: Callable[[B], C],
+    __fn3: Callable[[C], D],
+    __fn4: Callable[[D], E],
+    __fn5: Callable[[E], F],
+    __fn6: Callable[[F], G],
+    __fn7: Callable[[G], H],
+    __fn8: Callable[[H], T],
+    __fn9: Callable[[T], J],
+) -> Callable[[A], J]:
     ...
 
 

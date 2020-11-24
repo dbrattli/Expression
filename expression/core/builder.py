@@ -84,9 +84,9 @@ class Builder(Generic[TOuter, TInner], ABC):
             except EffectError:
                 pass
 
-            # If anything returns none (i.e raises StopIteration without
-            # a value) then we expect the effect to have a zero method
-            # implemented.
+            # If anything returns `None` (i.e raises StopIteration
+            # without a value) then we expect the effect to have a zero
+            # method implemented.
             if result is None:
                 result = self.zero()
 
