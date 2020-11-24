@@ -20,5 +20,30 @@
     ],
     "python.languageServer": "Pylance",
     "python.analysis.typeCheckingMode": "strict",
-    "vsintellicode.features.python.deepLearning": "enabled"
+    //"python.analysis.logLevel": "Trace",
+    "vsintellicode.features.python.deepLearning": "enabled",
+    "grammarly.overrides": [
+        {
+            "files": [
+                "**/README.md"
+            ],
+            "config": {
+                "audience": "expert",
+                "dialect": "american",
+                "domain": "technical",
+                "emotions": [
+                    "optimistic"
+                ],
+                "goals": [
+                    "inform"
+                ],
+                "emotion": "mild"
+            }
+        }
+    ],
+    "grammarly.userWords": [
+        "Expression",
+        "Iterator",
+        "Iterable"
+    ]
 }

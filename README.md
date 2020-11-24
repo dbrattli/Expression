@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/expression.svg)](https://pypi.python.org/pypi/Expression)
 ![Python package](https://github.com/dbrattli/expression/workflows/Python%20package/badge.svg)
 ![Upload Python Package](https://github.com/dbrattli/expression/workflows/Upload%20Python%20Package/badge.svg)
-[![codecov](https://codecov.io/gh/dbrattli/expression/branch/master/graph/badge.svg)](https://codecov.io/gh/dbrattli/expression)
+[![codecov](https://codecov.io/gh/dbrattli/expression/branch/main/graph/badge.svg)](https://codecov.io/gh/dbrattli/expression)
 
 > Pragmatic functional programming
 
@@ -249,8 +249,8 @@ assert xs is Nothing
 
 For more information about options:
 
-- [Tutorial](https://github.com/dbrattli/Expression/blob/master/notebooks/Options.ipynb)
-- [API reference](https://dbrattli.github.io/Expression/expression/core/option.html)
+- [Tutorial](https://github.com/dbrattli/Expression/blob/maom/notebooks/Options.ipynb)
+- [API reference](https://dbrattli.github.io/Expression/main/core/option.html)
 
 ### Results
 
@@ -497,4 +497,4 @@ formatted using [Black](https://github.com/psf/black).
 
 ## License
 
-MIT, see [LICENSE](https://github.com/dbrattli/Expression/blob/master/LICENSE).
+MIT, see [LICENSE](https://github.com/dbrattli/Expression/blob/main/LICENSE).
