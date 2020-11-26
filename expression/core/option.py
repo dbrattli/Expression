@@ -298,7 +298,7 @@ class Nothing_(Option[TSource], EffectError):
 
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
-# avoid conflicts with the builtin `None` value.
+# avoid conflicts with the builtin `None` value in Python.
 # Note to self: Must be of type `Nothing_` or pattern matching will not work.
 Nothing: Nothing_[Any] = Nothing_()
 """Singleton `Nothing` object.

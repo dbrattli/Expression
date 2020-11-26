@@ -172,7 +172,7 @@ def test_active_pattern_matches():
 def test_active_pattern_not_matches():
     text = "abc"
     with match(text) as m:
-        for _ in ParseInteger().case(m):
+        for _ in ParseInteger.case(m):
             assert False
 
         while m.default():

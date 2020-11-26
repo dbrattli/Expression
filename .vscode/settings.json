@@ -45,6 +45,7 @@
         "Expression",
         "Iterable",
         "Iterator",
+        "Subgenerator",
         "iterable",
         "iterables",
         "iterator"

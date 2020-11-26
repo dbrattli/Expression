@@ -7,49 +7,48 @@
 
 > Pragmatic functional programming
 
-Expression aims to be a solid, type-safe, pragmatic, and high
-performance library for practical functional programming in Python 3.8+.
-By pragmatic we mean that the goal of the library is to use simple
-abstractions to enable you to do practical and productive functional
-programming in Python (instead of being a [Monad
-tutorial](https://github.com/dbrattli/OSlash)).
+Expression aims to be a solid, type-safe, pragmatic, and high performance
+library for frictionless and practical functional programming in Python 3.8+.
 
-Python is a multi-paradigm programming language that also supports
-functional programming constructs such as functions, higher-order
-functions, lambdas, and in many ways favors composition over inheritance.
+By pragmatic we mean that the goal of the library is to use simple abstractions
+to enable you to do practical and productive functional programming in Python
+(instead of being a [Monad tutorial](https://github.com/dbrattli/OSlash)).
+
+Python is a multi-paradigm programming language that also supports functional
+programming constructs such as functions, higher-order functions, lambdas, and
+in many ways favors composition over inheritance.
 
 > Better Python with F#
 
 Expression tries to make a better Python by providing several functional
-features inspired by [F#](https://fsharp.org) into Python. This serves
-several purposes:
+features inspired by [F#](https://fsharp.org) into Python. This serves several
+purposes:
 
-- Enable functional programming in a Pythonic way. I.e make sure we are
-  not over-abstracting things. Expressions will not be anywhere close to e.g
+- Enable functional programming in a Pythonic way. I.e make sure we are not
+  over-abstracting things. Expressions will not be anywhere close to e.g
   Haskell.
-- Everything you learn with Expression can also be used with F#. Learn
-  F# by starting in a programming language they already know. Perhaps
-  get inspired to also [try out F#](https://aka.ms/fsharphome) by
-  itself.
-- Make it easier for F# developers to use Python when needed, and re-use
-  many of the concepts and abstractions they already know and love.
+- Everything you learn with Expression can also be used with F#. Learn F# by
+  starting in a programming language they already know. Perhaps get inspired to
+  also [try out F#](https://aka.ms/fsharphome) by itself.
+- Make it easier for F# developers to use Python when needed, and re-use many
+  of the concepts and abstractions they already know and love.
 
 Expression will enable you to work with Python using many of the same
-programming concepts and abstractions. This enables concepts such as
-[Railway oriented programming](https://fsharpforfunandprofit.com/rop/)
-(ROP) for better and predictable error handling. Pipelining for
-workflows, computational expressions, etc.
+programming concepts and abstractions. This enables concepts such as [Railway
+oriented programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
+and predictable error handling. Pipelining for workflows, computational
+expressions, etc.
 
-F# is a functional programming language for .NET that is succinct
-(concise, readable, and type-safe) and kind of
-[Pythonic](https://docs.python.org/3/glossary.html). F# is in many ways
-very similar to Python, but F# can also do a lot of things better than
-Python:
+F# is a functional programming language for .NET that is succinct (concise,
+readable, and type-safe) and kind of
+[Pythonic](https://docs.python.org/3/glossary.html). F# is in many ways very
+similar to Python, but F# can also do a lot of things better than Python:
 
 *Expressions evaluates to a value. Statements do something.*
 
-- Strongly typed, if it compiles it usually works making refactoring
-  much safer. You can trust the type system. With mypy or Pylance you often wonder who is right and who is wrong.
+- Strongly typed, if it compiles it usually works making refactoring much
+  safer. You can trust the type-system. With mypy or Pylance you often wonder
+  who is right and who is wrong.
 - Type inference, the compiler deduces types during compilation
 - Expression based language
 
@@ -71,24 +70,24 @@ $ pip3 install expression
 - Provide pipelining and pipe friendly methods. Compose all the things!
 - Dot-chaining on objects as an alternative syntax to pipes.
 - Lower the cognitive load on the programmer by:
-  - Avoid currying, not supported in Python by default and not a well
-    known concept by Python programmers.
-  - Avoid operator (`|`, `>>`, etc) overloading, this usually confuses
-    more than it helps.
-  - Avoid recursion. Recursion is not normally used in Python and any
-    use of it should be hidden within the SDK.
-- Provide [type-hints](https://docs.python.org/3/library/typing.html)
-  for all functions and methods.
-- Code must pass strict static type checking by
-  [mypy](http://mypy-lang.org/) and
+  - Avoid currying, not supported in Python by default and not a well known
+    concept by Python programmers.
+  - Avoid operator (`|`, `>>`, etc) overloading, this usually confuses more
+    than it helps.
+  - Avoid recursion. Recursion is not normally used in Python and any use of it
+    should be hidden within the SDK.
+- Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
+  functions and methods.
+- Code must pass strict static type checking by [mypy](http://mypy-lang.org/)
+  and
   [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
   Pylance is awesome, use it!
 
 ## Supported features
 
-Expression will never provide you with all the features of F# and .NET.
-We are providing a few of the features we think are useful, and will add
-more on-demand as we go along.
+Expression will never provide you with all the features of F# and .NET. We are
+providing a few of the features we think are useful, and will add more
+on-demand as we go along.
 
 - **Pipelining** - for creating workflows.
 - **Composition** - for composing and creating new operators
@@ -302,11 +301,10 @@ assert ys == zs
 
 ### Pattern Matching
 
-Pattern matching is tricky for a language like Python. We are
-waiting for [PEP 634](https://www.python.org/dev/peps/pep-0634/) and
-structural pattern matching for Python. But we need something that can
-by handled by static type checkers and will also unwrap inner e.g
-optional values and results.
+Pattern matching is tricky for a language like Python. We are waiting for [PEP
+634](https://www.python.org/dev/peps/pep-0634/) and structural pattern matching
+for Python. But we need something that can by handled by static type checkers
+and will also decompose or unwrap inner values.
 
 What we want to achieve with pattern matching:
 
@@ -315,14 +313,13 @@ What we want to achieve with pattern matching:
   programmer.
 - Type safety. We need the code to pass static type checkers.
 - Decomposing of wrapped values, e.g options and results.
-- Case handling must be inline, i.e we want to avoid lambdas which would
-  make things difficult for e.g async code.
-- Pythonic. Is it possible to use something that still looks like Python
-  code?
+- Case handling must be inline, i.e we want to avoid lambdas which would make
+  things difficult for e.g async code.
+- Pythonic. Is it possible to use something that still looks like Python code?
 
-The solution we propose is based on loops, and singleton iterables. This
-lets us write our code inline, decompose and unwrap inner values, and
-also effectively skip the cases that do not match.
+The solution we propose is based on loops, singleton iterables and resource
+managemnet. This lets us write our code inline, decompose and unwrap inner
+values, and also effectively skip the cases that do not match.
 
 ```py
 from expression.core import match
@@ -409,9 +406,10 @@ class Matchable(Protocol[TSource]):
 ```
 
 This significantly simplifies the decomposition and type handling
-compared to using `isinstance` checks. E.g code from aioreactive:
+compared to using `isinstance` directly. E.g code from
+[aioreactive](https://github.com/dbrattli/aioreactive/blob/master/aioreactive/combine.py#L64):
 
-```
+```py
 if isinstance(msg, InnerObservableMsg):
     msg = cast(InnerObservableMsg[TSource], msg)
     xs: AsyncObservable[TSource] = msg.inner_observable

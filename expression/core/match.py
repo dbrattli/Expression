@@ -66,7 +66,7 @@ class Matcher:
 
         value = self.value
 
-        # Active pattern matching. The pattern is matching the value.
+        # The pattern is matching the value (aka active pattern matching)
         if hasattr(pattern, "__match_val__"):
             matched = pattern.__match_val__(value)
             if matched:
@@ -81,10 +81,12 @@ class Matcher:
                 self.is_matched = True
             return matched
 
+        # Value is pattern or equals pattern
         if value is pattern or value == pattern:
             self.is_matched = True
             return [value]
 
+        # Value is an instance of pattern
         try:
             if isinstance(value, pattern):
                 self.is_matched = True
@@ -92,6 +94,7 @@ class Matcher:
         except TypeError:
             pass
 
+        # No match
         return []
 
     def default(self) -> Iterable[Any]:
