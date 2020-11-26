@@ -1,4 +1,6 @@
-from expression.core import Matcher, Nothing, Option, Some, match
+from typing import Any, Iterable
+
+from expression.core import Matcher, Nothing, Option, Pattern, Some, match
 
 
 def test_default_matches():
@@ -38,6 +40,24 @@ def test_match_instance():
 def test_not_match_instance():
     with match(42) as m:
         while m.case(43):
+            assert False
+
+        while m.default():
+            assert True
+
+
+def test_match_equals():
+    with match(Some(42)) as m:
+        while m.case(Some(42)):
+            assert True
+
+        while m.default():
+            assert False
+
+
+def test_match_not_equals():
+    with match(Some(42)) as m:
+        while m.case(Some(43)):
             assert False
 
         while m.default():
@@ -117,3 +137,43 @@ def test_match_multiple_only_matches_first():
 
         while m.default():
             assert False
+
+
+class ParseInteger(Pattern[int]):
+    """Active pattern for parsing integers."""
+
+    @classmethod
+    def __match_val__(cls, value: Any) -> Iterable[int]:
+        """Match value with pattern."""
+
+        try:
+            number = int(value)
+        except ValueError:
+            return []
+        else:
+            return [number]
+
+    @classmethod
+    def case(cls, m: Matcher) -> Iterable[int]:
+        """Helper to cast the match result to correct type."""
+        return m.case(cls)
+
+
+def test_active_pattern_matches():
+    text = "42"
+    with match(text) as m:
+        for value in ParseInteger.case(m):
+            assert value == int(text)
+
+        while m.default():
+            assert False
+
+
+def test_active_pattern_not_matches():
+    text = "abc"
+    with match(text) as m:
+        for _ in ParseInteger().case(m):
+            assert False
+
+        while m.default():
+            assert True

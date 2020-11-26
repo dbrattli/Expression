@@ -6,8 +6,7 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
 from abc import ABC, abstractmethod
-from typing import (Any, Callable, Generator, Iterable, Iterator, List,
-                    Optional, TypeVar, cast, overload)
+from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
 
 from .error import EffectError
 from .match import Matchable
@@ -186,8 +185,6 @@ class Some(Option[TSource]):
         return self._value
 
     def __match__(self, pattern: Any) -> Iterable[TSource]:
-        print("__match__", pattern)
-
         if self == pattern:
             return [self.value]
 

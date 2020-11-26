@@ -43,7 +43,10 @@
     ],
     "grammarly.userWords": [
         "Expression",
+        "Iterable",
         "Iterator",
-        "Iterable"
+        "iterable",
+        "iterables",
+        "iterator"
     ]
 }

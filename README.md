@@ -181,9 +181,11 @@ ys = custom(xs)
 
 ### Options
 
-The option type is used when an actual value might not exist for a named
-value or variable. An option has an underlying type and can hold a value
-of that type `Some(value)`, or it might not have the value `Nothing`.
+The option type is used when a function or method cannot produce a
+meaningful output for a given input.
+
+An option value may have a value of a given type i.e `Some(value)`, or
+it might not have any meaningful value, i.e `Nothing`.
 
 ```py
 from expression.core import Some, Nothing, Option
@@ -191,22 +193,24 @@ from expression.core import Some, Nothing, Option
 def keep_positive(a: int) -> Option[int]:
     if a > 0:
         return Some(a)
-    else:
-        return Nothing
+
+    return Nothing
 ```
 
 ```py
 def exists(x : Option[int]) -> bool:
     for value in x.match(Ok):
         return True
-    else:
-        return False
+
+    return False
 ```
 
-Options as decorators for computational expressions. Computational
-expressions in Expression are implemented as coroutines ([enhanced
-generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`,
-`yield from` and `return` to consume or generate optional values:
+## Options as effects.
+
+Effects in Expression is implemented as specially decorated coroutines
+([enhanced generators](https://www.python.org/dev/peps/pep-0342/)) using
+`yield`, `yield from` and `return` to consume or generate optional
+values:
 
 ```py
 from expression import effect
@@ -358,11 +362,11 @@ def matcher(value) -> Option[int]:
 result = matcher(42).
 ```
 
-Classes may also support `match` with pattern directly, i.e:
+Classes should also support `match` with pattern directly, i.e:
 `xs.match(pattern)` is effectively the same as
-`match(xs).case(pattern)`. For multiple cases you will need to use
-`match` to get a match object (since the match object will keep state to
-know if it has found a match or not).
+`match(xs).case(pattern)`, except that the class can then provide
+overloads for correct typing of the unwrapped values without having to
+cast.
 
 ```py
     xs = Some(42)
@@ -390,11 +394,36 @@ values by subclassing or implementing the matching protocol:
 class Matchable(Protocol[TSource]):
     """Pattern matching protocol."""
 
+    @classmethod
+    def case(cls, matcher: Matcher) -> Iterable[TSource]:
+        """Helper to cast the match result to correct type."""
+
+        return matcher.case(cls)
+
+
     @abstractmethod
     def __match__(s elf, pattern: Any) -> Iterable[TSource]:
         """Return a singleton iterable item (e.g `[value]`) if pattern
         matches, else an empty iterable (e.g. `[]`)."""
         raise NotImplementedError
+```
+
+This significantly simplifies the decomposition and type handling
+compared to using `isinstance` checks. E.g code from aioreactive:
+
+```
+if isinstance(msg, InnerObservableMsg):
+    msg = cast(InnerObservableMsg[TSource], msg)
+    xs: AsyncObservable[TSource] = msg.inner_observable
+    ...
+```
+
+Now becomes:
+
+```py
+with match(msg) as m:
+    for xs in InnerObservableMsg.case(m):
+        ...
 ```
 
 ## Notable Differences
@@ -442,8 +471,8 @@ programmers.
 
 Expression is an F# inspired version of my previously written
 [OSlash](https://github.com/dbrattli/OSlash) monad tutorial where I
-ported a number of Haskell abstractions to Python. I never felt that
-OSlash was really practically usable in Python, but F# is much closer to
+ported several Haskell abstractions to Python. I never felt that
+OSlash was practically usable in Python, but F# is much closer to
 Python than Haskell, so it makes more sense to try and make a functional
 library inspired by F# instead.
 

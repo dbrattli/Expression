@@ -20,8 +20,7 @@ Example:
 
 import builtins
 import functools
-from typing import (Any, Callable, Iterable, List, Tuple, TypeVar, cast,
-                    overload)
+from typing import Any, Callable, Iterable, List, Tuple, TypeVar, cast, overload
 
 from expression.core import Matcher, Nothing, Option, Some, pipe
 
@@ -51,7 +50,7 @@ class FrozenList(Tuple[TSource]):
         return FrozenList(source)
 
     @overload
-    def match(self) -> "Matcher[TSource]":
+    def match(self) -> Matcher:
         ...
 
     @overload
@@ -59,7 +58,7 @@ class FrozenList(Tuple[TSource]):
         ...
 
     def match(self, pattern: Any) -> Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
