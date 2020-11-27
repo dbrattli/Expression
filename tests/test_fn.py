@@ -1,10 +1,10 @@
-from expression.core import Ok, Result, TailCall, recursive
+from expression.core import Ok, Result, TailCall, tailrec
 from hypothesis import given
 from hypothesis import strategies as st
 
 
 def test_factorial():
-    @recursive
+    @tailrec
     def factorial(n: int, acc: int = 1) -> Result[int, Exception]:
         if n == 0:
             return Ok(acc)

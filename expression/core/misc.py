@@ -69,20 +69,20 @@ def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
         >>> fn(a, b) == flip(fn)(b, a)
     """
 
-    def _(b: B, a: A) -> Any:
+    def _flip(b: B, a: A) -> Any:
         return fn(a, b)
 
-    return _
+    return _flip
 
 
 def snd(value: Tuple[A, B]) -> B:
-    """Return second argument of tuple."""
+    """Return second argument of the tuple."""
     _, b = value
     return b
 
 
 def fst(value: Tuple[A, B]) -> A:
-    """Return first argument of tuple."""
+    """Return first argument of the tuple."""
     a, _ = value
     return a
 

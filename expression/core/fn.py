@@ -15,7 +15,7 @@ class TailCall(Ok[TResult, Exception]):
         self.kw = kw
 
 
-def recursive(fn: Callable[..., Result[TResult, Exception]]) -> Callable[..., TResult]:
+def tailrec(fn: Callable[..., Result[TResult, Exception]]) -> Callable[..., TResult]:
     """Tail call bouncing decorator."""
 
     def _trampoline(bouncer: Result[TResult, Exception]) -> TResult:
@@ -35,7 +35,7 @@ def recursive(fn: Callable[..., Result[TResult, Exception]]) -> Callable[..., TR
     return wrapper
 
 
-def recursive_async(fn: Callable[..., Awaitable[TResult]]) -> Callable[..., Awaitable[TResult]]:
+def tailrec_async(fn: Callable[..., Awaitable[TResult]]) -> Callable[..., Awaitable[TResult]]:
     """Thunk bouncing async decorator."""
 
     async def _trampoline(bouncer: Result[TResult, Exception]) -> TResult:
@@ -53,4 +53,4 @@ def recursive_async(fn: Callable[..., Awaitable[TResult]]) -> Callable[..., Awai
     return _
 
 
-__all__ = ["TailCall", "recursive", "recursive_async"]
+__all__ = ["TailCall", "tailrec", "tailrec_async"]
