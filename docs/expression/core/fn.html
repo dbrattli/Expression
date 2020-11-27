@@ -43,7 +43,7 @@ class TailCall(Ok[TResult, Exception]):
         self.kw = kw
 
 
-def recursive(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
+def tailrec(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
     &#34;&#34;&#34;Tail call bouncing decorator.&#34;&#34;&#34;
 
     def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
@@ -63,7 +63,7 @@ def recursive(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[...,
     return wrapper
 
 
-def recursive_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
+def tailrec_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
     &#34;&#34;&#34;Thunk bouncing async decorator.&#34;&#34;&#34;
 
     async def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
@@ -81,7 +81,7 @@ def recursive_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., A
     return _
 
 
-__all__ = [&#34;TailCall&#34;, &#34;recursive&#34;, &#34;recursive_async&#34;]</code></pre>
+__all__ = [&#34;TailCall&#34;, &#34;tailrec&#34;, &#34;tailrec_async&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -91,8 +91,8 @@ __all__ = [&#34;TailCall&#34;, &#34;recursive&#34;, &#34;recursive_async&#34;]</
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="expression.core.fn.recursive"><code class="name flex">
-<span>def <span class="ident">recursive</span></span>(<span>fn: Callable[..., <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, Exception]]) ‑> Callable[..., ~TResult]</span>
+<dt id="expression.core.fn.tailrec"><code class="name flex">
+<span>def <span class="ident">tailrec</span></span>(<span>fn: Callable[..., <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, Exception]]) ‑> Callable[..., ~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Tail call bouncing decorator.</p></div>
@@ -100,7 +100,7 @@ __all__ = [&#34;TailCall&#34;, &#34;recursive&#34;, &#34;recursive_async&#34;]</
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def recursive(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
+<pre><code class="python">def tailrec(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
     &#34;&#34;&#34;Tail call bouncing decorator.&#34;&#34;&#34;
 
     def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
@@ -120,8 +120,8 @@ __all__ = [&#34;TailCall&#34;, &#34;recursive&#34;, &#34;recursive_async&#34;]</
     return wrapper</code></pre>
 </details>
 </dd>
-<dt id="expression.core.fn.recursive_async"><code class="name flex">
-<span>def <span class="ident">recursive_async</span></span>(<span>fn: Callable[..., Awaitable[~TResult]]) ‑> Callable[..., Awaitable[~TResult]]</span>
+<dt id="expression.core.fn.tailrec_async"><code class="name flex">
+<span>def <span class="ident">tailrec_async</span></span>(<span>fn: Callable[..., Awaitable[~TResult]]) ‑> Callable[..., Awaitable[~TResult]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Thunk bouncing async decorator.</p></div>
@@ -129,7 +129,7 @@ __all__ = [&#34;TailCall&#34;, &#34;recursive&#34;, &#34;recursive_async&#34;]</
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def recursive_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
+<pre><code class="python">def tailrec_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
     &#34;&#34;&#34;Thunk bouncing async decorator.&#34;&#34;&#34;
 
     async def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
@@ -204,8 +204,8 @@ __all__ = [&#34;TailCall&#34;, &#34;recursive&#34;, &#34;recursive_async&#34;]</
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="expression.core.fn.recursive" href="#expression.core.fn.recursive">recursive</a></code></li>
-<li><code><a title="expression.core.fn.recursive_async" href="#expression.core.fn.recursive_async">recursive_async</a></code></li>
+<li><code><a title="expression.core.fn.tailrec" href="#expression.core.fn.tailrec">tailrec</a></code></li>
+<li><code><a title="expression.core.fn.tailrec_async" href="#expression.core.fn.tailrec_async">tailrec_async</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

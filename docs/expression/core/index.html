@@ -36,9 +36,9 @@ from .builder import Builder
 from .compose import compose
 from .curry import curried
 from .error import EffectError, failwith
-from .fn import TailCall, recursive, recursive_async
+from .fn import TailCall, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
-from .match import Matchable, Matcher, match
+from .match import Matchable, Matcher, Pattern, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
@@ -65,11 +65,12 @@ __all__ = [
     &#34;Ok&#34;,
     &#34;Option&#34;,
     &#34;option&#34;,
+    &#34;Pattern&#34;,
     &#34;pipe&#34;,
     &#34;pipe2&#34;,
     &#34;pipe3&#34;,
-    &#34;recursive&#34;,
-    &#34;recursive_async&#34;,
+    &#34;tailrec&#34;,
+    &#34;tailrec_async&#34;,
     &#34;result&#34;,
     &#34;Result&#34;,
     &#34;snd&#34;,
@@ -86,6 +87,10 @@ __all__ = [
 <div class="desc"><p>The aiotools (async) module …</p></div>
 </dd>
 <dt><code class="name"><a title="expression.core.builder" href="builder.html">expression.core.builder</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="expression.core.choice" href="choice.html">expression.core.choice</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -269,23 +274,23 @@ assert add(3)(4) == 7</p></div>
         &gt;&gt;&gt; fn(a, b) == flip(fn)(b, a)
     &#34;&#34;&#34;
 
-    def _(b: B, a: A) -&gt; Any:
+    def _flip(b: B, a: A) -&gt; Any:
         return fn(a, b)
 
-    return _</code></pre>
+    return _flip</code></pre>
 </details>
 </dd>
 <dt id="expression.core.fst"><code class="name flex">
 <span>def <span class="ident">fst</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~A</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Return first argument of tuple.</p></div>
+<div class="desc"><p>Return first argument of the tuple.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def fst(value: Tuple[A, B]) -&gt; A:
-    &#34;&#34;&#34;Return first argument of tuple.&#34;&#34;&#34;
+    &#34;&#34;&#34;Return first argument of the tuple.&#34;&#34;&#34;
     a, _ = value
     return a</code></pre>
 </details>
@@ -309,17 +314,17 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>value: ~TSource) ‑> expression.core.match.Matcher[~TSource]</span>
+<span>def <span class="ident">match</span></span>(<span>value: ~TSource) ‑> expression.core.match.Matcher</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Convenience create method to get typing right</p>
+<div class="desc"><p>Convenience matcher create method to get typing right</p>
 <p>Same as <code><a title="expression.core.Matcher.of" href="#expression.core.Matcher.of">Matcher.of()</a>(value)</code></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(value: TSource) -&gt; Matcher[TSource]:
-    &#34;&#34;&#34;Convenience create method to get typing right
+<pre><code class="python">def match(value: TSource) -&gt; Matcher:
+    &#34;&#34;&#34;Convenience matcher create method to get typing right
 
     Same as `Matcher.of(value)`
     &#34;&#34;&#34;
@@ -356,7 +361,7 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.pipe2"><code class="name flex">
-<span>def <span class="ident">pipe2</span></span>(<span>args, *fns)</span>
+<span>def <span class="ident">pipe2</span></span>(<span>args: Any, *fns: Any)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -364,12 +369,12 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe2(args, *fns):
+<pre><code class="python">def pipe2(args: Any, *fns: Any):
     return starpipe(args, *fns)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.pipe3"><code class="name flex">
-<span>def <span class="ident">pipe3</span></span>(<span>args, *fns)</span>
+<span>def <span class="ident">pipe3</span></span>(<span>args: Any, *fns: Any)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -377,12 +382,27 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe3(args, *fns):
+<pre><code class="python">def pipe3(args: Any, *fns: Any):
     return starpipe(args, *fns)</code></pre>
 </details>
 </dd>
-<dt id="expression.core.recursive"><code class="name flex">
-<span>def <span class="ident">recursive</span></span>(<span>fn: Callable[..., <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, Exception]]) ‑> Callable[..., ~TResult]</span>
+<dt id="expression.core.snd"><code class="name flex">
+<span>def <span class="ident">snd</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~B</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return second argument of the tuple.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def snd(value: Tuple[A, B]) -&gt; B:
+    &#34;&#34;&#34;Return second argument of the tuple.&#34;&#34;&#34;
+    _, b = value
+    return b</code></pre>
+</details>
+</dd>
+<dt id="expression.core.tailrec"><code class="name flex">
+<span>def <span class="ident">tailrec</span></span>(<span>fn: Callable[..., <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, Exception]]) ‑> Callable[..., ~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Tail call bouncing decorator.</p></div>
@@ -390,7 +410,7 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def recursive(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
+<pre><code class="python">def tailrec(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
     &#34;&#34;&#34;Tail call bouncing decorator.&#34;&#34;&#34;
 
     def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
@@ -410,8 +430,8 @@ assert add(3)(4) == 7</p></div>
     return wrapper</code></pre>
 </details>
 </dd>
-<dt id="expression.core.recursive_async"><code class="name flex">
-<span>def <span class="ident">recursive_async</span></span>(<span>fn: Callable[..., Awaitable[~TResult]]) ‑> Callable[..., Awaitable[~TResult]]</span>
+<dt id="expression.core.tailrec_async"><code class="name flex">
+<span>def <span class="ident">tailrec_async</span></span>(<span>fn: Callable[..., Awaitable[~TResult]]) ‑> Callable[..., Awaitable[~TResult]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Thunk bouncing async decorator.</p></div>
@@ -419,7 +439,7 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def recursive_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
+<pre><code class="python">def tailrec_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
     &#34;&#34;&#34;Thunk bouncing async decorator.&#34;&#34;&#34;
 
     async def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
@@ -435,21 +455,6 @@ assert add(3)(4) == 7</p></div>
         return await _trampoline(result)
 
     return _</code></pre>
-</details>
-</dd>
-<dt id="expression.core.snd"><code class="name flex">
-<span>def <span class="ident">snd</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~B</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return second argument of tuple.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def snd(value: Tuple[A, B]) -&gt; B:
-    &#34;&#34;&#34;Return second argument of tuple.&#34;&#34;&#34;
-    _, b = value
-    return b</code></pre>
 </details>
 </dd>
 </dl>
@@ -593,9 +598,9 @@ return default</p></div>
             except EffectError:
                 pass
 
-            # If anything returns none (i.e raises StopIteration without
-            # a value) then we expect the effect to have a zero method
-            # implemented.
+            # If anything returns `None` (i.e raises StopIteration
+            # without a value) then we expect the effect to have a zero
+            # method implemented.
             if result is None:
                 result = self.zero()
 
@@ -1164,27 +1169,29 @@ timeout is exceeded.</p></div>
 
     @abstractmethod
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Return a singleton iterable item (e.g `[ value ]`) if pattern
+        &#34;&#34;&#34;Match pattern with value.
+
+        Return a singleton iterable item (e.g `[ value ]`) if pattern
         matches, else an empty iterable (e.g. `[]`).&#34;&#34;&#34;
 
         raise NotImplementedError
 
     @overload
-    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
+    def match(self) -&gt; &#34;Matcher&#34;:
         ...
 
     @overload
     def match(self, pattern: Any) -&gt; Iterable[TSource]:
         ...
 
-    def match(self, pattern: Optional[Any] = None) -&gt; &#34;Union[Matcher[TSource], Iterable[TSource]]&#34;:
+    def match(self, pattern: Optional[Any] = None) -&gt; &#34;Union[Matcher, Iterable[TSource]]&#34;:
         &#34;&#34;&#34;Match with pattern.
 
         NOTE: You most often need to add this methods plus the
         appropriate overloads to your own matchable class to get typing
         correctly.&#34;&#34;&#34;
 
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1199,7 +1206,7 @@ timeout is exceeded.</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.Matchable.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, pattern: Union[Any, NoneType] = None) ‑> Union[expression.core.match.Matcher[~TSource], Iterable[~TSource]]</span>
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Union[Any, NoneType] = None) ‑> Union[expression.core.match.Matcher, Iterable[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Match with pattern.</p>
@@ -1210,14 +1217,14 @@ correctly.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, pattern: Optional[Any] = None) -&gt; &#34;Union[Matcher[TSource], Iterable[TSource]]&#34;:
+<pre><code class="python">def match(self, pattern: Optional[Any] = None) -&gt; &#34;Union[Matcher, Iterable[TSource]]&#34;:
     &#34;&#34;&#34;Match with pattern.
 
     NOTE: You most often need to add this methods plus the
     appropriate overloads to your own matchable class to get typing
     correctly.&#34;&#34;&#34;
 
-    m: Matcher[TSource] = Matcher(self)
+    m = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
@@ -1225,7 +1232,7 @@ correctly.</p></div>
 </dd>
 <dt id="expression.core.Matcher"><code class="flex name class">
 <span>class <span class="ident">Matcher</span></span>
-<span>(</span><span>value: Union[Any, expression.core.match.Matchable[~TSource]])</span>
+<span>(</span><span>value: Any)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Pattern matcher.</p>
@@ -1235,14 +1242,14 @@ if supported by value.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Matcher(Generic[TSource]):
+<pre><code class="python">class Matcher:
     &#34;&#34;&#34;Pattern matcher.
 
     Matches a value with type, instance or uses matching protocol
     if supported by value.
     &#34;&#34;&#34;
 
-    def __init__(self, value: Union[Any, Matchable[TSource]]):
+    def __init__(self, value: Any):
         self.is_matched = False
         self.value = value
 
@@ -1252,34 +1259,50 @@ if supported by value.</p></div>
 
         value = self.value
 
+        # The pattern is matching the value (aka active pattern matching)
+        if hasattr(pattern, &#34;__match_val__&#34;):
+            matched = pattern.__match_val__(value)
+            if matched:
+                self.is_matched = True
+                return matched
+
+        # Value is matching pattern
         if hasattr(value, &#34;__match__&#34;):
-            value_ = cast(Matchable[TSource], value)
+            value_ = cast(Matchable[Any], value)
             matched = value_.__match__(pattern)
             if matched:
                 self.is_matched = True
             return matched
 
+        # Value is pattern or equals pattern
+        if value is pattern or value == pattern:
+            self.is_matched = True
+            return [value]
+
+        # Value is an instance of pattern
         try:
-            if value is pattern or isinstance(value, pattern):
+            if isinstance(value, pattern):
                 self.is_matched = True
                 return [value]
         except TypeError:
             pass
 
+        # No match
         return []
 
-    def default(self) -&gt; Iterable[Union[Any, Matchable[TSource]]]:
+    def default(self) -&gt; Iterable[Any]:
         if self.is_matched:
             return []
+
         self.is_matched = True
         return [self.value]
 
     @staticmethod
-    def of(value: TSource) -&gt; &#34;Matcher[TSource]&#34;:
+    def of(value: TSource) -&gt; &#34;Matcher&#34;:
         &#34;&#34;&#34;Convenience create method to get typing right&#34;&#34;&#34;
         return Matcher(value)
 
-    def __enter__(self) -&gt; &#34;Matcher[TSource]&#34;:
+    def __enter__(self) -&gt; &#34;Matcher&#34;:
         &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
         return self
 
@@ -1294,14 +1317,10 @@ if supported by value.</p></div>
     def __bool__(self):
         return self.is_matched</code></pre>
 </details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>typing.Generic</li>
-</ul>
 <h3>Static methods</h3>
 <dl>
 <dt id="expression.core.Matcher.of"><code class="name flex">
-<span>def <span class="ident">of</span></span>(<span>value: ~TSource) ‑> expression.core.match.Matcher[~TSource]</span>
+<span>def <span class="ident">of</span></span>(<span>value: ~TSource) ‑> expression.core.match.Matcher</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convenience create method to get typing right</p></div>
@@ -1310,7 +1329,7 @@ if supported by value.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def of(value: TSource) -&gt; &#34;Matcher[TSource]&#34;:
+def of(value: TSource) -&gt; &#34;Matcher&#34;:
     &#34;&#34;&#34;Convenience create method to get typing right&#34;&#34;&#34;
     return Matcher(value)</code></pre>
 </details>
@@ -1333,25 +1352,40 @@ def of(value: TSource) -&gt; &#34;Matcher[TSource]&#34;:
 
     value = self.value
 
+    # The pattern is matching the value (aka active pattern matching)
+    if hasattr(pattern, &#34;__match_val__&#34;):
+        matched = pattern.__match_val__(value)
+        if matched:
+            self.is_matched = True
+            return matched
+
+    # Value is matching pattern
     if hasattr(value, &#34;__match__&#34;):
-        value_ = cast(Matchable[TSource], value)
+        value_ = cast(Matchable[Any], value)
         matched = value_.__match__(pattern)
         if matched:
             self.is_matched = True
         return matched
 
+    # Value is pattern or equals pattern
+    if value is pattern or value == pattern:
+        self.is_matched = True
+        return [value]
+
+    # Value is an instance of pattern
     try:
-        if value is pattern or isinstance(value, pattern):
+        if isinstance(value, pattern):
             self.is_matched = True
             return [value]
     except TypeError:
         pass
 
+    # No match
     return []</code></pre>
 </details>
 </dd>
 <dt id="expression.core.Matcher.default"><code class="name flex">
-<span>def <span class="ident">default</span></span>(<span>self) ‑> Iterable[Union[Any, expression.core.match.Matchable[~TSource]]]</span>
+<span>def <span class="ident">default</span></span>(<span>self) ‑> Iterable[Any]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1359,9 +1393,10 @@ def of(value: TSource) -&gt; &#34;Matcher[TSource]&#34;:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def default(self) -&gt; Iterable[Union[Any, Matchable[TSource]]]:
+<pre><code class="python">def default(self) -&gt; Iterable[Any]:
     if self.is_matched:
         return []
+
     self.is_matched = True
     return [self.value]</code></pre>
 </details>
@@ -2063,6 +2098,56 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </dd>
 </dl>
 </dd>
+<dt id="expression.core.Pattern"><code class="flex name class">
+<span>class <span class="ident">Pattern</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for protocol classes.</p>
+<p>Protocol classes are defined as::</p>
+<pre><code>class Proto(Protocol):
+    def meth(self) -&gt; int:
+        ...
+</code></pre>
+<p>Such classes are primarily used with static type checkers that recognize
+structural subtyping (static duck-typing), for example::</p>
+<pre><code>class C:
+    def meth(self) -&gt; int:
+        return 0
+
+def func(x: Proto) -&gt; int:
+    return x.meth()
+
+func(C())  # Passes static type check
+</code></pre>
+<p>See PEP 544 for details. Protocol classes decorated with
+@typing.runtime_checkable act as simple-minded runtime protocols that check
+only the presence of given attributes, ignoring their type signatures.
+Protocol classes can be generic, they are defined as::</p>
+<pre><code>class GenProto(Protocol[T]):
+    def meth(self) -&gt; T:
+        ...
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Pattern(Protocol[TSource]):
+    @abstractmethod
+    def __match_val__(self, value: Any) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Match value with pattern.
+
+        Matches any value with pattern (self) and returns a list of
+        `TSource` if the case matched, else an empty list.
+        &#34;&#34;&#34;
+        raise NotImplementedError</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+</dd>
 <dt id="expression.core.Result"><code class="flex name class">
 <span>class <span class="ident">Result</span></span>
 <span>(</span><span>*args, **kwds)</span>
@@ -2345,8 +2430,6 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         return self._value
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        print(&#34;__match__&#34;, pattern)
-
         if self == pattern:
             return [self.value]
 
@@ -2543,6 +2626,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <ul>
 <li><code><a title="expression.core.aiotools" href="aiotools.html">expression.core.aiotools</a></code></li>
 <li><code><a title="expression.core.builder" href="builder.html">expression.core.builder</a></code></li>
+<li><code><a title="expression.core.choice" href="choice.html">expression.core.choice</a></code></li>
 <li><code><a title="expression.core.curry" href="curry.html">expression.core.curry</a></code></li>
 <li><code><a title="expression.core.error" href="error.html">expression.core.error</a></code></li>
 <li><code><a title="expression.core.fn" href="fn.html">expression.core.fn</a></code></li>
@@ -2564,9 +2648,9 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.pipe" href="#expression.core.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.pipe2" href="#expression.core.pipe2">pipe2</a></code></li>
 <li><code><a title="expression.core.pipe3" href="#expression.core.pipe3">pipe3</a></code></li>
-<li><code><a title="expression.core.recursive" href="#expression.core.recursive">recursive</a></code></li>
-<li><code><a title="expression.core.recursive_async" href="#expression.core.recursive_async">recursive_async</a></code></li>
 <li><code><a title="expression.core.snd" href="#expression.core.snd">snd</a></code></li>
+<li><code><a title="expression.core.tailrec" href="#expression.core.tailrec">tailrec</a></code></li>
+<li><code><a title="expression.core.tailrec_async" href="#expression.core.tailrec_async">tailrec_async</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -2660,6 +2744,9 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.Option.to_seq" href="#expression.core.Option.to_seq">to_seq</a></code></li>
 <li><code><a title="expression.core.Option.value" href="#expression.core.Option.value">value</a></code></li>
 </ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Pattern" href="#expression.core.Pattern">Pattern</a></code></h4>
 </li>
 <li>
 <h4><code><a title="expression.core.Result" href="#expression.core.Result">Result</a></code></h4>

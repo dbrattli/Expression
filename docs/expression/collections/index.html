@@ -105,7 +105,7 @@ __all__ = [
         return FrozenList(source)
 
     @overload
-    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
+    def match(self) -&gt; Matcher:
         ...
 
     @overload
@@ -113,7 +113,7 @@ __all__ = [
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
@@ -795,7 +795,7 @@ list.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m: Matcher[TSource] = Matcher(self)
+    m = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>

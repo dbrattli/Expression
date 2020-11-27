@@ -97,20 +97,20 @@ def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
         &gt;&gt;&gt; fn(a, b) == flip(fn)(b, a)
     &#34;&#34;&#34;
 
-    def _(b: B, a: A) -&gt; Any:
+    def _flip(b: B, a: A) -&gt; Any:
         return fn(a, b)
 
-    return _
+    return _flip
 
 
 def snd(value: Tuple[A, B]) -&gt; B:
-    &#34;&#34;&#34;Return second argument of tuple.&#34;&#34;&#34;
+    &#34;&#34;&#34;Return second argument of the tuple.&#34;&#34;&#34;
     _, b = value
     return b
 
 
 def fst(value: Tuple[A, B]) -&gt; A:
-    &#34;&#34;&#34;Return first argument of tuple.&#34;&#34;&#34;
+    &#34;&#34;&#34;Return first argument of the tuple.&#34;&#34;&#34;
     a, _ = value
     return a
 
@@ -144,23 +144,23 @@ __all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, 
         &gt;&gt;&gt; fn(a, b) == flip(fn)(b, a)
     &#34;&#34;&#34;
 
-    def _(b: B, a: A) -&gt; Any:
+    def _flip(b: B, a: A) -&gt; Any:
         return fn(a, b)
 
-    return _</code></pre>
+    return _flip</code></pre>
 </details>
 </dd>
 <dt id="expression.core.misc.fst"><code class="name flex">
 <span>def <span class="ident">fst</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~A</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Return first argument of tuple.</p></div>
+<div class="desc"><p>Return first argument of the tuple.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def fst(value: Tuple[A, B]) -&gt; A:
-    &#34;&#34;&#34;Return first argument of tuple.&#34;&#34;&#34;
+    &#34;&#34;&#34;Return first argument of the tuple.&#34;&#34;&#34;
     a, _ = value
     return a</code></pre>
 </details>
@@ -187,13 +187,13 @@ __all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, 
 <span>def <span class="ident">snd</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~B</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Return second argument of tuple.</p></div>
+<div class="desc"><p>Return second argument of the tuple.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def snd(value: Tuple[A, B]) -&gt; B:
-    &#34;&#34;&#34;Return second argument of tuple.&#34;&#34;&#34;
+    &#34;&#34;&#34;Return second argument of the tuple.&#34;&#34;&#34;
     _, b = value
     return b</code></pre>
 </details>

@@ -39,8 +39,7 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 &#34;&#34;&#34;
 from abc import ABC, abstractmethod
-from typing import (Any, Callable, Generator, Iterable, Iterator, List,
-                    Optional, TypeVar, cast, overload)
+from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
 
 from .error import EffectError
 from .match import Matchable
@@ -219,8 +218,6 @@ class Some(Option[TSource]):
         return self._value
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        print(&#34;__match__&#34;, pattern)
-
         if self == pattern:
             return [self.value]
 
@@ -334,7 +331,7 @@ class Nothing_(Option[TSource], EffectError):
 
 
 # The singleton None class. We use the name &#39;Nothing&#39; here instead of `None` to
-# avoid conflicts with the builtin `None` value.
+# avoid conflicts with the builtin `None` value in Python.
 # Note to self: Must be of type `Nothing_` or pattern matching will not work.
 Nothing: Nothing_[Any] = Nothing_()
 &#34;&#34;&#34;Singleton `Nothing` object.
@@ -1346,8 +1343,6 @@ def to_seq(self) -&gt; Iterable[TSource]:
         return self._value
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        print(&#34;__match__&#34;, pattern)
-
         if self == pattern:
             return [self.value]
 

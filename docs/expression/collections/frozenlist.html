@@ -94,7 +94,7 @@ class FrozenList(Tuple[TSource]):
         return FrozenList(source)
 
     @overload
-    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
+    def match(self) -&gt; Matcher:
         ...
 
     @overload
@@ -102,7 +102,7 @@ class FrozenList(Tuple[TSource]):
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
@@ -534,10 +534,10 @@ def item(index: int) -&gt; Callable[[FrozenList[TSource]], TSource]:
         The value at the given index.
     &#34;&#34;&#34;
 
-    def _(source: FrozenList[TSource]) -&gt; TSource:
+    def _item(source: FrozenList[TSource]) -&gt; TSource:
         return source.item(index)
 
-    return _
+    return _item
 
 
 def is_empty(source: FrozenList[TSource]) -&gt; bool:
@@ -1037,10 +1037,10 @@ of each element.</p>
         The value at the given index.
     &#34;&#34;&#34;
 
-    def _(source: FrozenList[TSource]) -&gt; TSource:
+    def _item(source: FrozenList[TSource]) -&gt; TSource:
         return source.item(index)
 
-    return _</code></pre>
+    return _item</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.map"><code class="name flex">
@@ -1414,7 +1414,7 @@ the input lists.</p></div>
         return FrozenList(source)
 
     @overload
-    def match(self) -&gt; &#34;Matcher[TSource]&#34;:
+    def match(self) -&gt; Matcher:
         ...
 
     @overload
@@ -1422,7 +1422,7 @@ the input lists.</p></div>
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload
@@ -2104,7 +2104,7 @@ list.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m: Matcher[TSource] = Matcher(self)
+    m = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
