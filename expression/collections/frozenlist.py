@@ -422,7 +422,8 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[FrozenList[TSource
             source: The input list..
 
         Returns:
-            A list containing only the elements that satisfy the predicate.
+            A list containing only the elements that satisfy the
+            predicate.
         """
         return source.filter(predicate)
 
@@ -439,7 +440,8 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -> Callable
     iN.
 
     Args:
-        folder: The function to update the state given the input elements.
+        folder: The function to update the state given the input
+            elements.
 
         state: The initial state.
 
@@ -540,6 +542,7 @@ def skip(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
 
     Args:
         count: The number of elements to skip.
+
     Returns:
         The list after removing the first N elements.
     """
@@ -555,6 +558,7 @@ def skip_last(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]
 
     Args:
         count: The number of elements to skip.
+
     Returns:
         The list after removing the last N elements.
     """

@@ -52,7 +52,8 @@ class MailboxProcessor(Generic[Msg]):
         Args:
             msg: Message to post.
 
-        Returns: None
+        Returns:
+            None
         """
         self.messages.put(msg)
         self.loop.call_soon_threadsafe(self.__process_events)
@@ -67,7 +68,8 @@ class MailboxProcessor(Generic[Msg]):
             to the mailbox processor. The message should contain the
             reply channel as e.g a tuple.
 
-        Returns: The reply from mailbox processor.
+        Returns:
+            The reply from mailbox processor.
         """
 
         result: Optional[Reply] = None

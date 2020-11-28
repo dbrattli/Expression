@@ -204,7 +204,7 @@ def exists(x : Option[int]) -> bool:
     return False
 ```
 
-## Options as effects.
+## Options as effects
 
 Effects in Expression is implemented as specially decorated coroutines
 ([enhanced generators](https://www.python.org/dev/peps/pep-0342/)) using
@@ -278,10 +278,9 @@ assert isinstance(xs, Some)
 
 ### Sequences
 
-Contains operations for working with iterables. Thus all the functions
-in this module will work on normal Python iterables. Iterables are
-already immutable by design, so they are already perfectly suited for
-using with functional programming.
+Contains operations for working with iterables so all the functions in
+the sequence module will work with Python iterables. Iterables are
+immutable by design, and perfectly suited for functional programming.
 
 ```py
 # Normal python way. Nested functions are hard to read since you need to
@@ -317,9 +316,10 @@ What we want to achieve with pattern matching:
   things difficult for e.g async code.
 - Pythonic. Is it possible to use something that still looks like Python code?
 
-The solution we propose is based on loops, singleton iterables and resource
-managemnet. This lets us write our code inline, decompose and unwrap inner
-values, and also effectively skip the cases that do not match.
+The solution we propose is based on loops, singleton iterables and
+resource management. This lets us write our code inline, decompose, and
+unwrap inner values, and also effectively skip the cases that do not
+match.
 
 ```py
 from expression.core import match
@@ -452,10 +452,11 @@ to type-cast every time.
 
 - I love F#, and know F# quite well. I'm the creator of projects such as
   [Oryx](https://github.com/cognitedata/oryx),
-  [Fable.Reaction](https://github.com/dbrattli/Fable.Reaction) and
+  [Fable.Reaction](https://github.com/dbrattli/Fable.Reaction), and
   [Feliz.ViewEngine](https://github.com/dbrattli/Feliz.ViewEngine)
 - I love Python, and know Python really well. I'm the creator of both
-  [RxPY](https://github.com/ReactiveX/RxPY) and
+  [RxPY](https://github.com/ReactiveX/RxPY),
+  [aioreactive](https://github.com/ReactiveX/aioreactive), and
   [OSlash](https://github.com/dbrattli/OSlash), two functional style
   libraries for Python.
 

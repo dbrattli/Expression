@@ -36,7 +36,7 @@ from .builder import Builder
 from .compose import compose
 from .curry import curried
 from .error import EffectError, failwith
-from .fn import TailCall, tailrec, tailrec_async
+from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .match import Matchable, Matcher, Pattern, match
 from .misc import flip, fst, identity, snd
@@ -69,13 +69,14 @@ __all__ = [
     &#34;pipe&#34;,
     &#34;pipe2&#34;,
     &#34;pipe3&#34;,
-    &#34;tailrec&#34;,
-    &#34;tailrec_async&#34;,
     &#34;result&#34;,
     &#34;Result&#34;,
     &#34;snd&#34;,
     &#34;Some&#34;,
     &#34;TailCall&#34;,
+    &#34;TailCallResult&#34;,
+    &#34;tailrec&#34;,
+    &#34;tailrec_async&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -402,57 +403,54 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.tailrec"><code class="name flex">
-<span>def <span class="ident">tailrec</span></span>(<span>fn: Callable[..., <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, Exception]]) ‑> Callable[..., ~TResult]</span>
+<span>def <span class="ident">tailrec</span></span>(<span>fn: Callable[..., Union[~TResult, <a title="expression.core.fn.TailCall" href="fn.html#expression.core.fn.TailCall">TailCall</a>]]) ‑> Callable[..., ~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Tail call bouncing decorator.</p></div>
+<div class="desc"><p>Tail call decorator.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tailrec(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
-    &#34;&#34;&#34;Tail call bouncing decorator.&#34;&#34;&#34;
+<pre><code class="python">def tailrec(fn: Callable[..., TailCallResult[TResult]]) -&gt; Callable[..., TResult]:
+    &#34;&#34;&#34;Tail call decorator.&#34;&#34;&#34;
 
-    def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+    def trampoline(bouncer: TailCallResult[TResult]) -&gt; TResult:
         while isinstance(bouncer, TailCall):
-            try:
-                bouncer = fn(*bouncer.args, **bouncer.kw)
-            except Exception as ex:
-                bouncer = Error(ex)
+            args, kw = bouncer.args, bouncer.kw
+            bouncer = fn(*args, **kw)
 
-        for value in bouncer:
-            return value
+        return bouncer
 
     @functools.wraps(fn)
     def wrapper(*args: Any, **kw: Any) -&gt; TResult:
-        return _trampoline(fn(*args, **kw))
+        return trampoline(fn(*args, **kw))
 
     return wrapper</code></pre>
 </details>
 </dd>
 <dt id="expression.core.tailrec_async"><code class="name flex">
-<span>def <span class="ident">tailrec_async</span></span>(<span>fn: Callable[..., Awaitable[~TResult]]) ‑> Callable[..., Awaitable[~TResult]]</span>
+<span>def <span class="ident">tailrec_async</span></span>(<span>fn: Callable[..., Awaitable[Union[~TResult, <a title="expression.core.fn.TailCall" href="fn.html#expression.core.fn.TailCall">TailCall</a>]]]) ‑> Callable[..., Awaitable[~TResult]]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Thunk bouncing async decorator.</p></div>
+<div class="desc"><p>Tail call async decorator.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tailrec_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
-    &#34;&#34;&#34;Thunk bouncing async decorator.&#34;&#34;&#34;
+<pre><code class="python">def tailrec_async(fn: Callable[..., Awaitable[TailCallResult[TResult]]]) -&gt; Callable[..., Awaitable[TResult]]:
+    &#34;&#34;&#34;Tail call async decorator.&#34;&#34;&#34;
 
-    async def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+    async def trampoline(bouncer: TailCallResult[TResult]) -&gt; TResult:
         while isinstance(bouncer, TailCall):
-            bouncer = await fn(*bouncer.args, **bouncer.kw)
+            args, kw = bouncer.args, bouncer.kw
+            bouncer = await fn(*args, **kw)
 
-        for value in bouncer:
-            return value
+        return bouncer
 
     @functools.wraps(fn)
     async def _(*args: Any) -&gt; TResult:
         result = await fn(*args)
-        return await _trampoline(result)
+        return await trampoline(result)
 
     return _</code></pre>
 </details>
@@ -761,7 +759,7 @@ yielding nothing will be silently ignored.</p></div>
         return False
 
     def __match__(self, pattern: Any) -&gt; Iterable[TError]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.error]
 
         try:
@@ -920,7 +918,8 @@ return default</p></div>
         Args:
             msg: Message to post.
 
-        Returns: None
+        Returns:
+            None
         &#34;&#34;&#34;
         self.messages.put(msg)
         self.loop.call_soon_threadsafe(self.__process_events)
@@ -935,7 +934,8 @@ return default</p></div>
             to the mailbox processor. The message should contain the
             reply channel as e.g a tuple.
 
-        Returns: The reply from mailbox processor.
+        Returns:
+            The reply from mailbox processor.
         &#34;&#34;&#34;
 
         result: Optional[Reply] = None
@@ -1043,7 +1043,8 @@ processor and returns.</p>
 <dt><strong><code>msg</code></strong></dt>
 <dd>Message to post.</dd>
 </dl>
-<p>Returns: None</p></div>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1058,7 +1059,8 @@ processor and returns.</p>
     Args:
         msg: Message to post.
 
-    Returns: None
+    Returns:
+        None
     &#34;&#34;&#34;
     self.messages.put(msg)
     self.loop.call_soon_threadsafe(self.__process_events)</code></pre>
@@ -1077,8 +1079,9 @@ wait for the reply.</p>
 </dl>
 <p>(<code><a title="expression.core.AsyncReplyChannel" href="#expression.core.AsyncReplyChannel">AsyncReplyChannel</a>[Reply]</code>) and returns a message to send
 to the mailbox processor. The message should contain the
-reply channel as e.g a tuple.
-Returns: The reply from mailbox processor.</p></div>
+reply channel as e.g a tuple.</p>
+<h2 id="returns">Returns</h2>
+<p>The reply from mailbox processor.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1093,7 +1096,8 @@ Returns: The reply from mailbox processor.</p></div>
         to the mailbox processor. The message should contain the
         reply channel as e.g a tuple.
 
-    Returns: The reply from mailbox processor.
+    Returns:
+        The reply from mailbox processor.
     &#34;&#34;&#34;
 
     result: Optional[Reply] = None
@@ -1665,7 +1669,7 @@ return True</p></div>
         return True
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.value]
 
         try:
@@ -1694,10 +1698,6 @@ return True</p></div>
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
-</ul>
-<h3>Subclasses</h3>
-<ul class="hlist">
-<li><a title="expression.core.fn.TailCall" href="fn.html#expression.core.fn.TailCall">TailCall</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -2204,6 +2204,10 @@ Protocol classes can be generic, they are defined as::</p>
         raise NotImplementedError
 
     @overload
+    def match(self) -&gt; &#34;Matcher&#34;:
+        ...
+
+    @overload
     def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
         ...
 
@@ -2220,7 +2224,7 @@ Protocol classes can be generic, they are defined as::</p>
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
@@ -2337,7 +2341,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m: Matcher[TSource] = Matcher(self)
+    m = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>
@@ -2430,7 +2434,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         return self._value
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.value]
 
         try:
@@ -2582,31 +2586,13 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class TailCall(Ok[TResult, Exception]):
+<pre><code class="python">class TailCall:
     &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
 
     def __init__(self, *args: Any, **kw: Any):
-        super().__init__(args)  # Keep linters happy.
         self.args = args
         self.kw = kw</code></pre>
 </details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></li>
-<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
-<li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
-<li>abc.ABC</li>
-</ul>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.result.Ok.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
-<li><code><a title="expression.core.result.Ok.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
-</ul>
-</li>
-</ul>
 </dd>
 </dl>
 </section>

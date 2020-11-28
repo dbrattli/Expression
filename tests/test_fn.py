@@ -1,13 +1,11 @@
-from expression.core import Ok, Result, TailCall, tailrec
-from hypothesis import given
-from hypothesis import strategies as st
+from expression.core import TailCall, TailCallResult, tailrec
 
 
 def test_factorial():
     @tailrec
-    def factorial(n: int, acc: int = 1) -> Result[int, Exception]:
+    def factorial(n: int, acc: int = 1) -> TailCallResult[int]:
         if n == 0:
-            return Ok(acc)
+            return acc
 
         return TailCall(n - 1, acc * n)
 

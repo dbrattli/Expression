@@ -91,7 +91,7 @@ class Seq(Iterable[TSource]):
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -> "Matcher[TSource]":
+    def match(self) -> "Matcher":
         ...
 
     @overload
@@ -99,7 +99,7 @@ class Seq(Iterable[TSource]):
         ...
 
     def match(self, pattern: Any) -> Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @overload

@@ -1,56 +1,53 @@
 import functools
-from typing import Any, Awaitable, Callable, TypeVar
-
-from .result import Error, Ok, Result
+from typing import Any, Awaitable, Callable, TypeVar, Union
 
 TResult = TypeVar("TResult")
 
 
-class TailCall(Ok[TResult, Exception]):
+class TailCall:
     """Returns a tail call."""
 
     def __init__(self, *args: Any, **kw: Any):
-        super().__init__(args)  # Keep linters happy.
         self.args = args
         self.kw = kw
 
 
-def tailrec(fn: Callable[..., Result[TResult, Exception]]) -> Callable[..., TResult]:
-    """Tail call bouncing decorator."""
+TailCallResult = Union[TResult, TailCall]
 
-    def _trampoline(bouncer: Result[TResult, Exception]) -> TResult:
+
+def tailrec(fn: Callable[..., TailCallResult[TResult]]) -> Callable[..., TResult]:
+    """Tail call decorator."""
+
+    def trampoline(bouncer: TailCallResult[TResult]) -> TResult:
         while isinstance(bouncer, TailCall):
-            try:
-                bouncer = fn(*bouncer.args, **bouncer.kw)
-            except Exception as ex:
-                bouncer = Error(ex)
+            args, kw = bouncer.args, bouncer.kw
+            bouncer = fn(*args, **kw)
 
-        for value in bouncer:
-            return value
+        return bouncer
 
     @functools.wraps(fn)
     def wrapper(*args: Any, **kw: Any) -> TResult:
-        return _trampoline(fn(*args, **kw))
+        return trampoline(fn(*args, **kw))
 
     return wrapper
 
 
-def tailrec_async(fn: Callable[..., Awaitable[TResult]]) -> Callable[..., Awaitable[TResult]]:
-    """Thunk bouncing async decorator."""
+def tailrec_async(fn: Callable[..., Awaitable[TailCallResult[TResult]]]) -> Callable[..., Awaitable[TResult]]:
+    """Tail call async decorator."""
 
-    async def _trampoline(bouncer: Result[TResult, Exception]) -> TResult:
+    async def trampoline(bouncer: TailCallResult[TResult]) -> TResult:
         while isinstance(bouncer, TailCall):
-            bouncer = await fn(*bouncer.args, **bouncer.kw)
+            args, kw = bouncer.args, bouncer.kw
+            bouncer = await fn(*args, **kw)
 
-        for value in bouncer:
-            return value
+        return bouncer
 
     @functools.wraps(fn)
     async def _(*args: Any) -> TResult:
         result = await fn(*args)
-        return await _trampoline(result)
+        return await trampoline(result)
 
     return _
 
 
-__all__ = ["TailCall", "tailrec", "tailrec_async"]
+__all__ = ["TailCall", "TailCallResult", "tailrec", "tailrec_async"]

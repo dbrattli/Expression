@@ -80,7 +80,8 @@ class MailboxProcessor(Generic[Msg]):
         Args:
             msg: Message to post.
 
-        Returns: None
+        Returns:
+            None
         &#34;&#34;&#34;
         self.messages.put(msg)
         self.loop.call_soon_threadsafe(self.__process_events)
@@ -95,7 +96,8 @@ class MailboxProcessor(Generic[Msg]):
             to the mailbox processor. The message should contain the
             reply channel as e.g a tuple.
 
-        Returns: The reply from mailbox processor.
+        Returns:
+            The reply from mailbox processor.
         &#34;&#34;&#34;
 
         result: Optional[Reply] = None
@@ -269,7 +271,8 @@ return default</p></div>
         Args:
             msg: Message to post.
 
-        Returns: None
+        Returns:
+            None
         &#34;&#34;&#34;
         self.messages.put(msg)
         self.loop.call_soon_threadsafe(self.__process_events)
@@ -284,7 +287,8 @@ return default</p></div>
             to the mailbox processor. The message should contain the
             reply channel as e.g a tuple.
 
-        Returns: The reply from mailbox processor.
+        Returns:
+            The reply from mailbox processor.
         &#34;&#34;&#34;
 
         result: Optional[Reply] = None
@@ -392,7 +396,8 @@ processor and returns.</p>
 <dt><strong><code>msg</code></strong></dt>
 <dd>Message to post.</dd>
 </dl>
-<p>Returns: None</p></div>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -407,7 +412,8 @@ processor and returns.</p>
     Args:
         msg: Message to post.
 
-    Returns: None
+    Returns:
+        None
     &#34;&#34;&#34;
     self.messages.put(msg)
     self.loop.call_soon_threadsafe(self.__process_events)</code></pre>
@@ -426,8 +432,9 @@ wait for the reply.</p>
 </dl>
 <p>(<code><a title="expression.core.mailbox.AsyncReplyChannel" href="#expression.core.mailbox.AsyncReplyChannel">AsyncReplyChannel</a>[Reply]</code>) and returns a message to send
 to the mailbox processor. The message should contain the
-reply channel as e.g a tuple.
-Returns: The reply from mailbox processor.</p></div>
+reply channel as e.g a tuple.</p>
+<h2 id="returns">Returns</h2>
+<p>The reply from mailbox processor.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -442,7 +449,8 @@ Returns: The reply from mailbox processor.</p></div>
         to the mailbox processor. The message should contain the
         reply channel as e.g a tuple.
 
-    Returns: The reply from mailbox processor.
+    Returns:
+        The reply from mailbox processor.
     &#34;&#34;&#34;
 
     result: Optional[Reply] = None

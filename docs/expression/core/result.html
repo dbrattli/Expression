@@ -101,6 +101,10 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         raise NotImplementedError
 
     @overload
+    def match(self) -&gt; &#34;Matcher&#34;:
+        ...
+
+    @overload
     def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
         ...
 
@@ -117,7 +121,7 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
@@ -167,7 +171,7 @@ class Ok(Result[TSource, TError]):
         return True
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.value]
 
         try:
@@ -225,7 +229,7 @@ class Error(Result[TSource, TError], ResultException):
         return False
 
     def __match__(self, pattern: Any) -&gt; Iterable[TError]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.error]
 
         try:
@@ -355,7 +359,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
         return False
 
     def __match__(self, pattern: Any) -&gt; Iterable[TError]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.error]
 
         try:
@@ -509,7 +513,7 @@ def error(self) -&gt; TError:
         return True
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.value]
 
         try:
@@ -538,10 +542,6 @@ def error(self) -&gt; TError:
 <li>collections.abc.Iterable</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
-</ul>
-<h3>Subclasses</h3>
-<ul class="hlist">
-<li><a title="expression.core.fn.TailCall" href="fn.html#expression.core.fn.TailCall">TailCall</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -679,6 +679,10 @@ def value(self) -&gt; TSource:
         raise NotImplementedError
 
     @overload
+    def match(self) -&gt; &#34;Matcher&#34;:
+        ...
+
+    @overload
     def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
         ...
 
@@ -695,7 +699,7 @@ def value(self) -&gt; TSource:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
@@ -812,7 +816,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m: Matcher[TSource] = Matcher(self)
+    m = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
 </dd>

@@ -68,6 +68,10 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         raise NotImplementedError
 
     @overload
+    def match(self) -> "Matcher":
+        ...
+
+    @overload
     def match(self, pattern: "Ok[TSource, TError]") -> Iterable[TSource]:
         ...
 
@@ -84,7 +88,7 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         ...
 
     def match(self, pattern: Any) -> Any:
-        m: Matcher[TSource] = Matcher(self)
+        m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
@@ -134,7 +138,7 @@ class Ok(Result[TSource, TError]):
         return True
 
     def __match__(self, pattern: Any) -> Iterable[TSource]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.value]
 
         try:
@@ -192,7 +196,7 @@ class Error(Result[TSource, TError], ResultException):
         return False
 
     def __match__(self, pattern: Any) -> Iterable[TError]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.error]
 
         try:

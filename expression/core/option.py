@@ -185,7 +185,7 @@ class Some(Option[TSource]):
         return self._value
 
     def __match__(self, pattern: Any) -> Iterable[TSource]:
-        if self == pattern:
+        if self is pattern or self == pattern:
             return [self.value]
 
         try:
@@ -395,11 +395,11 @@ def of_optional(value: Optional[TSource]) -> Option[TSource]:
     """
     if value is None:
         return Nothing
-    else:
-        return Some(value)
+
+    return Some(value)
 
 
-def of_obj(value: Any) -> Option[TSource]:
+def of_obj(value: Any) -> Option[Any]:
     """Convert object to an option.
 
     Convert a value that could be `None` into an `Option` value.
@@ -410,10 +410,7 @@ def of_obj(value: Any) -> Option[TSource]:
     Return:
         The result option.
     """
-    if value is None:
-        return Nothing
-
-    return Some(value)
+    return of_optional(value)
 
 
 __all__ = [

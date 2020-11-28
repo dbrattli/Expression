@@ -27,61 +27,58 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">import functools
-from typing import Any, Awaitable, Callable, TypeVar
-
-from .result import Error, Ok, Result
+from typing import Any, Awaitable, Callable, TypeVar, Union
 
 TResult = TypeVar(&#34;TResult&#34;)
 
 
-class TailCall(Ok[TResult, Exception]):
+class TailCall:
     &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
 
     def __init__(self, *args: Any, **kw: Any):
-        super().__init__(args)  # Keep linters happy.
         self.args = args
         self.kw = kw
 
 
-def tailrec(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
-    &#34;&#34;&#34;Tail call bouncing decorator.&#34;&#34;&#34;
+TailCallResult = Union[TResult, TailCall]
 
-    def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+
+def tailrec(fn: Callable[..., TailCallResult[TResult]]) -&gt; Callable[..., TResult]:
+    &#34;&#34;&#34;Tail call decorator.&#34;&#34;&#34;
+
+    def trampoline(bouncer: TailCallResult[TResult]) -&gt; TResult:
         while isinstance(bouncer, TailCall):
-            try:
-                bouncer = fn(*bouncer.args, **bouncer.kw)
-            except Exception as ex:
-                bouncer = Error(ex)
+            args, kw = bouncer.args, bouncer.kw
+            bouncer = fn(*args, **kw)
 
-        for value in bouncer:
-            return value
+        return bouncer
 
     @functools.wraps(fn)
     def wrapper(*args: Any, **kw: Any) -&gt; TResult:
-        return _trampoline(fn(*args, **kw))
+        return trampoline(fn(*args, **kw))
 
     return wrapper
 
 
-def tailrec_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
-    &#34;&#34;&#34;Thunk bouncing async decorator.&#34;&#34;&#34;
+def tailrec_async(fn: Callable[..., Awaitable[TailCallResult[TResult]]]) -&gt; Callable[..., Awaitable[TResult]]:
+    &#34;&#34;&#34;Tail call async decorator.&#34;&#34;&#34;
 
-    async def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+    async def trampoline(bouncer: TailCallResult[TResult]) -&gt; TResult:
         while isinstance(bouncer, TailCall):
-            bouncer = await fn(*bouncer.args, **bouncer.kw)
+            args, kw = bouncer.args, bouncer.kw
+            bouncer = await fn(*args, **kw)
 
-        for value in bouncer:
-            return value
+        return bouncer
 
     @functools.wraps(fn)
     async def _(*args: Any) -&gt; TResult:
         result = await fn(*args)
-        return await _trampoline(result)
+        return await trampoline(result)
 
     return _
 
 
-__all__ = [&#34;TailCall&#34;, &#34;tailrec&#34;, &#34;tailrec_async&#34;]</code></pre>
+__all__ = [&#34;TailCall&#34;, &#34;TailCallResult&#34;, &#34;tailrec&#34;, &#34;tailrec_async&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -92,57 +89,54 @@ __all__ = [&#34;TailCall&#34;, &#34;tailrec&#34;, &#34;tailrec_async&#34;]</code
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.fn.tailrec"><code class="name flex">
-<span>def <span class="ident">tailrec</span></span>(<span>fn: Callable[..., <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>[~TResult, Exception]]) ‑> Callable[..., ~TResult]</span>
+<span>def <span class="ident">tailrec</span></span>(<span>fn: Callable[..., Union[~TResult, <a title="expression.core.fn.TailCall" href="#expression.core.fn.TailCall">TailCall</a>]]) ‑> Callable[..., ~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Tail call bouncing decorator.</p></div>
+<div class="desc"><p>Tail call decorator.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tailrec(fn: Callable[..., Result[TResult, Exception]]) -&gt; Callable[..., TResult]:
-    &#34;&#34;&#34;Tail call bouncing decorator.&#34;&#34;&#34;
+<pre><code class="python">def tailrec(fn: Callable[..., TailCallResult[TResult]]) -&gt; Callable[..., TResult]:
+    &#34;&#34;&#34;Tail call decorator.&#34;&#34;&#34;
 
-    def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+    def trampoline(bouncer: TailCallResult[TResult]) -&gt; TResult:
         while isinstance(bouncer, TailCall):
-            try:
-                bouncer = fn(*bouncer.args, **bouncer.kw)
-            except Exception as ex:
-                bouncer = Error(ex)
+            args, kw = bouncer.args, bouncer.kw
+            bouncer = fn(*args, **kw)
 
-        for value in bouncer:
-            return value
+        return bouncer
 
     @functools.wraps(fn)
     def wrapper(*args: Any, **kw: Any) -&gt; TResult:
-        return _trampoline(fn(*args, **kw))
+        return trampoline(fn(*args, **kw))
 
     return wrapper</code></pre>
 </details>
 </dd>
 <dt id="expression.core.fn.tailrec_async"><code class="name flex">
-<span>def <span class="ident">tailrec_async</span></span>(<span>fn: Callable[..., Awaitable[~TResult]]) ‑> Callable[..., Awaitable[~TResult]]</span>
+<span>def <span class="ident">tailrec_async</span></span>(<span>fn: Callable[..., Awaitable[Union[~TResult, <a title="expression.core.fn.TailCall" href="#expression.core.fn.TailCall">TailCall</a>]]]) ‑> Callable[..., Awaitable[~TResult]]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Thunk bouncing async decorator.</p></div>
+<div class="desc"><p>Tail call async decorator.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tailrec_async(fn: Callable[..., Awaitable[TResult]]) -&gt; Callable[..., Awaitable[TResult]]:
-    &#34;&#34;&#34;Thunk bouncing async decorator.&#34;&#34;&#34;
+<pre><code class="python">def tailrec_async(fn: Callable[..., Awaitable[TailCallResult[TResult]]]) -&gt; Callable[..., Awaitable[TResult]]:
+    &#34;&#34;&#34;Tail call async decorator.&#34;&#34;&#34;
 
-    async def _trampoline(bouncer: Result[TResult, Exception]) -&gt; TResult:
+    async def trampoline(bouncer: TailCallResult[TResult]) -&gt; TResult:
         while isinstance(bouncer, TailCall):
-            bouncer = await fn(*bouncer.args, **bouncer.kw)
+            args, kw = bouncer.args, bouncer.kw
+            bouncer = await fn(*args, **kw)
 
-        for value in bouncer:
-            return value
+        return bouncer
 
     @functools.wraps(fn)
     async def _(*args: Any) -&gt; TResult:
         result = await fn(*args)
-        return await _trampoline(result)
+        return await trampoline(result)
 
     return _</code></pre>
 </details>
@@ -162,31 +156,13 @@ __all__ = [&#34;TailCall&#34;, &#34;tailrec&#34;, &#34;tailrec_async&#34;]</code
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class TailCall(Ok[TResult, Exception]):
+<pre><code class="python">class TailCall:
     &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
 
     def __init__(self, *args: Any, **kw: Any):
-        super().__init__(args)  # Keep linters happy.
         self.args = args
         self.kw = kw</code></pre>
 </details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></li>
-<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
-<li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
-<li>abc.ABC</li>
-</ul>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.result.Ok.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
-<li><code><a title="expression.core.result.Ok.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
-</ul>
-</li>
-</ul>
 </dd>
 </dl>
 </section>

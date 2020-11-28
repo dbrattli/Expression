@@ -466,7 +466,8 @@ def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[FrozenList[TSou
             source: The input list..
 
         Returns:
-            A list containing only the elements that satisfy the predicate.
+            A list containing only the elements that satisfy the
+            predicate.
         &#34;&#34;&#34;
         return source.filter(predicate)
 
@@ -483,7 +484,8 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Calla
     iN.
 
     Args:
-        folder: The function to update the state given the input elements.
+        folder: The function to update the state given the input
+            elements.
 
         state: The initial state.
 
@@ -584,6 +586,7 @@ def skip(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
 
     Args:
         count: The number of elements to skip.
+
     Returns:
         The list after removing the first N elements.
     &#34;&#34;&#34;
@@ -599,6 +602,7 @@ def skip_last(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSour
 
     Args:
         count: The number of elements to skip.
+
     Returns:
         The list after removing the last N elements.
     &#34;&#34;&#34;
@@ -880,7 +884,8 @@ collection for which the given predicate returns <code>True</code></p>
             source: The input list..
 
         Returns:
-            A list containing only the elements that satisfy the predicate.
+            A list containing only the elements that satisfy the
+            predicate.
         &#34;&#34;&#34;
         return source.filter(predicate)
 
@@ -901,7 +906,8 @@ iN.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>folder</code></strong></dt>
-<dd>The function to update the state given the input elements.</dd>
+<dd>The function to update the state given the input
+elements.</dd>
 <dt><strong><code>state</code></strong></dt>
 <dd>The initial state.</dd>
 </dl>
@@ -922,7 +928,8 @@ and returns the final state value.</p></div>
     iN.
 
     Args:
-        folder: The function to update the state given the input elements.
+        folder: The function to update the state given the input
+            elements.
 
         state: The initial state.
 
@@ -1143,6 +1150,7 @@ the given function to each of the elements of the collection.</p>
 
     Args:
         count: The number of elements to skip.
+
     Returns:
         The list after removing the first N elements.
     &#34;&#34;&#34;
@@ -1174,6 +1182,7 @@ the given function to each of the elements of the collection.</p>
 
     Args:
         count: The number of elements to skip.
+
     Returns:
         The list after removing the last N elements.
     &#34;&#34;&#34;
