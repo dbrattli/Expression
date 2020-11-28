@@ -42,7 +42,7 @@ from .match import Matchable, Matcher, Pattern, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
-from .result import Error, Ok, Result
+from .result import Error, Ok, Result, Try
 
 __all__ = [
     &#34;aiotools&#34;,
@@ -77,6 +77,7 @@ __all__ = [
     &#34;TailCallResult&#34;,
     &#34;tailrec&#34;,
     &#34;tailrec_async&#34;,
+    &#34;Try&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -93,7 +94,7 @@ __all__ = [
 </dd>
 <dt><code class="name"><a title="expression.core.choice" href="choice.html">expression.core.choice</a></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Choice type …</p></div>
 </dd>
 <dt><code class="name"><a title="expression.core.curry" href="curry.html">expression.core.curry</a></code></dt>
 <dd>
@@ -406,13 +407,21 @@ assert add(3)(4) == 7</p></div>
 <span>def <span class="ident">tailrec</span></span>(<span>fn: Callable[..., Union[~TResult, <a title="expression.core.fn.TailCall" href="fn.html#expression.core.fn.TailCall">TailCall</a>]]) ‑> Callable[..., ~TResult]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Tail call decorator.</p></div>
+<div class="desc"><p>Tail call recursive function decorator.</p>
+<p>Can be used to create tail call recursive functions that will not
+stack overflow. To recurse the function needs to return an instance
+of <code><a title="expression.core.TailCall" href="#expression.core.TailCall">TailCall</a></code> with the next arguments to be used for the next call.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def tailrec(fn: Callable[..., TailCallResult[TResult]]) -&gt; Callable[..., TResult]:
-    &#34;&#34;&#34;Tail call decorator.&#34;&#34;&#34;
+    &#34;&#34;&#34;Tail call recursive function decorator.
+
+    Can be used to create tail call recursive functions that will not
+    stack overflow. To recurse the function needs to return an instance
+    of `TailCall` with the next arguments to be used for the next call.
+    &#34;&#34;&#34;
 
     def trampoline(bouncer: TailCallResult[TResult]) -&gt; TResult:
         while isinstance(bouncer, TailCall):
@@ -432,13 +441,13 @@ assert add(3)(4) == 7</p></div>
 <span>def <span class="ident">tailrec_async</span></span>(<span>fn: Callable[..., Awaitable[Union[~TResult, <a title="expression.core.fn.TailCall" href="fn.html#expression.core.fn.TailCall">TailCall</a>]]]) ‑> Callable[..., Awaitable[~TResult]]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Tail call async decorator.</p></div>
+<div class="desc"><p>Tail call recursive async function decorator.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def tailrec_async(fn: Callable[..., Awaitable[TailCallResult[TResult]]]) -&gt; Callable[..., Awaitable[TResult]]:
-    &#34;&#34;&#34;Tail call async decorator.&#34;&#34;&#34;
+    &#34;&#34;&#34;Tail call recursive async function decorator.&#34;&#34;&#34;
 
     async def trampoline(bouncer: TailCallResult[TResult]) -&gt; TResult:
         while isinstance(bouncer, TailCall):
@@ -448,11 +457,11 @@ assert add(3)(4) == 7</p></div>
         return bouncer
 
     @functools.wraps(fn)
-    async def _(*args: Any) -&gt; TResult:
+    async def wrapper(*args: Any) -&gt; TResult:
         result = await fn(*args)
         return await trampoline(result)
 
-    return _</code></pre>
+    return wrapper</code></pre>
 </details>
 </dd>
 </dl>
@@ -753,9 +762,11 @@ yielding nothing will be silently ignored.</p></div>
         return Error(mapper(self._error))
 
     def is_error(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
         return True
 
     def is_ok(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
         return False
 
     def __match__(self, pattern: Any) -&gt; Iterable[TError]:
@@ -829,12 +840,13 @@ def error(self) -&gt; TError:
 <span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>True</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def is_error(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
     return True</code></pre>
 </details>
 </dd>
@@ -842,12 +854,13 @@ def error(self) -&gt; TError:
 <span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>False</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def is_ok(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
     return False</code></pre>
 </details>
 </dd>
@@ -964,10 +977,14 @@ return default</p></div>
         return from_continuations(callback)
 
     async def receive(self) -&gt; Msg:
-        &#34;&#34;&#34;Return an asynchronous computation which will consume the
-        first message in arrival order. No thread is blocked while
-        waiting for further messages. Raise a TimeoutException if the
-        timeout is exceeded.&#34;&#34;&#34;
+        &#34;&#34;&#34;Receive message from mailbox.
+
+        Returns:
+            An asynchronous computation which will consume the
+            first message in arrival order. No thread is blocked while
+            waiting for further messages. Raises a TimeoutException if
+            the timeout is exceeded.
+        &#34;&#34;&#34;
 
         def callback(
             done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
@@ -1130,19 +1147,25 @@ reply channel as e.g a tuple.</p>
 <span>async def <span class="ident">receive</span></span>(<span>self) ‑> ~Msg</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Return an asynchronous computation which will consume the
+<div class="desc"><p>Receive message from mailbox.</p>
+<h2 id="returns">Returns</h2>
+<p>An asynchronous computation which will consume the
 first message in arrival order. No thread is blocked while
-waiting for further messages. Raise a TimeoutException if the
-timeout is exceeded.</p></div>
+waiting for further messages. Raises a TimeoutException if
+the timeout is exceeded.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">async def receive(self) -&gt; Msg:
-    &#34;&#34;&#34;Return an asynchronous computation which will consume the
-    first message in arrival order. No thread is blocked while
-    waiting for further messages. Raise a TimeoutException if the
-    timeout is exceeded.&#34;&#34;&#34;
+    &#34;&#34;&#34;Receive message from mailbox.
+
+    Returns:
+        An asynchronous computation which will consume the
+        first message in arrival order. No thread is blocked while
+        waiting for further messages. Raises a TimeoutException if
+        the timeout is exceeded.
+    &#34;&#34;&#34;
 
     def callback(
         done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
@@ -2581,13 +2604,19 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <span>(</span><span>*args: Any, **kw: Any)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a tail call.</p></div>
+<div class="desc"><p>Returns a tail call.</p>
+<p>If a <code><a title="expression.core.tailrec" href="#expression.core.tailrec">tailrec()</a></code> decorated function return a <code><a title="expression.core.TailCall" href="#expression.core.TailCall">TailCall</a></code> then the
+function will be called again with the new arguments provided.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class TailCall:
-    &#34;&#34;&#34;Returns a tail call.&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns a tail call.
+
+    If a `tailrec` decorated function return a `TailCall` then the
+    function will be called again with the new arguments provided.
+    &#34;&#34;&#34;
 
     def __init__(self, *args: Any, **kw: Any):
         self.args = args

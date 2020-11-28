@@ -13,7 +13,7 @@ from .match import Matchable, Matcher, Pattern, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
-from .result import Error, Ok, Result
+from .result import Error, Ok, Result, Try
 
 __all__ = [
     "aiotools",
@@ -48,4 +48,5 @@ __all__ = [
     "TailCallResult",
     "tailrec",
     "tailrec_async",
+    "Try",
 ]

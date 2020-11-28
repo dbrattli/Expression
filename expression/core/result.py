@@ -4,6 +4,9 @@ The Result[TSource,TError] type lets you write error-tolerant code that
 can be composed. The Result type is typically used in monadic
 error-handling, which is often referred to as Railway-oriented
 Programming.
+
+There is also a simplifyed alias of this type called `Maybe` that pins
+the Result type to Exception.
 """
 
 from abc import ABC, abstractmethod
@@ -163,6 +166,9 @@ class Ok(Result[TSource, TError]):
 
 
 class ResultException(EffectError):
+    """Makes the Error case a valid exception for effect handling. Do
+    not use directly."""
+
     def __init__(self, message: str):
         self.message = message
 
@@ -190,9 +196,11 @@ class Error(Result[TSource, TError], ResultException):
         return Error(mapper(self._error))
 
     def is_error(self) -> bool:
+        """Returns `True`."""
         return True
 
     def is_ok(self) -> bool:
+        """Returns `False`."""
         return False
 
     def __match__(self, pattern: Any) -> Iterable[TError]:
@@ -238,4 +246,8 @@ def bind(
     return _bind
 
 
-__all__ = ["Result", "Ok", "Error", "map", "bind"]
+Try = Result[TSource, Exception]
+"""A result error type where the failure can only be a valid exception.
+"""
+
+__all__ = ["Result", "Ok", "Error", "map", "bind", "Try"]

@@ -126,10 +126,14 @@ class MailboxProcessor(Generic[Msg]):
         return from_continuations(callback)
 
     async def receive(self) -&gt; Msg:
-        &#34;&#34;&#34;Return an asynchronous computation which will consume the
-        first message in arrival order. No thread is blocked while
-        waiting for further messages. Raise a TimeoutException if the
-        timeout is exceeded.&#34;&#34;&#34;
+        &#34;&#34;&#34;Receive message from mailbox.
+
+        Returns:
+            An asynchronous computation which will consume the
+            first message in arrival order. No thread is blocked while
+            waiting for further messages. Raises a TimeoutException if
+            the timeout is exceeded.
+        &#34;&#34;&#34;
 
         def callback(
             done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
@@ -317,10 +321,14 @@ return default</p></div>
         return from_continuations(callback)
 
     async def receive(self) -&gt; Msg:
-        &#34;&#34;&#34;Return an asynchronous computation which will consume the
-        first message in arrival order. No thread is blocked while
-        waiting for further messages. Raise a TimeoutException if the
-        timeout is exceeded.&#34;&#34;&#34;
+        &#34;&#34;&#34;Receive message from mailbox.
+
+        Returns:
+            An asynchronous computation which will consume the
+            first message in arrival order. No thread is blocked while
+            waiting for further messages. Raises a TimeoutException if
+            the timeout is exceeded.
+        &#34;&#34;&#34;
 
         def callback(
             done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
@@ -483,19 +491,25 @@ reply channel as e.g a tuple.</p>
 <span>async def <span class="ident">receive</span></span>(<span>self) ‑> ~Msg</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Return an asynchronous computation which will consume the
+<div class="desc"><p>Receive message from mailbox.</p>
+<h2 id="returns">Returns</h2>
+<p>An asynchronous computation which will consume the
 first message in arrival order. No thread is blocked while
-waiting for further messages. Raise a TimeoutException if the
-timeout is exceeded.</p></div>
+waiting for further messages. Raises a TimeoutException if
+the timeout is exceeded.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">async def receive(self) -&gt; Msg:
-    &#34;&#34;&#34;Return an asynchronous computation which will consume the
-    first message in arrival order. No thread is blocked while
-    waiting for further messages. Raise a TimeoutException if the
-    timeout is exceeded.&#34;&#34;&#34;
+    &#34;&#34;&#34;Receive message from mailbox.
+
+    Returns:
+        An asynchronous computation which will consume the
+        first message in arrival order. No thread is blocked while
+        waiting for further messages. Raises a TimeoutException if
+        the timeout is exceeded.
+    &#34;&#34;&#34;
 
     def callback(
         done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]

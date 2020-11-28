@@ -5,7 +5,11 @@ TResult = TypeVar("TResult")
 
 
 class TailCall:
-    """Returns a tail call."""
+    """Returns a tail call.
+
+    If a `tailrec` decorated function return a `TailCall` then the
+    function will be called again with the new arguments provided.
+    """
 
     def __init__(self, *args: Any, **kw: Any):
         self.args = args
@@ -16,7 +20,12 @@ TailCallResult = Union[TResult, TailCall]
 
 
 def tailrec(fn: Callable[..., TailCallResult[TResult]]) -> Callable[..., TResult]:
-    """Tail call decorator."""
+    """Tail call recursive function decorator.
+
+    Can be used to create tail call recursive functions that will not
+    stack overflow. To recurse the function needs to return an instance
+    of `TailCall` with the next arguments to be used for the next call.
+    """
 
     def trampoline(bouncer: TailCallResult[TResult]) -> TResult:
         while isinstance(bouncer, TailCall):
@@ -33,7 +42,7 @@ def tailrec(fn: Callable[..., TailCallResult[TResult]]) -> Callable[..., TResult
 
 
 def tailrec_async(fn: Callable[..., Awaitable[TailCallResult[TResult]]]) -> Callable[..., Awaitable[TResult]]:
-    """Tail call async decorator."""
+    """Tail call recursive async function decorator."""
 
     async def trampoline(bouncer: TailCallResult[TResult]) -> TResult:
         while isinstance(bouncer, TailCall):
@@ -43,11 +52,11 @@ def tailrec_async(fn: Callable[..., Awaitable[TailCallResult[TResult]]]) -> Call
         return bouncer
 
     @functools.wraps(fn)
-    async def _(*args: Any) -> TResult:
+    async def wrapper(*args: Any) -> TResult:
         result = await fn(*args)
         return await trampoline(result)
 
-    return _
+    return wrapper
 
 
 __all__ = ["TailCall", "TailCallResult", "tailrec", "tailrec_async"]

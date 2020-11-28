@@ -27,6 +27,8 @@
 can be composed. The Result type is typically used in monadic
 error-handling, which is often referred to as Railway-oriented
 Programming.</p>
+<p>There is also a simplifyed alias of this type called <code>Maybe</code> that pins
+the Result type to Exception.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -37,6 +39,9 @@ The Result[TSource,TError] type lets you write error-tolerant code that
 can be composed. The Result type is typically used in monadic
 error-handling, which is often referred to as Railway-oriented
 Programming.
+
+There is also a simplifyed alias of this type called `Maybe` that pins
+the Result type to Exception.
 &#34;&#34;&#34;
 
 from abc import ABC, abstractmethod
@@ -223,9 +228,11 @@ class Error(Result[TSource, TError], ResultException):
         return Error(mapper(self._error))
 
     def is_error(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
         return True
 
     def is_ok(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
         return False
 
     def __match__(self, pattern: Any) -&gt; Iterable[TError]:
@@ -271,12 +278,23 @@ def bind(
     return _bind
 
 
-__all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;bind&#34;]</code></pre>
+Try = Result[TSource, Exception]
+&#34;&#34;&#34;A result error type where the failure can only be a valid exception.
+&#34;&#34;&#34;
+
+__all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;bind&#34;, &#34;Try&#34;]</code></pre>
 </details>
 </section>
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-variables">Global variables</h2>
+<dl>
+<dt id="expression.core.result.Try"><code class="name">var <span class="ident">Try</span></code></dt>
+<dd>
+<div class="desc"><p>A result error type where the failure can only be a valid exception.</p></div>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
@@ -353,9 +371,11 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
         return Error(mapper(self._error))
 
     def is_error(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
         return True
 
     def is_ok(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
         return False
 
     def __match__(self, pattern: Any) -&gt; Iterable[TError]:
@@ -429,12 +449,13 @@ def error(self) -&gt; TError:
 <span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>True</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def is_error(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
     return True</code></pre>
 </details>
 </dd>
@@ -442,12 +463,13 @@ def error(self) -&gt; TError:
 <span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>False</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def is_ok(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
     return False</code></pre>
 </details>
 </dd>
@@ -848,6 +870,11 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><h3>Super-module</h3>
 <ul>
 <li><code><a title="expression.core" href="index.html">expression.core</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-variables">Global variables</a></h3>
+<ul class="">
+<li><code><a title="expression.core.result.Try" href="#expression.core.result.Try">Try</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>

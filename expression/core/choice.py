@@ -1,3 +1,9 @@
+"""Choice type.
+
+A union type similar to the `Result` type. But also allows for higher
+number of choices. Usually you would most likekly want to use the
+`Result` type instead, but choice can be preferered in non-error cases.
+"""
 from abc import ABC, abstractclassmethod
 from typing import Any, Generic, Iterable, Optional, TypeVar, Union
 

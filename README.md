@@ -104,6 +104,8 @@ on-demand as we go along.
   - **FrozenList** - a frozen and immutable list type.
   - **Map** - a frozen and immutable dictionary type.
   - **AsyncSeq** - Asynchronous iterables.
+  - **AsyncObservable** - Asynchronous observables. Provided separately
+    by [aioreactive](https://github.com/dbrattli/aioreactive).
 - **Effects**: - lightweight computational expressions for Python. This
   is amazing stuff.
   - **option** - an optional world for working with optional values.
@@ -257,10 +259,10 @@ For more information about options:
 
 ### Results
 
-The `Result[T, TError]` type lets you write error-tolerant code that can
-be composed. A Result works similar to `Option` but lets you define the
-value used for errors, e.g an exception type or similar. This is great
-when you want to know why some operation failed (not just `Nothing`).
+The `Result[T, TError]` type lets you write error-tolerant code that can be
+composed. A Result works similar to `Option` but lets you define the value used
+for errors, e.g an exception type or similar. This is great when you want to
+know why some operation failed (not just `Nothing`).
 
 ```py
 from expression import effect
@@ -276,11 +278,14 @@ xs = fn()
 assert isinstance(xs, Some)
 ```
 
+A simplified type called `Try` is also available. It's a result type that is
+pinned to `Exception` i.e `Result[TSource, Exception]`.
+
 ### Sequences
 
-Contains operations for working with iterables so all the functions in
-the sequence module will work with Python iterables. Iterables are
-immutable by design, and perfectly suited for functional programming.
+Contains operations for working with iterables so all the functions in the
+sequence module will work with Python iterables. Iterables are immutable by
+design, and perfectly suited for functional programming.
 
 ```py
 # Normal python way. Nested functions are hard to read since you need to
@@ -456,11 +461,11 @@ to type-cast every time.
   [Feliz.ViewEngine](https://github.com/dbrattli/Feliz.ViewEngine)
 - I love Python, and know Python really well. I'm the creator of both
   [RxPY](https://github.com/ReactiveX/RxPY),
-  [aioreactive](https://github.com/ReactiveX/aioreactive), and
   [OSlash](https://github.com/dbrattli/OSlash), two functional style
+  [aioreactive](https://github.com/ReactiveX/aioreactive), and
   libraries for Python.
 
-For a long time I'm been wanting to make a "bridge" between these two
+For a long time, I've been wanting to make a "bridge" between these two
 languages and got inspired to write this library after watching "[F# as
 a Better Python](https://www.youtube.com/watch?v=_QnbV6CAWXc)" - Phillip
 Carter - NDC Oslo 2020. Doing a transpiler like

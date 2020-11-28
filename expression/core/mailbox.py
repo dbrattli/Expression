@@ -98,10 +98,14 @@ class MailboxProcessor(Generic[Msg]):
         return from_continuations(callback)
 
     async def receive(self) -> Msg:
-        """Return an asynchronous computation which will consume the
-        first message in arrival order. No thread is blocked while
-        waiting for further messages. Raise a TimeoutException if the
-        timeout is exceeded."""
+        """Receive message from mailbox.
+
+        Returns:
+            An asynchronous computation which will consume the
+            first message in arrival order. No thread is blocked while
+            waiting for further messages. Raises a TimeoutException if
+            the timeout is exceeded.
+        """
 
         def callback(
             done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
