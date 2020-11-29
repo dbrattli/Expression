@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.1" />
+<meta name="generator" content="pdoc 0.9.3.dev5+gbec6307" />
 <title>expression.collections.seq API documentation</title>
 <meta name="description" content="Sequence module …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -30,7 +30,7 @@ functions take (and return) Python iterables.</p>
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.</p>
 <h2 id="example">Example</h2>
-<pre><code class="python-repl">&gt;&gt;&gt; xs = Seq([1, 2, 3])
+<pre><code class="language-python-repl">&gt;&gt;&gt; xs = Seq([1, 2, 3])
 &gt;&gt;&gt; ys = xs.pipe(
     Seq.map(lambda x: x + 1),
     Seq.filter(lambda x: x &lt; 3)
@@ -61,7 +61,6 @@ Example:
 import builtins
 import functools
 import itertools
-import sys
 from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar, overload
 
 from expression.core import Matcher, Option, identity, pipe
@@ -368,14 +367,24 @@ def init_infinite(initializer: Callable[[int], TSource]) -&gt; Iterable[TSource]
     reapplied as necessary to regenerate the elements. The function is
     passed the index of the item being generated.
 
-    Iteration can continue up to `sys.maxint`.
+    Iteration can continue up to `sys.maxsize`.
     &#34;&#34;&#34;
-    for i in range(sys.maxsize):
-        yield initializer(i)
+
+    class Infinite(Iterable[int]):
+        &#34;&#34;&#34;An infinite iterable where each iterator starts counting at
+        0.&#34;&#34;&#34;
+
+        def __init__(self, initializer: Callable[[int], TSource]) -&gt; None:
+            self.initializer = initializer
+
+        def __iter__(self) -&gt; Iterator[int]:
+            return builtins.map(self.initializer, itertools.count(0, 1))
+
+    return Infinite(initializer)
 
 
-def infinite() -&gt; Iterable[int]:
-    return init_infinite(identity)
+infinite: Iterable[int] = init_infinite(identity)
+&#34;&#34;&#34;An infinite iterable.&#34;&#34;&#34;
 
 
 def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], None]:
@@ -596,7 +605,7 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="expression.collections.seq.empty"><code class="name">var <span class="ident">empty</span> : <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[typing.Any]</code></dt>
+<dt id="expression.collections.seq.empty"><code class="name">var <span class="ident">empty</span> : <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></code></dt>
 <dd>
 <div class="desc"><p>The empty sequence.</p></div>
 </dd>
@@ -988,7 +997,7 @@ compared via <code><a title="expression.collections.seq.max" href="#expression.c
 </details>
 </dd>
 <dt id="expression.collections.seq.of"><code class="name flex">
-<span>def <span class="ident">of</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[~TSource]</span>
+<span>def <span class="ident">of</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1001,7 +1010,7 @@ compared via <code><a title="expression.collections.seq.max" href="#expression.c
 </details>
 </dd>
 <dt id="expression.collections.seq.of_iterable"><code class="name flex">
-<span>def <span class="ident">of_iterable</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[~TSource]</span>
+<span>def <span class="ident">of_iterable</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1014,7 +1023,7 @@ compared via <code><a title="expression.collections.seq.max" href="#expression.c
 </details>
 </dd>
 <dt id="expression.collections.seq.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[~TSource]</span>
+<span>def <span class="ident">of_list</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1069,7 +1078,7 @@ from the sequence.</dd>
 </details>
 </dd>
 <dt id="expression.collections.seq.singleton"><code class="name flex">
-<span>def <span class="ident">singleton</span></span>(<span>item: ~TSource) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[~TSource]</span>
+<span>def <span class="ident">singleton</span></span>(<span>item: ~TSource) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a sequence that yields one item only.</p>
@@ -1097,7 +1106,7 @@ from the sequence.</dd>
 </details>
 </dd>
 <dt id="expression.collections.seq.unfold"><code class="name flex">
-<span>def <span class="ident">unfold</span></span>(<span>generator: Callable[[~TState], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[Tuple[~TSource, ~TState]]]) ‑> Callable[[~TState], Iterable[~TSource]]</span>
+<span>def <span class="ident">unfold</span></span>(<span>generator: Callable[[~TState], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Callable[[~TState], Iterable[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Generates a list that contains the elements generated by the
@@ -1162,7 +1171,7 @@ returns the result list.</p></div>
 <p>Contains instance methods for dot-chaining operators methods on
 sequences.</p>
 <h2 id="example">Example</h2>
-<pre><code class="python-repl">&gt;&gt;&gt; xs = Seq([1, 2, 3])
+<pre><code class="language-python-repl">&gt;&gt;&gt; xs = Seq([1, 2, 3])
 &gt;&gt;&gt; ys = xs.map(lambda x: x + 1).filter(lambda x: x &lt; 3)
 </code></pre></div>
 <details class="source">
@@ -1328,7 +1337,7 @@ sequences.</p>
 <h3>Static methods</h3>
 <dl>
 <dt id="expression.collections.seq.Seq.unfold"><code class="name flex">
-<span>def <span class="ident">unfold</span></span>(<span>generator: Callable[[~TState], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[Tuple[~TSource, ~TState]]], state: ~TState) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">unfold</span></span>(<span>generator: Callable[[~TState], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], state: ~TState) ‑> Iterable[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a list that contains the elements generated by the
@@ -1378,7 +1387,7 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.collections.seq.Seq.collect"><code class="name flex">
-<span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], ForwardRef('<a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[TResult]')]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[~TResult]</span>
+<span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], ForwardRef('<a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[TResult]')]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1391,7 +1400,7 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
 </details>
 </dd>
 <dt id="expression.collections.seq.Seq.filter"><code class="name flex">
-<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~TSource], bool]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[~TSource]</span>
+<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~TSource], bool]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1459,7 +1468,7 @@ each element of the sequence.</p></div>
 </details>
 </dd>
 <dt id="expression.collections.seq.Seq.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[~TResult]</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Map sequence.</p>
@@ -1656,7 +1665,7 @@ ignored.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.3.dev5+gbec6307</a>.</p>
 </footer>
 </body>
 </html>

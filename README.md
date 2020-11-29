@@ -44,7 +44,7 @@ readable, and type-safe) and kind of
 [Pythonic](https://docs.python.org/3/glossary.html). F# is in many ways very
 similar to Python, but F# can also do a lot of things better than Python:
 
-*Expressions evaluates to a value. Statements do something.*
+*Expressions evaluate to a value. Statements do something.*
 
 - Strongly typed, if it compiles it usually works making refactoring much
   safer. You can trust the type-system. With mypy or Pylance you often wonder

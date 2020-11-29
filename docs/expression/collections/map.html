@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.1" />
+<meta name="generator" content="pdoc 0.9.3.dev5+gbec6307" />
 <title>expression.collections.map API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -676,7 +676,7 @@ the output map.</p></div>
 </details>
 </dd>
 <dt id="expression.collections.map.change"><code class="name flex">
-<span>def <span class="ident">change</span></span>(<span>key: ~Key, fn: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]]</span>
+<span>def <span class="ident">change</span></span>(<span>key: ~Key, fn: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a new map with the value stored under key changed
@@ -923,7 +923,7 @@ binding exists in the map</p>
 </details>
 </dd>
 <dt id="expression.collections.map.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>elements: Union[List[Tuple[~Key, ~Value]], <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[Tuple[~Key, ~Value]]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">of_list</span></span>(<span>elements: Union[List[Tuple[~Key, ~Value]], <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -954,7 +954,7 @@ binding exists in the map</p>
 </details>
 </dd>
 <dt id="expression.collections.map.pick"><code class="name flex">
-<span>def <span class="ident">pick</span></span>(<span>chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]</span>
+<span>def <span class="ident">pick</span></span>(<span>chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1010,7 +1010,7 @@ raised if the element is not present.</p>
 </details>
 </dd>
 <dt id="expression.collections.map.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[typing.Tuple[~Key, ~Value]]</span>
+<span>def <span class="ident">to_list</span></span>(<span>table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1036,7 +1036,7 @@ raised if the element is not present.</p>
 </details>
 </dd>
 <dt id="expression.collections.map.try_find"><code class="name flex">
-<span>def <span class="ident">try_find</span></span>(<span>key: ~Key) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]]</span>
+<span>def <span class="ident">try_find</span></span>(<span>key: ~Key) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Lookup an element in the map, returning a <code>Some</code> value if the
@@ -1081,7 +1081,7 @@ instance and returns the result.</p></div>
 </details>
 </dd>
 <dt id="expression.collections.map.try_pick"><code class="name flex">
-<span>def <span class="ident">try_pick</span></span>(<span>chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]</span>
+<span>def <span class="ident">try_pick</span></span>(<span>chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Callable[[<a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Searches the map looking for the first element where the given
@@ -1389,7 +1389,7 @@ def empty() -&gt; &#34;Map[Key, Value]&#34;:
 </details>
 </dd>
 <dt id="expression.collections.map.Map.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>lst: Union[List[Tuple[~Key, ~Value]], <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[Tuple[~Key, ~Value]]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">of_list</span></span>(<span>lst: Union[List[Tuple[~Key, ~Value]], <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Generate map from list.</p>
@@ -1426,7 +1426,7 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 </details>
 </dd>
 <dt id="expression.collections.map.Map.change"><code class="name flex">
-<span>def <span class="ident">change</span></span>(<span>self, key: ~Key, f: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">change</span></span>(<span>self, key: ~Key, f: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1624,7 +1624,7 @@ element being transformed.</p>
 </details>
 </dd>
 <dt id="expression.collections.map.Map.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>self) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[typing.Tuple[~Key, ~Value]]</span>
+<span>def <span class="ident">to_list</span></span>(<span>self) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1657,7 +1657,7 @@ element being transformed.</p>
 </details>
 </dd>
 <dt id="expression.collections.map.Map.try_find"><code class="name flex">
-<span>def <span class="ident">try_find</span></span>(<span>self, key: ~Key) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]</span>
+<span>def <span class="ident">try_find</span></span>(<span>self, key: ~Key) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1687,7 +1687,7 @@ element being transformed.</p>
 </details>
 </dd>
 <dt id="expression.collections.map.Map.try_pick"><code class="name flex">
-<span>def <span class="ident">try_pick</span></span>(<span>self, chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]</span>
+<span>def <span class="ident">try_pick</span></span>(<span>self, chooser: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1773,7 +1773,7 @@ element being transformed.</p>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.3.dev5+gbec6307</a>.</p>
 </footer>
 </body>
 </html>

@@ -91,15 +91,21 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         ...
 
     def match(self, pattern: Any) -> Any:
+        """Match result with pattern."""
+
         m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
     def is_error(self) -> bool:
+        """Returns `True` if the result is an `Error` value."""
+
         raise NotImplementedError
 
     @abstractmethod
     def is_ok(self) -> bool:
+        """Returns `True` if the result is an `Ok` value."""
+
         raise NotImplementedError
 
     def __eq__(self, other: Any) -> bool:
@@ -135,9 +141,13 @@ class Ok(Result[TSource, TError]):
         return Ok(self._value)
 
     def is_error(self) -> bool:
+        """Returns `True` if the result is an `Ok` value."""
+
         return False
 
     def is_ok(self) -> bool:
+        """Returns `True` if the result is an `Ok` value."""
+
         return True
 
     def __match__(self, pattern: Any) -> Iterable[TSource]:
@@ -196,11 +206,11 @@ class Error(Result[TSource, TError], ResultException):
         return Error(mapper(self._error))
 
     def is_error(self) -> bool:
-        """Returns `True`."""
+        """Returns `True` if the result is an `Ok` value."""
         return True
 
     def is_ok(self) -> bool:
-        """Returns `False`."""
+        """Returns `True` if the result is an `Ok` value."""
         return False
 
     def __match__(self, pattern: Any) -> Iterable[TError]:
@@ -246,8 +256,12 @@ def bind(
     return _bind
 
 
+# class Try(Result[TSource, Exception]):
+#    """A result type where the failure case can only be a valid
+#    exception."""
+#
+#    ...
 Try = Result[TSource, Exception]
-"""A result error type where the failure can only be a valid exception.
-"""
+
 
 __all__ = ["Result", "Ok", "Error", "map", "bind", "Try"]

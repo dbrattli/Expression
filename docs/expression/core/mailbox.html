@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.1" />
+<meta name="generator" content="pdoc 0.9.3.dev5+gbec6307" />
 <title>expression.core.mailbox API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -63,12 +63,13 @@ class AsyncReplyChannel(Generic[Reply]):
 class MailboxProcessor(Generic[Msg]):
     def __init__(self, cancellation_token: Optional[CancellationToken]) -&gt; None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
-        self.continuation: Optional[
-            Continuation[Msg]
-        ] = None  # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
         self.token = cancellation_token or CancellationToken.none()
         self.lock = RLock()
         self.loop = asyncio.get_event_loop()
+
+        # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
+        self.continuation: Optional[Continuation[Msg]] = None
+        self.cancel: Optional[Continuation[OperationCanceledError]] = None
 
     def post(self, msg: Msg) -&gt; None:
         &#34;&#34;&#34;Post a message synchronously to the mailbox processor.
@@ -142,11 +143,21 @@ class MailboxProcessor(Generic[Msg]):
                 raise Exception(&#34;Receive can only be called once!&#34;)
 
             self.continuation = done
+            self.cancel = cancel
+
             self.__process_events()
 
         return await from_continuations(callback)
 
     def __process_events(self):
+        # Cancellation of async workflows is more tricky in Python than
+        # with F# so we check the cancellation token for each process.
+        if self.token.is_cancellation_requested:
+            self.cancel, cancel = None, self.cancel
+            if cancel is not None:
+                cancel(OperationCanceledError(&#34;Mailbox was cancelled&#34;))
+            return
+
         if self.continuation is None:
             return
 
@@ -234,7 +245,7 @@ return default</p></div>
 </dd>
 <dt id="expression.core.mailbox.MailboxProcessor"><code class="flex name class">
 <span>class <span class="ident">MailboxProcessor</span></span>
-<span>(</span><span>cancellation_token: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType])</span>
+<span>(</span><span>cancellation_token: Optional[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for generic types.</p>
@@ -258,12 +269,13 @@ return default</p></div>
 <pre><code class="python">class MailboxProcessor(Generic[Msg]):
     def __init__(self, cancellation_token: Optional[CancellationToken]) -&gt; None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
-        self.continuation: Optional[
-            Continuation[Msg]
-        ] = None  # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
         self.token = cancellation_token or CancellationToken.none()
         self.lock = RLock()
         self.loop = asyncio.get_event_loop()
+
+        # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
+        self.continuation: Optional[Continuation[Msg]] = None
+        self.cancel: Optional[Continuation[OperationCanceledError]] = None
 
     def post(self, msg: Msg) -&gt; None:
         &#34;&#34;&#34;Post a message synchronously to the mailbox processor.
@@ -337,11 +349,21 @@ return default</p></div>
                 raise Exception(&#34;Receive can only be called once!&#34;)
 
             self.continuation = done
+            self.cancel = cancel
+
             self.__process_events()
 
         return await from_continuations(callback)
 
     def __process_events(self):
+        # Cancellation of async workflows is more tricky in Python than
+        # with F# so we check the cancellation token for each process.
+        if self.token.is_cancellation_requested:
+            self.cancel, cancel = None, self.cancel
+            if cancel is not None:
+                cancel(OperationCanceledError(&#34;Mailbox was cancelled&#34;))
+            return
+
         if self.continuation is None:
             return
 
@@ -370,7 +392,7 @@ return default</p></div>
 <h3>Static methods</h3>
 <dl>
 <dt id="expression.core.mailbox.MailboxProcessor.start"><code class="name flex">
-<span>def <span class="ident">start</span></span>(<span>body: Callable[[ForwardRef('<a title="expression.core.mailbox.MailboxProcessor" href="#expression.core.mailbox.MailboxProcessor">MailboxProcessor</a>[Any]')], Awaitable[NoneType]], cancellation_token: Union[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>, NoneType] = None) ‑> <a title="expression.core.mailbox.MailboxProcessor" href="#expression.core.mailbox.MailboxProcessor">MailboxProcessor</a>[typing.Any]</span>
+<span>def <span class="ident">start</span></span>(<span>body: Callable[[ForwardRef('<a title="expression.core.mailbox.MailboxProcessor" href="#expression.core.mailbox.MailboxProcessor">MailboxProcessor</a>[Any]')], Awaitable[NoneType]], cancellation_token: Optional[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>] = None) ‑> <a title="expression.core.mailbox.MailboxProcessor" href="#expression.core.mailbox.MailboxProcessor">MailboxProcessor</a>[typing.Any]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -518,6 +540,8 @@ the timeout is exceeded.</p></div>
             raise Exception(&#34;Receive can only be called once!&#34;)
 
         self.continuation = done
+        self.cancel = cancel
+
         self.__process_events()
 
     return await from_continuations(callback)</code></pre>
@@ -562,7 +586,7 @@ the timeout is exceeded.</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.3.dev5+gbec6307</a>.</p>
 </footer>
 </body>
 </html>

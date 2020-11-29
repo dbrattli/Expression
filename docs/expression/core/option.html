@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.1" />
+<meta name="generator" content="pdoc 0.9.3.dev5+gbec6307" />
 <title>expression.core.option API documentation</title>
 <meta name="description" content="Option module …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -470,7 +470,7 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-variables">Global variables</h2>
 <dl>
-<dt id="expression.core.option.Nothing"><code class="name">var <span class="ident">Nothing</span> : <a title="expression.core.option.Nothing_" href="#expression.core.option.Nothing_">Nothing_</a>[typing.Any]</code></dt>
+<dt id="expression.core.option.Nothing"><code class="name">var <span class="ident">Nothing</span> : <a title="expression.core.option.Nothing_" href="#expression.core.option.Nothing_">Nothing_</a></code></dt>
 <dd>
 <div class="desc"><p>Singleton <code><a title="expression.core.option.Nothing" href="#expression.core.option.Nothing">Nothing</a></code> object.</p>
 <p>Since Nothing is a singleton it can be tested e.g using <code>is</code>:
@@ -484,7 +484,7 @@ return True</p></div>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.option.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Bind option.</p>
@@ -527,7 +527,7 @@ option of the output type of the mapper.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.default_value"><code class="name flex">
-<span>def <span class="ident">default_value</span></span>(<span>value: ~TSource) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], ~TSource]</span>
+<span>def <span class="ident">default_value</span></span>(<span>value: ~TSource) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], ~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Gets the value of the option if the option is Some, otherwise
@@ -548,7 +548,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.is_none"><code class="name flex">
-<span>def <span class="ident">is_none</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]) ‑> bool</span>
+<span>def <span class="ident">is_none</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -561,7 +561,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.is_some"><code class="name flex">
-<span>def <span class="ident">is_some</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]) ‑> bool</span>
+<span>def <span class="ident">is_some</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -574,7 +574,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -590,7 +590,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>mapper: Callable[[~T1, ~T2], ~TResult]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~T1], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~T2]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]</span>
+<span>def <span class="ident">map2</span></span>(<span>mapper: Callable[[~T1, ~T2], ~TResult]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>, <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -606,7 +606,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.of_obj"><code class="name flex">
-<span>def <span class="ident">of_obj</span></span>(<span>value: Any) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[typing.Any]</span>
+<span>def <span class="ident">of_obj</span></span>(<span>value: Any) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert object to an option.</p>
@@ -637,7 +637,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.of_optional"><code class="name flex">
-<span>def <span class="ident">of_optional</span></span>(<span>value: Union[~TSource, NoneType]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]</span>
+<span>def <span class="ident">of_optional</span></span>(<span>value: Optional[~TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert an optional value to an option.</p>
@@ -673,7 +673,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]]</span>
+<span>def <span class="ident">or_else</span></span>(<span>if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns option if it is Some, otherwise returns ifNone.</p></div>
@@ -691,7 +691,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]) ‑> List[~TSource]</span>
+<span>def <span class="ident">to_list</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> List[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -704,7 +704,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> Iterable[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -880,7 +880,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.Nothing_.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~T2]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]</span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -893,7 +893,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.Nothing_.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]</span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns <code>if_none</code>.</p></div>
@@ -1093,7 +1093,7 @@ def value(self) -&gt; TSource:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.option.Option.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TResult]')]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]</span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TResult]')]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Bind option.</p>
@@ -1178,7 +1178,7 @@ def is_some(self) -&gt; bool:
 </details>
 </dd>
 <dt id="expression.core.option.Option.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1192,7 +1192,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#
 </details>
 </dd>
 <dt id="expression.core.option.Option.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]</span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1206,7 +1206,7 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 </details>
 </dd>
 <dt id="expression.core.option.Option.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]</span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns option if it is Some, otherwise returns <code>if_one</code>.</p></div>
@@ -1412,7 +1412,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </details>
 </dd>
 <dt id="expression.core.option.Some.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~T2]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]</span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1427,7 +1427,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </details>
 </dd>
 <dt id="expression.core.option.Some.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]</span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns <code>self</code>.</p></div>
@@ -1561,7 +1561,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.3.dev5+gbec6307</a>.</p>
 </footer>
 </body>
 </html>

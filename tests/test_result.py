@@ -2,7 +2,7 @@ from typing import Callable, Generator, List, Optional
 
 import pytest
 from expression import effect
-from expression.core import Error, Ok, Result, result
+from expression.core import Error, Ok, Result, Try, result
 from expression.extra.result import sequence
 from hypothesis import given
 from hypothesis import strategies as st
@@ -271,3 +271,10 @@ def test_result_builder_multiple_ok():
         break
     else:
         assert False
+
+
+def test_try():
+    xs: Try[int] = Ok(10)
+
+    for x in xs:
+        assert x == 10
