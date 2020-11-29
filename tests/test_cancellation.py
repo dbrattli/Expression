@@ -7,6 +7,7 @@ def test_token_none_works():
     assert isinstance(token, CancellationToken)
     assert not token.can_be_canceled
     assert not token.is_cancellation_requested
+    token.throw_if_cancellation_requested()
 
 
 def test_token_source_works():

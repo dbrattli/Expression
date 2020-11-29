@@ -35,12 +35,13 @@ class AsyncReplyChannel(Generic[Reply]):
 class MailboxProcessor(Generic[Msg]):
     def __init__(self, cancellation_token: Optional[CancellationToken]) -> None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
-        self.continuation: Optional[
-            Continuation[Msg]
-        ] = None  # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
         self.token = cancellation_token or CancellationToken.none()
         self.lock = RLock()
         self.loop = asyncio.get_event_loop()
+
+        # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
+        self.continuation: Optional[Continuation[Msg]] = None
+        self.cancel: Optional[Continuation[OperationCanceledError]] = None
 
     def post(self, msg: Msg) -> None:
         """Post a message synchronously to the mailbox processor.
@@ -114,11 +115,21 @@ class MailboxProcessor(Generic[Msg]):
                 raise Exception("Receive can only be called once!")
 
             self.continuation = done
+            self.cancel = cancel
+
             self.__process_events()
 
         return await from_continuations(callback)
 
     def __process_events(self):
+        # Cancellation of async workflows is more tricky in Python than
+        # with F# so we check the receive cancellation token.
+        if self.token.is_cancellation_requested:
+            self.cancel, cancel = None, self.cancel
+            if cancel is not None:
+                cancel(OperationCanceledError("Mailbox was cancelled"))
+            return
+
         if self.continuation is None:
             return
 

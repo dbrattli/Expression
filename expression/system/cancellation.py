@@ -35,7 +35,7 @@ class CancellationToken:
         return not self._cancelled
 
     def throw_if_cancellation_requested(self):
-        if self._source.is_cancellation_requested:
+        if self.is_cancellation_requested:
             raise ObjectDisposedException()
 
     def register(self, callback: Callable[[], None]) -> Disposable:
