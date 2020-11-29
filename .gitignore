@@ -127,3 +127,5 @@ dmypy.json
 .ionide
 
 .idea/
+
+notebooks/images/.ztr-directory

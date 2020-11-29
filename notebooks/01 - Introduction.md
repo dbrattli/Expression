@@ -3,7 +3,7 @@
 
 > Do you know Python and would like to learn more about functional programming? Are you wondering what the Scala, F#, and Haskell developers are talking about? Let's do some functional programming in a language that you already know!
 
-This tutoral that will get you up to speed with functinal programming in Python using the [Expression](https://github.com/dbrattli/Expression) functional programming library.
+This tutorial that will get you up to speed with functional programming in Python using the [Expression](https://github.com/dbrattli/Expression) functional programming library.
 
 ## Functional Programming
 
@@ -11,7 +11,7 @@ Functional programming is about programming with functions, or *expressions*. An
 
 Functional programming can sometimes be seen as difficult, scary or even intimidating. Talks about functional programming are often about Applicatives, Functors, and you might have heard about Category Theory or the infamous Monad. But you don't need to know about category theory and Monads to do functional programming.
 
-Note that object-oriented programming can in the same way be just as scary with words such as Inheritance, Interfaces, Abstract Base Classes, Covariance, Contravariance and Liskovs substitution principle. 
+Note that object-oriented programming can in the same way be just as scary with words such as Inheritance, Interfaces, Abstract Base Classes, Covariance, Contravariance and Liskovs substitution principle.
 
 Lets look at how some object oriented programming patterns maps to functional programming:
 
@@ -30,7 +30,7 @@ Python is a multi-paradigm language:
 - **Procedural**: `print("test")`
 - ... and **Functional**: `xs = map(lambda x: x*2, [1, 2, 3])`
 
-So Python is not a functional first programming language, but it has some functional programming features that we will explore in this tutorial. 
+So Python is not a functional-first programming language, but it has some functional programming features that we will explore in this tutorial.
 
 ## Functions
 
@@ -62,9 +62,9 @@ add(10, 20)
 
 Another aspect of functional programming is the concept of pure functions. A pure function is a function where the same input always gives the same output . Pure functions are  important for several reasons:
 
-- Pure functions are deteministic
+- Pure functions are deterministic
 - Pure function can be unit-tested
-- Pure functions are thread safe
+- Pure functions are thread-safe
 - Pure functions can be memoized
 - Pure functions lowers the cognitive load. I.e they can be reasoned about.
 - Pure functions have no side-effects
@@ -129,7 +129,7 @@ add_10(20)
 
 ## Currying
 
-A function that takes two arguments is basically exactly the same as a function that takes one argument and returns a function that takes the second argument. 
+A function that takes two arguments is basically exactly the same as a function that takes one argument and returns a function that takes the second argument.
 
 Some languages like F# supports automatic currying of functions. Python does not support automatic currying of functions, but we can define functions that return functions.
 
@@ -155,10 +155,10 @@ add(10)(20)
 Making pipelines of operations is well known from the Unix terminal and shell programming.
 
 ```bash
-command_1 | command_2 | command_3 | .... | command_N 
+command_1 | command_2 | command_3 | .... | command_N
 ```
 
-F# uses the `|>` operator for piping. The definition of the pipe operator is suprisingly simple:
+F# uses the `|>` operator for piping. The definition of the pipe operator is surprisingly simple:
 
 ```fsharp
 let (|>) x f = f x
@@ -181,7 +181,7 @@ pipe(
 )
 ```
 
-The key thing to note is that for pipelining to work, then every function can only take a single argument. So how can we provide both e.g a mapper and an iterable for the `seq.map` function? The answer is to use currying or higher order functions. Remember that a function that takes two arguments is the same as a function that takes the first argument and returns a function that takes the second argument. Here is how the `map` function in the sequence module is defined:
+The key thing to note is that for pipelining to work, then every function can only take a single argument. So how can we provide both e.g a mapper and an iterable for the `seq.map` function? The answer is to use currying or higher-order functions. Remember that a function that takes two arguments is the same as a function that takes the first argument and returns a function that takes the second argument. Here is how the `map` function in the sequence module is defined:
 
 ```python
 def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
@@ -266,7 +266,7 @@ def test(x):
     left = compose(compose(f, g), h)
 
     assert right(x) == left(x)
-    
+
 test(10)
 ```
 
@@ -282,7 +282,7 @@ def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
     return _compose
 ```
 
-It is basically iteration of the functions keeping an accumulator with the currently composed functions.
+It is basically an iteration of the functions keeping an accumulator with the currently composed functions.
 
 ## Believe the Type
 
@@ -297,7 +297,6 @@ def run():
 run()
 ```
 
-<!-- #region -->
 But there are a several static type checkers for Python that we can use:
 
 * **Mypy:** https://github.com/python/mypy
@@ -310,18 +309,18 @@ Static type checkers can significantly improve the quality of the code. The prob
 
 With Expression we are aiming for industral strength code. What is industrial strength?
 
-> Marked by more than usual power, durability, or intensity 
+> Marked by more than usual power, durability, or intensity
 
 The difference with "more than usual" and "usual" can be subtle, but even a subtle difference can have a significant effect when you start deploing to 100.000 servers (e.g Exchange, Facebook, etc) instead of a single server. You need to plan for more than being lucky.
 
-- Use simple well tested abstractions. Don't reinvent the wheel.
+- Use simple well-tested abstractions. Don't reinvent the wheel.
 - Use immutable data types whenever possible.
 - Use pure functions. Avoid None-taking/returning methods or functions
 - Use a static type checker like Pylance (in strict mode)
 - Use unit-testing and property-based testing for core logic. E.g a library like Hypotheses
-- Use single threaded code to avoid Heisenbugs
+- Use single-threaded code to avoid Heisenbugs
 
-Cost of failure increases exponentially the further the bug 
+Cost of failure increases exponentially the further the bug
 
 - Type checks (instant)
 - Unit tests (seconds)
@@ -334,7 +333,6 @@ Cost of failure increases exponentially the further the bug
 
 *"A Heisenbug is a classification of an unusual software bug that disappears or alters its behavior when an attempt to isolate it is made. Due to the unpredictable nature of a Heisenbug, when trying to recreate the bug or using a debugger, the error may change or even vanish on a retry."*
 
-<!-- #endregion -->
 
 ```python
 

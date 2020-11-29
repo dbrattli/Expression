@@ -61,6 +61,11 @@ You can install the latest `expression` from PyPI by running `pip` (or
 $ pip3 install expression
 ```
 
+## Tutorial
+
+1. [Introduction](https://github.com/dbrattli/Expression/blob/main/notebooks/01%20-%20Introduction.md)
+   to Functional Programming in Python
+
 ## Goals
 
 - Industrial strength library for functional programming in Python.
