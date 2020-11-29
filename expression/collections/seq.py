@@ -23,6 +23,7 @@ import sys
 from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar, overload
 
 from expression.core import Matcher, Option, identity, pipe
+from pyrsistent import s
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -326,14 +327,24 @@ def init_infinite(initializer: Callable[[int], TSource]) -> Iterable[TSource]:
     reapplied as necessary to regenerate the elements. The function is
     passed the index of the item being generated.
 
-    Iteration can continue up to `sys.maxint`.
+    Iteration can continue up to `sys.maxsize`.
     """
-    for i in range(sys.maxsize):
-        yield initializer(i)
+
+    class Infinite(Iterable[int]):
+        """An infinite iterable where each iterator starts counting at
+        0."""
+
+        def __init__(self, initializer: Callable[[int], TSource]) -> None:
+            self.initializer = initializer
+
+        def __iter__(self) -> Iterator[int]:
+            return builtins.map(self.initializer, itertools.count(0, 1))
+
+    return Infinite(initializer)
 
 
-def infinite() -> Iterable[int]:
-    return init_infinite(identity)
+infinite: Iterable[int] = init_infinite(identity)
+"""An infinite iterable."""
 
 
 def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], None]:

@@ -156,7 +156,7 @@ def test_seq_pipeline(xs: List[int]):
 
 @given(st.lists(st.integers()))
 def test_seq_infinite(xs: List[int]):
-    ys = pipe(xs, seq.zip(seq.infinite()))
+    ys = pipe(xs, seq.zip(seq.infinite))
 
     expected = list(enumerate(xs))
     assert expected == list(ys)
