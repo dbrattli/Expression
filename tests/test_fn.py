@@ -1,3 +1,4 @@
+# flake8: noqa
 from expression.core import TailCall, TailCallResult, tailrec
 
 

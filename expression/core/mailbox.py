@@ -123,7 +123,7 @@ class MailboxProcessor(Generic[Msg]):
 
     def __process_events(self):
         # Cancellation of async workflows is more tricky in Python than
-        # with F# so we check the receive cancellation token.
+        # with F# so we check the cancellation token for each process.
         if self.token.is_cancellation_requested:
             self.cancel, cancel = None, self.cancel
             if cancel is not None:

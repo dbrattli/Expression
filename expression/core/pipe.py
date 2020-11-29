@@ -122,8 +122,8 @@ def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:
     Allows the use of function argument on the left side of the function.
 
     Example:
-        >>> pipe(x, __fn) == __fn(x)  # Same as x |> __fn
-        >>> pipe(x, __fn, gn) == gn(fn(x))  # Same as x |> __fn |> gn
+        >>> pipe(x, fn) == __fn(x)  # Same as x |> fn
+        >>> pipe(x, fn, gn) == gn(fn(x))  # Same as x |> fn |> gn
         ...
     """
 
