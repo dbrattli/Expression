@@ -19,11 +19,9 @@ Example:
 import builtins
 import functools
 import itertools
-import sys
 from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar, overload
 
 from expression.core import Matcher, Option, identity, pipe
-from pyrsistent import s
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
