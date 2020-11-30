@@ -69,7 +69,7 @@ $ pip3 install expression
 2. [Collections](https://github.com/cognitedata/Expression/blob/main/notebooks/02%20-%20Containers.md)
 3. [Lambda Calculus](https://github.com/cognitedata/Expression/blob/main/notebooks/03%20-%20Lambda%20Calculus.md)
 4. [Optional Values](https://github.com/cognitedata/Expression/blob/main/notebooks/04%20-%20Optional%20Values.md)
-
+5. [Railway Oriented Programming](https://github.com/cognitedata/Expression/blob/main/notebooks/05%20-%20Railroad%20Oriented%20Programming.md)
 ## Goals
 
 - Industrial strength library for functional programming in Python.
