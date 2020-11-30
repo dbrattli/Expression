@@ -68,7 +68,7 @@ $ pip3 install expression
 1. [Introduction](https://github.com/cognitedata/Expression/blob/main/notebooks/01%20-%20Introduction.md)
 2. [Collections](https://github.com/cognitedata/Expression/blob/main/notebooks/02%20-%20Containers.md)
 3. [Lambda Calculus](https://github.com/cognitedata/Expression/blob/main/notebooks/03%20-%20Lambda%20Calculus.md)
-4. [Optional Values](https://github.com/cognitedata/Expression/blob/main/notebooks/04%20-%20Optional%20Values.m)
+4. [Optional Values](https://github.com/cognitedata/Expression/blob/main/notebooks/04%20-%20Optional%20Values.md)
 
 ## Goals
 
