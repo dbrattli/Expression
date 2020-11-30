@@ -129,3 +129,5 @@ dmypy.json
 .idea/
 
 notebooks/images/.ztr-directory
+
+notebooks/.ztr-directory
