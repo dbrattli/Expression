@@ -15,9 +15,23 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import Any, Callable, Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union, cast, overload
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
-from expression.core import Option, pipe
+from expression.core import Option, fst, pipe, snd
 
 from . import maptree, seq
 from .frozenlist import FrozenList
@@ -35,7 +49,7 @@ T5 = TypeVar("T5")
 T6 = TypeVar("T6")
 
 
-class Map(Generic[Key, Value]):
+class Map(Mapping[Key, Value]):
     """The immutable map class."""
 
     def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -> None:
@@ -141,7 +155,7 @@ class Map(Generic[Key, Value]):
     def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -> Result:
         return maptree.fold(folder, state, self._tree)
 
-    def map(self, mapping: Callable[[Value], Result]) -> "Map[Key, Result]":
+    def map(self, mapping: Callable[[Key, Value], Result]) -> "Map[Key, Result]":
         """Builds a new collection whose elements are the results of
         applying the given function to each of the elements of the
         collection. The key passed to the function indicates the key of
@@ -161,6 +175,29 @@ class Map(Generic[Key, Value]):
 
     def contains_key(self, key: Key) -> bool:
         return maptree.mem(key, self._tree)
+
+    # @overload
+    # def get(self, key: Key) -> Optional[Value]:
+    #    ...
+
+    # @overload
+    # def get(self, key: Key, default: Value) -> Value:
+    #    ...
+
+    # def get(self, key: Key, default: Union[Value, _T]) -> Union[Value, _T]:
+    #    for value in self.try_find(key):
+    #        return value
+
+    #   return default
+
+    def keys(self) -> Set[Key]:
+        return set(pipe(maptree.to_seq(self._tree), seq.map(fst)))
+
+    def value(self) -> Set[Value]:
+        return set(pipe(maptree.to_seq(self._tree), seq.map(snd)))
+
+    def items(self) -> Set[Tuple[Key, Value]]:
+        return set(maptree.to_seq(self._tree))
 
     def remove(self, key: Key) -> "Map[Key, Value]":
         return Map(maptree.remove(key, self._tree))
@@ -201,9 +238,21 @@ class Map(Generic[Key, Value]):
         """Generate map from list.
 
         Returns:
-            New map.
+            The new map.
         """
         return Map(maptree.of_list(FrozenList(lst)))
+
+    @staticmethod
+    def of_seq(sequence: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
+        """Generate map from sequence.
+
+        Generates a new map from an iterable of key/value tuples. This
+        is an alias for `Map.create`.
+
+        Returns:
+            The new map.
+        """
+        return Map.create(sequence)
 
     def __hash__(self) -> int:
         def combine_hash(x: int, y: int) -> int:
@@ -224,6 +273,9 @@ class Map(Generic[Key, Value]):
     def __len__(self) -> int:
         """Return the number of bindings in the map."""
         return maptree.size(self._tree)
+
+    def __contains__(self, key: Key) -> bool:
+        return self.contains_key(key)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Map):
@@ -420,7 +472,7 @@ def for_all(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value
     return _for_all
 
 
-def map(mapping: Callable[[Value], Result]) -> Callable[[Map[Key, Value]], Map[Key, Result]]:
+def map(mapping: Callable[[Key, Value], Result]) -> Callable[[Map[Key, Value]], Map[Key, Result]]:
     def _map(table: Map[Key, Value]) -> Map[Key, Result]:
         return table.map(mapping)
 

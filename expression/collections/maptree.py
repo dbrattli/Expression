@@ -24,7 +24,8 @@ Do not use directly. Use the `map` module instead.
 """
 import builtins
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
+from typing import (Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar,
+                    cast)
 
 from expression.core import Nothing, Option, Some, failwith, pipe
 
@@ -387,16 +388,16 @@ def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
         return True
 
 
-def map(f: Callable[[Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
+def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
             l2 = map(f, mn.left)
-            v2 = f(mn.value)
+            v2 = f(mn.key, mn.value)
             r2 = map(f, mn.right)
             return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
         else:
-            return Some(MapTreeLeaf(m2.key, f(m2.value)))
+            return Some(MapTreeLeaf(m2.key, f(m2.key, m2.value)))
     else:
         return empty
 

@@ -1,11 +1,8 @@
-from typing import Dict, ItemsView
+from typing import Callable, Dict, ItemsView
 
-import pytest
 from expression.collections import FrozenList, Map, map
 from hypothesis import given
 from hypothesis import strategies as st
-
-from .utils import CustomException, throw
 
 
 def test_map_empty():
@@ -39,7 +36,7 @@ def test_map_of_seq(xs: Dict[str, int]):
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_remove(xs: Dict[str, int]):
     items: ItemsView[str, int] = xs.items()
-    m = Map.create(items)
+    m = Map.of_seq(items)
 
     keys = xs.keys()
     count = len(m)
@@ -63,3 +60,15 @@ def test_map_to_list(xs: Dict[str, int]):
     ys = map.of_list(items).to_seq()
 
     assert sorted(list(items)) == list(ys)
+
+
+@given(st.dictionaries(keys=st.text(), values=st.integers()))
+def test_map_map(xs: Dict[str, int]):
+    items = FrozenList(xs.items())
+
+    mapper: Callable[[str, int], int] = lambda k, v: v * 20
+    ys = map.of_list(items).map(mapper)
+    print(xs, ys)
+
+    expected = [(k, mapper(k, v)) for k, v in sorted(list(items))]
+    assert expected == list(ys)
