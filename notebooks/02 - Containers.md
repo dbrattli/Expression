@@ -6,7 +6,7 @@ In Python a container is something that contains something. Containers may be se
 - Sequences are iterable
 - Collections have a size
 
-We usually talk about generic container types such as `List[T]`, `Set[T]`, `Tuple[T, ...]`. But we can also imagine taking the abstraction to a higher-order making the left side generic as well, e.g `Something[T]`. What does types of `Something` have in common?
+We usually talk about generic container types such as `List[T]`, `Set[T]`, `Tuple[T, ...]`. But we can also imagine taking the abstraction to a higher-order making the left side generic as well, e.g `Something[T]`. What do types of `Something` have in common?
 
 > *A something within a something*
 
@@ -30,12 +30,12 @@ Immutable data types are important in functional programming. Immutable means th
 
 The advantages of immutable data types are:
 
-* Thread safe. Multiple threads cannot modify or corrupt the state.
+* Thread-safe. Multiple threads cannot modify or corrupt the state.
 * Safe to share and reuse
 * Easy to reason about. Reduces the cognitive load
 * Easier to debug
 
-Expression extends Python with a comple of more immutable data types:
+Expression extends Python with a couple of more immutable data types:
 
 ## FrozenList
 
@@ -56,7 +56,7 @@ print(zs)
 
 ## Map
 
-The Expression Map module is an immutable Dict type. The implementation is based on map type from F# and uses a balanced binary tree implementation. 
+The Expression Map module is an immutable Dict type. The implementation is based on map type from F# and uses a balanced binary tree implementation.
 
 ```python
 from expression.collections import Map
@@ -169,7 +169,7 @@ print(value)
 
 ## Push Collections
 
-A push collection is something that pushes values out of the collection. This can be seen as temporal (push) containers vs spatial (pull) collections. This collection is called an Observable and is the dual (or the opposite) of an Iterable. 
+A push collection is something that pushes values out of the collection. This can be seen as temporal (push) containers vs spatial (pull) collections. This collection is called an Observable and is the dual (or the opposite) of an Iterable.
 
 An `Iterable` have getter for getting an `Iterator` (__iter__)
 An `Obserable` have a setter for setting an `Observer` (subscribe)

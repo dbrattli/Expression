@@ -50,7 +50,7 @@ Alpha-conversion is about renaming of bound variables
 
 ## Beta Reduction
 
-A beta reduction (also written β reduction) is the process of calculating a result from the application of a function to an expression. 
+A beta reduction (also written β reduction) is the process of calculating a result from the application of a function to an expression.
 
 ((λn.n×2) 7) → 7×2.
 
@@ -61,7 +61,7 @@ A beta reduction (also written β reduction) is the process of calculating a res
 
 ## Eta-conversion
 
-An eta conversion (also written η-conversion) is adding or dropping of an abstraction over a function. 
+An eta conversion (also written η-conversion) is adding, or dropping an abstraction over a function.
 
 ```python
 # Eta-conversion
@@ -71,7 +71,7 @@ f = lambda x: x
 (lambda x: f(x)) == f
 ```
 
-Extensive use of η-*reduction* can lead to what's called *point-free* programming. 
+Extensive use of η-*reduction* can lead to what's called *point-free* programming.
 
 > Extensive use of point-free programming can lead to *point-less* programming.
 
@@ -89,4 +89,4 @@ print(xs)
 
 ## Do we need to know about lambda calculus?
 
-You usually do not need to know about lambda calculus. But look out for point-free programming which may both simplify or over complicate your code. Lambda calculus is a must have knowledge when dealing with compilers and expression trees (ASTs).
+You usually do not need to know about lambda calculus. But look out for point-free programming which may both simplify or over complicate your code. Lambda calculus is a must-have knowledge when dealing with compilers and expression trees (ASTs).
