@@ -193,7 +193,7 @@ def test_result_traverse_error(xs: List[int]):
         assert err == error
 
 
-def test_result_builder_zero():
+def test_result_effect_zero():
     @effect.result
     def fn():
         while False:
@@ -203,7 +203,7 @@ def test_result_builder_zero():
         fn()
 
 
-def test_result_builder_yield_ok():
+def test_result_effect_yield_ok():
     @effect.result
     def fn() -> Generator[int, int, Optional[int]]:
         yield 42
@@ -213,7 +213,7 @@ def test_result_builder_yield_ok():
         assert x == 42
 
 
-def test_result_builder_return_ok():
+def test_result_effect_return_ok():
     @effect.result
     def fn() -> Generator[int, int, int]:
         x = yield 42
@@ -227,7 +227,7 @@ def test_result_builder_return_ok():
         assert False
 
 
-def test_result_builder_yield_from_ok():
+def test_result_effect_yield_from_ok():
     @effect.result
     def fn() -> Generator[int, int, int]:
         x = yield from Ok(42)
@@ -241,7 +241,7 @@ def test_result_builder_yield_from_ok():
         assert False
 
 
-def test_result_builder_yield_from_error():
+def test_result_effect_yield_from_error():
     error = "Do'h"
 
     @effect.result
@@ -257,7 +257,7 @@ def test_result_builder_yield_from_error():
         assert False, "Should not happen"
 
 
-def test_result_builder_multiple_ok():
+def test_result_effect_multiple_ok():
     @effect.result
     def fn() -> Generator[int, int, int]:
         x = yield 42
@@ -271,6 +271,20 @@ def test_result_builder_multiple_ok():
         break
     else:
         assert False
+
+
+def test_result_effect_throws():
+    error = CustomException("this happend!")
+
+    @effect.result
+    def fn() -> Generator[int, int, int]:
+        _ = yield from Ok(42)
+        raise error
+
+    with pytest.raises(CustomException) as exc:
+        fn()
+
+    assert exc.value == error
 
 
 def test_try():
