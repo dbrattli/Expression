@@ -155,6 +155,9 @@ class Map(Mapping[Key, Value]):
     def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -> Result:
         return maptree.fold(folder, state, self._tree)
 
+    def fold_back(self, folder: Callable[[Tuple[Key, Value], Result], Result], state: Result) -> Result:
+        return maptree.fold_back(folder, self._tree, state)
+
     def map(self, mapping: Callable[[Key, Value], Result]) -> "Map[Key, Result]":
         """Builds a new collection whose elements are the results of
         applying the given function to each of the elements of the
@@ -486,9 +489,11 @@ def fold(folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -
     return _fold
 
 
-# // [<CompiledName("FoldBack")>]
-# let foldBack<'Key, 'T, 'State  when 'Key : comparison> folder (table: Map<'Key, 'T>) (state:'State) =
-#     maptree.foldBack folder table.Tree state
+def fold_back(folder: Callable[[Tuple[Key, Value], Result], Result], table: Map[Key, Value]) -> Result:
+    def _fold_back(state: Result) -> Result:
+        return table.fold_back(folder, state)
+
+    return _fold_back
 
 
 def partition(

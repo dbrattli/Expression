@@ -428,6 +428,10 @@ def min_by(projection: Callable[[TSource], TResult]) -> Callable[[Iterable[TSour
 
 
 def of(value: Iterable[TSource]) -> Seq[TSource]:
+    """Create sequence from iterable.
+
+    Enables fluent dot chaining on the created sequence object.
+    """
     return Seq(value)
 
 
@@ -446,7 +450,6 @@ def scan(
 
     Args:
         scanner: A function that updates the state with each element
-            from the sequence.
         state: The initial state.
     """
 
