@@ -127,7 +127,7 @@ add_10 = eval("lambda x: x+10")
 add_10(20)
 ```
 
-## Currying
+## Currying and Partial Application
 
 A function that takes two arguments is basically exactly the same as a function that takes one argument and returns a function that takes the second argument.
 
@@ -146,6 +146,42 @@ function that takes the second argument:
 ```python
 add = lambda a: lambda b: a + b
 add(10)(20)
+```
+
+We do not use currying in the core part of Expression, but the library itself supports the concept using the curried decorator:
+
+```python
+from expression.core import curried
+
+@curried
+def add(a: int, b: int) -> int:
+    return a + b
+```
+
+```python
+assert add(3, 4) == 7
+assert add()(3, 4) == 7
+assert add(3)(4) == 7
+assert add()(3)(4) == 7
+assert add()(3)()(4) == 7
+assert add()()(3)()()(4) == 7
+```
+
+This enables partial application where a number of arguments except the last is given to a function. Partial application is used extensively in libraries such as Expression, RxPY and aioreactive.
+
+```python
+from expression.core import pipe
+from expression.collections import seq
+
+xs = seq.of(range(10))
+
+mapping = seq.map(lambda x: x * 10)
+
+pipe(xs,
+    mapping,
+    seq.filter(lambda x: x > 30),
+    list,
+)
 ```
 
 <!-- #region -->
@@ -313,11 +349,13 @@ With Expression we are aiming for industral strength code. What is industrial st
 
 The difference with "more than usual" and "usual" can be subtle, but even a subtle difference can have a significant effect when you start deploing to 100.000 servers (e.g Exchange, Facebook, etc) instead of a single server. You need to plan for more than being lucky.
 
+Functional programmming is not a silver bullet, but it can 
+
 - Use simple well-tested abstractions. Don't reinvent the wheel.
 - Use immutable data types whenever possible.
 - Use pure functions. Avoid None-taking/returning methods or functions
 - Use a static type checker like Pylance (in strict mode)
-- Use unit-testing and property-based testing for core logic. E.g a library like Hypotheses
+- Use unit-testing and property-based testing for core logic. E.g a library like pytest and Hypotheses
 - Use single-threaded code to avoid Heisenbugs
 
 Cost of failure increases exponentially the further the bug
