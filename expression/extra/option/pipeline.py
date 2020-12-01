@@ -75,10 +75,10 @@ def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]
     functional composition. The functions are composed left to right. A
     composition of zero functions gives back the identity function.
 
-    >>> pipeline()(x) == x
+    >>> pipeline()(x) == Some(x)
     >>> pipeline(f)(x) == f(x)
-    >>> pipeline(f, g)(x) == g(f(x))
-    >>> pipeline(f, g, h)(x) == h(g(f(x)))
+    >>> pipeline(f, g)(x) == f(x).bind(g)
+    >>> pipeline(f, g, h)(x) == f(x).bind(g).bind(h)
     ...
 
     Returns:

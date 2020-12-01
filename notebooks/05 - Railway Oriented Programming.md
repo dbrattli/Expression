@@ -16,17 +16,21 @@ class Ok(Result):
         self._value = value
     
     def __str__(self):
-        return "Ok: %s" % str(self._value)
+        return "Ok %s" % str(self._value)
 
 class Error(Result):
     def __init__(self, exn):
         self._exn = exn
     
     def __str__(self):
-        return "Error: %s" % str(self._exn)
+        return "Error %s" % str(self._exn)
 ```
 
+The Expression library contains a similar but more feature complete Result class we can use:
+
 ```python
+from expression.core import Ok, Error
+
 def fetch(url):
     try:
         if not "http://" in url:
@@ -94,7 +98,7 @@ class Ok(Result):
         return fn(self._value)
 
     def __str__(self):
-        return "Ok: %s" % str(self._value)
+        return "Ok %s" % str(self._value)
 
 class Error(Result):
     def __init__(self, exn):
@@ -104,7 +108,7 @@ class Error(Result):
         return self
     
     def __str__(self):
-        return "Error: %s" % str(self._exn)
+        return "Error %s" % str(self._exn)
     
 def bind(fn, result):
     """We don't want method chaining in Python."""
@@ -137,25 +141,27 @@ print(result)
 This is what's called the "Pyramide of Doom":
 
 ```python
+from expression.core import result
+
 result = bind(parse, 
-          bind(lambda x: fetch("http://%s" % x),
-           bind(lambda x: fetch("http://%s" % x),
             bind(lambda x: fetch("http://%s" % x),
-             bind(lambda x: fetch("http://%s" % x),
-              bind(lambda x: fetch("http://%s" % x),
                bind(lambda x: fetch("http://%s" % x),
-                fetch("http://123")
+                  bind(lambda x: fetch("http://%s" % x),
+                     bind(lambda x: fetch("http://%s" % x),
+                         bind(lambda x: fetch("http://%s" % x),
+                             bind(lambda x: fetch("http://%s" % x),
+                                 fetch("http://123")
+                            )
+                         )
+                     )
+                  )
                )
-              )
-             )
             )
-           )
-          )
          )
 print(result)
 ```
 
-## Can we make a general compose?
+## Can we make a more generic compose?
 
 Let's try to make a general compose function that composes two result returning functions:
 
@@ -168,21 +174,21 @@ result = fetch_parse("http://42")
 print(result)
 ```
 
-## Kleisli composition
+## Pipelining
 
-Functional compose of functions that returns wrapped values is called Kleisli composition. Using a reducer we can compose any number of functions:
+Functional compose of functions that returns wrapped values is called pipeling in the Expression library. Other languages calls this "Kleisli composition". Using a reducer we can compose any number of functions:
 
 ```python
 from functools import reduce
 
-def kleisli(*fns):
+def pipeline(*fns):
     return reduce(lambda res, fn: lambda x: res(x).bind(fn), fns)
 ```
 
 Now, make `fetch_and_parse` using kleisli:
 
 ```python
-fetch_and_parse = kleisli(fetch, parse)
+fetch_and_parse = pipeline(fetch, parse)
 result = fetch_and_parse("http://123")
 print(result)
 ```
@@ -190,9 +196,11 @@ print(result)
 ### What if we wanted to call fetch 10 times in a row?
 
 ```python
+from expression.extra.result import pipeline
+
 fetch_with_value = lambda x: fetch("http://%s" % x)
 
-request = kleisli(
+request = pipeline(
             fetch,
             fetch_with_value,
             fetch_with_value,
@@ -205,4 +213,8 @@ request = kleisli(
 
 result = request("http://123")
 print(result)
+```
+
+```python
+
 ```
