@@ -16,7 +16,6 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
     Threads an applicative computation though a list of items.
     """
 
-    # flake8: noqa: T484
     @effect.result
     def folder(head: TSource, tail: Result[List[TResult], TError]) -> Generator[TResult, TResult, List[TResult]]:
         """Same as:

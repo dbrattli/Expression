@@ -3,6 +3,7 @@ from typing import Any, Callable, Generator
 import pytest
 from expression import effect
 from expression.core import Nothing, Option, Some, option, pipe, pipe2
+from expression.extra.option import pipeline
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -353,3 +354,34 @@ def test_option_builder_throws():
         fn()
 
     assert ex.value.message == error
+
+
+def test_pipeline_none():
+
+    hn = pipeline()
+
+    assert hn(42) == Some(42)
+
+
+def test_pipeline_works():
+    fn: Callable[[int], Option[int]] = lambda x: Some(x * 10)
+    gn: Callable[[int], Option[int]] = lambda x: Some(x + 10)
+
+    hn = pipeline(
+        fn,
+        gn,
+    )
+
+    assert hn(42) == Some(430)
+
+
+def test_pipeline_error():
+    fn: Callable[[int], Option[int]] = lambda x: Some(x * 10)
+    gn: Callable[[int], Option[int]] = lambda x: Nothing
+
+    hn = pipeline(
+        fn,
+        gn,
+    )
+
+    assert hn(42) == Nothing

@@ -3,7 +3,7 @@ from typing import Callable, Generator, List, Optional
 import pytest
 from expression import effect
 from expression.core import Error, Ok, Result, Try, result
-from expression.extra.result import sequence
+from expression.extra.result import pipeline, sequence
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -292,3 +292,35 @@ def test_try():
 
     for x in xs:
         assert x == 10
+
+
+def test_pipeline_none():
+
+    hn = pipeline()
+
+    assert hn(42) == Ok(42)
+
+
+def test_pipeline_works():
+    fn: Callable[[int], Result[int, Exception]] = lambda x: Ok(x * 10)
+    gn: Callable[[int], Result[int, Exception]] = lambda x: Ok(x + 10)
+
+    hn = pipeline(
+        fn,
+        gn,
+    )
+
+    assert hn(42) == Ok(430)
+
+
+def test_pipeline_error():
+    error = Error("failed")
+    fn: Callable[[int], Result[int, str]] = lambda x: Ok(x * 10)
+    gn: Callable[[int], Result[int, str]] = lambda x: error
+
+    hn = pipeline(
+        fn,
+        gn,
+    )
+
+    assert hn(42) == error

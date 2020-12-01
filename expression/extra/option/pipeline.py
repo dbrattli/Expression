@@ -1,8 +1,7 @@
-from typing import Callable, Any, TypeVar, overload
 from functools import reduce
+from typing import Any, Callable, TypeVar, overload
 
-from expression.core.option import Option, Nothing
-
+from expression.core import Option, Some
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -86,13 +85,13 @@ def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]
         The composed functions.
     """
 
-    def kleisli(source: Any) -> Option[Any]:
-        def reducer(acc: Any, fn: Callable[[Any], Option[Any]]) -> Option[Any]:
-            return fn(acc.value) if acc is not Nothing else acc
+    def reducer(acc: Callable[[Any], Option[Any]], fn: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:
+        def gn(x: Any) -> Option[Any]:
+            return acc(x).bind(fn)
 
-        return reduce(reducer, fns, source)
+        return gn
 
-    return kleisli
+    return reduce(reducer, fns, Some)
 
 
 __all__ = ["pipeline"]
