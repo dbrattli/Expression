@@ -176,10 +176,11 @@ from expression.collections import seq
 xs = seq.of(range(10))
 
 mapping = seq.map(lambda x: x * 10)
+filter = seq.filter(lambda x: x > 30)
 
 pipe(xs,
     mapping,
-    seq.filter(lambda x: x > 30),
+    filter,
     list,
 )
 ```
@@ -308,7 +309,9 @@ test(10)
 
 The `compose` operator in Expression is defined as follows:
 
-```py
+```python
+from typing import Callable, Any
+
 def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
     """Compose multiple functions left to right."""
 
