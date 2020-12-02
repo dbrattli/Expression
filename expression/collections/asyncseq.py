@@ -1,6 +1,8 @@
 import builtins
 import itertools
-from typing import Any, AsyncIterable, Callable, Optional, TypeVar, overload
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional, TypeVar, overload
+
+from expression.core import pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -9,6 +11,45 @@ TResult = TypeVar("TResult")
 class AsyncSeq(AsyncIterable[TSource]):
     def __init__(self, ai: AsyncIterable[TSource]):
         self._ai = ai
+
+    async def map(self, mapper: Callable[[TSource], TResult]) -> AsyncIterable[TResult]:
+        return pipe(self, map(mapper))
+
+    @classmethod
+    def empty(cls) -> AsyncIterable[Any]:
+        return AsyncSeq(empty())
+
+    @overload
+    @classmethod
+    def range(cls, stop: int) -> AsyncIterable[int]:
+        ...
+
+    @overload
+    @classmethod
+    def range(cls, start: int, stop: int, step: Optional[int]) -> AsyncIterable[int]:
+        ...
+
+    @classmethod
+    def range(cls, *args: Any) -> AsyncIterable[int]:
+        return AsyncSeq(range(*args))
+
+    def __aiter__(self) -> AsyncIterator[TSource]:
+        return self._ai.__aiter__()
+
+
+def append(other: AsyncIterable[TSource]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+    async def _append(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
+        async for value in source:
+            yield value
+        async for value in other:
+            yield value
+
+    return _append
+
+
+async def empty() -> AsyncIterable[Any]:
+    while False:
+        yield
 
 
 async def repeat(value: TSource, times: Optional[int] = None) -> AsyncIterable[TSource]:
@@ -31,15 +72,21 @@ async def range(*args: Any) -> AsyncIterable[int]:
         yield value
 
 
-async def filter(predicate: Callable[[TSource], bool], source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
-    async for value in source:
-        if predicate(value):
-            yield value
+def filter(predicate: Callable[[TSource], bool]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+    async def _filter(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
+        async for value in source:
+            if predicate(value):
+                yield value
+
+    return _filter
 
 
-async def map(mapper: Callable[[TSource], TResult], source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
-    async for value in source:
-        yield mapper(value)
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
+    async def _map(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
+        async for value in source:
+            yield mapper(value)
+
+    return _map
 
 
 __all__ = [
