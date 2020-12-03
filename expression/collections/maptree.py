@@ -24,15 +24,14 @@ Do not use directly. Use the `map` module instead.
 """
 import builtins
 from dataclasses import dataclass
-from typing import (Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar,
-                    cast)
+from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
 
-from expression.core import Nothing, Option, Some, failwith, pipe
+from expression.core import Comparable, Nothing, Option, Some, failwith, pipe
 
 from . import frozenlist, seq
 from .frozenlist import FrozenList
 
-Key = TypeVar("Key")
+Key = TypeVar("Key", bound=Comparable)
 Value = TypeVar("Value")
 Result = TypeVar("Result")
 
@@ -48,6 +47,9 @@ MapTree = Option[MapTreeLeaf[Key, Value]]
 
 @dataclass
 class MapTreeNode(MapTreeLeaf[Key, Value]):
+    key: Key  # TODO: Remove when pylance bug fixed
+    value: Value  # TODO: Remove when pylance bug fixed
+
     left: MapTree[Key, Value]
     right: MapTree[Key, Value]
 
@@ -151,7 +153,8 @@ def add(k: Key, v: Value, m: MapTree[Key, Value]) -> MapTree[Key, Value]:
                 return rebalance(mn.left, mn.key, mn.value, add(k, v, mn.right))
         else:
             if k < m2.key:
-                return Some(MapTreeNode(k, v, empty, m, 2))
+                node = MapTreeNode(k, v, empty, m, 2)
+                return Some(node)
             elif k == m2:
                 return Some(MapTreeLeaf(k, v))
             else:
@@ -354,10 +357,12 @@ def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) 
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
-            for res in try_pick(f, mn.left).to_list():
+            res = try_pick(f, mn.left)
+            if res.is_some():
                 return res
             else:
-                for res in f(mn.key, mn.value):
+                res = f(mn.key, mn.value)
+                if res.is_some():
                     return res
                 else:
                     return try_pick(f, mn.right)
@@ -399,20 +404,6 @@ def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Ke
             return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
         else:
             return Some(MapTreeLeaf(m2.key, f(m2.key, m2.value)))
-    else:
-        return empty
-
-
-def mapi(f: Callable[[Tuple[Key, Value]], Result], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = cast(MapTreeNode[Key, Value], m2)
-            l2 = mapi(f, mn.left)
-            v2 = f((mn.key, mn.value))
-            r2 = mapi(f, mn.right)
-            return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
-        else:
-            return Some(MapTreeLeaf(m2.key, f((m2.key, m2.value))))
     else:
         return empty
 

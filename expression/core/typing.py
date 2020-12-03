@@ -1,4 +1,5 @@
-from typing import Optional, Type, TypeVar, cast, get_origin
+from abc import abstractmethod
+from typing import Optional, Protocol, Type, TypeVar, cast, get_origin
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -6,6 +7,12 @@ TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 Base = TypeVar("Base")
 Derived = TypeVar("Derived")
+
+
+class Comparable(Protocol[TSource]):
+    @abstractmethod
+    def __lt__(self, other: TSource) -> bool:
+        pass
 
 
 def downcast(type: Type[Derived], expr: Base) -> Derived:
@@ -50,4 +57,4 @@ def try_upcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:
         return None
 
 
-__all__ = ["downcast", "upcast", "try_upcast"]
+__all__ = ["Comparable", "downcast", "upcast", "try_upcast"]
