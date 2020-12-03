@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from expression.core.misc import downcast, try_upcast, upcast
+from expression.core.typing import downcast, try_upcast, upcast
 
 
 class Base:

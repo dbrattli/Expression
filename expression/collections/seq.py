@@ -335,7 +335,7 @@ def init_infinite(initializer: Callable[[int], TSource]) -> Iterable[TSource]:
         def __init__(self, initializer: Callable[[int], TSource]) -> None:
             self.initializer = initializer
 
-        def __iter__(self) -> Iterator[int]:
+        def __iter__(self) -> Iterator[TSource]:
             return builtins.map(self.initializer, itertools.count(0, 1))
 
     return Infinite(initializer)

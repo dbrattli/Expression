@@ -33,7 +33,7 @@ def from_continuations(
         An asynchronous computation that provides the callback with the
         current continuations.
     """
-    future: Future[Any] = asyncio.Future()
+    future: Future[TSource] = asyncio.Future()
 
     def done(value: TSource) -> None:
         future.set_result(value)
@@ -98,6 +98,11 @@ async def sleep(msecs: int) -> None:
 async def empty() -> None:
     """Async no-op"""
     pass
+
+
+async def from_result(result: TSource) -> TSource:
+    """Async return value"""
+    return result
 
 
 __all__ = [

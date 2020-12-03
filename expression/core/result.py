@@ -83,11 +83,7 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         ...
 
     @overload
-    def match(self, pattern: "Type[Ok[TSource, TError]]") -> Iterable[TSource]:
-        ...
-
-    @overload
-    def match(self, pattern: "Type[Error[TSource, TError]]") -> Iterable[TError]:
+    def match(self, pattern: "Type[Result[TSource, TError]]") -> Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -> Any:

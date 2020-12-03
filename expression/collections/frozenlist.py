@@ -20,7 +20,7 @@ Example:
 
 import builtins
 import functools
-from typing import Any, Callable, Iterable, List, Tuple, TypeVar, cast, overload
+from typing import Any, Callable, Iterable, List, Tuple, TypeVar, Union, cast, overload
 
 from expression.core import Matcher, Nothing, Option, Some, pipe
 
@@ -39,6 +39,16 @@ T6 = TypeVar("T6")
 
 class FrozenList(Tuple[TSource]):
     """Immutable list type.
+
+    Is faster than `List` for prepending, but slower for
+    appending.
+
+    Count: 200K
+
+    | Operation | FrozenList | List   |
+    |-----------|------------|--------|
+    | Append    | 3.29 s     | 0.02 s |
+    | Prepend   | 0.05 s     | 7.02 s |
 
     Example:
         >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
@@ -112,8 +122,23 @@ class FrozenList(Tuple[TSource]):
         """Pipe list through the given functions."""
         return pipe(self, *args)
 
+    @overload
+    def append(self, other: TSource) -> "FrozenList[TSource]":
+        """Append item to end of the frozen list."""
+        ...
+
+    @overload
     def append(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
-        return FrozenList(self + other)
+        """Append frozen list to end of the frozen list."""
+        ...
+
+    def append(self, other: "Union[TSource, FrozenList[TSource]]") -> "FrozenList[TSource]":
+        """Append frozen list or item to end of the frozen list."""
+
+        if isinstance(other, FrozenList):
+            return FrozenList(self + other)
+
+        return FrozenList(self + (other,))  # NOTE: Faster than (*self, other)
 
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "FrozenList[TResult]":
         """Choose items from the list.
@@ -143,7 +168,7 @@ class FrozenList(Tuple[TSource]):
     def cons(self, element: TSource) -> "FrozenList[TSource]":
         """Add element to front of List."""
 
-        return FrozenList((element, *self))
+        return FrozenList((element,) + self)  # NOTE: Faster than (element, *self)
 
     def filter(self, predicate: Callable[[TSource], bool]) -> "FrozenList[TSource]":
         """Filter list.
@@ -326,7 +351,7 @@ class FrozenList(Tuple[TSource]):
         """
         return FrozenList.of_seq(builtins.zip(self, other))
 
-    def __match__(self, pattern: Any) -> Iterable[TSource]:
+    def __match__(self, pattern: Any) -> Iterable[List[TSource]]:
         if self == pattern:
             return [[val for val in self]]
 
@@ -419,7 +444,7 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[FrozenList[TSource
         collection for which the given predicate returns `True`
 
         Args:
-            source: The input list..
+            source: The input list.
 
         Returns:
             A list containing only the elements that satisfy the

@@ -14,12 +14,14 @@ from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result, Try
+from .typing import Comparable
 
 __all__ = [
     "aiotools",
     "AsyncReplyChannel",
     "Builder",
     "compose",
+    "Comparable",
     "curried",
     "EffectError",
     "Error",

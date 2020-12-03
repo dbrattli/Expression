@@ -6,7 +6,8 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
+from typing import (Any, Callable, Generator, Iterable, Iterator, List,
+                    Optional, TypeVar, cast, overload)
 
 from .error import EffectError
 from .match import Matchable
@@ -105,12 +106,15 @@ class Option(Iterable[TSource], ABC, Matchable[TSource]):
         """Returns true if the option is Nothing."""
         raise NotImplementedError
 
-    @abstractmethod
-    def __eq__(self, other: Any) -> bool:
-        raise NotImplementedError
+    @classmethod
+    def of_obj(cls: "Option[TSource]", value: TSource) -> "Option[TSource]":
+        """Convert object to an option."""
+        return of_optional(value)
 
-    def __repr__(self) -> str:
-        return self.__str__()
+    @classmethod
+    def of_optional(cls: "Option[TSource]", value: Optional[TSource]) -> "Option[TSource]":
+        """Convert optional value to an option."""
+        return of_optional(value)
 
     @property
     @abstractmethod
@@ -120,6 +124,13 @@ class Option(Iterable[TSource], ABC, Matchable[TSource]):
         A `ValueError` is raised if the option is `Nothing`.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def __eq__(self, other: Any) -> bool:
+        raise NotImplementedError
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class Some(Option[TSource]):
@@ -231,8 +242,8 @@ class Nothing_(Option[TSource], EffectError):
         """Returns `True`."""
         return True
 
-    def map(self, mapper: Callable[[TSource], TResult]):
-        return self
+    def map(self, mapper: Callable[[TSource], TResult]) -> Option[TResult]:
+        return Nothing
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -> Option[TResult]:
         return Nothing
@@ -272,7 +283,7 @@ class Nothing_(Option[TSource], EffectError):
 
         raise ValueError("There is no value.")
 
-    def __match__(self, pattern: Any) -> Iterable[TSource]:
+    def __match__(self, pattern: Any) -> "Iterable[Nothing_[TSource]]":
         if self is pattern:
             return [Nothing]
 
