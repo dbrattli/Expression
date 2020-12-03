@@ -17,7 +17,6 @@ async def test_asyncseq_empty():
         assert False
 
 
-@pytest.mark.asyncio
 @given(st.integers(min_value=0, max_value=100))  # type: ignore
 async def test_asyncseq_range(count: int):
     xs = AsyncSeq.range(count)
@@ -27,7 +26,7 @@ async def test_asyncseq_range(count: int):
 
     assert acc == sum(range(count))
 
-@pytest.mark.asyncio
+
 @given(st.integers(min_value=0, max_value=100))  # type: ignore
 async def test_asyncseq_map(count: int):
     xs = AsyncSeq.range(count)

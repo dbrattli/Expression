@@ -24,8 +24,7 @@ Do not use directly. Use the `map` module instead.
 """
 import builtins
 from dataclasses import dataclass
-from typing import (Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar,
-                    cast)
+from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
 
 from expression.core import Nothing, Option, Some, failwith, pipe
 
@@ -167,7 +166,7 @@ def try_find(k: Key, m: MapTree[Key, Value]) -> Option[Value]:
         else:
             if isinstance(m2, MapTreeNode):
                 mn = cast(MapTreeNode[Key, Value], m2)
-                return try_find(k, mn.left if k < m2 else mn.right)
+                return try_find(k, mn.left if k < mn.key else mn.right)
             else:
                 return Nothing
     else:  # Nothing
@@ -186,7 +185,8 @@ def partition1(
 ) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     (acc1, acc2) = acc
     if predicate(k, v):
-        return add(k, v, acc1), acc2
+        a: MapTree[Key, Value] = add(k, v, acc1)
+        return a, acc2
     else:
         return acc1, add(k, v, acc2)
 

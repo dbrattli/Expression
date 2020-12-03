@@ -15,21 +15,9 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+import builtins
+from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
+                    Set, Tuple, TypeVar, Union, cast, overload)
 
 from expression.core import Option, fst, pipe, snd
 
@@ -52,9 +40,8 @@ T6 = TypeVar("T6")
 class Map(Mapping[Key, Value]):
     """The immutable map class."""
 
-    def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -> None:
-        tree: MapTree[str, Value] = maptree.of_seq(kw.items())
-        self._tree = __tree if __tree is not None else tree
+    def __init__(self, __tree: Optional[MapTree[Key, Value]] = None) -> None:
+        self._tree: MapTree[Key, Value] = __tree if __tree else maptree.empty
 
     @overload
     def pipe(self, __fn1: Callable[["Map[Key, Value]"], Result]) -> Result:
@@ -193,12 +180,6 @@ class Map(Mapping[Key, Value]):
 
     #   return default
 
-    def keys(self) -> Set[Key]:
-        return set(pipe(maptree.to_seq(self._tree), seq.map(fst)))
-
-    def value(self) -> Set[Value]:
-        return set(pipe(maptree.to_seq(self._tree), seq.map(snd)))
-
     def items(self) -> Set[Tuple[Key, Value]]:
         return set(maptree.to_seq(self._tree))
 
@@ -225,6 +206,10 @@ class Map(Mapping[Key, Value]):
             Sequenc of key, value tuples.
         """
         return maptree.to_seq(self._tree)
+
+    @staticmethod
+    def of(**args: Value) -> "Map[str, Value]":
+        return Map(maptree.of_seq(args.items()))
 
     @overload
     @staticmethod
@@ -262,16 +247,17 @@ class Map(Mapping[Key, Value]):
             return (x << 1) + y + 631
 
         res = 0
-        for x, y in self:
+        for x, y in maptree.mk_iterator(self._tree):
             res = combine_hash(res, hash(x))
             res = combine_hash(res, hash(y))
         return res
 
-    def __getitem__(self, key: Value) -> Value:
+    def __getitem__(self, key: Key) -> Value:
         return maptree.find(key, self._tree)
 
-    def __iter__(self) -> Iterator[Tuple[Key, Value]]:
-        return maptree.mk_iterator(self._tree)
+    def __iter__(self) -> Iterator[Key]:
+        xs = maptree.mk_iterator(self._tree)
+        return (k for (k, _) in xs)
 
     def __len__(self) -> int:
         """Return the number of bindings in the map."""
@@ -433,8 +419,8 @@ def try_pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[K
     return _try_pick
 
 
-def pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[Key, Value]], Option[Result]]:
-    def _try_pick(table: Map[Key, Value]) -> Option[Result]:
+def pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[Key, Value]], Result]:
+    def _try_pick(table: Map[Key, Value]) -> Result:
         for res in table.try_pick(chooser):
             return res
         else:
@@ -489,7 +475,9 @@ def fold(folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -
     return _fold
 
 
-def fold_back(folder: Callable[[Tuple[Key, Value], Result], Result], table: Map[Key, Value]) -> Result:
+def fold_back(
+    folder: Callable[[Tuple[Key, Value], Result], Result], table: Map[Key, Value]
+) -> Callable[[Result], Result]:
     def _fold_back(state: Result) -> Result:
         return table.fold_back(folder, state)
 
@@ -523,7 +511,7 @@ def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
     return _remove
 
 
-def to_seq(table: Map[Key, Value]):
+def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
     return Map.to_seq(table)
 
 

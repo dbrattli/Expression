@@ -71,4 +71,4 @@ def test_map_map(xs: Dict[str, int]):
     print(xs, ys)
 
     expected = [(k, mapper(k, v)) for k, v in sorted(list(items))]
-    assert expected == list(ys)
+    assert expected == list(ys.to_list())

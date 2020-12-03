@@ -20,7 +20,7 @@ class OptionBuilder(Builder[Option[TSource], TSource]):
         binder: Callable[[Any], Option[TSource]] = lambda _: ys
         return option.bind(binder)(xs)
 
-    def zero(self):
+    def zero(self) -> Option[TSource]:
         return Nothing
 
 
