@@ -20,7 +20,8 @@ Example:
 
 import builtins
 import functools
-from typing import Any, Callable, Iterable, List, Tuple, TypeVar, Union, cast, overload
+from typing import (Any, Callable, Iterable, List, Tuple, TypeVar, Union, cast,
+                    overload)
 
 from expression.core import Matcher, Nothing, Option, Some, pipe
 
@@ -233,7 +234,7 @@ class FrozenList(Tuple[TSource]):
         Returns:
             The list of indexed elements.
         """
-        return FrozenList.of_seq(enumerate(self))
+        return of_seq(enumerate(self))
 
     def item(self, index: int) -> TSource:
         """Indexes into the list. The first element has index 0.
@@ -349,7 +350,7 @@ class FrozenList(Tuple[TSource]):
             A single list containing pairs of matching elements from the
             input lists.
         """
-        return FrozenList.of_seq(builtins.zip(self, other))
+        return of_seq(builtins.zip(self, other))
 
     def __match__(self, pattern: Any) -> Iterable[List[TSource]]:
         if self == pattern:
@@ -420,7 +421,7 @@ def concat(sources: Iterable[FrozenList[TSource]]) -> FrozenList[TSource]:
 
 
 def cons(head: TSource, tail: FrozenList[TSource]) -> FrozenList[TSource]:
-    return FrozenList(head, *tail)
+    return FrozenList((head, *tail))
 
 
 nil: FrozenList[Any] = FrozenList()

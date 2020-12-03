@@ -15,11 +15,9 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-import builtins
-from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
-                    Set, Tuple, TypeVar, Union, cast, overload)
+from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Set, Tuple, TypeVar, cast, overload
 
-from expression.core import Option, fst, pipe, snd
+from expression.core import Option, pipe
 
 from . import maptree, seq
 from .frozenlist import FrozenList
@@ -211,18 +209,17 @@ class Map(Mapping[Key, Value]):
     def of(**args: Value) -> "Map[str, Value]":
         return Map(maptree.of_seq(args.items()))
 
-    @overload
     @staticmethod
-    def of_list(lst: FrozenList[Tuple[Key, Value]]) -> "Map[Key, Value]":
-        ...
+    def of_frozenlist(lst: FrozenList[Tuple[Key, Value]]) -> "Map[Key, Value]":
+        """Generate map from list.
 
-    @overload
+        Returns:
+            The new map.
+        """
+        return Map(maptree.of_list(lst))
+
     @staticmethod
     def of_list(lst: List[Tuple[Key, Value]]) -> "Map[Key, Value]":
-        ...
-
-    @staticmethod
-    def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -> "Map[Key, Value]":
         """Generate map from list.
 
         Returns:
@@ -292,7 +289,7 @@ class Map(Mapping[Key, Value]):
             key = f'"{key}"' if isinstance(key, str) else key
             return f"({key}, {value})"
 
-        items = pipe(self, Map.to_seq, seq.map(to_str))
+        items = pipe(self.to_seq(), seq.map(to_str))
         return f"map [{'; '.join(items)}]"
 
     def __repr__(self) -> str:
@@ -512,7 +509,7 @@ def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
 
 
 def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
-    return Map.to_seq(table)
+    return table.to_seq()
 
 
 # // [<CompiledName("FindKey")>]
@@ -524,18 +521,12 @@ def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
 #     table |> Seq.tryPick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
 
 
-@overload
-def of_list(elements: FrozenList[Tuple[Key, Value]]) -> Map[Key, Value]:
-    ...
+def of_frozenlist(elements: FrozenList[Tuple[Key, Value]]) -> Map[Key, Value]:
+    return Map.of_frozenlist(elements)
 
 
-@overload
 def of_list(elements: List[Tuple[Key, Value]]) -> Map[Key, Value]:
-    ...
-
-
-def of_list(elements: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -> Map[Key, Value]:
-    return Map.of_list(FrozenList(elements))
+    return Map.of_list(elements)
 
 
 def of_seq(elements: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:

@@ -24,7 +24,8 @@ Do not use directly. Use the `map` module instead.
 """
 import builtins
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
+from typing import (Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar,
+                    cast)
 
 from expression.core import Nothing, Option, Some, failwith, pipe
 
