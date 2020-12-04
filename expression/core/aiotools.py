@@ -16,11 +16,10 @@ from expression.system import CancellationToken, OperationCanceledError
 TSource = TypeVar("TSource")
 
 Continuation = Callable[[TSource], None]
+Callbacks = Callable[[Continuation[TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
 
 
-def from_continuations(
-    callback: Callable[[Continuation[TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
-) -> Awaitable[TSource]:
+def from_continuations(callback: Callbacks[TSource]) -> Awaitable[TSource]:
     """Creates an asynchronous computation that captures the current
     success, exception and cancellation continuations. The callback must
     eventually call exactly one of the given continuations.

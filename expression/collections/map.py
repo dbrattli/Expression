@@ -15,9 +15,10 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Set, Tuple, TypeVar, cast, overload
+from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
+                    Set, Tuple, TypeVar, cast, overload)
 
-from expression.core import SupportsLessThan, Option, pipe
+from expression.core import Option, SupportsLessThan, pipe
 
 from . import maptree, seq
 from .frozenlist import FrozenList
@@ -216,7 +217,7 @@ class Map(Mapping[Key, Value]):
         Returns:
             The new map.
         """
-        return Map(maptree.of_list(lst))
+        return of_frozenlist((lst))
 
     @staticmethod
     def of_list(lst: List[Tuple[Key, Value]]) -> "Map[Key, Value]":
@@ -225,7 +226,7 @@ class Map(Mapping[Key, Value]):
         Returns:
             The new map.
         """
-        return Map(maptree.of_list(FrozenList(lst)))
+        return of_list((lst))
 
     @staticmethod
     def of_seq(sequence: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
@@ -237,7 +238,7 @@ class Map(Mapping[Key, Value]):
         Returns:
             The new map.
         """
-        return Map.create(sequence)
+        return of_seq(sequence)
 
     def __hash__(self) -> int:
         def combine_hash(x: int, y: int) -> int:
@@ -522,15 +523,15 @@ def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
 
 
 def of_frozenlist(elements: FrozenList[Tuple[Key, Value]]) -> Map[Key, Value]:
-    return Map.of_frozenlist(elements)
+    return Map(maptree.of_list(elements))
 
 
 def of_list(elements: List[Tuple[Key, Value]]) -> Map[Key, Value]:
-    return Map.of_list(elements)
+    return Map(maptree.of_list(FrozenList(elements)))
 
 
 def of_seq(elements: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
-    return Map.create(elements)
+    return Map(maptree.of_seq(elements))
 
 
 def to_list(table: Map[Key, Value]) -> FrozenList[Tuple[Key, Value]]:

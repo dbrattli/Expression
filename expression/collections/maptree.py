@@ -189,7 +189,7 @@ def find(k: Key, m: MapTree[Key, Value]) -> Value:
 def partition1(
     predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
 ) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
-    (acc1, acc2) = acc
+    acc1, acc2 = acc
     if predicate(k, v):
         a: MapTree[Key, Value] = add(k, v, acc1)
         return a, acc2
