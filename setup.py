@@ -18,10 +18,10 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Dag Brattli",
-    author_email="dag@brattli.net",
+    author_email="dag.brattli@cognite.com",
     license="MIT License",
-    url="https://github.com/dbrattli/expression",
-    download_url="https://github.com/dbrattli/expression",
+    url="https://github.com/cognitedata/expression",
+    download_url="https://github.com/cognitedata/expression",
     zip_safe=True,
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[

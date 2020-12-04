@@ -1,11 +1,11 @@
 import functools
 from itertools import accumulate
-from typing import Callable, Generator, Iterable, List
+from typing import Callable, Generator, Iterable, List, Tuple
 
 import pytest
 from expression import effect
 from expression.collections import Seq, seq
-from expression.core import pipe
+from expression.core import Nothing, Option, Some, pipe
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -98,6 +98,18 @@ def test_seq_fold_fluent(xs: List[int], s: int):
     value = seq.of(xs).fold(lambda s, v: s + v, s)
 
     assert value == sum(xs) + s
+
+
+@given(st.integers(max_value=100))
+def test_list_unfold(x: int):
+    def unfolder(state: int) -> Option[Tuple[int, int]]:
+        if state < x:
+            return Some((state, state + 1))
+        return Nothing
+
+    result = pipe(0, seq.unfold(unfolder))
+
+    assert list(result) == list(range(x))
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())

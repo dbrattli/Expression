@@ -211,8 +211,8 @@ class Some(Option[TSource]):
         return []
 
     def __lt__(self, other: Any) -> bool:
-        # if isinstance(other, Some):
-        #    return self._value < other._value  # type: ignore
+        if isinstance(other, Some):
+            return self._value < other._value  # type: ignore
         return False
 
     def __eq__(self, other: Any) -> bool:
