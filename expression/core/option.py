@@ -6,8 +6,7 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
 from abc import ABC, abstractmethod
-from typing import (Any, Callable, Generator, Iterable, Iterator, List,
-                    Optional, TypeVar, cast, overload)
+from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
 
 from .error import EffectError
 from .match import Matchable
@@ -129,6 +128,10 @@ class Option(Iterable[TSource], ABC, Matchable[TSource]):
     def __eq__(self, other: Any) -> bool:
         raise NotImplementedError
 
+    @abstractmethod
+    def __lt__(self, other: Any) -> bool:
+        raise NotImplementedError
+
     def __repr__(self) -> str:
         return self.__str__()
 
@@ -206,6 +209,11 @@ class Some(Option[TSource]):
             pass
 
         return []
+
+    def __lt__(self, other: Any) -> bool:
+        # if isinstance(other, Some):
+        #    return self._value < other._value  # type: ignore
+        return False
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Some):
@@ -298,6 +306,9 @@ class Nothing_(Option[TSource], EffectError):
         raise cast(Nothing_[TSource], Nothing)
         while False:
             yield
+
+    def __lt__(self, other: Any) -> bool:
+        return True
 
     def __eq__(self, other: Any) -> bool:
         if other is Nothing:

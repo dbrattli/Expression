@@ -17,13 +17,13 @@
 
 from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Set, Tuple, TypeVar, cast, overload
 
-from expression.core import Comparable, Option, pipe
+from expression.core import SupportsLessThan, Option, pipe
 
 from . import maptree, seq
 from .frozenlist import FrozenList
 from .maptree import MapTree
 
-Key = TypeVar("Key", bound=Comparable)
+Key = TypeVar("Key", bound=SupportsLessThan)
 Value = TypeVar("Value")
 Result = TypeVar("Result")
 

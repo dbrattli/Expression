@@ -1,9 +1,9 @@
 import functools
 from builtins import list as list
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Tuple
 
 from expression.collections import FrozenList, frozenlist
-from expression.core import pipe
+from expression.core import Nothing, Option, Some, pipe
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -197,6 +197,18 @@ def test_list_fold(xs: List[int]):
     result = pipe(ys, frozenlist.fold(folder, 0))
 
     assert result == expected
+
+
+@given(st.integers(max_value=100))
+def test_list_unfold(x: int):
+    def unfolder(state: int) -> Option[Tuple[int, int]]:
+        if state < x:
+            return Some((state, state + 1))
+        return Nothing
+
+    result = frozenlist.unfold(unfolder, 0)
+
+    assert list(result) == list(range(x))
 
 
 @given(st.lists(st.integers()), st.integers())

@@ -20,8 +20,7 @@ Example:
 
 import builtins
 import functools
-from typing import (Any, Callable, Iterable, List, Tuple, TypeVar, Union, cast,
-                    overload)
+from typing import Any, Callable, Iterable, List, Tuple, TypeVar, cast, overload
 
 from expression.core import Matcher, Nothing, Option, Some, pipe
 
@@ -55,10 +54,6 @@ class FrozenList(Tuple[TSource]):
         >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
-
-    @staticmethod
-    def of_seq(source: Iterable[TSource]) -> "FrozenList[TSource]":
-        return FrozenList(source)
 
     @overload
     def match(self) -> Matcher:
@@ -123,23 +118,10 @@ class FrozenList(Tuple[TSource]):
         """Pipe list through the given functions."""
         return pipe(self, *args)
 
-    @overload
-    def append(self, other: TSource) -> "FrozenList[TSource]":
-        """Append item to end of the frozen list."""
-        ...
-
-    @overload
     def append(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
         """Append frozen list to end of the frozen list."""
-        ...
 
-    def append(self, other: "Union[TSource, FrozenList[TSource]]") -> "FrozenList[TSource]":
-        """Append frozen list or item to end of the frozen list."""
-
-        if isinstance(other, FrozenList):
-            return FrozenList(self + other)
-
-        return FrozenList(self + (other,))  # NOTE: Faster than (*self, other)
+        return FrozenList(self + other)
 
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "FrozenList[TResult]":
         """Choose items from the list.
@@ -268,6 +250,24 @@ class FrozenList(Tuple[TSource]):
         """
         return FrozenList((*builtins.map(mapping, self),))
 
+    @staticmethod
+    def of(*args: TSource) -> "FrozenList[TSource]":
+        """Create list from a number of arguments."""
+        return FrozenList((*args,))
+
+    @staticmethod
+    def of_seq(xs: Iterable[TSource]) -> "FrozenList[TSource]":
+        """Create list from iterable sequence."""
+        return FrozenList((*xs,))
+
+    @staticmethod
+    def of_option(option: Option[TSource]) -> "FrozenList[TSource]":
+        return of_option(option)
+
+    @staticmethod
+    def singleton(item: TSource) -> "FrozenList[TSource]":
+        return FrozenList((item,))
+
     def skip(self, count: int) -> "FrozenList[TSource]":
         """Returns the list after removing the first N elements.
 
@@ -333,11 +333,7 @@ class FrozenList(Tuple[TSource]):
             The result list.
         """
 
-        result = generator(state)
-        for (item, state_) in result.to_list():
-            return FrozenList.unfold(generator, state_).cons(item)
-        else:
-            return empty
+        return unfold(generator, state)
 
     def zip(self, other: "FrozenList[TResult]") -> "FrozenList[Tuple[TSource, TResult]]":
         """Combines the two lists into a list of pairs. The two lists
@@ -548,6 +544,11 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[FrozenList[TSource]],
     return _map
 
 
+def of(*args: TSource) -> FrozenList[TSource]:
+    """Create list from a number of arguments."""
+    return FrozenList((*args,))
+
+
 def of_seq(xs: Iterable[TSource]) -> FrozenList[TSource]:
     """Create list from iterable sequence."""
     return FrozenList((*xs,))
@@ -661,7 +662,8 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
         The result list.
     """
 
-    return FrozenList.unfold(generator, state)
+    xs = pipe(state, seq.unfold(generator))
+    return FrozenList(xs)
 
 
 def zip(other: FrozenList[TResult]) -> Callable[[FrozenList[TSource]], FrozenList[Tuple[TSource, TResult]]]:

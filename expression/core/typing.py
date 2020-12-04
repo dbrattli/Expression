@@ -9,10 +9,10 @@ Base = TypeVar("Base")
 Derived = TypeVar("Derived")
 
 
-class Comparable(Protocol[TSource]):
+class SupportsLessThan(Protocol[TSource]):
     @abstractmethod
     def __lt__(self, other: TSource) -> bool:
-        pass
+        raise NotImplementedError
 
 
 def downcast(type: Type[Derived], expr: Base) -> Derived:
@@ -57,4 +57,4 @@ def try_upcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:
         return None
 
 
-__all__ = ["Comparable", "downcast", "upcast", "try_upcast"]
+__all__ = ["SupportsLessThan", "downcast", "upcast", "try_upcast"]

@@ -24,14 +24,16 @@ Do not use directly. Use the `map` module instead.
 """
 import builtins
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
+from typing import (Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar,
+                    cast)
 
-from expression.core import Comparable, Nothing, Option, Some, failwith, pipe
+from expression.core import (Nothing, Option, Some, SupportsLessThan, failwith,
+                             pipe)
 
 from . import frozenlist, seq
 from .frozenlist import FrozenList
 
-Key = TypeVar("Key", bound=Comparable)
+Key = TypeVar("Key", bound=SupportsLessThan)
 Value = TypeVar("Value")
 Result = TypeVar("Result")
 
