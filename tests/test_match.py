@@ -4,10 +4,10 @@ from expression.core import Matcher, Nothing, Option, Pattern, Some, match
 
 
 def test_default_matches():
-    m = Matcher.of(42)
+    with match(42) as m:
 
-    for value in m.default():
-        assert value == 42
+        for value in m.default():
+            assert value == 42
 
 
 def test_match_type():

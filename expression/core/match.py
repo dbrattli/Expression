@@ -60,6 +60,46 @@ class Matcher:
         self.is_matched = False
         self.value = value
 
+    @overload
+    def case(self, pattern: Type[Pattern[TSource]]) -> Iterable[TSource]:
+        """Active type pattern.
+
+        Handle the case where pattern is an active pattern type e.g:
+        - ParseInteger
+        """
+        ...
+
+    @overload
+    def case(self, pattern: Pattern[TSource]) -> Iterable[TSource]:
+        """Active type pattern.
+
+        Handle the case where pattern is instance of an active pattern
+        type e.g:
+        - ParseInteger
+        """
+        ...
+
+    @overload
+    def case(self, pattern: Type[TSource]) -> Iterable[TSource]:
+        """Type pattern.
+
+        Handle the case where pattern is a type e.g:
+        - int
+        - str
+        - float
+        """
+
+    @overload
+    def case(self, pattern: TSource) -> Iterable[TSource]:
+        """Intance pattern.
+
+        Handle the case where pattern is instance of a type e.g:
+        - 42
+        - "test"
+        - 23.4
+        """
+        ...
+
     def case(self, pattern: Any) -> Iterable[Any]:
         if self.is_matched:
             return []
@@ -103,11 +143,6 @@ class Matcher:
 
         self.is_matched = True
         return [self.value]
-
-    @staticmethod
-    def of(value: TSource) -> "Matcher":
-        """Convenience create method to get typing right"""
-        return Matcher(value)
 
     def __enter__(self) -> "Matcher":
         """Enter context management."""
