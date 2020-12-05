@@ -15,8 +15,7 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
-                    Set, Tuple, TypeVar, cast, overload)
+from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Set, Tuple, TypeVar, cast, overload
 
 from expression.core import Option, SupportsLessThan, pipe
 
@@ -41,6 +40,9 @@ class Map(Mapping[Key, Value]):
 
     def __init__(self, __tree: Optional[MapTree[Key, Value]] = None) -> None:
         self._tree: MapTree[Key, Value] = __tree if __tree else maptree.empty
+
+    def add(self, key: Key, value: Value) -> "Map[Key, Value]":
+        return Map(maptree.add(key, value, self._tree))
 
     @overload
     def pipe(self, __fn1: Callable[["Map[Key, Value]"], Result]) -> Result:
@@ -101,17 +103,14 @@ class Map(Mapping[Key, Value]):
     def create(ie: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
         return Map(maptree.of_seq(ie))
 
-    def add(self, key: Key, value: Value) -> "Map[Key, Value]":
-        return Map(maptree.add(key, value, self._tree))
+    def contains_key(self, key: Key) -> bool:
+        return maptree.mem(key, self._tree)
 
     def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -> "Map[Key, Value]":
         return Map(maptree.change(key, f, self._tree))
 
     def is_empty(self) -> bool:
         return maptree.is_empty(self._tree)
-
-    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -> Option[Result]:
-        return maptree.try_pick(chooser, self._tree)
 
     def exists(self, predicate: Callable[[Key, Value], bool]) -> bool:
         return maptree.exists(predicate, self._tree)
@@ -162,9 +161,6 @@ class Map(Mapping[Key, Value]):
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
 
-    def contains_key(self, key: Key) -> bool:
-        return maptree.mem(key, self._tree)
-
     # @overload
     # def get(self, key: Key) -> Optional[Value]:
     #    ...
@@ -185,16 +181,6 @@ class Map(Mapping[Key, Value]):
     def remove(self, key: Key) -> "Map[Key, Value]":
         return Map(maptree.remove(key, self._tree))
 
-    def try_get_value(self, key: Key, value: List[Value]):
-        for v in maptree.try_find(key, self._tree).to_list():
-            value.append(v)
-            return True
-        else:
-            return False
-
-    def try_find(self, key: Key) -> Option[Value]:
-        return maptree.try_find(key, self._tree)
-
     def to_list(self) -> FrozenList[Tuple[Key, Value]]:
         return maptree.to_list(self._tree)
 
@@ -205,6 +191,19 @@ class Map(Mapping[Key, Value]):
             Sequenc of key, value tuples.
         """
         return maptree.to_seq(self._tree)
+
+    def try_get_value(self, key: Key, value: List[Value]):
+        for v in maptree.try_find(key, self._tree).to_list():
+            value.append(v)
+            return True
+        else:
+            return False
+
+    def try_find(self, key: Key) -> Option[Value]:
+        return maptree.try_find(key, self._tree)
+
+    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -> Option[Result]:
+        return maptree.try_pick(chooser, self._tree)
 
     @staticmethod
     def of(**args: Value) -> "Map[str, Value]":

@@ -49,8 +49,9 @@ MapTree = Option[MapTreeLeaf[Key, Value]]
 
 @dataclass
 class MapTreeNode(MapTreeLeaf[Key, Value]):
-    key: Key  # TODO: Remove when pylance bug fixed
-    value: Value  # TODO: Remove when pylance bug fixed
+    # TODO: Remove key and value here when pylance bug fixed
+    key: Key
+    value: Value
 
     left: MapTree[Key, Value]
     right: MapTree[Key, Value]

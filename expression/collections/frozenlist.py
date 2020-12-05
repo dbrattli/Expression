@@ -20,8 +20,7 @@ Example:
 
 import builtins
 import functools
-from typing import (Any, Callable, Iterable, List, Tuple, TypeVar, cast,
-                    overload)
+from typing import Any, Callable, Iterable, List, Optional, Tuple, TypeVar, cast, overload
 
 from expression.core import Matcher, Nothing, Option, Some, pipe
 
@@ -265,9 +264,23 @@ class FrozenList(Tuple[TSource]):
     def of_option(option: Option[TSource]) -> "FrozenList[TSource]":
         return of_option(option)
 
+    @overload
+    @staticmethod
+    def range(stop: int) -> "FrozenList[int]":
+        ...
+
+    @overload
+    @staticmethod
+    def range(start: int, stop: int, step: Optional[int] = None) -> "FrozenList[int]":
+        ...
+
+    @staticmethod
+    def range(*args: int, **kw: int) -> "FrozenList[int]":
+        return range(*args, **kw)
+
     @staticmethod
     def singleton(item: TSource) -> "FrozenList[TSource]":
-        return FrozenList((item,))
+        return singleton(item)
 
     def skip(self, count: int) -> "FrozenList[TSource]":
         """Returns the list after removing the first N elements.
@@ -559,6 +572,20 @@ def of_option(option: Option[TSource]) -> FrozenList[TSource]:
     if isinstance(option, Some):
         return singleton(cast(Some[TSource], option).value)
     return empty
+
+
+@overload
+def range(stop: int) -> FrozenList[int]:
+    ...
+
+
+@overload
+def range(start: int, stop: int, step: Optional[int] = None) -> FrozenList[int]:
+    ...
+
+
+def range(*args: int, **kw: int) -> FrozenList[int]:
+    return FrozenList((*builtins.range(*args, **kw),))
 
 
 def singleton(value: TSource) -> FrozenList[TSource]:

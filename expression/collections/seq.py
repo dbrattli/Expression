@@ -19,7 +19,7 @@ Example:
 import builtins
 import functools
 import itertools
-from typing import Any, Callable, Iterable, Iterator, Tuple, TypeVar, overload
+from typing import Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, overload
 
 from expression.core import Matcher, Option, SupportsLessThan, identity, pipe
 
@@ -127,6 +127,20 @@ class Seq(Iterable[TSource]):
     def pipe(self, *args: Any) -> Any:
         """Pipe sequence through the given functions."""
         return pipe(self, *args)
+
+    @overload
+    @staticmethod
+    def range(stop: int) -> Iterable[int]:
+        ...
+
+    @overload
+    @staticmethod
+    def range(start: int, stop: int, step: Optional[int] = None) -> Iterable[int]:
+        ...
+
+    @staticmethod
+    def range(*args: int, **kw: int) -> Iterable[int]:
+        return range(*args, **kw)
 
     def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -> Iterable[TState]:
         """Like fold, but computes on-demand and returns the sequence of
@@ -436,6 +450,20 @@ of_list = of
 
 of_iterable = of
 """Alias to `Seq.of`."""
+
+
+@overload
+def range(stop: int) -> Iterable[int]:
+    ...
+
+
+@overload
+def range(start: int, stop: int, step: Optional[int] = None) -> Iterable[int]:
+    ...
+
+
+def range(*args: int, **kw: int) -> Iterable[int]:
+    return Seq(builtins.range(*args, **kw))
 
 
 def scan(

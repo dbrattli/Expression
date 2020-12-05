@@ -303,7 +303,7 @@ class Nothing_(Option[TSource], EffectError):
         We basically want to return nothing, but we have to return
         something to signal fail.
         """
-        raise cast(Nothing_[TSource], Nothing)
+        raise Nothing
         while False:
             yield
 
