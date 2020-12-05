@@ -50,11 +50,10 @@ from expression.system import CancellationToken, OperationCanceledError
 TSource = TypeVar(&#34;TSource&#34;)
 
 Continuation = Callable[[TSource], None]
+Callbacks = Callable[[Continuation[TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
 
 
-def from_continuations(
-    callback: Callable[[Continuation[TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
-) -&gt; Awaitable[TSource]:
+def from_continuations(callback: Callbacks[TSource]) -&gt; Awaitable[TSource]:
     &#34;&#34;&#34;Creates an asynchronous computation that captures the current
     success, exception and cancellation continuations. The callback must
     eventually call exactly one of the given continuations.
@@ -67,7 +66,7 @@ def from_continuations(
         An asynchronous computation that provides the callback with the
         current continuations.
     &#34;&#34;&#34;
-    future: Future[Any] = asyncio.Future()
+    future: Future[TSource] = asyncio.Future()
 
     def done(value: TSource) -&gt; None:
         future.set_result(value)
@@ -134,6 +133,11 @@ async def empty() -&gt; None:
     pass
 
 
+async def from_result(result: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Async return value&#34;&#34;&#34;
+    return result
+
+
 __all__ = [
     &#34;Continuation&#34;,
     &#34;empty&#34;,
@@ -186,9 +190,7 @@ current continuations.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def from_continuations(
-    callback: Callable[[Continuation[TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
-) -&gt; Awaitable[TSource]:
+<pre><code class="python">def from_continuations(callback: Callbacks[TSource]) -&gt; Awaitable[TSource]:
     &#34;&#34;&#34;Creates an asynchronous computation that captures the current
     success, exception and cancellation continuations. The callback must
     eventually call exactly one of the given continuations.
@@ -201,7 +203,7 @@ current continuations.</p></div>
         An asynchronous computation that provides the callback with the
         current continuations.
     &#34;&#34;&#34;
-    future: Future[Any] = asyncio.Future()
+    future: Future[TSource] = asyncio.Future()
 
     def done(value: TSource) -&gt; None:
         future.set_result(value)

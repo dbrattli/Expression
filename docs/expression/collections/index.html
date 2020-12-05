@@ -69,6 +69,10 @@ __all__ = [
 <dd>
 <div class="desc"><p>Sequence module …</p></div>
 </dd>
+<dt><code class="name"><a title="expression.collections.test4" href="test4.html">expression.collections.test4</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 </dl>
 </section>
 <section>
@@ -84,6 +88,30 @@ __all__ = [
 </code></dt>
 <dd>
 <div class="desc"><p>Immutable list type.</p>
+<p>Is faster than <code>List</code> for prepending, but slower for
+appending.</p>
+<p>Count: 200K</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>FrozenList</th>
+<th>List</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Append</td>
+<td>3.29 s</td>
+<td>0.02 s</td>
+</tr>
+<tr>
+<td>Prepend</td>
+<td>0.05 s</td>
+<td>7.02 s</td>
+</tr>
+</tbody>
+</table>
 <h2 id="example">Example</h2>
 <pre><code class="language-python-repl">&gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
 &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
@@ -95,14 +123,20 @@ __all__ = [
 <pre><code class="python">class FrozenList(Tuple[TSource]):
     &#34;&#34;&#34;Immutable list type.
 
+    Is faster than `List` for prepending, but slower for
+    appending.
+
+    Count: 200K
+
+    | Operation | FrozenList | List   |
+    |-----------|------------|--------|
+    | Append    | 3.29 s     | 0.02 s |
+    | Prepend   | 0.05 s     | 7.02 s |
+
     Example:
         &gt;&gt;&gt; xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
-
-    @staticmethod
-    def of_seq(source: Iterable[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
-        return FrozenList(source)
 
     @overload
     def match(self) -&gt; Matcher:
@@ -168,6 +202,8 @@ __all__ = [
         return pipe(self, *args)
 
     def append(self, other: &#34;FrozenList[TSource]&#34;) -&gt; &#34;FrozenList[TSource]&#34;:
+        &#34;&#34;&#34;Append frozen list to end of the frozen list.&#34;&#34;&#34;
+
         return FrozenList(self + other)
 
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;FrozenList[TResult]&#34;:
@@ -198,7 +234,7 @@ __all__ = [
     def cons(self, element: TSource) -&gt; &#34;FrozenList[TSource]&#34;:
         &#34;&#34;&#34;Add element to front of List.&#34;&#34;&#34;
 
-        return FrozenList((element, *self))
+        return FrozenList((element,) + self)  # NOTE: Faster than (element, *self)
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;FrozenList[TSource]&#34;:
         &#34;&#34;&#34;Filter list.
@@ -263,7 +299,7 @@ __all__ = [
         Returns:
             The list of indexed elements.
         &#34;&#34;&#34;
-        return FrozenList.of_seq(enumerate(self))
+        return of_seq(enumerate(self))
 
     def item(self, index: int) -&gt; TSource:
         &#34;&#34;&#34;Indexes into the list. The first element has index 0.
@@ -296,6 +332,38 @@ __all__ = [
             The list of transformed elements.
         &#34;&#34;&#34;
         return FrozenList((*builtins.map(mapping, self),))
+
+    @staticmethod
+    def of(*args: TSource) -&gt; &#34;FrozenList[TSource]&#34;:
+        &#34;&#34;&#34;Create list from a number of arguments.&#34;&#34;&#34;
+        return FrozenList((*args,))
+
+    @staticmethod
+    def of_seq(xs: Iterable[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
+        &#34;&#34;&#34;Create list from iterable sequence.&#34;&#34;&#34;
+        return FrozenList((*xs,))
+
+    @staticmethod
+    def of_option(option: Option[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
+        return of_option(option)
+
+    @overload
+    @staticmethod
+    def range(stop: int) -&gt; &#34;FrozenList[int]&#34;:
+        ...
+
+    @overload
+    @staticmethod
+    def range(start: int, stop: int, step: Optional[int] = None) -&gt; &#34;FrozenList[int]&#34;:
+        ...
+
+    @staticmethod
+    def range(*args: int, **kw: int) -&gt; &#34;FrozenList[int]&#34;:
+        return range(*args, **kw)
+
+    @staticmethod
+    def singleton(item: TSource) -&gt; &#34;FrozenList[TSource]&#34;:
+        return singleton(item)
 
     def skip(self, count: int) -&gt; &#34;FrozenList[TSource]&#34;:
         &#34;&#34;&#34;Returns the list after removing the first N elements.
@@ -362,11 +430,7 @@ __all__ = [
             The result list.
         &#34;&#34;&#34;
 
-        result = generator(state)
-        for (item, state_) in result.to_list():
-            return FrozenList.unfold(generator, state_).cons(item)
-        else:
-            return empty
+        return pipe(state, unfold(generator))
 
     def zip(self, other: &#34;FrozenList[TResult]&#34;) -&gt; &#34;FrozenList[Tuple[TSource, TResult]]&#34;:
         &#34;&#34;&#34;Combines the two lists into a list of pairs. The two lists
@@ -379,9 +443,9 @@ __all__ = [
             A single list containing pairs of matching elements from the
             input lists.
         &#34;&#34;&#34;
-        return FrozenList.of_seq(builtins.zip(self, other))
+        return of_seq(builtins.zip(self, other))
 
-    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+    def __match__(self, pattern: Any) -&gt; Iterable[List[TSource]]:
         if self == pattern:
             return [[val for val in self]]
 
@@ -406,8 +470,23 @@ __all__ = [
 </ul>
 <h3>Static methods</h3>
 <dl>
-<dt id="expression.collections.FrozenList.of_seq"><code class="name flex">
-<span>def <span class="ident">of_seq</span></span>(<span>source: Iterable[~TSource]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
+<dt id="expression.collections.FrozenList.of"><code class="name flex">
+<span>def <span class="ident">of</span></span>(<span>*args: ~TSource) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create list from a number of arguments.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of(*args: TSource) -&gt; &#34;FrozenList[TSource]&#34;:
+    &#34;&#34;&#34;Create list from a number of arguments.&#34;&#34;&#34;
+    return FrozenList((*args,))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.FrozenList.of_option"><code class="name flex">
+<span>def <span class="ident">of_option</span></span>(<span>option: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -416,8 +495,51 @@ __all__ = [
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def of_seq(source: Iterable[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
-    return FrozenList(source)</code></pre>
+def of_option(option: Option[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
+    return of_option(option)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.FrozenList.of_seq"><code class="name flex">
+<span>def <span class="ident">of_seq</span></span>(<span>xs: Iterable[~TSource]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create list from iterable sequence.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of_seq(xs: Iterable[TSource]) -&gt; &#34;FrozenList[TSource]&#34;:
+    &#34;&#34;&#34;Create list from iterable sequence.&#34;&#34;&#34;
+    return FrozenList((*xs,))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.FrozenList.range"><code class="name flex">
+<span>def <span class="ident">range</span></span>(<span>*args: int, **kw: int) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def range(*args: int, **kw: int) -&gt; &#34;FrozenList[int]&#34;:
+    return range(*args, **kw)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.FrozenList.singleton"><code class="name flex">
+<span>def <span class="ident">singleton</span></span>(<span>item: ~TSource) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def singleton(item: TSource) -&gt; &#34;FrozenList[TSource]&#34;:
+    return singleton(item)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.FrozenList.unfold"><code class="name flex">
@@ -458,11 +580,7 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
         The result list.
     &#34;&#34;&#34;
 
-    result = generator(state)
-    for (item, state_) in result.to_list():
-        return FrozenList.unfold(generator, state_).cons(item)
-    else:
-        return empty</code></pre>
+    return pipe(state, unfold(generator))</code></pre>
 </details>
 </dd>
 </dl>
@@ -472,12 +590,14 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
 <span>def <span class="ident">append</span></span>(<span>self, other: <a title="expression.collections.FrozenList" href="#expression.collections.FrozenList">FrozenList</a>[TSource]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Append frozen list to end of the frozen list.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def append(self, other: &#34;FrozenList[TSource]&#34;) -&gt; &#34;FrozenList[TSource]&#34;:
+    &#34;&#34;&#34;Append frozen list to end of the frozen list.&#34;&#34;&#34;
+
     return FrozenList(self + other)</code></pre>
 </details>
 </dd>
@@ -549,7 +669,7 @@ function.</p></div>
 <pre><code class="python">def cons(self, element: TSource) -&gt; &#34;FrozenList[TSource]&#34;:
     &#34;&#34;&#34;Add element to front of List.&#34;&#34;&#34;
 
-    return FrozenList((element, *self))</code></pre>
+    return FrozenList((element,) + self)  # NOTE: Faster than (element, *self)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.FrozenList.filter"><code class="name flex">
@@ -702,7 +822,7 @@ of each element.</p>
     Returns:
         The list of indexed elements.
     &#34;&#34;&#34;
-    return FrozenList.of_seq(enumerate(self))</code></pre>
+    return of_seq(enumerate(self))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.FrozenList.is_empty"><code class="name flex">
@@ -974,14 +1094,13 @@ input lists.</p></div>
         A single list containing pairs of matching elements from the
         input lists.
     &#34;&#34;&#34;
-    return FrozenList.of_seq(builtins.zip(self, other))</code></pre>
+    return of_seq(builtins.zip(self, other))</code></pre>
 </details>
 </dd>
 </dl>
 </dd>
 <dt id="expression.collections.Map"><code class="flex name class">
 <span>class <span class="ident">Map</span></span>
-<span>(</span><span>**kw: ~Value)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The immutable map class.</p></div>
@@ -989,12 +1108,14 @@ input lists.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Map(Generic[Key, Value]):
+<pre><code class="python">class Map(Mapping[Key, Value]):
     &#34;&#34;&#34;The immutable map class.&#34;&#34;&#34;
 
-    def __init__(self, __tree: Optional[MapTree[Key, Value]] = None, **kw: Value) -&gt; None:
-        tree: MapTree[str, Value] = maptree.of_seq(kw.items())
-        self._tree = __tree if __tree is not None else tree
+    def __init__(self, __tree: Optional[MapTree[Key, Value]] = None) -&gt; None:
+        self._tree: MapTree[Key, Value] = __tree if __tree else maptree.empty
+
+    def add(self, key: Key, value: Value) -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.add(key, value, self._tree))
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;Map[Key, Value]&#34;], Result]) -&gt; Result:
@@ -1055,17 +1176,14 @@ input lists.</p></div>
     def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         return Map(maptree.of_seq(ie))
 
-    def add(self, key: Key, value: Value) -&gt; &#34;Map[Key, Value]&#34;:
-        return Map(maptree.add(key, value, self._tree))
+    def contains_key(self, key: Key) -&gt; bool:
+        return maptree.mem(key, self._tree)
 
     def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         return Map(maptree.change(key, f, self._tree))
 
     def is_empty(self) -&gt; bool:
         return maptree.is_empty(self._tree)
-
-    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -&gt; Option[Result]:
-        return maptree.try_pick(chooser, self._tree)
 
     def exists(self, predicate: Callable[[Key, Value], bool]) -&gt; bool:
         return maptree.exists(predicate, self._tree)
@@ -1095,7 +1213,10 @@ input lists.</p></div>
     def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -&gt; Result:
         return maptree.fold(folder, state, self._tree)
 
-    def map(self, mapping: Callable[[Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
+    def fold_back(self, folder: Callable[[Tuple[Key, Value], Result], Result], state: Result) -&gt; Result:
+        return maptree.fold_back(folder, self._tree, state)
+
+    def map(self, mapping: Callable[[Key, Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
         &#34;&#34;&#34;Builds a new collection whose elements are the results of
         applying the given function to each of the elements of the
         collection. The key passed to the function indicates the key of
@@ -1113,21 +1234,25 @@ input lists.</p></div>
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
 
-    def contains_key(self, key: Key) -&gt; bool:
-        return maptree.mem(key, self._tree)
+    # @overload
+    # def get(self, key: Key) -&gt; Optional[Value]:
+    #    ...
+
+    # @overload
+    # def get(self, key: Key, default: Value) -&gt; Value:
+    #    ...
+
+    # def get(self, key: Key, default: Union[Value, _T]) -&gt; Union[Value, _T]:
+    #    for value in self.try_find(key):
+    #        return value
+
+    #   return default
+
+    def items(self) -&gt; Set[Tuple[Key, Value]]:
+        return set(maptree.to_seq(self._tree))
 
     def remove(self, key: Key) -&gt; &#34;Map[Key, Value]&#34;:
         return Map(maptree.remove(key, self._tree))
-
-    def try_get_value(self, key: Key, value: List[Value]):
-        for v in maptree.try_find(key, self._tree).to_list():
-            value.append(v)
-            return True
-        else:
-            return False
-
-    def try_find(self, key: Key) -&gt; Option[Value]:
-        return maptree.try_find(key, self._tree)
 
     def to_list(self) -&gt; FrozenList[Tuple[Key, Value]]:
         return maptree.to_list(self._tree)
@@ -1140,44 +1265,76 @@ input lists.</p></div>
         &#34;&#34;&#34;
         return maptree.to_seq(self._tree)
 
-    @overload
-    @staticmethod
-    def of_list(lst: FrozenList[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
-        ...
+    def try_get_value(self, key: Key, value: List[Value]):
+        for v in maptree.try_find(key, self._tree).to_list():
+            value.append(v)
+            return True
+        else:
+            return False
 
-    @overload
-    @staticmethod
-    def of_list(lst: List[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
-        ...
+    def try_find(self, key: Key) -&gt; Option[Value]:
+        return maptree.try_find(key, self._tree)
+
+    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -&gt; Option[Result]:
+        return maptree.try_pick(chooser, self._tree)
 
     @staticmethod
-    def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -&gt; &#34;Map[Key, Value]&#34;:
+    def of(**args: Value) -&gt; &#34;Map[str, Value]&#34;:
+        return Map(maptree.of_seq(args.items()))
+
+    @staticmethod
+    def of_frozenlist(lst: FrozenList[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         &#34;&#34;&#34;Generate map from list.
 
         Returns:
-            New map.
+            The new map.
         &#34;&#34;&#34;
-        return Map(maptree.of_list(FrozenList(lst)))
+        return of_frozenlist((lst))
+
+    @staticmethod
+    def of_list(lst: List[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
+        &#34;&#34;&#34;Generate map from list.
+
+        Returns:
+            The new map.
+        &#34;&#34;&#34;
+        return of_list((lst))
+
+    @staticmethod
+    def of_seq(sequence: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
+        &#34;&#34;&#34;Generate map from sequence.
+
+        Generates a new map from an iterable of key/value tuples. This
+        is an alias for `Map.create`.
+
+        Returns:
+            The new map.
+        &#34;&#34;&#34;
+        return of_seq(sequence)
 
     def __hash__(self) -&gt; int:
         def combine_hash(x: int, y: int) -&gt; int:
             return (x &lt;&lt; 1) + y + 631
 
         res = 0
-        for x, y in self:
+        for x, y in maptree.mk_iterator(self._tree):
             res = combine_hash(res, hash(x))
             res = combine_hash(res, hash(y))
         return res
 
-    def __getitem__(self, key: Value) -&gt; Value:
+    def __getitem__(self, key: Key) -&gt; Value:
         return maptree.find(key, self._tree)
 
-    def __iter__(self) -&gt; Iterator[Tuple[Key, Value]]:
-        return maptree.mk_iterator(self._tree)
+    def __iter__(self) -&gt; Iterator[Key]:
+        xs = maptree.mk_iterator(self._tree)
+        return (k for (k, _) in xs)
 
     def __len__(self) -&gt; int:
         &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
         return maptree.size(self._tree)
+
+    def __contains__(self, key: Key) -&gt; bool:
+        return self.contains_key(key)
 
     def __eq__(self, other: Any) -&gt; bool:
         if not isinstance(other, Map):
@@ -1205,7 +1362,7 @@ input lists.</p></div>
             key = f&#39;&#34;{key}&#34;&#39; if isinstance(key, str) else key
             return f&#34;({key}, {value})&#34;
 
-        items = pipe(self, Map.to_seq, seq.map(to_str))
+        items = pipe(self.to_seq(), seq.map(to_str))
         return f&#34;map [{&#39;; &#39;.join(items)}]&#34;
 
     def __repr__(self) -&gt; str:
@@ -1213,12 +1370,17 @@ input lists.</p></div>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
+<li>collections.abc.Mapping</li>
+<li>collections.abc.Collection</li>
+<li>collections.abc.Sized</li>
+<li>collections.abc.Iterable</li>
+<li>collections.abc.Container</li>
 <li>typing.Generic</li>
 </ul>
 <h3>Static methods</h3>
 <dl>
 <dt id="expression.collections.Map.create"><code class="name flex">
-<span>def <span class="ident">create</span></span>(<span>ie: Iterable[Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">create</span></span>(<span>ie: Iterable[Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1232,7 +1394,7 @@ def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
 </details>
 </dd>
 <dt id="expression.collections.Map.empty"><code class="name flex">
-<span>def <span class="ident">empty</span></span>(<span>) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">empty</span></span>(<span>) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1245,32 +1407,93 @@ def empty() -&gt; &#34;Map[Key, Value]&#34;:
     return Map(maptree.empty)</code></pre>
 </details>
 </dd>
-<dt id="expression.collections.Map.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>lst: Union[List[Tuple[~Key, ~Value]], <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<dt id="expression.collections.Map.of"><code class="name flex">
+<span>def <span class="ident">of</span></span>(<span>**args: ~Value) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Generate map from list.</p>
-<h2 id="returns">Returns</h2>
-<p>New map.</p></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) -&gt; &#34;Map[Key, Value]&#34;:
+def of(**args: Value) -&gt; &#34;Map[str, Value]&#34;:
+    return Map(maptree.of_seq(args.items()))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.Map.of_frozenlist"><code class="name flex">
+<span>def <span class="ident">of_frozenlist</span></span>(<span>lst: <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate map from list.</p>
+<h2 id="returns">Returns</h2>
+<p>The new map.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of_frozenlist(lst: FrozenList[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
     &#34;&#34;&#34;Generate map from list.
 
     Returns:
-        New map.
+        The new map.
     &#34;&#34;&#34;
-    return Map(maptree.of_list(FrozenList(lst)))</code></pre>
+    return of_frozenlist((lst))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.Map.of_list"><code class="name flex">
+<span>def <span class="ident">of_list</span></span>(<span>lst: List[Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate map from list.</p>
+<h2 id="returns">Returns</h2>
+<p>The new map.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of_list(lst: List[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
+    &#34;&#34;&#34;Generate map from list.
+
+    Returns:
+        The new map.
+    &#34;&#34;&#34;
+    return of_list((lst))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.Map.of_seq"><code class="name flex">
+<span>def <span class="ident">of_seq</span></span>(<span>sequence: Iterable[Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate map from sequence.</p>
+<p>Generates a new map from an iterable of key/value tuples. This
+is an alias for <code><a title="expression.collections.Map.create" href="#expression.collections.Map.create">Map.create()</a></code>.</p>
+<h2 id="returns">Returns</h2>
+<p>The new map.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def of_seq(sequence: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
+    &#34;&#34;&#34;Generate map from sequence.
+
+    Generates a new map from an iterable of key/value tuples. This
+    is an alias for `Map.create`.
+
+    Returns:
+        The new map.
+    &#34;&#34;&#34;
+    return of_seq(sequence)</code></pre>
 </details>
 </dd>
 </dl>
 <h3>Methods</h3>
 <dl>
 <dt id="expression.collections.Map.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, key: ~Key, value: ~Value) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">add</span></span>(<span>self, key: ~Key, value: ~Value) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1283,7 +1506,7 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 </details>
 </dd>
 <dt id="expression.collections.Map.change"><code class="name flex">
-<span>def <span class="ident">change</span></span>(<span>self, key: ~Key, f: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">change</span></span>(<span>self, key: ~Key, f: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1322,7 +1545,7 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 </details>
 </dd>
 <dt id="expression.collections.Map.filter"><code class="name flex">
-<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~Key, ~Value], bool]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[~Key, ~Value], bool]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1345,6 +1568,19 @@ def of_list(lst: Union[List[Tuple[Key, Value]], FrozenList[Tuple[Key, Value]]]) 
 </summary>
 <pre><code class="python">def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -&gt; Result:
     return maptree.fold(folder, state, self._tree)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.Map.fold_back"><code class="name flex">
+<span>def <span class="ident">fold_back</span></span>(<span>self, folder: Callable[[Tuple[~Key, ~Value], ~Result], ~Result], state: ~Result) ‑> ~Result</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fold_back(self, folder: Callable[[Tuple[Key, Value], Result], Result], state: Result) -&gt; Result:
+    return maptree.fold_back(folder, self._tree, state)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.Map.for_all"><code class="name flex">
@@ -1392,6 +1628,19 @@ bindings in the map.</p></div>
     return maptree.is_empty(self._tree)</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.Map.items"><code class="name flex">
+<span>def <span class="ident">items</span></span>(<span>self) ‑> Set[Tuple[~Key, ~Value]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>D.items() -&gt; a set-like object providing a view on D's items</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def items(self) -&gt; Set[Tuple[Key, Value]]:
+    return set(maptree.to_seq(self._tree))</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.Map.iterate"><code class="name flex">
 <span>def <span class="ident">iterate</span></span>(<span>self, f: Callable[[~Key, ~Value], NoneType]) ‑> NoneType</span>
 </code></dt>
@@ -1406,7 +1655,7 @@ bindings in the map.</p></div>
 </details>
 </dd>
 <dt id="expression.collections.Map.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapping: Callable[[~Value], ~Result]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Result]</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapping: Callable[[~Key, ~Value], ~Result]) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Builds a new collection whose elements are the results of
@@ -1424,7 +1673,7 @@ element being transformed.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(self, mapping: Callable[[Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
+<pre><code class="python">def map(self, mapping: Callable[[Key, Value], Result]) -&gt; &#34;Map[Key, Result]&#34;:
     &#34;&#34;&#34;Builds a new collection whose elements are the results of
     applying the given function to each of the elements of the
     collection. The key passed to the function indicates the key of
@@ -1440,7 +1689,7 @@ element being transformed.</p>
 </details>
 </dd>
 <dt id="expression.collections.Map.partition"><code class="name flex">
-<span>def <span class="ident">partition</span></span>(<span>self, predicate: Callable[[~Key, ~Value], bool]) ‑> Tuple[<a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value], <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value]]</span>
+<span>def <span class="ident">partition</span></span>(<span>self, predicate: Callable[[~Key, ~Value], bool]) ‑> Tuple[<a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>, <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1468,7 +1717,7 @@ element being transformed.</p>
 </details>
 </dd>
 <dt id="expression.collections.Map.remove"><code class="name flex">
-<span>def <span class="ident">remove</span></span>(<span>self, key: ~Key) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a>[~Key, ~Value]</span>
+<span>def <span class="ident">remove</span></span>(<span>self, key: ~Key) ‑> <a title="expression.collections.map.Map" href="map.html#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1669,6 +1918,20 @@ sequences.</p>
         &#34;&#34;&#34;Pipe sequence through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
+    @overload
+    @staticmethod
+    def range(stop: int) -&gt; Iterable[int]:
+        ...
+
+    @overload
+    @staticmethod
+    def range(start: int, stop: int, step: Optional[int] = None) -&gt; Iterable[int]:
+        ...
+
+    @staticmethod
+    def range(*args: int, **kw: int) -&gt; Iterable[int]:
+        return range(*args, **kw)
+
     def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -&gt; Iterable[TState]:
         &#34;&#34;&#34;Like fold, but computes on-demand and returns the sequence of
         intermediary and final results.
@@ -1683,8 +1946,8 @@ sequences.</p>
         &#34;&#34;&#34;
         return Seq(itertools.accumulate(self, scanner, initial=state))  # type: ignore
 
-    @staticmethod
-    def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -&gt; Iterable[TSource]:
+    @classmethod
+    def unfold(cls, generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -&gt; Iterable[TSource]:
         &#34;&#34;&#34;Returns a list that contains the elements generated by the
         given computation. The given initial state argument is passed to
         the element generator.
@@ -1699,13 +1962,7 @@ sequences.</p>
             The result list.
         &#34;&#34;&#34;
 
-        while True:
-            result = generator(state)
-            if result.is_none():
-                break
-
-            item, state = result.value
-            yield item
+        return pipe(state, unfold(generator))
 
     def zip(self, other: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
         &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
@@ -1732,6 +1989,20 @@ sequences.</p>
 </ul>
 <h3>Static methods</h3>
 <dl>
+<dt id="expression.collections.Seq.range"><code class="name flex">
+<span>def <span class="ident">range</span></span>(<span>*args: int, **kw: int) ‑> Iterable[int]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def range(*args: int, **kw: int) -&gt; Iterable[int]:
+    return range(*args, **kw)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.Seq.unfold"><code class="name flex">
 <span>def <span class="ident">unfold</span></span>(<span>generator: Callable[[~TState], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], state: ~TState) ‑> Iterable[~TSource]</span>
 </code></dt>
@@ -1754,8 +2025,8 @@ and the next state value.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@staticmethod
-def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -&gt; Iterable[TSource]:
+<pre><code class="python">@classmethod
+def unfold(cls, generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -&gt; Iterable[TSource]:
     &#34;&#34;&#34;Returns a list that contains the elements generated by the
     given computation. The given initial state argument is passed to
     the element generator.
@@ -1770,13 +2041,7 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state:
         The result list.
     &#34;&#34;&#34;
 
-    while True:
-        result = generator(state)
-        if result.is_none():
-            break
-
-        item, state = result.value
-        yield item</code></pre>
+    return pipe(state, unfold(generator))</code></pre>
 </details>
 </dd>
 </dl>
@@ -2019,6 +2284,7 @@ ignored.</p>
 <li><code><a title="expression.collections.map" href="map.html">expression.collections.map</a></code></li>
 <li><code><a title="expression.collections.maptree" href="maptree.html">expression.collections.maptree</a></code></li>
 <li><code><a title="expression.collections.seq" href="seq.html">expression.collections.seq</a></code></li>
+<li><code><a title="expression.collections.test4" href="test4.html">expression.collections.test4</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -2038,8 +2304,12 @@ ignored.</p>
 <li><code><a title="expression.collections.FrozenList.item" href="#expression.collections.FrozenList.item">item</a></code></li>
 <li><code><a title="expression.collections.FrozenList.map" href="#expression.collections.FrozenList.map">map</a></code></li>
 <li><code><a title="expression.collections.FrozenList.match" href="#expression.collections.FrozenList.match">match</a></code></li>
+<li><code><a title="expression.collections.FrozenList.of" href="#expression.collections.FrozenList.of">of</a></code></li>
+<li><code><a title="expression.collections.FrozenList.of_option" href="#expression.collections.FrozenList.of_option">of_option</a></code></li>
 <li><code><a title="expression.collections.FrozenList.of_seq" href="#expression.collections.FrozenList.of_seq">of_seq</a></code></li>
 <li><code><a title="expression.collections.FrozenList.pipe" href="#expression.collections.FrozenList.pipe">pipe</a></code></li>
+<li><code><a title="expression.collections.FrozenList.range" href="#expression.collections.FrozenList.range">range</a></code></li>
+<li><code><a title="expression.collections.FrozenList.singleton" href="#expression.collections.FrozenList.singleton">singleton</a></code></li>
 <li><code><a title="expression.collections.FrozenList.skip" href="#expression.collections.FrozenList.skip">skip</a></code></li>
 <li><code><a title="expression.collections.FrozenList.skip_last" href="#expression.collections.FrozenList.skip_last">skip_last</a></code></li>
 <li><code><a title="expression.collections.FrozenList.tail" href="#expression.collections.FrozenList.tail">tail</a></code></li>
@@ -2061,11 +2331,16 @@ ignored.</p>
 <li><code><a title="expression.collections.Map.exists" href="#expression.collections.Map.exists">exists</a></code></li>
 <li><code><a title="expression.collections.Map.filter" href="#expression.collections.Map.filter">filter</a></code></li>
 <li><code><a title="expression.collections.Map.fold" href="#expression.collections.Map.fold">fold</a></code></li>
+<li><code><a title="expression.collections.Map.fold_back" href="#expression.collections.Map.fold_back">fold_back</a></code></li>
 <li><code><a title="expression.collections.Map.for_all" href="#expression.collections.Map.for_all">for_all</a></code></li>
 <li><code><a title="expression.collections.Map.is_empty" href="#expression.collections.Map.is_empty">is_empty</a></code></li>
+<li><code><a title="expression.collections.Map.items" href="#expression.collections.Map.items">items</a></code></li>
 <li><code><a title="expression.collections.Map.iterate" href="#expression.collections.Map.iterate">iterate</a></code></li>
 <li><code><a title="expression.collections.Map.map" href="#expression.collections.Map.map">map</a></code></li>
+<li><code><a title="expression.collections.Map.of" href="#expression.collections.Map.of">of</a></code></li>
+<li><code><a title="expression.collections.Map.of_frozenlist" href="#expression.collections.Map.of_frozenlist">of_frozenlist</a></code></li>
 <li><code><a title="expression.collections.Map.of_list" href="#expression.collections.Map.of_list">of_list</a></code></li>
+<li><code><a title="expression.collections.Map.of_seq" href="#expression.collections.Map.of_seq">of_seq</a></code></li>
 <li><code><a title="expression.collections.Map.partition" href="#expression.collections.Map.partition">partition</a></code></li>
 <li><code><a title="expression.collections.Map.pipe" href="#expression.collections.Map.pipe">pipe</a></code></li>
 <li><code><a title="expression.collections.Map.remove" href="#expression.collections.Map.remove">remove</a></code></li>
@@ -2086,6 +2361,7 @@ ignored.</p>
 <li><code><a title="expression.collections.Seq.map" href="#expression.collections.Seq.map">map</a></code></li>
 <li><code><a title="expression.collections.Seq.match" href="#expression.collections.Seq.match">match</a></code></li>
 <li><code><a title="expression.collections.Seq.pipe" href="#expression.collections.Seq.pipe">pipe</a></code></li>
+<li><code><a title="expression.collections.Seq.range" href="#expression.collections.Seq.range">range</a></code></li>
 <li><code><a title="expression.collections.Seq.scan" href="#expression.collections.Seq.scan">scan</a></code></li>
 <li><code><a title="expression.collections.Seq.unfold" href="#expression.collections.Seq.unfold">unfold</a></code></li>
 <li><code><a title="expression.collections.Seq.zip" href="#expression.collections.Seq.zip">zip</a></code></li>

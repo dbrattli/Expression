@@ -118,23 +118,25 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Ok[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
-        ...
-
-    @overload
-    def match(self, pattern: &#34;Type[Error[TSource, TError]]&#34;) -&gt; Iterable[TError]:
+    def match(self, pattern: &#34;Type[Result[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
+        &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
+
         m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
     def is_error(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Error` value.&#34;&#34;&#34;
+
         raise NotImplementedError
 
     @abstractmethod
     def is_ok(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
         raise NotImplementedError
 
     def __eq__(self, other: Any) -&gt; bool:
@@ -170,9 +172,13 @@ class Ok(Result[TSource, TError]):
         return Ok(self._value)
 
     def is_error(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
         return False
 
     def is_ok(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
         return True
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
@@ -231,11 +237,11 @@ class Error(Result[TSource, TError], ResultException):
         return Error(mapper(self._error))
 
     def is_error(self) -&gt; bool:
-        &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
         return True
 
     def is_ok(self) -&gt; bool:
-        &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
         return False
 
     def __match__(self, pattern: Any) -&gt; Iterable[TError]:
@@ -371,11 +377,11 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
         return Error(mapper(self._error))
 
     def is_error(self) -&gt; bool:
-        &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
         return True
 
     def is_ok(self) -&gt; bool:
-        &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
         return False
 
     def __match__(self, pattern: Any) -&gt; Iterable[TError]:
@@ -449,28 +455,14 @@ def error(self) -&gt; TError:
 <span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns <code>True</code>.</p></div>
+<div class="desc"><p>Returns <code>True</code> if the result is an <code><a title="expression.core.result.Ok" href="#expression.core.result.Ok">Ok</a></code> value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def is_error(self) -&gt; bool:
-    &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
     return True</code></pre>
-</details>
-</dd>
-<dt id="expression.core.result.Error.is_ok"><code class="name flex">
-<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Returns <code>False</code>.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def is_ok(self) -&gt; bool:
-    &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
-    return False</code></pre>
 </details>
 </dd>
 <dt id="expression.core.result.Error.map"><code class="name flex">
@@ -491,7 +483,9 @@ def error(self) -&gt; TError:
 <ul class="hlist">
 <li><code><b><a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></b></code>:
 <ul class="hlist">
+<li><code><a title="expression.core.result.Result.is_ok" href="#expression.core.result.Result.is_ok">is_ok</a></code></li>
 <li><code><a title="expression.core.result.Result.map_error" href="#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Result.match" href="#expression.core.result.Result.match">match</a></code></li>
 <li><code><a title="expression.core.result.Result.pipe" href="#expression.core.result.Result.pipe">pipe</a></code></li>
 </ul>
 </li>
@@ -529,9 +523,13 @@ def error(self) -&gt; TError:
         return Ok(self._value)
 
     def is_error(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
         return False
 
     def is_ok(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
         return True
 
     def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
@@ -599,26 +597,15 @@ def value(self) -&gt; TSource:
 <span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>True</code> if the result is an <code><a title="expression.core.result.Ok" href="#expression.core.result.Ok">Ok</a></code> value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def is_error(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
     return False</code></pre>
-</details>
-</dd>
-<dt id="expression.core.result.Ok.is_ok"><code class="name flex">
-<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def is_ok(self) -&gt; bool:
-    return True</code></pre>
 </details>
 </dd>
 <dt id="expression.core.result.Ok.map"><code class="name flex">
@@ -639,7 +626,9 @@ def value(self) -&gt; TSource:
 <ul class="hlist">
 <li><code><b><a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></b></code>:
 <ul class="hlist">
+<li><code><a title="expression.core.result.Result.is_ok" href="#expression.core.result.Result.is_ok">is_ok</a></code></li>
 <li><code><a title="expression.core.result.Result.map_error" href="#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Result.match" href="#expression.core.result.Result.match">match</a></code></li>
 <li><code><a title="expression.core.result.Result.pipe" href="#expression.core.result.Result.pipe">pipe</a></code></li>
 </ul>
 </li>
@@ -712,23 +701,25 @@ def value(self) -&gt; TSource:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Ok[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
-        ...
-
-    @overload
-    def match(self, pattern: &#34;Type[Error[TSource, TError]]&#34;) -&gt; Iterable[TError]:
+    def match(self, pattern: &#34;Type[Result[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
+        &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
+
         m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
     def is_error(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Error` value.&#34;&#34;&#34;
+
         raise NotImplementedError
 
     @abstractmethod
     def is_ok(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
         raise NotImplementedError
 
     def __eq__(self, other: Any) -&gt; bool:
@@ -772,13 +763,15 @@ def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -
 <span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>True</code> if the result is an <code><a title="expression.core.result.Error" href="#expression.core.result.Error">Error</a></code> value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def is_error(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True` if the result is an `Error` value.&#34;&#34;&#34;
+
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -786,13 +779,15 @@ def is_error(self) -&gt; bool:
 <span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>True</code> if the result is an <code><a title="expression.core.result.Ok" href="#expression.core.result.Ok">Ok</a></code> value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def is_ok(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -831,12 +826,14 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Match result with pattern.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
+    &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
+
     m = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
@@ -924,23 +921,25 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Ok[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
-        ...
-
-    @overload
-    def match(self, pattern: &#34;Type[Error[TSource, TError]]&#34;) -&gt; Iterable[TError]:
+    def match(self, pattern: &#34;Type[Result[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
+        &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
+
         m = Matcher(self)
         return m.case(pattern) if pattern else m
 
     @abstractmethod
     def is_error(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Error` value.&#34;&#34;&#34;
+
         raise NotImplementedError
 
     @abstractmethod
     def is_ok(self) -&gt; bool:
+        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
         raise NotImplementedError
 
     def __eq__(self, other: Any) -&gt; bool:
@@ -979,13 +978,15 @@ def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -
 <span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>True</code> if the result is an <code><a title="expression.core.result.Error" href="#expression.core.result.Error">Error</a></code> value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def is_error(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True` if the result is an `Error` value.&#34;&#34;&#34;
+
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -993,13 +994,15 @@ def is_error(self) -&gt; bool:
 <span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Returns <code>True</code> if the result is an <code><a title="expression.core.result.Ok" href="#expression.core.result.Ok">Ok</a></code> value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
 def is_ok(self) -&gt; bool:
+    &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
+
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -1038,12 +1041,14 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Match result with pattern.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
+    &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
+
     m = Matcher(self)
     return m.case(pattern) if pattern else m</code></pre>
 </details>
@@ -1092,7 +1097,6 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.result.Error.bind" href="#expression.core.result.Error.bind">bind</a></code></li>
 <li><code><a title="expression.core.result.Error.error" href="#expression.core.result.Error.error">error</a></code></li>
 <li><code><a title="expression.core.result.Error.is_error" href="#expression.core.result.Error.is_error">is_error</a></code></li>
-<li><code><a title="expression.core.result.Error.is_ok" href="#expression.core.result.Error.is_ok">is_ok</a></code></li>
 <li><code><a title="expression.core.result.Error.map" href="#expression.core.result.Error.map">map</a></code></li>
 </ul>
 </li>
@@ -1101,7 +1105,6 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <ul class="">
 <li><code><a title="expression.core.result.Ok.bind" href="#expression.core.result.Ok.bind">bind</a></code></li>
 <li><code><a title="expression.core.result.Ok.is_error" href="#expression.core.result.Ok.is_error">is_error</a></code></li>
-<li><code><a title="expression.core.result.Ok.is_ok" href="#expression.core.result.Ok.is_ok">is_ok</a></code></li>
 <li><code><a title="expression.core.result.Ok.map" href="#expression.core.result.Ok.map">map</a></code></li>
 <li><code><a title="expression.core.result.Ok.value" href="#expression.core.result.Ok.value">value</a></code></li>
 </ul>

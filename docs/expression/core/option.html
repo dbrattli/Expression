@@ -138,12 +138,15 @@ class Option(Iterable[TSource], ABC, Matchable[TSource]):
         &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
         raise NotImplementedError
 
-    @abstractmethod
-    def __eq__(self, other: Any) -&gt; bool:
-        raise NotImplementedError
+    @classmethod
+    def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+        &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
+        return of_optional(value)
 
-    def __repr__(self) -&gt; str:
-        return self.__str__()
+    @classmethod
+    def of_optional(cls: &#34;Option[TSource]&#34;, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+        &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
+        return of_optional(value)
 
     @property
     @abstractmethod
@@ -153,6 +156,17 @@ class Option(Iterable[TSource], ABC, Matchable[TSource]):
         A `ValueError` is raised if the option is `Nothing`.
         &#34;&#34;&#34;
         raise NotImplementedError
+
+    @abstractmethod
+    def __eq__(self, other: Any) -&gt; bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    def __lt__(self, other: Any) -&gt; bool:
+        raise NotImplementedError
+
+    def __repr__(self) -&gt; str:
+        return self.__str__()
 
 
 class Some(Option[TSource]):
@@ -229,6 +243,11 @@ class Some(Option[TSource]):
 
         return []
 
+    def __lt__(self, other: Any) -&gt; bool:
+        if isinstance(other, Some):
+            return self._value &lt; other._value  # type: ignore
+        return False
+
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
             return self._value == other._value  # type: ignore
@@ -264,8 +283,8 @@ class Nothing_(Option[TSource], EffectError):
         &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
         return True
 
-    def map(self, mapper: Callable[[TSource], TResult]):
-        return self
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
+        return Nothing
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
         return Nothing
@@ -305,7 +324,7 @@ class Nothing_(Option[TSource], EffectError):
 
         raise ValueError(&#34;There is no value.&#34;)
 
-    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+    def __match__(self, pattern: Any) -&gt; &#34;Iterable[Nothing_[TSource]]&#34;:
         if self is pattern:
             return [Nothing]
 
@@ -317,9 +336,12 @@ class Nothing_(Option[TSource], EffectError):
         We basically want to return nothing, but we have to return
         something to signal fail.
         &#34;&#34;&#34;
-        raise cast(Nothing_[TSource], Nothing)
+        raise Nothing
         while False:
             yield
+
+    def __lt__(self, other: Any) -&gt; bool:
+        return True
 
     def __eq__(self, other: Any) -&gt; bool:
         if other is Nothing:
@@ -759,8 +781,8 @@ return True</p></div>
         &#34;&#34;&#34;Returns `True`.&#34;&#34;&#34;
         return True
 
-    def map(self, mapper: Callable[[TSource], TResult]):
-        return self
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
+        return Nothing
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
         return Nothing
@@ -800,7 +822,7 @@ return True</p></div>
 
         raise ValueError(&#34;There is no value.&#34;)
 
-    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+    def __match__(self, pattern: Any) -&gt; &#34;Iterable[Nothing_[TSource]]&#34;:
         if self is pattern:
             return [Nothing]
 
@@ -812,9 +834,12 @@ return True</p></div>
         We basically want to return nothing, but we have to return
         something to signal fail.
         &#34;&#34;&#34;
-        raise cast(Nothing_[TSource], Nothing)
+        raise Nothing
         while False:
             yield
+
+    def __lt__(self, other: Any) -&gt; bool:
+        return True
 
     def __eq__(self, other: Any) -&gt; bool:
         if other is Nothing:
@@ -867,7 +892,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.Nothing_.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult])</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -875,8 +900,8 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]):
-    return self</code></pre>
+<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
+    return Nothing</code></pre>
 </details>
 </dd>
 <dt id="expression.core.option.Nothing_.map2"><code class="name flex">
@@ -939,6 +964,8 @@ return True</p></div>
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Option.default_value" href="#expression.core.option.Option.default_value">default_value</a></code></li>
+<li><code><a title="expression.core.option.Option.of_obj" href="#expression.core.option.Option.of_obj">of_obj</a></code></li>
+<li><code><a title="expression.core.option.Option.of_optional" href="#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.value" href="#expression.core.option.Option.value">value</a></code></li>
 </ul>
@@ -1040,12 +1067,15 @@ return True</p></div>
         &#34;&#34;&#34;Returns true if the option is Nothing.&#34;&#34;&#34;
         raise NotImplementedError
 
-    @abstractmethod
-    def __eq__(self, other: Any) -&gt; bool:
-        raise NotImplementedError
+    @classmethod
+    def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+        &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
+        return of_optional(value)
 
-    def __repr__(self) -&gt; str:
-        return self.__str__()
+    @classmethod
+    def of_optional(cls: &#34;Option[TSource]&#34;, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+        &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
+        return of_optional(value)
 
     @property
     @abstractmethod
@@ -1054,7 +1084,18 @@ return True</p></div>
 
         A `ValueError` is raised if the option is `Nothing`.
         &#34;&#34;&#34;
-        raise NotImplementedError</code></pre>
+        raise NotImplementedError
+
+    @abstractmethod
+    def __eq__(self, other: Any) -&gt; bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    def __lt__(self, other: Any) -&gt; bool:
+        raise NotImplementedError
+
+    def __repr__(self) -&gt; str:
+        return self.__str__()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1069,6 +1110,39 @@ return True</p></div>
 <li><a title="expression.core.option.Nothing_" href="#expression.core.option.Nothing_">Nothing_</a></li>
 <li><a title="expression.core.option.Some" href="#expression.core.option.Some">Some</a></li>
 </ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.option.Option.of_obj"><code class="name flex">
+<span>def <span class="ident">of_obj</span></span>(<span>value: ~TSource) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert object to an option.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+    &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
+    return of_optional(value)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.option.Option.of_optional"><code class="name flex">
+<span>def <span class="ident">of_optional</span></span>(<span>value: Optional[~TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert optional value to an option.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def of_optional(cls: &#34;Option[TSource]&#34;, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+    &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
+    return of_optional(value)</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Instance variables</h3>
 <dl>
 <dt id="expression.core.option.Option.value"><code class="name">var <span class="ident">value</span> : ~TSource</code></dt>
@@ -1348,6 +1422,11 @@ def to_seq(self) -&gt; Iterable[TSource]:
 
         return []
 
+    def __lt__(self, other: Any) -&gt; bool:
+        if isinstance(other, Some):
+            return self._value &lt; other._value  # type: ignore
+        return False
+
     def __eq__(self, other: Any) -&gt; bool:
         if isinstance(other, Some):
             return self._value == other._value  # type: ignore
@@ -1473,6 +1552,8 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Option.default_value" href="#expression.core.option.Option.default_value">default_value</a></code></li>
+<li><code><a title="expression.core.option.Option.of_obj" href="#expression.core.option.Option.of_obj">of_obj</a></code></li>
+<li><code><a title="expression.core.option.Option.of_optional" href="#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.value" href="#expression.core.option.Option.value">value</a></code></li>
 </ul>
@@ -1536,6 +1617,8 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <li><code><a title="expression.core.option.Option.is_some" href="#expression.core.option.Option.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.option.Option.map" href="#expression.core.option.Option.map">map</a></code></li>
 <li><code><a title="expression.core.option.Option.map2" href="#expression.core.option.Option.map2">map2</a></code></li>
+<li><code><a title="expression.core.option.Option.of_obj" href="#expression.core.option.Option.of_obj">of_obj</a></code></li>
+<li><code><a title="expression.core.option.Option.of_optional" href="#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.or_else" href="#expression.core.option.Option.or_else">or_else</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.to_list" href="#expression.core.option.Option.to_list">to_list</a></code></li>

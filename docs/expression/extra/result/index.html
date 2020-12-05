@@ -54,10 +54,10 @@ __all__ = [&#34;sequence&#34;, &#34;traverse&#34;, &#34;pipeline&#34;]</code></p
 <p>A pipeline kleisli (&gt;=&gt;) composes zero or more functions into a
 functional composition. The functions are composed left to right. A
 composition of zero functions gives back the identity function.</p>
-<pre><code class="language-python-repl">&gt;&gt;&gt; pipeline()(x) == x
+<pre><code class="language-python-repl">&gt;&gt;&gt; pipeline()(x) == Ok(x)
 &gt;&gt;&gt; pipeline(f)(x) == f(x)
-&gt;&gt;&gt; pipeline(f, g)(x) == g(f(x))
-&gt;&gt;&gt; pipeline(f, g, h)(x) == h(g(f(x)))
+&gt;&gt;&gt; pipeline(f, g)(x) == f(x).bind(g)
+&gt;&gt;&gt; pipeline(f, g, h)(x) == f(x).bind(g).bind(h)
 ...
 </code></pre>
 <h2 id="returns">Returns</h2>
@@ -73,23 +73,25 @@ composition of zero functions gives back the identity function.</p>
     functional composition. The functions are composed left to right. A
     composition of zero functions gives back the identity function.
 
-    &gt;&gt;&gt; pipeline()(x) == x
+    &gt;&gt;&gt; pipeline()(x) == Ok(x)
     &gt;&gt;&gt; pipeline(f)(x) == f(x)
-    &gt;&gt;&gt; pipeline(f, g)(x) == g(f(x))
-    &gt;&gt;&gt; pipeline(f, g, h)(x) == h(g(f(x)))
+    &gt;&gt;&gt; pipeline(f, g)(x) == f(x).bind(g)
+    &gt;&gt;&gt; pipeline(f, g, h)(x) == f(x).bind(g).bind(h)
     ...
 
     Returns:
         The composed functions.
     &#34;&#34;&#34;
 
-    def kleisli(source: Any) -&gt; Result[Any, Any]:
-        def reducer(acc: Result[Any, Any], fn: Callable[[Any], Result[Any, Any]]):
-            return fn(cast(Ok[Any, Any], acc).value) if acc.is_ok() else acc
+    def reducer(
+        acc: Callable[[Any], Result[Any, Any]], fn: Callable[[Any], Result[Any, Any]]
+    ) -&gt; Callable[[Any], Result[Any, Any]]:
+        def gn(x: Any) -&gt; Result[Any, Any]:
+            return acc(x).bind(fn)
 
-        return reduce(reducer, fns, source)
+        return gn
 
-    return kleisli</code></pre>
+    return reduce(reducer, fns, Ok)</code></pre>
 </details>
 </dd>
 <dt id="expression.extra.result.sequence"><code class="name flex">
@@ -125,7 +127,6 @@ sequence of their response.</p></div>
     Threads an applicative computation though a list of items.
     &#34;&#34;&#34;
 
-    # flake8: noqa: T484
     @effect.result
     def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Generator[TResult, TResult, List[TResult]]:
         &#34;&#34;&#34;Same as:

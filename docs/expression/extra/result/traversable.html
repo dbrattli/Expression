@@ -45,7 +45,6 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
     Threads an applicative computation though a list of items.
     &#34;&#34;&#34;
 
-    # flake8: noqa: T484
     @effect.result
     def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Generator[TResult, TResult, List[TResult]]:
         &#34;&#34;&#34;Same as:
@@ -106,7 +105,6 @@ sequence of their response.</p></div>
     Threads an applicative computation though a list of items.
     &#34;&#34;&#34;
 
-    # flake8: noqa: T484
     @effect.result
     def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Generator[TResult, TResult, List[TResult]]:
         &#34;&#34;&#34;Same as:

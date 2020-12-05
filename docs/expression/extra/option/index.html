@@ -46,10 +46,10 @@ __all__ = [&#34;pipeline&#34;]</code></pre>
 <p>A pipeline kleisli (&gt;=&gt;) composes zero or more functions into a
 functional composition. The functions are composed left to right. A
 composition of zero functions gives back the identity function.</p>
-<pre><code class="language-python-repl">&gt;&gt;&gt; pipeline()(x) == x
+<pre><code class="language-python-repl">&gt;&gt;&gt; pipeline()(x) == Some(x)
 &gt;&gt;&gt; pipeline(f)(x) == f(x)
-&gt;&gt;&gt; pipeline(f, g)(x) == g(f(x))
-&gt;&gt;&gt; pipeline(f, g, h)(x) == h(g(f(x)))
+&gt;&gt;&gt; pipeline(f, g)(x) == f(x).bind(g)
+&gt;&gt;&gt; pipeline(f, g, h)(x) == f(x).bind(g).bind(h)
 ...
 </code></pre>
 <h2 id="returns">Returns</h2>
@@ -65,23 +65,23 @@ composition of zero functions gives back the identity function.</p>
     functional composition. The functions are composed left to right. A
     composition of zero functions gives back the identity function.
 
-    &gt;&gt;&gt; pipeline()(x) == x
+    &gt;&gt;&gt; pipeline()(x) == Some(x)
     &gt;&gt;&gt; pipeline(f)(x) == f(x)
-    &gt;&gt;&gt; pipeline(f, g)(x) == g(f(x))
-    &gt;&gt;&gt; pipeline(f, g, h)(x) == h(g(f(x)))
+    &gt;&gt;&gt; pipeline(f, g)(x) == f(x).bind(g)
+    &gt;&gt;&gt; pipeline(f, g, h)(x) == f(x).bind(g).bind(h)
     ...
 
     Returns:
         The composed functions.
     &#34;&#34;&#34;
 
-    def kleisli(source: Any) -&gt; Option[Any]:
-        def reducer(acc: Any, fn: Callable[[Any], Option[Any]]) -&gt; Option[Any]:
-            return fn(acc.value) if acc is not Nothing else acc
+    def reducer(acc: Callable[[Any], Option[Any]], fn: Callable[[Any], Option[Any]]) -&gt; Callable[[Any], Option[Any]]:
+        def gn(x: Any) -&gt; Option[Any]:
+            return acc(x).bind(fn)
 
-        return reduce(reducer, fns, source)
+        return gn
 
-    return kleisli</code></pre>
+    return reduce(reducer, fns, Some)</code></pre>
 </details>
 </dd>
 </dl>

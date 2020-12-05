@@ -28,7 +28,9 @@
 </summary>
 <pre><code class="python">import builtins
 import itertools
-from typing import Any, AsyncIterable, Callable, Optional, TypeVar, overload
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional, TypeVar, overload
+
+from expression.core import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -37,6 +39,45 @@ TResult = TypeVar(&#34;TResult&#34;)
 class AsyncSeq(AsyncIterable[TSource]):
     def __init__(self, ai: AsyncIterable[TSource]):
         self._ai = ai
+
+    async def map(self, mapper: Callable[[TSource], TResult]) -&gt; AsyncIterable[TResult]:
+        return pipe(self, map(mapper))
+
+    @classmethod
+    def empty(cls) -&gt; AsyncIterable[Any]:
+        return AsyncSeq(empty())
+
+    @overload
+    @classmethod
+    def range(cls, stop: int) -&gt; AsyncIterable[int]:
+        ...
+
+    @overload
+    @classmethod
+    def range(cls, start: int, stop: int, step: Optional[int]) -&gt; AsyncIterable[int]:
+        ...
+
+    @classmethod
+    def range(cls, *args: Any) -&gt; AsyncIterable[int]:
+        return AsyncSeq(range(*args))
+
+    def __aiter__(self) -&gt; AsyncIterator[TSource]:
+        return self._ai.__aiter__()
+
+
+def append(other: AsyncIterable[TSource]) -&gt; Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+    async def _append(source: AsyncIterable[TSource]) -&gt; AsyncIterable[TSource]:
+        async for value in source:
+            yield value
+        async for value in other:
+            yield value
+
+    return _append
+
+
+async def empty() -&gt; AsyncIterable[Any]:
+    while False:
+        yield
 
 
 async def repeat(value: TSource, times: Optional[int] = None) -&gt; AsyncIterable[TSource]:
@@ -59,15 +100,21 @@ async def range(*args: Any) -&gt; AsyncIterable[int]:
         yield value
 
 
-async def filter(predicate: Callable[[TSource], bool], source: AsyncIterable[TSource]) -&gt; AsyncIterable[TSource]:
-    async for value in source:
-        if predicate(value):
-            yield value
+def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+    async def _filter(source: AsyncIterable[TSource]) -&gt; AsyncIterable[TSource]:
+        async for value in source:
+            if predicate(value):
+                yield value
+
+    return _filter
 
 
-async def map(mapper: Callable[[TSource], TResult], source: AsyncIterable[TSource]) -&gt; AsyncIterable[TResult]:
-    async for value in source:
-        yield mapper(value)
+def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
+    async def _map(source: AsyncIterable[TSource]) -&gt; AsyncIterable[TResult]:
+        async for value in source:
+            yield mapper(value)
+
+    return _map
 
 
 __all__ = [
@@ -87,7 +134,7 @@ __all__ = [
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.collections.asyncseq.filter"><code class="name flex">
-<span>async def <span class="ident">filter</span></span>(<span>predicate: Callable[[~TSource], bool], source: AsyncIterable[~TSource]) ‑> AsyncIterable[~TSource]</span>
+<span>def <span class="ident">filter</span></span>(<span>predicate: Callable[[~TSource], bool]) ‑> Callable[[AsyncIterable[~TSource]], AsyncIterable[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -95,14 +142,17 @@ __all__ = [
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">async def filter(predicate: Callable[[TSource], bool], source: AsyncIterable[TSource]) -&gt; AsyncIterable[TSource]:
-    async for value in source:
-        if predicate(value):
-            yield value</code></pre>
+<pre><code class="python">def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+    async def _filter(source: AsyncIterable[TSource]) -&gt; AsyncIterable[TSource]:
+        async for value in source:
+            if predicate(value):
+                yield value
+
+    return _filter</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.asyncseq.map"><code class="name flex">
-<span>async def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult], source: AsyncIterable[~TSource]) ‑> AsyncIterable[~TResult]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[AsyncIterable[~TSource]], AsyncIterable[~TResult]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -110,9 +160,12 @@ __all__ = [
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">async def map(mapper: Callable[[TSource], TResult], source: AsyncIterable[TSource]) -&gt; AsyncIterable[TResult]:
-    async for value in source:
-        yield mapper(value)</code></pre>
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
+    async def _map(source: AsyncIterable[TSource]) -&gt; AsyncIterable[TResult]:
+        async for value in source:
+            yield mapper(value)
+
+    return _map</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.asyncseq.range"><code class="name flex">
@@ -173,13 +226,84 @@ return default</p></div>
 </summary>
 <pre><code class="python">class AsyncSeq(AsyncIterable[TSource]):
     def __init__(self, ai: AsyncIterable[TSource]):
-        self._ai = ai</code></pre>
+        self._ai = ai
+
+    async def map(self, mapper: Callable[[TSource], TResult]) -&gt; AsyncIterable[TResult]:
+        return pipe(self, map(mapper))
+
+    @classmethod
+    def empty(cls) -&gt; AsyncIterable[Any]:
+        return AsyncSeq(empty())
+
+    @overload
+    @classmethod
+    def range(cls, stop: int) -&gt; AsyncIterable[int]:
+        ...
+
+    @overload
+    @classmethod
+    def range(cls, start: int, stop: int, step: Optional[int]) -&gt; AsyncIterable[int]:
+        ...
+
+    @classmethod
+    def range(cls, *args: Any) -&gt; AsyncIterable[int]:
+        return AsyncSeq(range(*args))
+
+    def __aiter__(self) -&gt; AsyncIterator[TSource]:
+        return self._ai.__aiter__()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>collections.abc.AsyncIterable</li>
 <li>typing.Generic</li>
 </ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.collections.asyncseq.AsyncSeq.empty"><code class="name flex">
+<span>def <span class="ident">empty</span></span>(<span>) ‑> AsyncIterable[Any]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def empty(cls) -&gt; AsyncIterable[Any]:
+    return AsyncSeq(empty())</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.asyncseq.AsyncSeq.range"><code class="name flex">
+<span>def <span class="ident">range</span></span>(<span>*args: Any) ‑> AsyncIterable[int]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def range(cls, *args: Any) -&gt; AsyncIterable[int]:
+    return AsyncSeq(range(*args))</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.collections.asyncseq.AsyncSeq.map"><code class="name flex">
+<span>async def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> AsyncIterable[~TResult]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">async def map(self, mapper: Callable[[TSource], TResult]) -&gt; AsyncIterable[TResult]:
+    return pipe(self, map(mapper))</code></pre>
+</details>
+</dd>
+</dl>
 </dd>
 </dl>
 </section>
@@ -207,6 +331,11 @@ return default</p></div>
 <ul>
 <li>
 <h4><code><a title="expression.collections.asyncseq.AsyncSeq" href="#expression.collections.asyncseq.AsyncSeq">AsyncSeq</a></code></h4>
+<ul class="">
+<li><code><a title="expression.collections.asyncseq.AsyncSeq.empty" href="#expression.collections.asyncseq.AsyncSeq.empty">empty</a></code></li>
+<li><code><a title="expression.collections.asyncseq.AsyncSeq.map" href="#expression.collections.asyncseq.AsyncSeq.map">map</a></code></li>
+<li><code><a title="expression.collections.asyncseq.AsyncSeq.range" href="#expression.collections.asyncseq.AsyncSeq.range">range</a></code></li>
+</ul>
 </li>
 </ul>
 </li>

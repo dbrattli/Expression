@@ -55,14 +55,16 @@ Do not use directly. Use the `map` module instead.
 &#34;&#34;&#34;
 import builtins
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
+from typing import (Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar,
+                    cast)
 
-from expression.core import Nothing, Option, Some, failwith, pipe
+from expression.core import (Nothing, Option, Some, SupportsLessThan, failwith,
+                             pipe)
 
 from . import frozenlist, seq
 from .frozenlist import FrozenList
 
-Key = TypeVar(&#34;Key&#34;)
+Key = TypeVar(&#34;Key&#34;, bound=SupportsLessThan)
 Value = TypeVar(&#34;Value&#34;)
 Result = TypeVar(&#34;Result&#34;)
 
@@ -78,6 +80,10 @@ MapTree = Option[MapTreeLeaf[Key, Value]]
 
 @dataclass
 class MapTreeNode(MapTreeLeaf[Key, Value]):
+    # TODO: Remove key and value here when pylance bug fixed
+    key: Key
+    value: Value
+
     left: MapTree[Key, Value]
     right: MapTree[Key, Value]
 
@@ -181,7 +187,8 @@ def add(k: Key, v: Value, m: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
                 return rebalance(mn.left, mn.key, mn.value, add(k, v, mn.right))
         else:
             if k &lt; m2.key:
-                return Some(MapTreeNode(k, v, empty, m, 2))
+                node = MapTreeNode(k, v, empty, m, 2)
+                return Some(node)
             elif k == m2:
                 return Some(MapTreeLeaf(k, v))
             else:
@@ -197,7 +204,7 @@ def try_find(k: Key, m: MapTree[Key, Value]) -&gt; Option[Value]:
         else:
             if isinstance(m2, MapTreeNode):
                 mn = cast(MapTreeNode[Key, Value], m2)
-                return try_find(k, mn.left if k &lt; m2 else mn.right)
+                return try_find(k, mn.left if k &lt; mn.key else mn.right)
             else:
                 return Nothing
     else:  # Nothing
@@ -214,9 +221,10 @@ def find(k: Key, m: MapTree[Key, Value]) -&gt; Value:
 def partition1(
     predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
 ) -&gt; Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
-    (acc1, acc2) = acc
+    acc1, acc2 = acc
     if predicate(k, v):
-        return add(k, v, acc1), acc2
+        a: MapTree[Key, Value] = add(k, v, acc1)
+        return a, acc2
     else:
         return acc1, add(k, v, acc2)
 
@@ -383,10 +391,12 @@ def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) 
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
-            for res in try_pick(f, mn.left).to_list():
+            res = try_pick(f, mn.left)
+            if res.is_some():
                 return res
             else:
-                for res in f(mn.key, mn.value):
+                res = f(mn.key, mn.value)
+                if res.is_some():
                     return res
                 else:
                     return try_pick(f, mn.right)
@@ -418,30 +428,16 @@ def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -&gt; bool:
         return True
 
 
-def map(f: Callable[[Value], Result], m: MapTree[Key, Value]) -&gt; MapTree[Key, Result]:
+def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -&gt; MapTree[Key, Result]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
             l2 = map(f, mn.left)
-            v2 = f(mn.value)
+            v2 = f(mn.key, mn.value)
             r2 = map(f, mn.right)
             return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
         else:
-            return Some(MapTreeLeaf(m2.key, f(m2.value)))
-    else:
-        return empty
-
-
-def mapi(f: Callable[[Tuple[Key, Value]], Result], m: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = cast(MapTreeNode[Key, Value], m2)
-            l2 = mapi(f, mn.left)
-            v2 = f((mn.key, mn.value))
-            r2 = mapi(f, mn.right)
-            return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
-        else:
-            return Some(MapTreeLeaf(m2.key, f((m2.key, m2.value))))
+            return Some(MapTreeLeaf(m2.key, f(m2.key, m2.value)))
     else:
         return empty
 
@@ -605,7 +601,8 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
                 return rebalance(mn.left, mn.key, mn.value, add(k, v, mn.right))
         else:
             if k &lt; m2.key:
-                return Some(MapTreeNode(k, v, empty, m, 2))
+                node = MapTreeNode(k, v, empty, m, 2)
+                return Some(node)
             elif k == m2:
                 return Some(MapTreeLeaf(k, v))
             else:
@@ -911,7 +908,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 </details>
 </dd>
 <dt id="expression.collections.maptree.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>f: Callable[[~Value], ~Result], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map</span></span>(<span>f: Callable[[~Key, ~Value], ~Result], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -919,39 +916,16 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(f: Callable[[Value], Result], m: MapTree[Key, Value]) -&gt; MapTree[Key, Result]:
+<pre><code class="python">def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -&gt; MapTree[Key, Result]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
             l2 = map(f, mn.left)
-            v2 = f(mn.value)
+            v2 = f(mn.key, mn.value)
             r2 = map(f, mn.right)
             return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
         else:
-            return Some(MapTreeLeaf(m2.key, f(m2.value)))
-    else:
-        return empty</code></pre>
-</details>
-</dd>
-<dt id="expression.collections.maptree.mapi"><code class="name flex">
-<span>def <span class="ident">mapi</span></span>(<span>f: Callable[[Tuple[~Key, ~Value]], ~Result], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def mapi(f: Callable[[Tuple[Key, Value]], Result], m: MapTree[Key, Value]) -&gt; MapTree[Key, Value]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = cast(MapTreeNode[Key, Value], m2)
-            l2 = mapi(f, mn.left)
-            v2 = f((mn.key, mn.value))
-            r2 = mapi(f, mn.right)
-            return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
-        else:
-            return Some(MapTreeLeaf(m2.key, f((m2.key, m2.value))))
+            return Some(MapTreeLeaf(m2.key, f(m2.key, m2.value)))
     else:
         return empty</code></pre>
 </details>
@@ -1104,9 +1078,10 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 <pre><code class="python">def partition1(
     predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
 ) -&gt; Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
-    (acc1, acc2) = acc
+    acc1, acc2 = acc
     if predicate(k, v):
-        return add(k, v, acc1), acc2
+        a: MapTree[Key, Value] = add(k, v, acc1)
+        return a, acc2
     else:
         return acc1, add(k, v, acc2)</code></pre>
 </details>
@@ -1338,7 +1313,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
         else:
             if isinstance(m2, MapTreeNode):
                 mn = cast(MapTreeNode[Key, Value], m2)
-                return try_find(k, mn.left if k &lt; m2 else mn.right)
+                return try_find(k, mn.left if k &lt; mn.key else mn.right)
             else:
                 return Nothing
     else:  # Nothing
@@ -1358,10 +1333,12 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
-            for res in try_pick(f, mn.left).to_list():
+            res = try_pick(f, mn.left)
+            if res.is_some():
                 return res
             else:
-                for res in f(mn.key, mn.value):
+                res = f(mn.key, mn.value)
+                if res.is_some():
                     return res
                 else:
                     return try_pick(f, mn.right)
@@ -1423,6 +1400,10 @@ class MapTreeLeaf(Generic[Key, Value]):
 </summary>
 <pre><code class="python">@dataclass
 class MapTreeNode(MapTreeLeaf[Key, Value]):
+    # TODO: Remove key and value here when pylance bug fixed
+    key: Key
+    value: Value
+
     left: MapTree[Key, Value]
     right: MapTree[Key, Value]
 
@@ -1439,11 +1420,19 @@ class MapTreeNode(MapTreeLeaf[Key, Value]):
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="expression.collections.maptree.MapTreeNode.key"><code class="name">var <span class="ident">key</span> : ~Key</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="expression.collections.maptree.MapTreeNode.left"><code class="name">var <span class="ident">left</span> : <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
 <dt id="expression.collections.maptree.MapTreeNode.right"><code class="name">var <span class="ident">right</span> : <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="expression.collections.maptree.MapTreeNode.value"><code class="name">var <span class="ident">value</span> : ~Value</code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -1529,7 +1518,6 @@ return default</p></div>
 <li><code><a title="expression.collections.maptree.is_empty" href="#expression.collections.maptree.is_empty">is_empty</a></code></li>
 <li><code><a title="expression.collections.maptree.iter" href="#expression.collections.maptree.iter">iter</a></code></li>
 <li><code><a title="expression.collections.maptree.map" href="#expression.collections.maptree.map">map</a></code></li>
-<li><code><a title="expression.collections.maptree.mapi" href="#expression.collections.maptree.mapi">mapi</a></code></li>
 <li><code><a title="expression.collections.maptree.mem" href="#expression.collections.maptree.mem">mem</a></code></li>
 <li><code><a title="expression.collections.maptree.mk" href="#expression.collections.maptree.mk">mk</a></code></li>
 <li><code><a title="expression.collections.maptree.mk_from_iterator" href="#expression.collections.maptree.mk_from_iterator">mk_from_iterator</a></code></li>
@@ -1564,8 +1552,10 @@ return default</p></div>
 <h4><code><a title="expression.collections.maptree.MapTreeNode" href="#expression.collections.maptree.MapTreeNode">MapTreeNode</a></code></h4>
 <ul class="">
 <li><code><a title="expression.collections.maptree.MapTreeNode.height" href="#expression.collections.maptree.MapTreeNode.height">height</a></code></li>
+<li><code><a title="expression.collections.maptree.MapTreeNode.key" href="#expression.collections.maptree.MapTreeNode.key">key</a></code></li>
 <li><code><a title="expression.collections.maptree.MapTreeNode.left" href="#expression.collections.maptree.MapTreeNode.left">left</a></code></li>
 <li><code><a title="expression.collections.maptree.MapTreeNode.right" href="#expression.collections.maptree.MapTreeNode.right">right</a></code></li>
+<li><code><a title="expression.collections.maptree.MapTreeNode.value" href="#expression.collections.maptree.MapTreeNode.value">value</a></code></li>
 </ul>
 </li>
 <li>

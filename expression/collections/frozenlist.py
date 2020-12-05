@@ -20,7 +20,8 @@ Example:
 
 import builtins
 import functools
-from typing import Any, Callable, Iterable, List, Optional, Tuple, TypeVar, cast, overload
+from typing import (Any, Callable, Iterable, List, Optional, Tuple, TypeVar,
+                    cast, overload)
 
 from expression.core import Matcher, Nothing, Option, Some, pipe
 
@@ -424,6 +425,7 @@ def collect(mapping: Callable[[TSource], FrozenList[TResult]]) -> Callable[[Froz
 
 
 def concat(sources: Iterable[FrozenList[TSource]]) -> FrozenList[TSource]:
+    """Concatenate sequence of FrozenList's"""
     def reducer(t: FrozenList[TSource], s: FrozenList[TSource]) -> FrozenList[TSource]:
         return t.append(s)
 
