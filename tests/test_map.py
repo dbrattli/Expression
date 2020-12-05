@@ -1,4 +1,4 @@
-from typing import Callable, Dict, ItemsView
+from typing import Callable, Dict, ItemsView, Iterable, Tuple
 
 from expression.collections import FrozenList, Map, map
 from hypothesis import given
@@ -21,8 +21,8 @@ def test_map_non_empty():
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_create(xs: Dict[str, int]):
-    items: ItemsView[str, int] = xs.items()
-    m = Map.create(items)
+    items: Iterable[Tuple[str, int]] = xs.items()
+    m = map.create(items)
     assert len(m) == len(xs)
 
 
@@ -57,7 +57,7 @@ def test_map_to_seq(xs: Dict[str, int]):
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_to_list(xs: Dict[str, int]):
     items = FrozenList(xs.items())
-    ys = map.of_list(items).to_seq()
+    ys = map.of_frozenlist(items).to_seq()
 
     assert sorted(list(items)) == list(ys)
 
@@ -67,7 +67,7 @@ def test_map_map(xs: Dict[str, int]):
     items = FrozenList(xs.items())
 
     mapper: Callable[[str, int], int] = lambda k, v: v * 20
-    ys = map.of_list(items).map(mapper)
+    ys = map.of_frozenlist(items).map(mapper)
     print(xs, ys)
 
     expected = [(k, mapper(k, v)) for k, v in sorted(list(items))]

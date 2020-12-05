@@ -40,15 +40,14 @@ class Builder(Generic[TOuter, TInner], ABC):
             yielded = gen.send(value)
             return self.return_(yielded)
         except EffectError as error:
+            # Effect errors (Nothing, Error, etc) short circuits the
+            # processing so we set `done` to `True` here.
             done.append(True)
-            return self.return_from(error)
+            return self.return_from(cast(TOuter, error))
         except StopIteration as ex:
             done.append(True)
             if ex.value is not None:
                 return self.return_(ex.value)
-
-            raise EffectError()
-        except Exception:
             raise
 
     def __call__(
@@ -77,11 +76,11 @@ class Builder(Generic[TOuter, TInner], ABC):
             result: Optional[TOuter] = None
             try:
                 result = self._send(gen, done)
-                while not done and not isinstance(result, EffectError):
+                while not done:
                     binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
                     cont = self.bind(cast(TOuter, result), binder)
                     result = self.combine(result, cont)
-            except EffectError:
+            except StopIteration:
                 pass
 
             # If anything returns `None` (i.e raises StopIteration
@@ -92,4 +91,4 @@ class Builder(Generic[TOuter, TInner], ABC):
 
             return result
 
-        return cast(Callable[..., TOuter], wrapper)
+        return wrapper

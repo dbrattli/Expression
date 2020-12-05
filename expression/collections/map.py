@@ -96,18 +96,18 @@ class Map(Mapping[Key, Value]):
         return pipe(self, *args)
 
     @staticmethod
-    def empty() -> "Map[Key, Value]":
-        return Map(maptree.empty)
-
-    @staticmethod
     def create(ie: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
-        return Map(maptree.of_seq(ie))
+        return create(ie)
 
     def contains_key(self, key: Key) -> bool:
         return maptree.mem(key, self._tree)
 
     def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -> "Map[Key, Value]":
         return Map(maptree.change(key, f, self._tree))
+
+    @staticmethod
+    def empty() -> "Map[Key, Value]":
+        return Map(maptree.empty)
 
     def is_empty(self) -> bool:
         return maptree.is_empty(self._tree)
@@ -351,9 +351,20 @@ def change(key: Key, fn: Callable[[Option[Value]], Option[Value]]) -> Callable[[
     return _change
 
 
+def contains_key(key: Key) -> Callable[[Map[Key, Value]], bool]:
+    def _contains_key(table: Map[Key, Value]) -> bool:
+        return table.contains_key(key)
+
+    return _contains_key
+
+
 def count(table: Map[Key, Value]) -> int:
     """Return the number of bindings in the map."""
     return len(table)
+
+
+def create(ie: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
+    return Map(maptree.of_seq(ie))
 
 
 def find(key: Key) -> Callable[[Map[Key, Value]], Value]:
@@ -382,13 +393,6 @@ def is_empty(table: Map[Key, Value]) -> bool:
         True if the map is empty.
     """
     return table.is_empty()
-
-
-def contains_key(key: Key) -> Callable[[Map[Key, Value]], bool]:
-    def _contains_key(table: Map[Key, Value]) -> bool:
-        return table.contains_key(key)
-
-    return _contains_key
 
 
 def iterate(action: Callable[[Key, Value], None]) -> Callable[[Map[Key, Value]], None]:
@@ -595,6 +599,7 @@ __all__ = [
     "Map",
     "add",
     "change",
+    "create",
     "contains_key",
     "count",
     "empty",
