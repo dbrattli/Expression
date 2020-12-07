@@ -21,7 +21,7 @@ import functools
 import itertools
 from typing import Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, overload
 
-from expression.core import Matcher, Option, SupportsLessThan, identity, pipe
+from expression.core import Case, Option, SupportsLessThan, identity, pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -91,7 +91,7 @@ class Seq(Iterable[TSource]):
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -> "Matcher":
+    def match(self) -> "Case":
         ...
 
     @overload
@@ -99,7 +99,7 @@ class Seq(Iterable[TSource]):
         ...
 
     def match(self, pattern: Any) -> Any:
-        m = Matcher(self)
+        m = Case(self)
         return m.case(pattern) if pattern else m
 
     @overload

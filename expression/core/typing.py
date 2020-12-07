@@ -35,8 +35,8 @@ def upcast(type: Type[Base], expr: Derived) -> Base:
     Note: F# `:>` or `upcast`.
     """
 
-    assert isinstance(expr, type), f"The expression {expr} is not derived from type {type}"
-    return cast(Base, expr)
+    # assert isinstance(expr, type), f"The expression {expr} is not derived from type {type}"
+    return cast("Base", expr)
 
 
 def try_upcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:

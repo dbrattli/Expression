@@ -20,10 +20,9 @@ Example:
 
 import builtins
 import functools
-from typing import (Any, Callable, Iterable, List, Optional, Tuple, TypeVar,
-                    cast, overload)
+from typing import Any, Callable, Iterable, List, Optional, Tuple, TypeVar, cast, get_origin, overload
 
-from expression.core import Matcher, Nothing, Option, Some, pipe
+from expression.core import Case, Nothing, Option, Some, pipe
 
 from . import seq
 
@@ -56,17 +55,9 @@ class FrozenList(Tuple[TSource]):
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
 
-    @overload
-    def match(self) -> Matcher:
-        ...
-
-    @overload
-    def match(self, pattern: Any) -> Iterable[List[TSource]]:
-        ...
-
     def match(self, pattern: Any) -> Any:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[TSource] = Case(self)
+        return case(pattern) if pattern else case
 
     @overload
     def pipe(self, __fn1: Callable[["FrozenList[TSource]"], TResult]) -> TResult:
@@ -368,7 +359,8 @@ class FrozenList(Tuple[TSource]):
             return [[val for val in self]]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [[val for val in self]]
         except TypeError:
             pass
@@ -426,6 +418,7 @@ def collect(mapping: Callable[[TSource], FrozenList[TResult]]) -> Callable[[Froz
 
 def concat(sources: Iterable[FrozenList[TSource]]) -> FrozenList[TSource]:
     """Concatenate sequence of FrozenList's"""
+
     def reducer(t: FrozenList[TSource], s: FrozenList[TSource]) -> FrozenList[TSource]:
         return t.append(s)
 

@@ -335,17 +335,17 @@ values, and also effectively skip the cases that do not match.
 ```py
 from expression.core import match
 
-with match("expression") as m:
-    while m.case("rxpy"):  # will not match
+with match("expression") as case:
+    while case("rxpy"):  # will not match
         assert False
 
-    for value in m.case(str):  # will match
+    for value in case(str):  # will match
         assert value == "expression"
 
-    for value in m.case(float):  # will not match
+    for value in case(float):  # will not match
         assert False
 
-    while m.default():  # will run if any previous case does not match
+    while case.default():  # will run if any previous case does not match
         assert False
 ```
 
@@ -357,11 +357,11 @@ expression that returns a value:
 
 ```py
 def matcher(value) -> Option[int]:
-    with match(value) as m:
-        for value in m.case(Some):
+    with match(value) as case:
+        for value in case(Some[int]):
             return Some(42)
 
-        while m.default():
+        while case.default():
             return Some(2)
 
     return Nothing
@@ -369,16 +369,15 @@ def matcher(value) -> Option[int]:
 result = matcher(42).
 ```
 
-Classes should also support `match` with pattern directly, i.e:
-`xs.match(pattern)` is effectively the same as `match(xs).case(pattern)`,
-except that the class can then provide overloads for correct typing of the
-unwrapped values without having to cast.
+Classes may also support `match` fluently, i.e:
+`xs.match(pattern)`. If you add generic types to the pattern then 
+unwrapped values will get the right type without having to cast.
 
 ```py
     xs = Some(42)
     ys = xs.map(lambda x: x + 1)
 
-    for value in ys.match(Some):
+    for value in ys.match(Some[int]):
         assert value == 43
         break
     else:
@@ -397,18 +396,11 @@ Classes can support more advanced pattern matching and decompose inner values
 by subclassing or implementing the matching protocol:
 
 ```py
-class Matchable(Protocol[TSource]):
+class SupportsMatch(Protocol[TSource]):
     """Pattern matching protocol."""
 
-    @classmethod
-    def case(cls, matcher: Matcher) -> Iterable[TSource]:
-        """Helper to cast the match result to correct type."""
-
-        return matcher.case(cls)
-
-
     @abstractmethod
-    def __match__(s elf, pattern: Any) -> Iterable[TSource]:
+    def __match__(self, value: Any, pattern: Any) -> Iterable[TSource]:
         """Return a singleton iterable item (e.g `[value]`) if pattern
         matches, else an empty iterable (e.g. `[]`)."""
         raise NotImplementedError
@@ -428,8 +420,8 @@ if isinstance(msg, InnerObservableMsg):
 Now becomes:
 
 ```py
-with match(msg) as m:
-    for xs in InnerObservableMsg.case(m):
+with match(msg) as case:
+    for xs in case(InnerObservableMsg[AsyncObservable[TSource]]):
         ...
 ```
 

@@ -206,7 +206,7 @@ def test_list_unfold(x: int):
             return Some((state, state + 1))
         return Nothing
 
-    result = pipe(0, frozenlist.unfold(unfolder))
+    result = FrozenList.unfold(unfolder, 0)
 
     assert list(result) == list(range(x))
 

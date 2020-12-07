@@ -6,10 +6,10 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
+from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, get_origin, overload
 
 from .error import EffectError
-from .match import Matchable
+from .match import MatchMixin, SupportsMatch
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
@@ -20,7 +20,7 @@ T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 
 
-class Option(Iterable[TSource], ABC, Matchable[TSource]):
+class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC):
     """Option abstract base class."""
 
     @overload
@@ -203,7 +203,8 @@ class Some(Option[TSource]):
             return [self.value]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.value]
         except TypeError:
             pass

@@ -2,7 +2,7 @@ from typing import Any, Callable, Generator
 
 import pytest
 from expression import effect
-from expression.core import Nothing, Option, Some, option, pipe, pipe2
+from expression.core import Nothing, Option, Some, match, option, pipe, pipe2
 from expression.extra.option import pipeline
 from hypothesis import given
 from hypothesis import strategies as st
@@ -16,6 +16,17 @@ def test_option_some():
     assert isinstance(xs, Option)
     assert pipe(xs, option.is_some) is True
     assert pipe(xs, option.is_none) is False
+
+
+def test_option_some_match():
+    xs = Some(42)
+
+    with match(xs) as case:
+        for x in case(Some[int]):
+            assert x == 42
+
+        while case.default():
+            assert False
 
 
 def test_option_some_iterate():
@@ -34,6 +45,20 @@ def test_option_none():
     assert isinstance(xs, Option)
     assert xs.pipe(option.is_some) is False
     assert xs.pipe(option.is_none) is True
+
+
+def test_option_none_match():
+    xs = Nothing
+
+    with match(xs) as case:
+        for _ in case(Some[int]):
+            assert False
+
+        while case(Nothing):
+            assert True
+
+        while case.default():
+            assert False
 
 
 def test_option_nothing_iterate():
@@ -236,6 +261,19 @@ def test_option_builder_zero():
 
 
 def test_option_builder_yield_value():
+    @effect.option
+    def fn():
+        yield 42
+
+    xs = fn()
+    for value in xs.match(Some):
+        assert value == 42
+        break
+    else:
+        assert False
+
+
+def test_option_builder_yield_value_async():
     @effect.option
     def fn():
         yield 42

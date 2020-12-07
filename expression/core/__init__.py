@@ -4,12 +4,13 @@ Core abstractions such as pipes, options and results.
 
 from . import aiotools, option, result
 from .builder import Builder
+from .choice import Choice, Choice1of2, Choice1of3, Choice2, Choice2of2, Choice2of3, Choice3, Choice3of3
 from .compose import compose
 from .curry import curried
 from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
-from .match import Matchable, Matcher, Pattern, match
+from .match import Case, MatchMixin, SupportsMatch, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
@@ -17,12 +18,22 @@ from .result import Error, Ok, Result, Try
 from .typing import SupportsLessThan
 
 __all__ = [
+    "ActivePattern",
     "aiotools",
     "AsyncReplyChannel",
     "Builder",
-    "SupportsLessThan",
+    "Case",
+    "Choice",
+    "Choice2",
+    "Choice3",
+    "Choice1of2",
+    "Choice2of2",
+    "Choice1of3",
+    "Choice2of3",
+    "Choice3of3",
     "compose",
     "curried",
+    "MatchMixin",
     "EffectError",
     "Error",
     "failwith",
@@ -31,14 +42,11 @@ __all__ = [
     "identity",
     "MailboxProcessor",
     "match",
-    "Matcher",
-    "Matchable",
     "Nothing",
     "Nothing_",
     "Ok",
     "Option",
     "option",
-    "Pattern",
     "pipe",
     "pipe2",
     "pipe3",
@@ -46,6 +54,8 @@ __all__ = [
     "Result",
     "snd",
     "Some",
+    "SupportsLessThan",
+    "SupportsMatch",
     "TailCall",
     "TailCallResult",
     "tailrec",

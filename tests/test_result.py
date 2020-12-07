@@ -2,7 +2,7 @@ from typing import Callable, Generator, List, Optional
 
 import pytest
 from expression import effect
-from expression.core import Error, Ok, Result, Try, result
+from expression.core import Error, Ok, Result, Try, match, result
 from expression.extra.result import pipeline, sequence
 from hypothesis import given
 from hypothesis import strategies as st
@@ -18,11 +18,33 @@ def test_result_ok():
     assert not xs.is_error()
     assert str(xs) == "Ok 42"
 
-    for x in xs.match(Ok):
+    for x in xs.match(Ok[int, str]):
         assert x == 42
         break
     else:
         assert False
+
+
+def test_result_match_ok():
+    xs: Result[int, str] = Ok(42)
+
+    with match(xs) as case:
+        for x in case(Ok[int, str]):
+            assert x == 42
+            break
+        else:
+            assert False
+
+
+def test_result_match_error():
+    xs: Result[int, str] = Error("err")
+
+    with match(xs) as case:
+        for err in case(Error[int, str]):
+            assert err == "err"
+            break
+        else:
+            assert False
 
 
 def test_result_ok_iterate():
@@ -176,7 +198,7 @@ def test_result_bind_piped(x: int, y: int):
 def test_result_traverse_ok(xs: List[int]):
     ys: List[Result[int, str]] = [Ok(x) for x in xs]
     zs = sequence(ys)
-    for value in zs.match(Ok):
+    for value in zs.match(Ok[List[int], str]):
         assert sum(value) == sum(xs)
         break
     else:
@@ -314,7 +336,7 @@ def test_pipeline_works():
 
 
 def test_pipeline_error():
-    error = Error("failed")
+    error: Result[int, str] = Error("failed")
     fn: Callable[[int], Result[int, str]] = lambda x: Ok(x * 10)
     gn: Callable[[int], Result[int, str]] = lambda x: error
 

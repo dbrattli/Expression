@@ -10,22 +10,27 @@ the Result type to Exception.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Generic, Iterable, Iterator, Type, TypeVar, Union, overload
+from typing import Any, Callable, Generator, Iterable, Iterator, Type, TypeVar, Union, get_origin, overload
 
 from .error import EffectError
-from .match import Matcher
+from .match import Case, SupportsMatch
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TError = TypeVar("TError")
+
+# Underscore types are used for generic methods
+_TSource = TypeVar("_TSource")
+_TError = TypeVar("_TError")
+
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 
 
-class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
+class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
     """The result abstract base class."""
 
     @overload
@@ -71,26 +76,30 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         raise NotImplementedError
 
     @overload
-    def match(self) -> "Matcher":
+    def match(self, pattern: "Ok[_TSource, _TError]") -> Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: "Ok[TSource, TError]") -> Iterable[TSource]:
+    def match(self, pattern: "Error[_TSource, _TError]") -> Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: "Error[TSource, TError]") -> Iterable[TError]:
+    def match(self, pattern: "Case[Ok[_TSource, _TError]]") -> Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: "Type[Result[TSource, TError]]") -> Iterable[TSource]:
+    def match(self, pattern: "Case[Error[_TSource, _TError]]") -> Iterable[_TError]:
+        ...
+
+    @overload
+    def match(self, pattern: "Type[Result[_TSource, _TError]]") -> Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -> Any:
         """Match result with pattern."""
 
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[Union[TSource, TError]]] = Case(self)
+        return case(pattern) if pattern else case
 
     @abstractmethod
     def is_error(self) -> bool:
@@ -115,7 +124,10 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         return str(self)
 
 
-class Ok(Result[TSource, TError]):
+class Ok(
+    Result[TSource, TError],
+    SupportsMatch[TSource],
+):
     """The Ok result case class."""
 
     def __init__(self, value: TSource) -> None:
@@ -151,7 +163,8 @@ class Ok(Result[TSource, TError]):
             return [self.value]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.value]
         except TypeError:
             pass
@@ -214,7 +227,8 @@ class Error(Result[TSource, TError], ResultException):
             return [self.error]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.error]
         except TypeError:
             pass
@@ -252,11 +266,6 @@ def bind(
     return _bind
 
 
-# class Try(Result[TSource, Exception]):
-#    """A result type where the failure case can only be a valid
-#    exception."""
-#
-#    ...
 Try = Result[TSource, Exception]
 
 

@@ -4,24 +4,22 @@ A union type similar to the `Result` type. But also allows for higher
 number of choices. Usually you would most likekly want to use the
 `Result` type instead, but choice can be preferered in non-error cases.
 """
-from abc import ABC, abstractclassmethod
-from typing import Any, Generic, Iterable, Optional, TypeVar, Union
+from abc import ABC
+from typing import Any, Generic, Iterable, TypeVar, get_origin, overload
 
-from .match import Matcher
+from .match import Case, SupportsMatch
 
+TSource = TypeVar("TSource")
 A = TypeVar("A")
+A_ = TypeVar("A_")
 B = TypeVar("B")
+B_ = TypeVar("B_")
 C = TypeVar("C")
 
 
-class Choice(ABC):
+class Choice(ABC, SupportsMatch[TSource]):
     def __init__(self, value: Any) -> None:
         self.value = value
-
-    @abstractclassmethod
-    def case(cls, m: Matcher) -> Iterable[Any]:
-        """Helper to cast the match result to correct type."""
-        raise NotImplementedError
 
     def __match__(self, pattern: Any) -> Iterable[Any]:
         if self.value is pattern or self.value == pattern:
@@ -29,7 +27,8 @@ class Choice(ABC):
             return [self.value]
 
         try:
-            if isinstance(self.value, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 self.is_matched = True
                 return [self.value]
         except TypeError:
@@ -37,79 +36,112 @@ class Choice(ABC):
 
         return []
 
-
-class Choice2(Generic[A, B], Choice):
-    def match(self, pattern: Optional[Any] = None) -> Union[Iterable[Union[A, B]]]:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else self.case(m)
+    def __repr__(self) -> str:
+        return str(self)
 
 
-class Choice1of2(Choice2[A, B]):
+class Choice2(Generic[A, B]):
+    def __repr__(self) -> str:
+        return str(self)
+
+
+class Choice1of2(Choice2[A, B], Choice[A]):
+    def __init__(self, value: A) -> None:
+        super().__init__(value)
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[Choice2[A_, B_]]) -> Iterable[A_]:
+        """Helper to cast the match result to correct type."""
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: "Case[Choice1of2[A_, B_]]") -> Iterable[A_]:
+        """Helper to cast the match result to correct type."""
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[A_]) -> Iterable[A_]:
+        ...
+
+    @classmethod
+    def match(cls, case: Any) -> Iterable[Any]:
+        return case(cls)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Choice1of2):
+            return self.value == other.value
+        return False
+
+    def __str__(self) -> str:
+        return f"Choice1of2 {self.value}"
+
+
+class Choice2of2(Choice2[A, B], Choice[B]):
+    def __init__(self, value: B) -> None:
+        super().__init__(value)
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[Choice2[A_, B_]]) -> Iterable[B_]:
+        """Helper to cast the match result to correct type."""
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: "Case[Choice1of2[A_, B_]]") -> Iterable[B_]:
+        """Helper to cast the match result to correct type."""
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[B_]) -> Iterable[B_]:
+        ...
+
+    @classmethod
+    def match(cls, case: Any) -> Iterable[Any]:
+        return case(cls)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Choice2of2):
+            return self.value == other.value
+        return False
+
+    def __str__(self) -> str:
+        return f"Choice2of2 {self.value}"
+
+
+class Choice3(Generic[A, B, C]):
+    ...
+
+
+class Choice1of3(Choice3[A, B, C], Choice[A]):
     def __init__(self, value: A) -> None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, m: Matcher) -> Iterable[A]:
+    def match(cls, case: Case[A]) -> Iterable[A]:
         """Helper to cast the match result to correct type."""
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -> Iterable[A]:
-        return super().__match__(pattern)
+        return case(cls)
 
 
-class Choice2of2(Choice2[A, B]):
+class Choice2of3(Choice3[A, B, C], Choice[B]):
     def __init__(self, value: B) -> None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, m: Matcher) -> Iterable[B]:
+    def case(cls, case: Case[B]) -> Iterable[B]:
         """Helper to cast the match result to correct type."""
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -> Iterable[B]:
-        return super().__match__(pattern)
+        return case(cls)
 
 
-class Choice3(Generic[A, B, C], Choice):
-    def match(self, pattern: Optional[Any] = None) -> Union[Iterable[Union[A, B, C]]]:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else self.case(m)
-
-
-class Choice1of3(Choice3[A, B, C]):
-    def __init__(self, value: A) -> None:
-        super().__init__(value)
-
-    @classmethod
-    def case(cls, m: Matcher) -> Iterable[A]:
-        """Helper to cast the match result to correct type."""
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -> Iterable[A]:
-        return super().__match__(pattern)
-
-
-class Choice2of3(Choice3[A, B, C]):
-    def __init__(self, value: B) -> None:
-        super().__init__(value)
-
-    @classmethod
-    def case(cls, m: Matcher) -> Iterable[B]:
-        """Helper to cast the match result to correct type."""
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -> Iterable[B]:
-        return super().__match__(pattern)
-
-
-class Choice3of3(Choice3[A, B, C]):
+class Choice3of3(Choice3[A, B, C], Choice[C]):
     def __init__(self, value: C) -> None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, m: Matcher) -> Iterable[C]:
+    def case(cls, case: Case[C]) -> Iterable[C]:
         """Helper to cast the match result to correct type."""
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -> Iterable[C]:
-        return super().__match__(pattern)
+        return case(cls)
