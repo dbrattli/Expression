@@ -2,8 +2,7 @@ from typing import Callable, Generator, List, Optional
 
 import pytest
 from expression import effect
-from expression.core import Error, Ok, Result, Try, match, result
-from expression.core.result_try import Failure, Success
+from expression.core import Error, Failure, Ok, Result, Success, Try, match, result
 from expression.extra.result import pipeline, sequence
 from hypothesis import given
 from hypothesis import strategies as st

@@ -50,6 +50,23 @@ class Seq(Iterable[TSource]):
     def filter(self, predicate: Callable[[TSource], bool]) -> "Seq[TSource]":
         return Seq(filter(predicate)(self))
 
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "Seq[TResult]":
+        """Choose items from the sequence.
+
+        Applies the given function to each element of the list. Returns
+        the list comprised of the results x for each element where the
+        function returns `Some(x)`.
+
+        Args:
+            chooser: The function to generate options from the elements.
+
+        Returns:
+            The list comprising the values selected from the chooser
+            function.
+        """
+
+        return Seq(pipe(self, choose(chooser)))
+
     def collect(self, mapping: Callable[[TSource], "Seq[TResult]"]) -> "Seq[TResult]":
         return Seq(collect(mapping)(self))
 
@@ -91,7 +108,7 @@ class Seq(Iterable[TSource]):
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -> "Case":
+    def match(self) -> "Case[Iterable[TSource]]":
         ...
 
     @overload
@@ -99,8 +116,8 @@ class Seq(Iterable[TSource]):
         ...
 
     def match(self, pattern: Any) -> Any:
-        m = Case(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[TSource]] = Case(self)
+        return case(pattern) if pattern else case
 
     @overload
     def pipe(self, __fn1: Callable[["Seq[TSource]"], TResult]) -> TResult:
@@ -191,6 +208,30 @@ class Seq(Iterable[TSource]):
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for sequence."""
         return builtins.iter(self._value)
+
+
+def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
+    """Choose items from the sequence.
+
+    Applies the given function to each element of the list. Returns
+    the list comprised of the results x for each element where the
+    function returns `Some(x)`.
+
+    Args:
+        chooser: The function to generate options from the elements.
+
+    Returns:
+        The list comprising the values selected from the chooser
+        function.
+    """
+
+    def _choose(source: Iterable[TSource]) -> Iterable[TResult]:
+        def mapper(x: TSource) -> Iterable[TResult]:
+            return chooser(x).to_seq()
+
+        return pipe(source, collect(mapper))
+
+    return _choose
 
 
 def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
@@ -437,19 +478,21 @@ def min_by(projection: Callable[[TSource], TSupportsLessThan]) -> Callable[[Iter
     return _min_by
 
 
-def of(value: Iterable[TSource]) -> Seq[TSource]:
+def of(*args: TSource) -> Seq[TSource]:
     """Create sequence from iterable.
 
     Enables fluent dot chaining on the created sequence object.
     """
-    return Seq(value)
+    return Seq(args)
 
 
-of_list = of
-"""Alias to `Seq.of`."""
+def of_iterable(source: Iterable[TSource]) -> Seq[TSource]:
+    """Alias to `Seq.of`."""
+    return Seq(source)
 
-of_iterable = of
-"""Alias to `Seq.of`."""
+
+of_list = of_iterable
+"""Alias to `seq.of_iterable`."""
 
 
 @overload
@@ -570,6 +613,7 @@ def zip(source1: Iterable[TSource]) -> Callable[[Iterable[TResult]], Iterable[Tu
 
 __all__ = [
     "Seq",
+    "choose",
     "concat",
     "collect",
     "empty",

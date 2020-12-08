@@ -1,9 +1,5 @@
-import asyncio
-from typing import Callable, Generator, Iterable, List
-
 import pytest
 from expression.collections.asyncseq import AsyncSeq
-from expression.core import pipe
 from hypothesis import given
 from hypothesis import strategies as st
 

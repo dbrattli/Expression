@@ -1,11 +1,11 @@
 import functools
 from itertools import accumulate
-from typing import Callable, Generator, Iterable, List, Tuple
+from typing import Callable, Generator, Iterable, List, Optional, Tuple
 
 import pytest
 from expression import effect
 from expression.collections import Seq, seq
-from expression.core import Nothing, Option, Some, pipe
+from expression.core import Nothing, Option, Some, option, pipe
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -80,7 +80,7 @@ def test_seq_head_empty_source():
 
 @given(st.lists(st.integers(), min_size=1))
 def test_seq_head_fluent(xs: List[int]):
-    value = seq.of(xs).head()
+    value = seq.of_iterable(xs).head()
 
     assert value == xs[0]
 
@@ -88,14 +88,14 @@ def test_seq_head_fluent(xs: List[int]):
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_fold_pipe(xs: List[int], s: int):
     folder: Callable[[int, int], int] = lambda s, v: s + v
-    value = pipe(seq.of(xs), seq.fold(folder, s))
+    value = pipe(seq.of_iterable(xs), seq.fold(folder, s))
 
     assert value == sum(xs) + s
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_fold_fluent(xs: List[int], s: int):
-    value = seq.of(xs).fold(lambda s, v: s + v, s)
+    value = seq.of_iterable(xs).fold(lambda s, v: s + v, s)
 
     assert value == sum(xs) + s
 
@@ -115,7 +115,7 @@ def test_list_unfold(x: int):
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_scan_pipe(xs: List[int], s: int):
     func: Callable[[int, int], int] = lambda s, v: s + v
-    value = pipe(seq.of(xs), seq.scan(func, s))
+    value = pipe(seq.of_iterable(xs), seq.scan(func, s))
 
     assert list(value) == list(accumulate(xs, func, initial=s))
 
@@ -123,7 +123,7 @@ def test_seq_scan_pipe(xs: List[int], s: int):
 @given(st.lists(st.integers(), min_size=1), st.integers())
 def test_seq_scan_fluent(xs: List[int], s: int):
     func: Callable[[int, int], int] = lambda s, v: s + v
-    value = seq.of(xs).scan(func, s)
+    value = seq.of_iterable(xs).scan(func, s)
 
     assert list(value) == list(accumulate(xs, func, initial=s))
 
@@ -158,12 +158,29 @@ def test_seq_collect(xs: List[int]):
 
 @given(st.lists(st.integers()))
 def test_seq_pipeline(xs: List[int]):
-    ys = seq.of(xs).pipe(
+    ys = seq.of_iterable(xs).pipe(
         seq.map(lambda x: x * 10),
         seq.filter(lambda x: x > 100),
         seq.fold(lambda s, x: s + x, 0),
     )
     assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
+
+
+def test_seq_choose_option():
+    xs = seq.of(None, 42)
+
+    chooser = seq.choose(option.of_optional)
+    ys = pipe(xs, chooser)
+
+    assert list(ys) == [42]
+
+
+def test_seq_choose_option_fluent():
+    xs = seq.of(None, 42)
+
+    ys = xs.choose(option.of_optional)
+
+    assert list(ys) == [42]
 
 
 @given(st.lists(st.integers()))
