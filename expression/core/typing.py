@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional, Protocol, Type, TypeVar, cast, get_origin
+from typing import Any, Iterable, Optional, Protocol, Type, TypeVar, cast, get_origin
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -9,9 +9,22 @@ Base = TypeVar("Base")
 Derived = TypeVar("Derived")
 
 
-class SupportsLessThan(Protocol[TSource]):
+class SupportsLessThan(Protocol):
     @abstractmethod
-    def __lt__(self, other: TSource) -> bool:
+    def __lt__(self, other: Any) -> bool:
+        raise NotImplementedError
+
+
+class SupportsMatch(Protocol[TSource]):
+    """Pattern matching protocol."""
+
+    @abstractmethod
+    def __match__(self, pattern: Any) -> Iterable[TSource]:
+        """Match pattern with value.
+
+        Return a singleton iterable item (e.g `[ value ]`) if pattern
+        matches value , else an empty iterable (e.g. `[]`)."""
+
         raise NotImplementedError
 
 

@@ -124,10 +124,7 @@ class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TErr
         return str(self)
 
 
-class Ok(
-    Result[TSource, TError],
-    SupportsMatch[TSource],
-):
+class Ok(Result[TSource, TError], SupportsMatch[TSource]):
     """The Ok result case class."""
 
     def __init__(self, value: TSource) -> None:
@@ -266,7 +263,4 @@ def bind(
     return _bind
 
 
-Try = Result[TSource, Exception]
-
-
-__all__ = ["Result", "Ok", "Error", "map", "bind", "Try"]
+__all__ = ["Result", "Ok", "Error", "map", "bind"]

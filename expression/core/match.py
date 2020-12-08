@@ -1,24 +1,13 @@
-from abc import abstractmethod
 from types import TracebackType
-from typing import Any, Generic, Iterable, Optional, Protocol, Type, TypeVar, cast, get_origin, overload
+from typing import Any, Generic, Iterable, Optional, Type, TypeVar, cast, get_origin, overload
 
+# from .choice import Choice1of2, Choice2of2
 from .error import MatchFailureError
+from .typing import SupportsMatch
 
 TSource = TypeVar("TSource")
-TPattern = TypeVar("TPattern")
-
-
-class SupportsMatch(Protocol[TSource]):
-    """Pattern matching protocol."""
-
-    @abstractmethod
-    def __match__(self, pattern: Any) -> Iterable[TSource]:
-        """Match pattern with value.
-
-        Return a singleton iterable item (e.g `[ value ]`) if pattern
-        matches value , else an empty iterable (e.g. `[]`)."""
-
-        raise NotImplementedError
+A = TypeVar("A")
+B = TypeVar("B")
 
 
 class MatchMixin(SupportsMatch[TSource]):
@@ -39,23 +28,6 @@ class MatchMixin(SupportsMatch[TSource]):
         return case(pattern)
 
 
-# class ActivePattern(SupportsMatch[TSource]):
-#     def match(self, pattern: Any) -> Iterable[TSource]:
-#         """Match with pattern.
-
-#         NOTE: This is just the basic default implementation for fluent
-#         matching. You most often need to add this methods plus the
-#         appropriate overloads to your own matchable class to get typing
-#         correctly.
-
-#         Example:
-#         >>> for x in xs.match(Some):
-#         ...     print(x)
-#         """
-
-#         return pattern(self)
-
-
 class Case(Generic[TSource]):
     """Case matcher for patterns.
 
@@ -71,43 +43,53 @@ class Case(Generic[TSource]):
         self.value = value
 
     @overload
-    def __call__(self, pattern: SupportsMatch[TPattern]) -> Iterable[TPattern]:
-        """Intance pattern.
+    def __call__(self, pattern: Type[SupportsMatch[A]]) -> Iterable[A]:
+        """Active type pattern.
 
-        Handle the case where pattern is instance of a type e.g:
-        - 42
-        - "test"
-        - 23.4
+        Handle the case where pattern is an active pattern type e.g
+        `ParseInteger`
         """
         ...
 
     @overload
-    def __call__(self, pattern: Type[SupportsMatch[TPattern]]) -> Iterable[TPattern]:
-        """Active type pattern.
+    def __call__(self, pattern: SupportsMatch[A]) -> Iterable[A]:
+        """Intance pattern.
 
-        Handle the case where pattern is an active pattern type e.g:
-        - ParseInteger
+        Handle the case where pattern is instance of a type that
+        sub-classes `SupportsMatch`, e.g an active pattern.
         """
         ...
+
+    # @overload
+    # def __call__(self, pattern: Choice1of2[A, B]) -> Iterable[A]:
+    #     """Intance pattern.
+
+    #     Handle the case where pattern is instance of a `Choice1of2` type
+    #     """
+    #     ...
+
+    # @overload
+    # def __call__(self, pattern: Choice2of2[A, B]) -> Iterable[B]:
+    #     """Intance pattern.
+
+    #     Handle the case where pattern is instance of a `Choice2of2` type
+    #     """
+    #     ...
 
     @overload
     def __call__(self, pattern: Type[TSource]) -> Iterable[TSource]:
         """Type pattern.
 
-        Handle the case where pattern is a type e.g:
-        - int
-        - str
-        - float
+        Handle the case where pattern is a type e.g `int`, `str`,
+        `float`.
         """
 
     @overload
-    def __call__(self, pattern: TPattern) -> Iterable[TPattern]:
+    def __call__(self, pattern: A) -> Iterable[A]:
         """Intance pattern.
 
-        Handle the case where pattern is instance of a type e.g:
-        - 42
-        - "test"
-        - 23.4
+        Handle the case where pattern is instance of a type e.g `42`,
+        `"test"`, `23.4`.
         """
         ...
 

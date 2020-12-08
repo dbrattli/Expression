@@ -103,10 +103,11 @@ on-demand as we go along.
 - **Composition** - for composing and creating new operators
 - **Pattern Matching** - an alternative flow control to
   `if-elif-else`.
-
-- **Option** - for optional stuff and better `None` handling.
-- **Result** - for better error handling and enables railway-oriented
-  programming in Python.
+- **Error Handling** - Several error handling types
+  - **Option** - for optional stuff and better `None` handling.
+  - **Result** - for better error handling and enables railway-oriented
+    programming in Python.
+  - **Try** - a simpler result type that pins the error to Exception.
 - **Collections** - immutable collections.
   - **Sequence** - a better
     [itertools](https://docs.python.org/3/library/itertools.html) and
@@ -393,14 +394,14 @@ for (head, *tail) in xs.match(FrozenList):
 ```
 
 Classes can support more advanced pattern matching and decompose inner values
-by subclassing or implementing the matching protocol:
+by subclassing or implementing the matching protocol. 
 
 ```py
 class SupportsMatch(Protocol[TSource]):
     """Pattern matching protocol."""
 
     @abstractmethod
-    def __match__(self, value: Any, pattern: Any) -> Iterable[TSource]:
+    def __match__(self, pattern: Any) -> Iterable[TSource]:
         """Return a singleton iterable item (e.g `[value]`) if pattern
         matches, else an empty iterable (e.g. `[]`)."""
         raise NotImplementedError
@@ -421,8 +422,37 @@ Now becomes:
 
 ```py
 with match(msg) as case:
-    for xs in case(InnerObservableMsg[AsyncObservable[TSource]]):
+    for xs in case(InnerObservableMsg[TSource]):
         ...
+```
+
+Note that the matching protocol may be implemented by both values and
+patterns. Patterns implementing the matching protocol effectively
+becomes active patterns.
+
+```python
+class ParseInteger_(SupportsMatch[int]):
+    """Active pattern for parsing integers."""
+
+    def __match__(self, pattern: Any) -> Iterable[int]:
+        """Match value with pattern."""
+
+        try:
+            number = int(pattern)
+        except ValueError:
+            return []
+        else:
+            return [number]
+
+ParseInteger = ParseInteger_()  # Pattern singleton instance
+
+text = "42"
+with match(text) as case:
+    for value in case(ParseInteger):
+        assert value == int(text)
+
+    while case.default():
+        assert False
 ```
 
 ## Notable Differences

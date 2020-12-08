@@ -10,12 +10,13 @@ from .curry import curried
 from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
-from .match import Case, MatchMixin, SupportsMatch, match
+from .match import Case, MatchMixin, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
-from .result import Error, Ok, Result, Try
-from .typing import SupportsLessThan
+from .result import Error, Ok, Result
+from .result_try import Failure, Success, Try
+from .typing import SupportsLessThan, SupportsMatch
 
 __all__ = [
     "ActivePattern",
@@ -36,6 +37,7 @@ __all__ = [
     "MatchMixin",
     "EffectError",
     "Error",
+    "Failure",
     "failwith",
     "flip",
     "fst",
@@ -54,6 +56,7 @@ __all__ = [
     "Result",
     "snd",
     "Some",
+    "Success",
     "SupportsLessThan",
     "SupportsMatch",
     "TailCall",

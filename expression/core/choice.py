@@ -7,7 +7,8 @@ number of choices. Usually you would most likekly want to use the
 from abc import ABC
 from typing import Any, Generic, Iterable, TypeVar, get_origin, overload
 
-from .match import Case, SupportsMatch
+from .match import Case
+from .typing import SupportsMatch
 
 TSource = TypeVar("TSource")
 A = TypeVar("A")

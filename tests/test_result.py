@@ -3,6 +3,7 @@ from typing import Callable, Generator, List, Optional
 import pytest
 from expression import effect
 from expression.core import Error, Ok, Result, Try, match, result
+from expression.core.result_try import Failure, Success
 from expression.extra.result import pipeline, sequence
 from hypothesis import given
 from hypothesis import strategies as st
@@ -42,6 +43,18 @@ def test_result_match_error():
     with match(xs) as case:
         for err in case(Error[int, str]):
             assert err == "err"
+            break
+        else:
+            assert False
+
+
+def test_try_match_error():
+    error = Exception("err")
+    xs: Try[int] = Error(error)
+
+    with match(xs) as case:
+        for err in case(Failure[int]):
+            assert err == error
             break
         else:
             assert False
