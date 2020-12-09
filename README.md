@@ -39,16 +39,17 @@ oriented programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
 and predictable error handling. Pipelining for workflows, computational
 expressions, etc.
 
+*Expressions evaluate to a value. Statements do something.*
+
 F# is a functional programming language for .NET that is succinct (concise,
 readable, and type-safe) and kind of
 [Pythonic](https://docs.python.org/3/glossary.html). F# is in many ways very
 similar to Python, but F# can also do a lot of things better than Python:
 
-*Expressions evaluate to a value. Statements do something.*
-
 - Strongly typed, if it compiles it usually works making refactoring much
-  safer. You can trust the type-system. With mypy or Pylance you often wonder
-  who is right and who is wrong.
+  safer. You can trust the type-system. With [mypy](http://mypy-lang.org/) or
+  [Pylance](https://github.com/microsoft/pylance-release) you often wonder who
+  is right and who is wrong.
 - Type inference, the compiler deduces types during compilation
 - Expression based language
 
@@ -371,7 +372,7 @@ result = matcher(42).
 ```
 
 Classes may also support `match` fluently, i.e:
-`xs.match(pattern)`. If you add generic types to the pattern then 
+`xs.match(pattern)`. If you add generic types to the pattern then
 unwrapped values will get the right type without having to cast.
 
 ```py
@@ -394,7 +395,7 @@ for (head, *tail) in xs.match(FrozenList):
 ```
 
 Classes can support more advanced pattern matching and decompose inner values
-by subclassing or implementing the matching protocol. 
+by subclassing or implementing the matching protocol.
 
 ```py
 class SupportsMatch(Protocol[TSource]):
