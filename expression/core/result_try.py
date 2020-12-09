@@ -8,5 +8,11 @@ from .result import Error, Ok, Result
 TSource = TypeVar("TSource")
 
 Try = Result[TSource, Exception]
-Success = Ok[TSource, Exception]
-Failure = Error[TSource, Exception]
+
+
+class Success(Ok[TSource, Exception]):
+    ...
+
+
+class Failure(Error[TSource, Exception]):
+    ...

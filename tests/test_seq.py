@@ -158,10 +158,14 @@ def test_seq_collect(xs: List[int]):
 
 @given(st.lists(st.integers()))
 def test_seq_pipeline(xs: List[int]):
+    mapper: Callable[[int], int] = lambda x: x * 10
+    predicate: Callable[[int], bool] = lambda x: x > 100
+    folder: Callable[[int, int], int] = lambda s, x: s + x
+
     ys = seq.of_iterable(xs).pipe(
-        seq.map(lambda x: x * 10),
-        seq.filter(lambda x: x > 100),
-        seq.fold(lambda s, x: s + x, 0),
+        seq.map(mapper),
+        seq.filter(predicate),
+        seq.fold(folder, 0),
     )
     assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 

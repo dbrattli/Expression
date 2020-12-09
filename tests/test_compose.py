@@ -16,7 +16,7 @@ def test_compose_identity_implicit(x: int):
 
 @given(st.integers())
 def test_compose_identity(x: int):
-    fn = compose(identity)
+    fn: Func = compose(identity)
 
     assert fn(x) == x
 
@@ -73,7 +73,7 @@ def test_compose_rigth_identity(x: int):
 def test_compose_left_identity(x: int):
     fn: Func = lambda x: x + 42
 
-    cn = compose(identity, fn)
+    cn: Func = compose(identity, fn)
 
     assert cn(x) == fn(x)
 
@@ -89,8 +89,8 @@ def test_compose_associative(x: int, y: int, z: int):
     cn_: Func = lambda x: hn(gn(fn(x)))
 
     rn = compose(fn, compose(gn, hn))
-    rn_: Func = lambda x: (lambda b: hn(gn(b)))(fn(x))  # right associative
+    rn_: Func = lambda x: (lambda b: hn(gn(b)))(fn(x))  # type: ignore , right associative
     ln = compose(compose(fn, gn), hn)
-    ln_: Func = lambda x: hn((lambda b: gn(fn(b)))(x))  # left associative
+    ln_: Func = lambda x: hn((lambda b: gn(fn(b)))(x))  # type: ignore , left associative
 
     assert cn(x) == cn_(x) == rn(x) == rn_(x) == ln(x) == ln_(x)

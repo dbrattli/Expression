@@ -43,7 +43,7 @@ class Builder(Generic[TOuter, TInner], ABC):
             # Effect errors (Nothing, Error, etc) short circuits the
             # processing so we set `done` to `True` here.
             done.append(True)
-            return self.return_from(cast(TOuter, error))
+            return self.return_from(cast("TOuter", error))
         except StopIteration as ex:
             done.append(True)
             if ex.value is not None:
@@ -78,7 +78,7 @@ class Builder(Generic[TOuter, TInner], ABC):
                 result = self._send(gen, done)
                 while not done:
                     binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
-                    cont = self.bind(cast(TOuter, result), binder)
+                    cont = self.bind(result, binder)
                     result = self.combine(result, cont)
             except StopIteration:
                 pass
