@@ -6,7 +6,7 @@ from expression.core import Nothing, Option, Some, SupportsMatch, match
 def test_default_matches():
     with match(42) as case:
 
-        for value in case.default():
+        for value in case._:
             assert value == 42
 
 
@@ -43,7 +43,7 @@ def test_not_match_instance():
         while case(43):
             assert False
 
-        while case.default():
+        if case._:
             assert True
 
 
@@ -52,16 +52,16 @@ def test_match_equals():
         while case(Some(42)):
             assert True
 
-        while case.default():
+        if case._:
             assert False
 
 
 def test_match_not_equals():
     with match(Some(42)) as case:
-        while case(Some(4)):
+        if case(Some(4)):
             assert False
 
-        while case.default():
+        if case._:
             assert True
 
 
@@ -87,7 +87,7 @@ def test_not_match_isinstance():
         while case(B):
             assert False
 
-        while case._:
+        if case._:
             assert True
 
 
@@ -102,7 +102,7 @@ def test_match_multiple_cases():
         for value in case(float):  # NOTE: should show type error
             assert False
 
-        while case.default():
+        if case._:
             assert False
 
 
@@ -119,7 +119,7 @@ def test_match_multiple_cases_return_value():
             for value in case("aioreactive"):
                 assert False
 
-            while case._:
+            if case._:
                 assert False
 
         return Nothing
@@ -136,7 +136,7 @@ def test_match_multiple_only_matches_first():
         for value in case(str):
             assert False
 
-        while case.default():
+        if case._:
             assert False
 
 
@@ -163,7 +163,7 @@ def test_active_pattern_matches():
         for value in case(ParseInteger):
             assert value == int(text)
 
-        while case.default():
+        if case._:
             assert False
 
 
@@ -173,5 +173,5 @@ def test_active_pattern_not_matches():
         for _ in case(ParseInteger):
             assert False
 
-        while case.default():
+        if case._:
             assert True
