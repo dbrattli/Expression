@@ -24,7 +24,7 @@ def test_not_match_type():
         while case(float):  # NOTE: Should show type error
             assert False
 
-        while case.default():
+        while case._:
             assert True
 
 
@@ -40,7 +40,7 @@ def test_match_instance():
 def test_not_match_instance():
     x = 42
     with match(x) as case:
-        while case(43):  # NOTE: should show type error
+        while case(43):
             assert False
 
         while case.default():
@@ -58,7 +58,7 @@ def test_match_equals():
 
 def test_match_not_equals():
     with match(Some(42)) as case:
-        while case(Some(4)):  # NOTE: should show type error
+        while case(Some(4)):
             assert False
 
         while case.default():
@@ -87,7 +87,7 @@ def test_not_match_isinstance():
         while case(B):
             assert False
 
-        while case.default():
+        while case._:
             assert True
 
 
@@ -119,7 +119,7 @@ def test_match_multiple_cases_return_value():
             for value in case("aioreactive"):
                 assert False
 
-            while case.default():
+            while case._:
                 assert False
 
         return Nothing

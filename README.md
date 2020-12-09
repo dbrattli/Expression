@@ -346,7 +346,7 @@ with match("expression") as case:
     for value in case(float):  # will not match
         assert False
 
-    while case.default():  # will run if any previous case does not match
+    while case._:  # will run if any previous case does not match
         assert False
 ```
 
@@ -362,7 +362,7 @@ def matcher(value) -> Option[int]:
         for value in case(Some[int]):
             return Some(42)
 
-        while case.default():
+        while case._:
             return Some(2)
 
     return Nothing
@@ -451,7 +451,7 @@ with match(text) as case:
     for value in case(ParseInteger):
         assert value == int(text)
 
-    while case.default():
+    while case._:
         assert False
 ```
 

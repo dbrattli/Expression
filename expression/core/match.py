@@ -44,7 +44,7 @@ class Case(Generic[TSource]):
 
     @overload
     def __call__(self, pattern: Type[SupportsMatch[A]]) -> Iterable[A]:
-        """Active type pattern.
+        """Match with active type pattern.
 
         Handle the case where pattern is an active pattern type e.g
         `ParseInteger`
@@ -53,7 +53,7 @@ class Case(Generic[TSource]):
 
     @overload
     def __call__(self, pattern: SupportsMatch[A]) -> Iterable[A]:
-        """Intance pattern.
+        """Match with intance of `SupportsMatch` pattern.
 
         Handle the case where pattern is instance of a type that
         sub-classes `SupportsMatch`, e.g an active pattern.
@@ -78,7 +78,7 @@ class Case(Generic[TSource]):
 
     @overload
     def __call__(self, pattern: Type[TSource]) -> Iterable[TSource]:
-        """Type pattern.
+        """Match with type pattern.
 
         Handle the case where pattern is a type e.g `int`, `str`,
         `float`.
@@ -86,7 +86,7 @@ class Case(Generic[TSource]):
 
     @overload
     def __call__(self, pattern: A) -> Iterable[A]:
-        """Intance pattern.
+        """Match with intance pattern.
 
         Handle the case where pattern is instance of a type e.g `42`,
         `"test"`, `23.4`.
@@ -94,6 +94,7 @@ class Case(Generic[TSource]):
         ...
 
     def __call__(self, pattern: Any) -> Iterable[Any]:
+        """Match with pattern."""
         if self.is_matched:
             return []
 
@@ -131,7 +132,14 @@ class Case(Generic[TSource]):
         # No match
         return []
 
+    @property
+    def _(self):
+        """Handle default case. Always matches."""
+        return self.default()
+
     def default(self) -> Iterable[Any]:
+        """Handle default case. Always matches."""
+
         if self.is_matched:
             return []
 
