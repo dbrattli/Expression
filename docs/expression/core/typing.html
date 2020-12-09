@@ -27,7 +27,7 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">from abc import abstractmethod
-from typing import Optional, Protocol, Type, TypeVar, cast, get_origin
+from typing import Any, Iterable, Optional, Protocol, Type, TypeVar, cast, get_origin
 
 A = TypeVar(&#34;A&#34;)
 B = TypeVar(&#34;B&#34;)
@@ -37,9 +37,22 @@ Base = TypeVar(&#34;Base&#34;)
 Derived = TypeVar(&#34;Derived&#34;)
 
 
-class SupportsLessThan(Protocol[TSource]):
+class SupportsLessThan(Protocol):
     @abstractmethod
-    def __lt__(self, other: TSource) -&gt; bool:
+    def __lt__(self, other: Any) -&gt; bool:
+        raise NotImplementedError
+
+
+class SupportsMatch(Protocol[TSource]):
+    &#34;&#34;&#34;Pattern matching protocol.&#34;&#34;&#34;
+
+    @abstractmethod
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Match pattern with value.
+
+        Return a singleton iterable item (e.g `[ value ]`) if pattern
+        matches value , else an empty iterable (e.g. `[]`).&#34;&#34;&#34;
+
         raise NotImplementedError
 
 
@@ -63,8 +76,8 @@ def upcast(type: Type[Base], expr: Derived) -&gt; Base:
     Note: F# `:&gt;` or `upcast`.
     &#34;&#34;&#34;
 
-    assert isinstance(expr, type), f&#34;The expression {expr} is not derived from type {type}&#34;
-    return cast(Base, expr)
+    # assert isinstance(expr, type), f&#34;The expression {expr} is not derived from type {type}&#34;
+    return cast(&#34;Base&#34;, expr)
 
 
 def try_upcast(type_: Type[Derived], expr: Base) -&gt; Optional[Derived]:
@@ -169,8 +182,8 @@ of T, and checks at runtime that E is in fact an instance of T.</p>
     Note: F# `:&gt;` or `upcast`.
     &#34;&#34;&#34;
 
-    assert isinstance(expr, type), f&#34;The expression {expr} is not derived from type {type}&#34;
-    return cast(Base, expr)</code></pre>
+    # assert isinstance(expr, type), f&#34;The expression {expr} is not derived from type {type}&#34;
+    return cast(&#34;Base&#34;, expr)</code></pre>
 </details>
 </dd>
 </dl>
@@ -212,9 +225,9 @@ Protocol classes can be generic, they are defined as::</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class SupportsLessThan(Protocol[TSource]):
+<pre><code class="python">class SupportsLessThan(Protocol):
     @abstractmethod
-    def __lt__(self, other: TSource) -&gt; bool:
+    def __lt__(self, other: Any) -&gt; bool:
         raise NotImplementedError</code></pre>
 </details>
 <h3>Ancestors</h3>

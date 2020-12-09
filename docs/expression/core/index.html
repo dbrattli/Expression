@@ -33,41 +33,50 @@ Core abstractions such as pipes, options and results.
 
 from . import aiotools, option, result
 from .builder import Builder
+from .choice import Choice, Choice1of2, Choice1of3, Choice2, Choice2of2, Choice2of3, Choice3, Choice3of3
 from .compose import compose
 from .curry import curried
 from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
-from .match import Matchable, Matcher, Pattern, match
+from .match import Case, MatchMixin, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
-from .result import Error, Ok, Result, Try
-from .typing import SupportsLessThan
+from .result import Error, Ok, Result
+from .result_try import Failure, Success, Try
+from .typing import SupportsLessThan, SupportsMatch
 
 __all__ = [
     &#34;aiotools&#34;,
     &#34;AsyncReplyChannel&#34;,
     &#34;Builder&#34;,
-    &#34;SupportsLessThan&#34;,
+    &#34;Case&#34;,
+    &#34;Choice&#34;,
+    &#34;Choice2&#34;,
+    &#34;Choice3&#34;,
+    &#34;Choice1of2&#34;,
+    &#34;Choice2of2&#34;,
+    &#34;Choice1of3&#34;,
+    &#34;Choice2of3&#34;,
+    &#34;Choice3of3&#34;,
     &#34;compose&#34;,
     &#34;curried&#34;,
+    &#34;MatchMixin&#34;,
     &#34;EffectError&#34;,
     &#34;Error&#34;,
+    &#34;Failure&#34;,
     &#34;failwith&#34;,
     &#34;flip&#34;,
     &#34;fst&#34;,
     &#34;identity&#34;,
     &#34;MailboxProcessor&#34;,
     &#34;match&#34;,
-    &#34;Matcher&#34;,
-    &#34;Matchable&#34;,
     &#34;Nothing&#34;,
     &#34;Nothing_&#34;,
     &#34;Ok&#34;,
     &#34;Option&#34;,
     &#34;option&#34;,
-    &#34;Pattern&#34;,
     &#34;pipe&#34;,
     &#34;pipe2&#34;,
     &#34;pipe3&#34;,
@@ -75,6 +84,9 @@ __all__ = [
     &#34;Result&#34;,
     &#34;snd&#34;,
     &#34;Some&#34;,
+    &#34;Success&#34;,
+    &#34;SupportsLessThan&#34;,
+    &#34;SupportsMatch&#34;,
     &#34;TailCall&#34;,
     &#34;TailCallResult&#34;,
     &#34;tailrec&#34;,
@@ -125,6 +137,12 @@ __all__ = [
 <dt><code class="name"><a title="expression.core.result" href="result.html">expression.core.result</a></code></dt>
 <dd>
 <div class="desc"><p>Result module …</p></div>
+</dd>
+<dt><code class="name"><a title="expression.core.result_try" href="result_try.html">expression.core.result_try</a></code></dt>
+<dd>
+<div class="desc"><p>The <code><a title="expression.core.Result" href="#expression.core.Result">Result</a></code> type
+is a simpler <code><a title="expression.core.Result" href="#expression.core.Result">Result</a></code> type that pins the error type
+to Exception.</p></div>
 </dd>
 <dt><code class="name"><a title="expression.core.test" href="test.html">expression.core.test</a></code></dt>
 <dd>
@@ -330,21 +348,21 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>value: ~TSource) ‑> expression.core.match.Matcher</span>
+<span>def <span class="ident">match</span></span>(<span>value: ~TSource) ‑> expression.core.match.Case[~TSource]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Convenience matcher create method to get typing right</p>
-<p>Same as <code>Matcher.of(value)</code></p></div>
+<div class="desc"><p>Convenience case matcher create method to get typing right</p>
+<p>Same as <code><a title="expression.core.Case" href="#expression.core.Case">Case</a>(value)</code></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(value: TSource) -&gt; Matcher:
-    &#34;&#34;&#34;Convenience matcher create method to get typing right
+<pre><code class="python">def match(value: TSource) -&gt; Case[TSource]:
+    &#34;&#34;&#34;Convenience case matcher create method to get typing right
 
-    Same as `Matcher.of(value)`
+    Same as `Case(value)`
     &#34;&#34;&#34;
-    return Matcher(value)</code></pre>
+    return Case(value)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.pipe"><code class="name flex">
@@ -574,15 +592,14 @@ return default</p></div>
             yielded = gen.send(value)
             return self.return_(yielded)
         except EffectError as error:
+            # Effect errors (Nothing, Error, etc) short circuits the
+            # processing so we set `done` to `True` here.
             done.append(True)
-            return self.return_from(error)
+            return self.return_from(cast(&#34;TOuter&#34;, error))
         except StopIteration as ex:
             done.append(True)
             if ex.value is not None:
                 return self.return_(ex.value)
-
-            raise EffectError()
-        except Exception:
             raise
 
     def __call__(
@@ -611,11 +628,11 @@ return default</p></div>
             result: Optional[TOuter] = None
             try:
                 result = self._send(gen, done)
-                while not done and not isinstance(result, EffectError):
+                while not done:
                     binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
-                    cont = self.bind(cast(TOuter, result), binder)
+                    cont = self.bind(result, binder)
                     result = self.combine(result, cont)
-            except EffectError:
+            except StopIteration:
                 pass
 
             # If anything returns `None` (i.e raises StopIteration
@@ -626,7 +643,7 @@ return default</p></div>
 
             return result
 
-        return cast(Callable[..., TOuter], wrapper)</code></pre>
+        return wrapper</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -712,6 +729,578 @@ i.e returns None</p></div>
 </dd>
 </dl>
 </dd>
+<dt id="expression.core.Case"><code class="flex name class">
+<span>class <span class="ident">Case</span></span>
+<span>(</span><span>value: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Case matcher for patterns.</p>
+<p>Matches its value with the given pattern. The pattern can be any of
+- Instance for is and equals matching
+- Type for isinstance matching
+- Matchable protocol if supported by value
+- Pattern protocol if supported by the pattern</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Case(Generic[TSource]):
+    &#34;&#34;&#34;Case matcher for patterns.
+
+    Matches its value with the given pattern. The pattern can be any of
+    - Instance for is and equals matching
+    - Type for isinstance matching
+    - Matchable protocol if supported by value
+    - Pattern protocol if supported by the pattern
+    &#34;&#34;&#34;
+
+    def __init__(self, value: Any):
+        self.is_matched = False
+        self.value = value
+
+    @overload
+    def __call__(self, pattern: Type[SupportsMatch[A]]) -&gt; Iterable[A]:
+        &#34;&#34;&#34;Active type pattern.
+
+        Handle the case where pattern is an active pattern type e.g
+        `ParseInteger`
+        &#34;&#34;&#34;
+        ...
+
+    @overload
+    def __call__(self, pattern: SupportsMatch[A]) -&gt; Iterable[A]:
+        &#34;&#34;&#34;Intance pattern.
+
+        Handle the case where pattern is instance of a type that
+        sub-classes `SupportsMatch`, e.g an active pattern.
+        &#34;&#34;&#34;
+        ...
+
+    # @overload
+    # def __call__(self, pattern: Choice1of2[A, B]) -&gt; Iterable[A]:
+    #     &#34;&#34;&#34;Intance pattern.
+
+    #     Handle the case where pattern is instance of a `Choice1of2` type
+    #     &#34;&#34;&#34;
+    #     ...
+
+    # @overload
+    # def __call__(self, pattern: Choice2of2[A, B]) -&gt; Iterable[B]:
+    #     &#34;&#34;&#34;Intance pattern.
+
+    #     Handle the case where pattern is instance of a `Choice2of2` type
+    #     &#34;&#34;&#34;
+    #     ...
+
+    @overload
+    def __call__(self, pattern: Type[TSource]) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Type pattern.
+
+        Handle the case where pattern is a type e.g `int`, `str`,
+        `float`.
+        &#34;&#34;&#34;
+
+    @overload
+    def __call__(self, pattern: A) -&gt; Iterable[A]:
+        &#34;&#34;&#34;Intance pattern.
+
+        Handle the case where pattern is instance of a type e.g `42`,
+        `&#34;test&#34;`, `23.4`.
+        &#34;&#34;&#34;
+        ...
+
+    def __call__(self, pattern: Any) -&gt; Iterable[Any]:
+        if self.is_matched:
+            return []
+
+        value = self.value
+
+        # Value is matching pattern
+        if hasattr(value, &#34;__match__&#34;):
+            value_ = cast(SupportsMatch[Any], value)
+            matched = value_.__match__(pattern)
+            if matched:
+                self.is_matched = True
+                return matched
+
+        # The pattern is matching value (aka active pattern matching)
+        elif hasattr(pattern, &#34;__match__&#34;):
+            matched = pattern.__match__(value)
+            if matched:
+                self.is_matched = True
+                return matched
+
+        # Value is pattern or equals pattern
+        if value is pattern or value == pattern:
+            self.is_matched = True
+            return [value]
+
+        # Value is an instance of pattern
+        try:
+            origin: Any = get_origin(pattern)
+            if isinstance(value, origin or pattern):
+                self.is_matched = True
+                return [value]
+        except TypeError:
+            pass
+
+        # No match
+        return []
+
+    def default(self) -&gt; Iterable[Any]:
+        if self.is_matched:
+            return []
+
+        self.is_matched = True
+        return [self.value]
+
+    def __enter__(self) -&gt; &#34;Case[TSource]&#34;:
+        &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
+        return self
+
+    def __exit__(
+        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+    ) -&gt; None:
+        &#34;&#34;&#34;Exit context management.&#34;&#34;&#34;
+
+        if not self.is_matched:
+            raise MatchFailureError(self.value)
+
+    def __bool__(self):
+        return self.is_matched</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="expression.core.Case.default"><code class="name flex">
+<span>def <span class="ident">default</span></span>(<span>self) ‑> Iterable[Any]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default(self) -&gt; Iterable[Any]:
+    if self.is_matched:
+        return []
+
+    self.is_matched = True
+    return [self.value]</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Choice"><code class="flex name class">
+<span>class <span class="ident">Choice</span></span>
+<span>(</span><span>value: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice(ABC, SupportsMatch[TSource]):
+    def __init__(self, value: Any) -&gt; None:
+        self.value = value
+
+    def __match__(self, pattern: Any) -&gt; Iterable[Any]:
+        if self.value is pattern or self.value == pattern:
+            self.is_matched = True
+            return [self.value]
+
+        try:
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
+                self.is_matched = True
+                return [self.value]
+        except TypeError:
+            pass
+
+        return []
+
+    def __repr__(self) -&gt; str:
+        return str(self)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice1of2" href="choice.html#expression.core.choice.Choice1of2">Choice1of2</a></li>
+<li><a title="expression.core.choice.Choice1of3" href="choice.html#expression.core.choice.Choice1of3">Choice1of3</a></li>
+<li><a title="expression.core.choice.Choice2of2" href="choice.html#expression.core.choice.Choice2of2">Choice2of2</a></li>
+<li><a title="expression.core.choice.Choice2of3" href="choice.html#expression.core.choice.Choice2of3">Choice2of3</a></li>
+<li><a title="expression.core.choice.Choice3of3" href="choice.html#expression.core.choice.Choice3of3">Choice3of3</a></li>
+</ul>
+</dd>
+<dt id="expression.core.Choice1of2"><code class="flex name class">
+<span>class <span class="ident">Choice1of2</span></span>
+<span>(</span><span>value: ~A)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice1of2(Choice2[A, B], Choice[A]):
+    def __init__(self, value: A) -&gt; None:
+        super().__init__(value)
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[A_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[A_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[A_]) -&gt; Iterable[A_]:
+        ...
+
+    @classmethod
+    def match(cls, case: Any) -&gt; Iterable[Any]:
+        return case(cls)
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Choice1of2):
+            return self.value == other.value
+        return False
+
+    def __str__(self) -&gt; str:
+        return f&#34;Choice1of2 {self.value}&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice2" href="choice.html#expression.core.choice.Choice2">Choice2</a></li>
+<li><a title="expression.core.choice.Choice" href="choice.html#expression.core.choice.Choice">Choice</a></li>
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.Choice1of2.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>case: Any) ‑> Iterable[Any]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def match(cls, case: Any) -&gt; Iterable[Any]:
+    return case(cls)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Choice1of3"><code class="flex name class">
+<span>class <span class="ident">Choice1of3</span></span>
+<span>(</span><span>value: ~A)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice1of3(Choice3[A, B, C], Choice[A]):
+    def __init__(self, value: A) -&gt; None:
+        super().__init__(value)
+
+    @classmethod
+    def match(cls, case: Case[A]) -&gt; Iterable[A]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        return case(cls)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice3" href="choice.html#expression.core.choice.Choice3">Choice3</a></li>
+<li><a title="expression.core.choice.Choice" href="choice.html#expression.core.choice.Choice">Choice</a></li>
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.Choice1of3.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>case: expression.core.match.Case[~A]) ‑> Iterable[~A]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper to cast the match result to correct type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def match(cls, case: Case[A]) -&gt; Iterable[A]:
+    &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+    return case(cls)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Choice2"><code class="flex name class">
+<span>class <span class="ident">Choice2</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Abstract base class for generic types.</p>
+<p>A generic type is typically declared by inheriting from
+this class parameterized with one or more type variables.
+For example, a generic mapping type might be defined as::</p>
+<p>class Mapping(Generic[KT, VT]):
+def <strong>getitem</strong>(self, key: KT) -&gt; VT:
+&hellip;
+# Etc.</p>
+<p>This class can then be used as follows::</p>
+<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
+try:
+return mapping[key]
+except KeyError:
+return default</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice2(Generic[A, B]):
+    def __repr__(self) -&gt; str:
+        return str(self)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice1of2" href="choice.html#expression.core.choice.Choice1of2">Choice1of2</a></li>
+<li><a title="expression.core.choice.Choice2of2" href="choice.html#expression.core.choice.Choice2of2">Choice2of2</a></li>
+</ul>
+</dd>
+<dt id="expression.core.Choice2of2"><code class="flex name class">
+<span>class <span class="ident">Choice2of2</span></span>
+<span>(</span><span>value: ~B)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice2of2(Choice2[A, B], Choice[B]):
+    def __init__(self, value: B) -&gt; None:
+        super().__init__(value)
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[B_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[B_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[B_]) -&gt; Iterable[B_]:
+        ...
+
+    @classmethod
+    def match(cls, case: Any) -&gt; Iterable[Any]:
+        return case(cls)
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Choice2of2):
+            return self.value == other.value
+        return False
+
+    def __str__(self) -&gt; str:
+        return f&#34;Choice2of2 {self.value}&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice2" href="choice.html#expression.core.choice.Choice2">Choice2</a></li>
+<li><a title="expression.core.choice.Choice" href="choice.html#expression.core.choice.Choice">Choice</a></li>
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.Choice2of2.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>case: Any) ‑> Iterable[Any]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def match(cls, case: Any) -&gt; Iterable[Any]:
+    return case(cls)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Choice2of3"><code class="flex name class">
+<span>class <span class="ident">Choice2of3</span></span>
+<span>(</span><span>value: ~B)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice2of3(Choice3[A, B, C], Choice[B]):
+    def __init__(self, value: B) -&gt; None:
+        super().__init__(value)
+
+    @classmethod
+    def case(cls, case: Case[B]) -&gt; Iterable[B]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        return case(cls)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice3" href="choice.html#expression.core.choice.Choice3">Choice3</a></li>
+<li><a title="expression.core.choice.Choice" href="choice.html#expression.core.choice.Choice">Choice</a></li>
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.Choice2of3.case"><code class="name flex">
+<span>def <span class="ident">case</span></span>(<span>case: expression.core.match.Case[~B]) ‑> Iterable[~B]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper to cast the match result to correct type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def case(cls, case: Case[B]) -&gt; Iterable[B]:
+    &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+    return case(cls)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.Choice3"><code class="flex name class">
+<span>class <span class="ident">Choice3</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Abstract base class for generic types.</p>
+<p>A generic type is typically declared by inheriting from
+this class parameterized with one or more type variables.
+For example, a generic mapping type might be defined as::</p>
+<p>class Mapping(Generic[KT, VT]):
+def <strong>getitem</strong>(self, key: KT) -&gt; VT:
+&hellip;
+# Etc.</p>
+<p>This class can then be used as follows::</p>
+<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
+try:
+return mapping[key]
+except KeyError:
+return default</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice3(Generic[A, B, C]):
+    ...</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice1of3" href="choice.html#expression.core.choice.Choice1of3">Choice1of3</a></li>
+<li><a title="expression.core.choice.Choice2of3" href="choice.html#expression.core.choice.Choice2of3">Choice2of3</a></li>
+<li><a title="expression.core.choice.Choice3of3" href="choice.html#expression.core.choice.Choice3of3">Choice3of3</a></li>
+</ul>
+</dd>
+<dt id="expression.core.Choice3of3"><code class="flex name class">
+<span>class <span class="ident">Choice3of3</span></span>
+<span>(</span><span>value: ~C)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice3of3(Choice3[A, B, C], Choice[C]):
+    def __init__(self, value: C) -&gt; None:
+        super().__init__(value)
+
+    @classmethod
+    def case(cls, case: Case[C]) -&gt; Iterable[C]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        return case(cls)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice3" href="choice.html#expression.core.choice.Choice3">Choice3</a></li>
+<li><a title="expression.core.choice.Choice" href="choice.html#expression.core.choice.Choice">Choice</a></li>
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.Choice3of3.case"><code class="name flex">
+<span>def <span class="ident">case</span></span>(<span>case: expression.core.match.Case[~C]) ‑> Iterable[~C]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper to cast the match result to correct type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def case(cls, case: Case[C]) -&gt; Iterable[C]:
+    &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+    return case(cls)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="expression.core.EffectError"><code class="flex name class">
 <span>class <span class="ident">EffectError</span></span>
 <span>(</span><span>*args, **kwargs)</span>
@@ -787,7 +1376,8 @@ yielding nothing will be silently ignored.</p></div>
             return [self.error]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.error]
         except TypeError:
             pass
@@ -812,12 +1402,18 @@ yielding nothing will be silently ignored.</p></div>
 <ul class="hlist">
 <li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
 <li>expression.core.result.ResultException</li>
 <li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.result_try.Failure" href="result_try.html#expression.core.result_try.Failure">Failure</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -885,6 +1481,46 @@ def error(self) -&gt; TError:
 <li><code><a title="expression.core.result.Result.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
 <li><code><a title="expression.core.result.Result.match" href="result.html#expression.core.result.Result.match">match</a></code></li>
 <li><code><a title="expression.core.result.Result.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="expression.core.Failure"><code class="flex name class">
+<span>class <span class="ident">Failure</span></span>
+<span>(</span><span>error: ~TError)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The Error result case class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Failure(Error[TSource, Exception]):
+    ...</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.result.Error" href="result.html#expression.core.result.Error">Error</a></li>
+<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
+<li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+<li>expression.core.result.ResultException</li>
+<li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.result.Error" href="result.html#expression.core.result.Error">Error</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.result.Error.is_error" href="result.html#expression.core.result.Error.is_error">is_error</a></code></li>
+<li><code><a title="expression.core.result.Error.is_ok" href="result.html#expression.core.result.Result.is_ok">is_ok</a></code></li>
+<li><code><a title="expression.core.result.Error.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Error.match" href="result.html#expression.core.result.Result.match">match</a></code></li>
+<li><code><a title="expression.core.result.Error.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
 </ul>
 </li>
 </ul>
@@ -1195,8 +1831,8 @@ the timeout is exceeded.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="expression.core.Matchable"><code class="flex name class">
-<span>class <span class="ident">Matchable</span></span>
+<dt id="expression.core.MatchMixin"><code class="flex name class">
+<span>class <span class="ident">MatchMixin</span></span>
 <span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
@@ -1205,38 +1841,26 @@ the timeout is exceeded.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Matchable(Protocol[TSource]):
-    &#34;&#34;&#34;Pattern matching protocol.&#34;&#34;&#34;
-
-    @abstractmethod
-    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Match pattern with value.
-
-        Return a singleton iterable item (e.g `[ value ]`) if pattern
-        matches, else an empty iterable (e.g. `[]`).&#34;&#34;&#34;
-
-        raise NotImplementedError
-
-    @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
-        ...
-
-    @overload
+<pre><code class="python">class MatchMixin(SupportsMatch[TSource]):
     def match(self, pattern: Any) -&gt; Iterable[TSource]:
-        ...
-
-    def match(self, pattern: Optional[Any] = None) -&gt; &#34;Union[Matcher, Iterable[TSource]]&#34;:
         &#34;&#34;&#34;Match with pattern.
 
-        NOTE: You most often need to add this methods plus the
+        NOTE: This is just the basic default implementation for fluent
+        matching. You most often need to add this methods plus the
         appropriate overloads to your own matchable class to get typing
-        correctly.&#34;&#34;&#34;
+        correctly.
 
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m</code></pre>
+        Example:
+        &gt;&gt;&gt; for x in xs.match(Some):
+        ...     print(x)
+        &#34;&#34;&#34;
+
+        case: Case[TSource] = Case(self)
+        return case(pattern)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
+<li>expression.core.typing.SupportsMatch</li>
 <li>typing.Protocol</li>
 <li>typing.Generic</li>
 </ul>
@@ -1246,217 +1870,38 @@ the timeout is exceeded.</p></div>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="expression.core.Matchable.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, pattern: Optional[Any] = None) ‑> Union[expression.core.match.Matcher, Iterable[~TSource]]</span>
+<dt id="expression.core.MatchMixin.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Iterable[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Match with pattern.</p>
-<p>NOTE: You most often need to add this methods plus the
+<p>NOTE: This is just the basic default implementation for fluent
+matching. You most often need to add this methods plus the
 appropriate overloads to your own matchable class to get typing
-correctly.</p></div>
+correctly.</p>
+<p>Example:</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; for x in xs.match(Some):
+...     print(x)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, pattern: Optional[Any] = None) -&gt; &#34;Union[Matcher, Iterable[TSource]]&#34;:
+<pre><code class="python">def match(self, pattern: Any) -&gt; Iterable[TSource]:
     &#34;&#34;&#34;Match with pattern.
 
-    NOTE: You most often need to add this methods plus the
+    NOTE: This is just the basic default implementation for fluent
+    matching. You most often need to add this methods plus the
     appropriate overloads to your own matchable class to get typing
-    correctly.&#34;&#34;&#34;
+    correctly.
 
-    m = Matcher(self)
-    return m.case(pattern) if pattern else m</code></pre>
-</details>
-</dd>
-</dl>
-</dd>
-<dt id="expression.core.Matcher"><code class="flex name class">
-<span>class <span class="ident">Matcher</span></span>
-<span>(</span><span>value: Any)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Pattern matcher.</p>
-<p>Matches a value with type, instance or uses matching protocol
-if supported by value.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Matcher:
-    &#34;&#34;&#34;Pattern matcher.
-
-    Matches a value with type, instance or uses matching protocol
-    if supported by value.
+    Example:
+    &gt;&gt;&gt; for x in xs.match(Some):
+    ...     print(x)
     &#34;&#34;&#34;
 
-    def __init__(self, value: Any):
-        self.is_matched = False
-        self.value = value
-
-    @overload
-    def case(self, pattern: Type[Pattern[TSource]]) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Active type pattern.
-
-        Handle the case where pattern is an active pattern type e.g:
-        - ParseInteger
-        &#34;&#34;&#34;
-        ...
-
-    @overload
-    def case(self, pattern: Pattern[TSource]) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Active type pattern.
-
-        Handle the case where pattern is instance of an active pattern
-        type e.g:
-        - ParseInteger
-        &#34;&#34;&#34;
-        ...
-
-    @overload
-    def case(self, pattern: Type[TSource]) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Type pattern.
-
-        Handle the case where pattern is a type e.g:
-        - int
-        - str
-        - float
-        &#34;&#34;&#34;
-
-    @overload
-    def case(self, pattern: TSource) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Intance pattern.
-
-        Handle the case where pattern is instance of a type e.g:
-        - 42
-        - &#34;test&#34;
-        - 23.4
-        &#34;&#34;&#34;
-        ...
-
-    def case(self, pattern: Any) -&gt; Iterable[Any]:
-        if self.is_matched:
-            return []
-
-        value = self.value
-
-        # The pattern is matching the value (aka active pattern matching)
-        if hasattr(pattern, &#34;__match_val__&#34;):
-            matched = pattern.__match_val__(value)
-            if matched:
-                self.is_matched = True
-                return matched
-
-        # Value is matching pattern
-        if hasattr(value, &#34;__match__&#34;):
-            value_ = cast(Matchable[Any], value)
-            matched = value_.__match__(pattern)
-            if matched:
-                self.is_matched = True
-            return matched
-
-        # Value is pattern or equals pattern
-        if value is pattern or value == pattern:
-            self.is_matched = True
-            return [value]
-
-        # Value is an instance of pattern
-        try:
-            if isinstance(value, pattern):
-                self.is_matched = True
-                return [value]
-        except TypeError:
-            pass
-
-        # No match
-        return []
-
-    def default(self) -&gt; Iterable[Any]:
-        if self.is_matched:
-            return []
-
-        self.is_matched = True
-        return [self.value]
-
-    def __enter__(self) -&gt; &#34;Matcher&#34;:
-        &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
-        return self
-
-    def __exit__(
-        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
-    ) -&gt; None:
-        &#34;&#34;&#34;Exit context management.&#34;&#34;&#34;
-
-        if not self.is_matched:
-            raise MatchFailureError(self.value)
-
-    def __bool__(self):
-        return self.is_matched</code></pre>
-</details>
-<h3>Methods</h3>
-<dl>
-<dt id="expression.core.Matcher.case"><code class="name flex">
-<span>def <span class="ident">case</span></span>(<span>self, pattern: Any) ‑> Iterable[Any]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def case(self, pattern: Any) -&gt; Iterable[Any]:
-    if self.is_matched:
-        return []
-
-    value = self.value
-
-    # The pattern is matching the value (aka active pattern matching)
-    if hasattr(pattern, &#34;__match_val__&#34;):
-        matched = pattern.__match_val__(value)
-        if matched:
-            self.is_matched = True
-            return matched
-
-    # Value is matching pattern
-    if hasattr(value, &#34;__match__&#34;):
-        value_ = cast(Matchable[Any], value)
-        matched = value_.__match__(pattern)
-        if matched:
-            self.is_matched = True
-        return matched
-
-    # Value is pattern or equals pattern
-    if value is pattern or value == pattern:
-        self.is_matched = True
-        return [value]
-
-    # Value is an instance of pattern
-    try:
-        if isinstance(value, pattern):
-            self.is_matched = True
-            return [value]
-    except TypeError:
-        pass
-
-    # No match
-    return []</code></pre>
-</details>
-</dd>
-<dt id="expression.core.Matcher.default"><code class="name flex">
-<span>def <span class="ident">default</span></span>(<span>self) ‑> Iterable[Any]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def default(self) -&gt; Iterable[Any]:
-    if self.is_matched:
-        return []
-
-    self.is_matched = True
-    return [self.value]</code></pre>
+    case: Case[TSource] = Case(self)
+    return case(pattern)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1571,10 +2016,11 @@ return True</p></div>
 <ul class="hlist">
 <li><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
-<li>abc.ABC</li>
-<li>expression.core.match.Matchable</li>
+<li>expression.core.match.MatchMixin</li>
+<li>expression.core.typing.SupportsMatch</li>
 <li>typing.Protocol</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 <li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
@@ -1700,7 +2146,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Ok(Result[TSource, TError]):
+<pre><code class="python">class Ok(Result[TSource, TError], SupportsMatch[TSource]):
     &#34;&#34;&#34;The Ok result case class.&#34;&#34;&#34;
 
     def __init__(self, value: TSource) -&gt; None:
@@ -1736,7 +2182,8 @@ return True</p></div>
             return [self.value]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.value]
         except TypeError:
             pass
@@ -1759,8 +2206,14 @@ return True</p></div>
 <ul class="hlist">
 <li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.result_try.Success" href="result_try.html#expression.core.result_try.Success">Success</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -1843,7 +2296,7 @@ def value(self) -&gt; TSource:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Option(Iterable[TSource], ABC, Matchable[TSource]):
+<pre><code class="python">class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -1961,10 +2414,11 @@ def value(self) -&gt; TSource:
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
-<li>abc.ABC</li>
-<li>expression.core.match.Matchable</li>
+<li>expression.core.match.MatchMixin</li>
+<li>expression.core.typing.SupportsMatch</li>
 <li>typing.Protocol</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -2199,58 +2653,9 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </dd>
 </dl>
 </dd>
-<dt id="expression.core.Pattern"><code class="flex name class">
-<span>class <span class="ident">Pattern</span></span>
-<span>(</span><span>*args, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Base class for protocol classes.</p>
-<p>Protocol classes are defined as::</p>
-<pre><code>class Proto(Protocol):
-    def meth(self) -&gt; int:
-        ...
-</code></pre>
-<p>Such classes are primarily used with static type checkers that recognize
-structural subtyping (static duck-typing), for example::</p>
-<pre><code>class C:
-    def meth(self) -&gt; int:
-        return 0
-
-def func(x: Proto) -&gt; int:
-    return x.meth()
-
-func(C())  # Passes static type check
-</code></pre>
-<p>See PEP 544 for details. Protocol classes decorated with
-@typing.runtime_checkable act as simple-minded runtime protocols that check
-only the presence of given attributes, ignoring their type signatures.
-Protocol classes can be generic, they are defined as::</p>
-<pre><code>class GenProto(Protocol[T]):
-    def meth(self) -&gt; T:
-        ...
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Pattern(Protocol[TSource]):
-    @abstractmethod
-    def __match_val__(self, value: Any) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Match value with pattern.
-
-        Matches any value with pattern (self) and returns a list of
-        `TSource` if the case matched, else an empty list.
-        &#34;&#34;&#34;
-        raise NotImplementedError</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>typing.Protocol</li>
-<li>typing.Generic</li>
-</ul>
-</dd>
 <dt id="expression.core.Result"><code class="flex name class">
 <span>class <span class="ident">Result</span></span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The result abstract base class.</p></div>
@@ -2258,7 +2663,7 @@ Protocol classes can be generic, they are defined as::</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
+<pre><code class="python">class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -2304,26 +2709,30 @@ Protocol classes can be generic, they are defined as::</p>
         raise NotImplementedError
 
     @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
+    def match(self, pattern: &#34;Ok[_TSource, _TError]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Error[_TSource, _TError]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Error[TSource, TError]&#34;) -&gt; Iterable[TError]:
+    def match(self, pattern: &#34;Case[Ok[_TSource, _TError]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Result[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Case[Error[_TSource, _TError]]&#34;) -&gt; Iterable[_TError]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Result[_TSource, _TError]]&#34;) -&gt; Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
         &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
 
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[Union[TSource, TError]]] = Case(self)
+        return case(pattern) if pattern else case
 
     @abstractmethod
     def is_error(self) -&gt; bool:
@@ -2350,6 +2759,8 @@ Protocol classes can be generic, they are defined as::</p>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
 </ul>
@@ -2449,8 +2860,8 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
     &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
 
-    m = Matcher(self)
-    return m.case(pattern) if pattern else m</code></pre>
+    case: Case[Iterable[Union[TSource, TError]]] = Case(self)
+    return case(pattern) if pattern else case</code></pre>
 </details>
 </dd>
 <dt id="expression.core.Result.pipe"><code class="name flex">
@@ -2471,6 +2882,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 </dd>
 <dt id="expression.core.Result"><code class="flex name class">
 <span>class <span class="ident">Try</span></span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The result abstract base class.</p></div>
@@ -2478,7 +2890,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
+<pre><code class="python">class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -2524,26 +2936,30 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         raise NotImplementedError
 
     @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
+    def match(self, pattern: &#34;Ok[_TSource, _TError]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Error[_TSource, _TError]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Error[TSource, TError]&#34;) -&gt; Iterable[TError]:
+    def match(self, pattern: &#34;Case[Ok[_TSource, _TError]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Result[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Case[Error[_TSource, _TError]]&#34;) -&gt; Iterable[_TError]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Result[_TSource, _TError]]&#34;) -&gt; Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
         &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
 
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[Union[TSource, TError]]] = Case(self)
+        return case(pattern) if pattern else case
 
     @abstractmethod
     def is_error(self) -&gt; bool:
@@ -2571,6 +2987,8 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <ul class="hlist">
 <li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
 </ul>
@@ -2695,7 +3113,8 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
             return [self.value]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.value]
         except TypeError:
             pass
@@ -2722,10 +3141,11 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 <ul class="hlist">
 <li><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
-<li>abc.ABC</li>
-<li>expression.core.match.Matchable</li>
+<li>expression.core.match.MatchMixin</li>
+<li>expression.core.typing.SupportsMatch</li>
 <li>typing.Protocol</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -2840,6 +3260,42 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 </li>
 </ul>
 </dd>
+<dt id="expression.core.Success"><code class="flex name class">
+<span>class <span class="ident">Success</span></span>
+<span>(</span><span>value: ~TSource)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The Ok result case class.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Success(Ok[TSource, Exception]):
+    ...</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></li>
+<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
+<li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.result.Ok.is_error" href="result.html#expression.core.result.Ok.is_error">is_error</a></code></li>
+<li><code><a title="expression.core.result.Ok.is_ok" href="result.html#expression.core.result.Result.is_ok">is_ok</a></code></li>
+<li><code><a title="expression.core.result.Ok.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Ok.match" href="result.html#expression.core.result.Result.match">match</a></code></li>
+<li><code><a title="expression.core.result.Ok.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
 <dt id="expression.core.SupportsLessThan"><code class="flex name class">
 <span>class <span class="ident">SupportsLessThan</span></span>
 <span>(</span><span>*args, **kwargs)</span>
@@ -2874,15 +3330,51 @@ Protocol classes can be generic, they are defined as::</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class SupportsLessThan(Protocol[TSource]):
+<pre><code class="python">class SupportsLessThan(Protocol):
     @abstractmethod
-    def __lt__(self, other: TSource) -&gt; bool:
+    def __lt__(self, other: Any) -&gt; bool:
         raise NotImplementedError</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>typing.Protocol</li>
 <li>typing.Generic</li>
+</ul>
+</dd>
+<dt id="expression.core.SupportsMatch"><code class="flex name class">
+<span>class <span class="ident">SupportsMatch</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pattern matching protocol.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SupportsMatch(Protocol[TSource]):
+    &#34;&#34;&#34;Pattern matching protocol.&#34;&#34;&#34;
+
+    @abstractmethod
+    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+        &#34;&#34;&#34;Match pattern with value.
+
+        Return a singleton iterable item (e.g `[ value ]`) if pattern
+        matches value , else an empty iterable (e.g. `[]`).&#34;&#34;&#34;
+
+        raise NotImplementedError</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice" href="choice.html#expression.core.choice.Choice">Choice</a></li>
+<li>expression.core.match.MatchMixin</li>
+<li><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></li>
+<li><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></li>
+<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
 </ul>
 </dd>
 <dt id="expression.core.TailCall"><code class="flex name class">
@@ -2935,6 +3427,7 @@ function will be called again with the new arguments provided.</p></div>
 <li><code><a title="expression.core.misc" href="misc.html">expression.core.misc</a></code></li>
 <li><code><a title="expression.core.option" href="option.html">expression.core.option</a></code></li>
 <li><code><a title="expression.core.result" href="result.html">expression.core.result</a></code></li>
+<li><code><a title="expression.core.result_try" href="result_try.html">expression.core.result_try</a></code></li>
 <li><code><a title="expression.core.test" href="test.html">expression.core.test</a></code></li>
 <li><code><a title="expression.core.test2" href="test2.html">expression.core.test2</a></code></li>
 <li><code><a title="expression.core.typing" href="typing.html">expression.core.typing</a></code></li>
@@ -2976,6 +3469,51 @@ function will be called again with the new arguments provided.</p></div>
 </ul>
 </li>
 <li>
+<h4><code><a title="expression.core.Case" href="#expression.core.Case">Case</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Case.default" href="#expression.core.Case.default">default</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Choice" href="#expression.core.Choice">Choice</a></code></h4>
+</li>
+<li>
+<h4><code><a title="expression.core.Choice1of2" href="#expression.core.Choice1of2">Choice1of2</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Choice1of2.match" href="#expression.core.Choice1of2.match">match</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Choice1of3" href="#expression.core.Choice1of3">Choice1of3</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Choice1of3.match" href="#expression.core.Choice1of3.match">match</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Choice2" href="#expression.core.Choice2">Choice2</a></code></h4>
+</li>
+<li>
+<h4><code><a title="expression.core.Choice2of2" href="#expression.core.Choice2of2">Choice2of2</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Choice2of2.match" href="#expression.core.Choice2of2.match">match</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Choice2of3" href="#expression.core.Choice2of3">Choice2of3</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Choice2of3.case" href="#expression.core.Choice2of3.case">case</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.Choice3" href="#expression.core.Choice3">Choice3</a></code></h4>
+</li>
+<li>
+<h4><code><a title="expression.core.Choice3of3" href="#expression.core.Choice3of3">Choice3of3</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.Choice3of3.case" href="#expression.core.Choice3of3.case">case</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="expression.core.EffectError" href="#expression.core.EffectError">EffectError</a></code></h4>
 </li>
 <li>
@@ -2988,6 +3526,9 @@ function will be called again with the new arguments provided.</p></div>
 </ul>
 </li>
 <li>
+<h4><code><a title="expression.core.Failure" href="#expression.core.Failure">Failure</a></code></h4>
+</li>
+<li>
 <h4><code><a title="expression.core.MailboxProcessor" href="#expression.core.MailboxProcessor">MailboxProcessor</a></code></h4>
 <ul class="">
 <li><code><a title="expression.core.MailboxProcessor.post" href="#expression.core.MailboxProcessor.post">post</a></code></li>
@@ -2997,16 +3538,9 @@ function will be called again with the new arguments provided.</p></div>
 </ul>
 </li>
 <li>
-<h4><code><a title="expression.core.Matchable" href="#expression.core.Matchable">Matchable</a></code></h4>
+<h4><code><a title="expression.core.MatchMixin" href="#expression.core.MatchMixin">MatchMixin</a></code></h4>
 <ul class="">
-<li><code><a title="expression.core.Matchable.match" href="#expression.core.Matchable.match">match</a></code></li>
-</ul>
-</li>
-<li>
-<h4><code><a title="expression.core.Matcher" href="#expression.core.Matcher">Matcher</a></code></h4>
-<ul class="">
-<li><code><a title="expression.core.Matcher.case" href="#expression.core.Matcher.case">case</a></code></li>
-<li><code><a title="expression.core.Matcher.default" href="#expression.core.Matcher.default">default</a></code></li>
+<li><code><a title="expression.core.MatchMixin.match" href="#expression.core.MatchMixin.match">match</a></code></li>
 </ul>
 </li>
 <li>
@@ -3049,9 +3583,6 @@ function will be called again with the new arguments provided.</p></div>
 </ul>
 </li>
 <li>
-<h4><code><a title="expression.core.Pattern" href="#expression.core.Pattern">Pattern</a></code></h4>
-</li>
-<li>
 <h4><code><a title="expression.core.Result" href="#expression.core.Result">Result</a></code></h4>
 <ul class="two-column">
 <li><code><a title="expression.core.Result.bind" href="#expression.core.Result.bind">bind</a></code></li>
@@ -3083,7 +3614,13 @@ function will be called again with the new arguments provided.</p></div>
 </ul>
 </li>
 <li>
+<h4><code><a title="expression.core.Success" href="#expression.core.Success">Success</a></code></h4>
+</li>
+<li>
 <h4><code><a title="expression.core.SupportsLessThan" href="#expression.core.SupportsLessThan">SupportsLessThan</a></code></h4>
+</li>
+<li>
+<h4><code><a title="expression.core.SupportsMatch" href="#expression.core.SupportsMatch">SupportsMatch</a></code></h4>
 </li>
 <li>
 <h4><code><a title="expression.core.TailCall" href="#expression.core.TailCall">TailCall</a></code></h4>

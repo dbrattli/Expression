@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.3.dev5+gbec6307" />
-<title>expression.core.test API documentation</title>
-<meta name="description" content="" />
+<title>expression.core.result_try API documentation</title>
+<meta name="description" content="The `Try` type
+is a simpler `Result` type that pins the error type
+to Exception." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -19,23 +21,34 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>expression.core.test</code></h1>
+<h1 class="title">Module <code>expression.core.result_try</code></h1>
 </header>
 <section id="section-intro">
+<p>The <code>Try</code> type
+is a simpler <code>Result</code> type that pins the error type
+to Exception.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from typing import Any, Generic, Type, TypeVar, cast
+<pre><code class="python">&#34;&#34;&#34;The `Try` type  is a simpler `Result` type that pins the error type
+to Exception.&#34;&#34;&#34;
+
+from typing import TypeVar
+
+from .result import Error, Ok, Result
 
 TSource = TypeVar(&#34;TSource&#34;)
 
+Try = Result[TSource, Exception]
 
-class Test(Generic[TSource]):
-    def test(self, value: Any):
-        x: TSource = value
 
-        y = cast(TSource, value)</code></pre>
+class Success(Ok[TSource, Exception]):
+    ...
+
+
+class Failure(Error[TSource, Exception]):
+    ...</code></pre>
 </details>
 </section>
 <section>
@@ -47,56 +60,81 @@ class Test(Generic[TSource]):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="expression.core.test.Test"><code class="flex name class">
-<span>class <span class="ident">Test</span></span>
+<dt id="expression.core.result_try.Failure"><code class="flex name class">
+<span>class <span class="ident">Failure</span></span>
+<span>(</span><span>error: ~TError)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
+<div class="desc"><p>The Error result case class.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Test(Generic[TSource]):
-    def test(self, value: Any):
-        x: TSource = value
-
-        y = cast(TSource, value)</code></pre>
+<pre><code class="python">class Failure(Error[TSource, Exception]):
+    ...</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
+<li><a title="expression.core.result.Error" href="result.html#expression.core.result.Error">Error</a></li>
+<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
+<li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
+<li>expression.core.result.ResultException</li>
+<li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
 </ul>
-<h3>Methods</h3>
-<dl>
-<dt id="expression.core.test.Test.test"><code class="name flex">
-<span>def <span class="ident">test</span></span>(<span>self, value: Any)</span>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.result.Error" href="result.html#expression.core.result.Error">Error</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.result.Error.is_error" href="result.html#expression.core.result.Error.is_error">is_error</a></code></li>
+<li><code><a title="expression.core.result.Error.is_ok" href="result.html#expression.core.result.Result.is_ok">is_ok</a></code></li>
+<li><code><a title="expression.core.result.Error.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Error.match" href="result.html#expression.core.result.Result.match">match</a></code></li>
+<li><code><a title="expression.core.result.Error.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="expression.core.result_try.Success"><code class="flex name class">
+<span>class <span class="ident">Success</span></span>
+<span>(</span><span>value: ~TSource)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The Ok result case class.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def test(self, value: Any):
-    x: TSource = value
-
-    y = cast(TSource, value)</code></pre>
+<pre><code class="python">class Success(Ok[TSource, Exception]):
+    ...</code></pre>
 </details>
-</dd>
-</dl>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></li>
+<li><a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></li>
+<li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="expression.core.result.Ok" href="result.html#expression.core.result.Ok">Ok</a></b></code>:
+<ul class="hlist">
+<li><code><a title="expression.core.result.Ok.is_error" href="result.html#expression.core.result.Ok.is_error">is_error</a></code></li>
+<li><code><a title="expression.core.result.Ok.is_ok" href="result.html#expression.core.result.Result.is_ok">is_ok</a></code></li>
+<li><code><a title="expression.core.result.Ok.map_error" href="result.html#expression.core.result.Result.map_error">map_error</a></code></li>
+<li><code><a title="expression.core.result.Ok.match" href="result.html#expression.core.result.Result.match">match</a></code></li>
+<li><code><a title="expression.core.result.Ok.pipe" href="result.html#expression.core.result.Result.pipe">pipe</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 </dl>
 </section>
@@ -115,10 +153,10 @@ return default</p></div>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="expression.core.test.Test" href="#expression.core.test.Test">Test</a></code></h4>
-<ul class="">
-<li><code><a title="expression.core.test.Test.test" href="#expression.core.test.Test.test">test</a></code></li>
-</ul>
+<h4><code><a title="expression.core.result_try.Failure" href="#expression.core.result_try.Failure">Failure</a></code></h4>
+</li>
+<li>
+<h4><code><a title="expression.core.result_try.Success" href="#expression.core.result_try.Success">Success</a></code></h4>
 </li>
 </ul>
 </li>

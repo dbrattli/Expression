@@ -39,10 +39,10 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 &#34;&#34;&#34;
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, overload
+from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, get_origin, overload
 
 from .error import EffectError
-from .match import Matchable
+from .match import MatchMixin, SupportsMatch
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
@@ -53,7 +53,7 @@ T3 = TypeVar(&#34;T3&#34;)
 T4 = TypeVar(&#34;T4&#34;)
 
 
-class Option(Iterable[TSource], ABC, Matchable[TSource]):
+class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -236,7 +236,8 @@ class Some(Option[TSource]):
             return [self.value]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.value]
         except TypeError:
             pass
@@ -853,10 +854,11 @@ return True</p></div>
 <ul class="hlist">
 <li><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
-<li>abc.ABC</li>
-<li>expression.core.match.Matchable</li>
+<li>expression.core.match.MatchMixin</li>
+<li>expression.core.typing.SupportsMatch</li>
 <li>typing.Protocol</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 <li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
@@ -982,7 +984,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Option(Iterable[TSource], ABC, Matchable[TSource]):
+<pre><code class="python">class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -1100,10 +1102,11 @@ return True</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
-<li>abc.ABC</li>
-<li>expression.core.match.Matchable</li>
+<li>expression.core.match.MatchMixin</li>
+<li>expression.core.typing.SupportsMatch</li>
 <li>typing.Protocol</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -1415,7 +1418,8 @@ def to_seq(self) -&gt; Iterable[TSource]:
             return [self.value]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.value]
         except TypeError:
             pass
@@ -1442,10 +1446,11 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <ul class="hlist">
 <li><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></li>
 <li>collections.abc.Iterable</li>
-<li>abc.ABC</li>
-<li>expression.core.match.Matchable</li>
+<li>expression.core.match.MatchMixin</li>
+<li>expression.core.typing.SupportsMatch</li>
 <li>typing.Protocol</li>
 <li>typing.Generic</li>
+<li>abc.ABC</li>
 </ul>
 <h3>Methods</h3>
 <dl>

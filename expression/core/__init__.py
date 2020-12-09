@@ -19,7 +19,6 @@ from .result_try import Failure, Success, Try
 from .typing import SupportsLessThan, SupportsMatch
 
 __all__ = [
-    "ActivePattern",
     "aiotools",
     "AsyncReplyChannel",
     "Builder",

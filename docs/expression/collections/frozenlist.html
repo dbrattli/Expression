@@ -64,10 +64,9 @@ Example:
 
 import builtins
 import functools
-from typing import (Any, Callable, Iterable, List, Optional, Tuple, TypeVar,
-                    cast, overload)
+from typing import Any, Callable, Iterable, List, Optional, Tuple, TypeVar, cast, get_origin, overload
 
-from expression.core import Matcher, Nothing, Option, Some, pipe
+from expression.core import Case, Nothing, Option, Some, pipe
 
 from . import seq
 
@@ -100,17 +99,9 @@ class FrozenList(Tuple[TSource]):
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
-    @overload
-    def match(self) -&gt; Matcher:
-        ...
-
-    @overload
-    def match(self, pattern: Any) -&gt; Iterable[List[TSource]]:
-        ...
-
     def match(self, pattern: Any) -&gt; Any:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[TSource] = Case(self)
+        return case(pattern) if pattern else case
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;FrozenList[TSource]&#34;], TResult]) -&gt; TResult:
@@ -412,7 +403,8 @@ class FrozenList(Tuple[TSource]):
             return [[val for val in self]]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [[val for val in self]]
         except TypeError:
             pass
@@ -470,6 +462,7 @@ def collect(mapping: Callable[[TSource], FrozenList[TResult]]) -&gt; Callable[[F
 
 def concat(sources: Iterable[FrozenList[TSource]]) -&gt; FrozenList[TSource]:
     &#34;&#34;&#34;Concatenate sequence of FrozenList&#39;s&#34;&#34;&#34;
+
     def reducer(t: FrozenList[TSource], s: FrozenList[TSource]) -&gt; FrozenList[TSource]:
         return t.append(s)
 
@@ -904,6 +897,7 @@ list and returns the concatenation of the transformed sublists.</p></div>
 </summary>
 <pre><code class="python">def concat(sources: Iterable[FrozenList[TSource]]) -&gt; FrozenList[TSource]:
     &#34;&#34;&#34;Concatenate sequence of FrozenList&#39;s&#34;&#34;&#34;
+
     def reducer(t: FrozenList[TSource], s: FrozenList[TSource]) -&gt; FrozenList[TSource]:
         return t.append(s)
 
@@ -1518,17 +1512,9 @@ appending.</p>
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
-    @overload
-    def match(self) -&gt; Matcher:
-        ...
-
-    @overload
-    def match(self, pattern: Any) -&gt; Iterable[List[TSource]]:
-        ...
-
     def match(self, pattern: Any) -&gt; Any:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[TSource] = Case(self)
+        return case(pattern) if pattern else case
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;FrozenList[TSource]&#34;], TResult]) -&gt; TResult:
@@ -1830,7 +1816,8 @@ appending.</p>
             return [[val for val in self]]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [[val for val in self]]
         except TypeError:
             pass
@@ -2295,8 +2282,8 @@ list.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m = Matcher(self)
-    return m.case(pattern) if pattern else m</code></pre>
+    case: Case[TSource] = Case(self)
+    return case(pattern) if pattern else case</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.FrozenList.pipe"><code class="name flex">

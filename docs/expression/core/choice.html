@@ -36,24 +36,23 @@ A union type similar to the `Result` type. But also allows for higher
 number of choices. Usually you would most likekly want to use the
 `Result` type instead, but choice can be preferered in non-error cases.
 &#34;&#34;&#34;
-from abc import ABC, abstractclassmethod
-from typing import Any, Generic, Iterable, Optional, TypeVar, Union
+from abc import ABC
+from typing import Any, Generic, Iterable, TypeVar, get_origin, overload
 
-from .match import Matcher
+from .match import Case
+from .typing import SupportsMatch
 
+TSource = TypeVar(&#34;TSource&#34;)
 A = TypeVar(&#34;A&#34;)
+A_ = TypeVar(&#34;A_&#34;)
 B = TypeVar(&#34;B&#34;)
+B_ = TypeVar(&#34;B_&#34;)
 C = TypeVar(&#34;C&#34;)
 
 
-class Choice(ABC):
+class Choice(ABC, SupportsMatch[TSource]):
     def __init__(self, value: Any) -&gt; None:
         self.value = value
-
-    @abstractclassmethod
-    def case(cls, m: Matcher) -&gt; Iterable[Any]:
-        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        raise NotImplementedError
 
     def __match__(self, pattern: Any) -&gt; Iterable[Any]:
         if self.value is pattern or self.value == pattern:
@@ -61,7 +60,8 @@ class Choice(ABC):
             return [self.value]
 
         try:
-            if isinstance(self.value, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 self.is_matched = True
                 return [self.value]
         except TypeError:
@@ -69,82 +69,115 @@ class Choice(ABC):
 
         return []
 
-
-class Choice2(Generic[A, B], Choice):
-    def match(self, pattern: Optional[Any] = None) -&gt; Union[Iterable[Union[A, B]]]:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else self.case(m)
+    def __repr__(self) -&gt; str:
+        return str(self)
 
 
-class Choice1of2(Choice2[A, B]):
+class Choice2(Generic[A, B]):
+    def __repr__(self) -&gt; str:
+        return str(self)
+
+
+class Choice1of2(Choice2[A, B], Choice[A]):
+    def __init__(self, value: A) -&gt; None:
+        super().__init__(value)
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[A_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[A_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[A_]) -&gt; Iterable[A_]:
+        ...
+
+    @classmethod
+    def match(cls, case: Any) -&gt; Iterable[Any]:
+        return case(cls)
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Choice1of2):
+            return self.value == other.value
+        return False
+
+    def __str__(self) -&gt; str:
+        return f&#34;Choice1of2 {self.value}&#34;
+
+
+class Choice2of2(Choice2[A, B], Choice[B]):
+    def __init__(self, value: B) -&gt; None:
+        super().__init__(value)
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[B_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[B_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[B_]) -&gt; Iterable[B_]:
+        ...
+
+    @classmethod
+    def match(cls, case: Any) -&gt; Iterable[Any]:
+        return case(cls)
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Choice2of2):
+            return self.value == other.value
+        return False
+
+    def __str__(self) -&gt; str:
+        return f&#34;Choice2of2 {self.value}&#34;
+
+
+class Choice3(Generic[A, B, C]):
+    ...
+
+
+class Choice1of3(Choice3[A, B, C], Choice[A]):
     def __init__(self, value: A) -&gt; None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[A]:
+    def match(cls, case: Case[A]) -&gt; Iterable[A]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[A]:
-        return super().__match__(pattern)
+        return case(cls)
 
 
-class Choice2of2(Choice2[A, B]):
+class Choice2of3(Choice3[A, B, C], Choice[B]):
     def __init__(self, value: B) -&gt; None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[B]:
+    def case(cls, case: Case[B]) -&gt; Iterable[B]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[B]:
-        return super().__match__(pattern)
+        return case(cls)
 
 
-class Choice3(Generic[A, B, C], Choice):
-    def match(self, pattern: Optional[Any] = None) -&gt; Union[Iterable[Union[A, B, C]]]:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else self.case(m)
-
-
-class Choice1of3(Choice3[A, B, C]):
-    def __init__(self, value: A) -&gt; None:
-        super().__init__(value)
-
-    @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[A]:
-        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[A]:
-        return super().__match__(pattern)
-
-
-class Choice2of3(Choice3[A, B, C]):
-    def __init__(self, value: B) -&gt; None:
-        super().__init__(value)
-
-    @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[B]:
-        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[B]:
-        return super().__match__(pattern)
-
-
-class Choice3of3(Choice3[A, B, C]):
+class Choice3of3(Choice3[A, B, C], Choice[C]):
     def __init__(self, value: C) -&gt; None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[C]:
+    def case(cls, case: Case[C]) -&gt; Iterable[C]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[C]:
-        return super().__match__(pattern)</code></pre>
+        return case(cls)</code></pre>
 </details>
 </section>
 <section>
@@ -167,14 +200,9 @@ inheritance.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Choice(ABC):
+<pre><code class="python">class Choice(ABC, SupportsMatch[TSource]):
     def __init__(self, value: Any) -&gt; None:
         self.value = value
-
-    @abstractclassmethod
-    def case(cls, m: Matcher) -&gt; Iterable[Any]:
-        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        raise NotImplementedError
 
     def __match__(self, pattern: Any) -&gt; Iterable[Any]:
         if self.value is pattern or self.value == pattern:
@@ -182,27 +210,138 @@ inheritance.</p></div>
             return [self.value]
 
         try:
-            if isinstance(self.value, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 self.is_matched = True
                 return [self.value]
         except TypeError:
             pass
 
-        return []</code></pre>
+        return []
+
+    def __repr__(self) -&gt; str:
+        return str(self)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="expression.core.choice.Choice1of2" href="#expression.core.choice.Choice1of2">Choice1of2</a></li>
+<li><a title="expression.core.choice.Choice1of3" href="#expression.core.choice.Choice1of3">Choice1of3</a></li>
+<li><a title="expression.core.choice.Choice2of2" href="#expression.core.choice.Choice2of2">Choice2of2</a></li>
+<li><a title="expression.core.choice.Choice2of3" href="#expression.core.choice.Choice2of3">Choice2of3</a></li>
+<li><a title="expression.core.choice.Choice3of3" href="#expression.core.choice.Choice3of3">Choice3of3</a></li>
+</ul>
+</dd>
+<dt id="expression.core.choice.Choice1of2"><code class="flex name class">
+<span>class <span class="ident">Choice1of2</span></span>
+<span>(</span><span>value: ~A)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice1of2(Choice2[A, B], Choice[A]):
+    def __init__(self, value: A) -&gt; None:
+        super().__init__(value)
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[A_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[A_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[A_]) -&gt; Iterable[A_]:
+        ...
+
+    @classmethod
+    def match(cls, case: Any) -&gt; Iterable[Any]:
+        return case(cls)
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Choice1of2):
+            return self.value == other.value
+        return False
+
+    def __str__(self) -&gt; str:
+        return f&#34;Choice1of2 {self.value}&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
 <li><a title="expression.core.choice.Choice2" href="#expression.core.choice.Choice2">Choice2</a></li>
-<li><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></li>
+<li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Static methods</h3>
 <dl>
-<dt id="expression.core.choice.Choice.case"><code class="name flex">
-<span>def <span class="ident">case</span></span>(<span>m: expression.core.match.Matcher) ‑> Iterable[Any]</span>
+<dt id="expression.core.choice.Choice1of2.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>case: Any) ‑> Iterable[Any]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def match(cls, case: Any) -&gt; Iterable[Any]:
+    return case(cls)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.choice.Choice1of3"><code class="flex name class">
+<span>class <span class="ident">Choice1of3</span></span>
+<span>(</span><span>value: ~A)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice1of3(Choice3[A, B, C], Choice[A]):
+    def __init__(self, value: A) -&gt; None:
+        super().__init__(value)
+
+    @classmethod
+    def match(cls, case: Case[A]) -&gt; Iterable[A]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        return case(cls)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></li>
+<li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.choice.Choice1of3.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>case: expression.core.match.Case[~A]) ‑> Iterable[~A]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Helper to cast the match result to correct type.</p></div>
@@ -210,119 +349,16 @@ inheritance.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">@abstractclassmethod
-def case(cls, m: Matcher) -&gt; Iterable[Any]:
+<pre><code class="python">@classmethod
+def match(cls, case: Case[A]) -&gt; Iterable[A]:
     &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-    raise NotImplementedError</code></pre>
+    return case(cls)</code></pre>
 </details>
 </dd>
 </dl>
 </dd>
-<dt id="expression.core.choice.Choice1of2"><code class="flex name class">
-<span>class <span class="ident">Choice1of2</span></span>
-<span>(</span><span>value: ~A)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Choice1of2(Choice2[A, B]):
-    def __init__(self, value: A) -&gt; None:
-        super().__init__(value)
-
-    @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[A]:
-        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[A]:
-        return super().__match__(pattern)</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li><a title="expression.core.choice.Choice2" href="#expression.core.choice.Choice2">Choice2</a></li>
-<li>typing.Generic</li>
-<li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
-<li>abc.ABC</li>
-</ul>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.choice.Choice2" href="#expression.core.choice.Choice2">Choice2</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.choice.Choice2.case" href="#expression.core.choice.Choice.case">case</a></code></li>
-</ul>
-</li>
-</ul>
-</dd>
-<dt id="expression.core.choice.Choice1of3"><code class="flex name class">
-<span>class <span class="ident">Choice1of3</span></span>
-<span>(</span><span>value: ~A)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Choice1of3(Choice3[A, B, C]):
-    def __init__(self, value: A) -&gt; None:
-        super().__init__(value)
-
-    @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[A]:
-        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[A]:
-        return super().__match__(pattern)</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></li>
-<li>typing.Generic</li>
-<li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
-<li>abc.ABC</li>
-</ul>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.choice.Choice3.case" href="#expression.core.choice.Choice.case">case</a></code></li>
-</ul>
-</li>
-</ul>
-</dd>
 <dt id="expression.core.choice.Choice2"><code class="flex name class">
 <span>class <span class="ident">Choice2</span></span>
-<span>(</span><span>value: Any)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for generic types.</p>
@@ -343,46 +379,18 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Choice2(Generic[A, B], Choice):
-    def match(self, pattern: Optional[Any] = None) -&gt; Union[Iterable[Union[A, B]]]:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else self.case(m)</code></pre>
+<pre><code class="python">class Choice2(Generic[A, B]):
+    def __repr__(self) -&gt; str:
+        return str(self)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>typing.Generic</li>
-<li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
-<li>abc.ABC</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="expression.core.choice.Choice1of2" href="#expression.core.choice.Choice1of2">Choice1of2</a></li>
 <li><a title="expression.core.choice.Choice2of2" href="#expression.core.choice.Choice2of2">Choice2of2</a></li>
-</ul>
-<h3>Methods</h3>
-<dl>
-<dt id="expression.core.choice.Choice2.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, pattern: Optional[Any] = None) ‑> Iterable[Union[~A, ~B]]</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def match(self, pattern: Optional[Any] = None) -&gt; Union[Iterable[Union[A, B]]]:
-    m = Matcher(self)
-    return m.case(pattern) if pattern else self.case(m)</code></pre>
-</details>
-</dd>
-</dl>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.choice.Choice.case" href="#expression.core.choice.Choice.case">case</a></code></li>
-</ul>
-</li>
 </ul>
 </dd>
 <dt id="expression.core.choice.Choice2of2"><code class="flex name class">
@@ -390,147 +398,58 @@ return default</p></div>
 <span>(</span><span>value: ~B)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Choice2of2(Choice2[A, B]):
+<pre><code class="python">class Choice2of2(Choice2[A, B], Choice[B]):
     def __init__(self, value: B) -&gt; None:
         super().__init__(value)
 
+    @overload
     @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[B]:
+    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[B_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
+        ...
 
-    def __match__(self, pattern: Any) -&gt; Iterable[B]:
-        return super().__match__(pattern)</code></pre>
+    @overload
+    @classmethod
+    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[B_]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        ...
+
+    @overload
+    @classmethod
+    def match(cls, case: Case[B_]) -&gt; Iterable[B_]:
+        ...
+
+    @classmethod
+    def match(cls, case: Any) -&gt; Iterable[Any]:
+        return case(cls)
+
+    def __eq__(self, other: Any) -&gt; bool:
+        if isinstance(other, Choice2of2):
+            return self.value == other.value
+        return False
+
+    def __str__(self) -&gt; str:
+        return f&#34;Choice2of2 {self.value}&#34;</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="expression.core.choice.Choice2" href="#expression.core.choice.Choice2">Choice2</a></li>
-<li>typing.Generic</li>
 <li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
 <li>abc.ABC</li>
-</ul>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.choice.Choice2" href="#expression.core.choice.Choice2">Choice2</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.choice.Choice2.case" href="#expression.core.choice.Choice.case">case</a></code></li>
-</ul>
-</li>
-</ul>
-</dd>
-<dt id="expression.core.choice.Choice2of3"><code class="flex name class">
-<span>class <span class="ident">Choice2of3</span></span>
-<span>(</span><span>value: ~B)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Choice2of3(Choice3[A, B, C]):
-    def __init__(self, value: B) -&gt; None:
-        super().__init__(value)
-
-    @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[B]:
-        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[B]:
-        return super().__match__(pattern)</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
-<li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
-<li>abc.ABC</li>
 </ul>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.choice.Choice3.case" href="#expression.core.choice.Choice.case">case</a></code></li>
-</ul>
-</li>
-</ul>
-</dd>
-<dt id="expression.core.choice.Choice3"><code class="flex name class">
-<span>class <span class="ident">Choice3</span></span>
-<span>(</span><span>value: Any)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Abstract base class for generic types.</p>
-<p>A generic type is typically declared by inheriting from
-this class parameterized with one or more type variables.
-For example, a generic mapping type might be defined as::</p>
-<p>class Mapping(Generic[KT, VT]):
-def <strong>getitem</strong>(self, key: KT) -&gt; VT:
-&hellip;
-# Etc.</p>
-<p>This class can then be used as follows::</p>
-<p>def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -&gt; VT:
-try:
-return mapping[key]
-except KeyError:
-return default</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Choice3(Generic[A, B, C], Choice):
-    def match(self, pattern: Optional[Any] = None) -&gt; Union[Iterable[Union[A, B, C]]]:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else self.case(m)</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>typing.Generic</li>
-<li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
-<li>abc.ABC</li>
-</ul>
-<h3>Subclasses</h3>
-<ul class="hlist">
-<li><a title="expression.core.choice.Choice1of3" href="#expression.core.choice.Choice1of3">Choice1of3</a></li>
-<li><a title="expression.core.choice.Choice2of3" href="#expression.core.choice.Choice2of3">Choice2of3</a></li>
-<li><a title="expression.core.choice.Choice3of3" href="#expression.core.choice.Choice3of3">Choice3of3</a></li>
-</ul>
-<h3>Methods</h3>
+<h3>Static methods</h3>
 <dl>
-<dt id="expression.core.choice.Choice3.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, pattern: Optional[Any] = None) ‑> Iterable[Union[~A, ~B, ~C]]</span>
+<dt id="expression.core.choice.Choice2of2.match"><code class="name flex">
+<span>def <span class="ident">match</span></span>(<span>case: Any) ‑> Iterable[Any]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -538,24 +457,63 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, pattern: Optional[Any] = None) -&gt; Union[Iterable[Union[A, B, C]]]:
-    m = Matcher(self)
-    return m.case(pattern) if pattern else self.case(m)</code></pre>
+<pre><code class="python">@classmethod
+def match(cls, case: Any) -&gt; Iterable[Any]:
+    return case(cls)</code></pre>
 </details>
 </dd>
 </dl>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.choice.Choice.case" href="#expression.core.choice.Choice.case">case</a></code></li>
-</ul>
-</li>
-</ul>
 </dd>
-<dt id="expression.core.choice.Choice3of3"><code class="flex name class">
-<span>class <span class="ident">Choice3of3</span></span>
-<span>(</span><span>value: ~C)</span>
+<dt id="expression.core.choice.Choice2of3"><code class="flex name class">
+<span>class <span class="ident">Choice2of3</span></span>
+<span>(</span><span>value: ~B)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice2of3(Choice3[A, B, C], Choice[B]):
+    def __init__(self, value: B) -&gt; None:
+        super().__init__(value)
+
+    @classmethod
+    def case(cls, case: Case[B]) -&gt; Iterable[B]:
+        &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+        return case(cls)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></li>
+<li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
+<li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.choice.Choice2of3.case"><code class="name flex">
+<span>def <span class="ident">case</span></span>(<span>case: expression.core.match.Case[~B]) ‑> Iterable[~B]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper to cast the match result to correct type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def case(cls, case: Case[B]) -&gt; Iterable[B]:
+    &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+    return case(cls)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="expression.core.choice.Choice3"><code class="flex name class">
+<span>class <span class="ident">Choice3</span></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for generic types.</p>
@@ -576,33 +534,67 @@ return default</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Choice3of3(Choice3[A, B, C]):
+<pre><code class="python">class Choice3(Generic[A, B, C]):
+    ...</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Generic</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.choice.Choice1of3" href="#expression.core.choice.Choice1of3">Choice1of3</a></li>
+<li><a title="expression.core.choice.Choice2of3" href="#expression.core.choice.Choice2of3">Choice2of3</a></li>
+<li><a title="expression.core.choice.Choice3of3" href="#expression.core.choice.Choice3of3">Choice3of3</a></li>
+</ul>
+</dd>
+<dt id="expression.core.choice.Choice3of3"><code class="flex name class">
+<span>class <span class="ident">Choice3of3</span></span>
+<span>(</span><span>value: ~C)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Choice3of3(Choice3[A, B, C], Choice[C]):
     def __init__(self, value: C) -&gt; None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, m: Matcher) -&gt; Iterable[C]:
+    def case(cls, case: Case[C]) -&gt; Iterable[C]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return m.case(cls)
-
-    def __match__(self, pattern: Any) -&gt; Iterable[C]:
-        return super().__match__(pattern)</code></pre>
+        return case(cls)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></li>
-<li>typing.Generic</li>
 <li><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></li>
 <li>abc.ABC</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></b></code>:
-<ul class="hlist">
-<li><code><a title="expression.core.choice.Choice3.case" href="#expression.core.choice.Choice.case">case</a></code></li>
-</ul>
-</li>
-</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="expression.core.choice.Choice3of3.case"><code class="name flex">
+<span>def <span class="ident">case</span></span>(<span>case: expression.core.match.Case[~C]) ‑> Iterable[~C]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper to cast the match result to correct type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def case(cls, case: Case[C]) -&gt; Iterable[C]:
+    &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
+    return case(cls)</code></pre>
+</details>
+</dd>
+</dl>
 </dd>
 </dl>
 </section>
@@ -622,36 +614,42 @@ return default</p></div>
 <ul>
 <li>
 <h4><code><a title="expression.core.choice.Choice" href="#expression.core.choice.Choice">Choice</a></code></h4>
-<ul class="">
-<li><code><a title="expression.core.choice.Choice.case" href="#expression.core.choice.Choice.case">case</a></code></li>
-</ul>
 </li>
 <li>
 <h4><code><a title="expression.core.choice.Choice1of2" href="#expression.core.choice.Choice1of2">Choice1of2</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.choice.Choice1of2.match" href="#expression.core.choice.Choice1of2.match">match</a></code></li>
+</ul>
 </li>
 <li>
 <h4><code><a title="expression.core.choice.Choice1of3" href="#expression.core.choice.Choice1of3">Choice1of3</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.choice.Choice1of3.match" href="#expression.core.choice.Choice1of3.match">match</a></code></li>
+</ul>
 </li>
 <li>
 <h4><code><a title="expression.core.choice.Choice2" href="#expression.core.choice.Choice2">Choice2</a></code></h4>
-<ul class="">
-<li><code><a title="expression.core.choice.Choice2.match" href="#expression.core.choice.Choice2.match">match</a></code></li>
-</ul>
 </li>
 <li>
 <h4><code><a title="expression.core.choice.Choice2of2" href="#expression.core.choice.Choice2of2">Choice2of2</a></code></h4>
-</li>
-<li>
-<h4><code><a title="expression.core.choice.Choice2of3" href="#expression.core.choice.Choice2of3">Choice2of3</a></code></h4>
-</li>
-<li>
-<h4><code><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></code></h4>
 <ul class="">
-<li><code><a title="expression.core.choice.Choice3.match" href="#expression.core.choice.Choice3.match">match</a></code></li>
+<li><code><a title="expression.core.choice.Choice2of2.match" href="#expression.core.choice.Choice2of2.match">match</a></code></li>
 </ul>
 </li>
 <li>
+<h4><code><a title="expression.core.choice.Choice2of3" href="#expression.core.choice.Choice2of3">Choice2of3</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.choice.Choice2of3.case" href="#expression.core.choice.Choice2of3.case">case</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="expression.core.choice.Choice3" href="#expression.core.choice.Choice3">Choice3</a></code></h4>
+</li>
+<li>
 <h4><code><a title="expression.core.choice.Choice3of3" href="#expression.core.choice.Choice3of3">Choice3of3</a></code></h4>
+<ul class="">
+<li><code><a title="expression.core.choice.Choice3of3.case" href="#expression.core.choice.Choice3of3.case">case</a></code></li>
+</ul>
 </li>
 </ul>
 </li>

@@ -63,7 +63,7 @@ import functools
 import itertools
 from typing import Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, overload
 
-from expression.core import Matcher, Option, SupportsLessThan, identity, pipe
+from expression.core import Case, Option, SupportsLessThan, identity, pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
@@ -91,6 +91,23 @@ class Seq(Iterable[TSource]):
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
         return Seq(filter(predicate)(self))
+
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;Seq[TResult]&#34;:
+        &#34;&#34;&#34;Choose items from the sequence.
+
+        Applies the given function to each element of the list. Returns
+        the list comprised of the results x for each element where the
+        function returns `Some(x)`.
+
+        Args:
+            chooser: The function to generate options from the elements.
+
+        Returns:
+            The list comprising the values selected from the chooser
+            function.
+        &#34;&#34;&#34;
+
+        return Seq(pipe(self, choose(chooser)))
 
     def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
         return Seq(collect(mapping)(self))
@@ -133,7 +150,7 @@ class Seq(Iterable[TSource]):
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
+    def match(self) -&gt; &#34;Case[Iterable[TSource]]&#34;:
         ...
 
     @overload
@@ -141,8 +158,8 @@ class Seq(Iterable[TSource]):
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[TSource]] = Case(self)
+        return case(pattern) if pattern else case
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], TResult]) -&gt; TResult:
@@ -233,6 +250,30 @@ class Seq(Iterable[TSource]):
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for sequence.&#34;&#34;&#34;
         return builtins.iter(self._value)
+
+
+def choose(chooser: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+    &#34;&#34;&#34;Choose items from the sequence.
+
+    Applies the given function to each element of the list. Returns
+    the list comprised of the results x for each element where the
+    function returns `Some(x)`.
+
+    Args:
+        chooser: The function to generate options from the elements.
+
+    Returns:
+        The list comprising the values selected from the chooser
+        function.
+    &#34;&#34;&#34;
+
+    def _choose(source: Iterable[TSource]) -&gt; Iterable[TResult]:
+        def mapper(x: TSource) -&gt; Iterable[TResult]:
+            return chooser(x).to_seq()
+
+        return pipe(source, collect(mapper))
+
+    return _choose
 
 
 def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
@@ -479,19 +520,21 @@ def min_by(projection: Callable[[TSource], TSupportsLessThan]) -&gt; Callable[[I
     return _min_by
 
 
-def of(value: Iterable[TSource]) -&gt; Seq[TSource]:
+def of(*args: TSource) -&gt; Seq[TSource]:
     &#34;&#34;&#34;Create sequence from iterable.
 
     Enables fluent dot chaining on the created sequence object.
     &#34;&#34;&#34;
-    return Seq(value)
+    return Seq(args)
 
 
-of_list = of
-&#34;&#34;&#34;Alias to `Seq.of`.&#34;&#34;&#34;
+def of_iterable(source: Iterable[TSource]) -&gt; Seq[TSource]:
+    &#34;&#34;&#34;Alias to `Seq.of`.&#34;&#34;&#34;
+    return Seq(source)
 
-of_iterable = of
-&#34;&#34;&#34;Alias to `Seq.of`.&#34;&#34;&#34;
+
+of_list = of_iterable
+&#34;&#34;&#34;Alias to `seq.of_iterable`.&#34;&#34;&#34;
 
 
 @overload
@@ -612,6 +655,7 @@ def zip(source1: Iterable[TSource]) -&gt; Callable[[Iterable[TResult]], Iterable
 
 __all__ = [
     &#34;Seq&#34;,
+    &#34;choose&#34;,
     &#34;concat&#34;,
     &#34;collect&#34;,
     &#34;empty&#34;,
@@ -647,6 +691,50 @@ __all__ = [
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="expression.collections.seq.choose"><code class="name flex">
+<span>def <span class="ident">choose</span></span>(<span>chooser: Callable[[~TSource], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Choose items from the sequence.</p>
+<p>Applies the given function to each element of the list. Returns
+the list comprised of the results x for each element where the
+function returns <code>Some(x)</code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>chooser</code></strong></dt>
+<dd>The function to generate options from the elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The list comprising the values selected from the chooser
+function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def choose(chooser: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+    &#34;&#34;&#34;Choose items from the sequence.
+
+    Applies the given function to each element of the list. Returns
+    the list comprised of the results x for each element where the
+    function returns `Some(x)`.
+
+    Args:
+        chooser: The function to generate options from the elements.
+
+    Returns:
+        The list comprising the values selected from the chooser
+        function.
+    &#34;&#34;&#34;
+
+    def _choose(source: Iterable[TSource]) -&gt; Iterable[TResult]:
+        def mapper(x: TSource) -&gt; Iterable[TResult]:
+            return chooser(x).to_seq()
+
+        return pipe(source, collect(mapper))
+
+    return _choose</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.seq.collect"><code class="name flex">
 <span>def <span class="ident">collect</span></span>(<span>mapping: Callable[[~TSource], Iterable[~TResult]]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
 </code></dt>
@@ -1031,7 +1119,7 @@ compared via <code><a title="expression.collections.seq.max" href="#expression.c
 </details>
 </dd>
 <dt id="expression.collections.seq.of"><code class="name flex">
-<span>def <span class="ident">of</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
+<span>def <span class="ident">of</span></span>(<span>*args: ~TSource) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create sequence from iterable.</p>
@@ -1040,48 +1128,40 @@ compared via <code><a title="expression.collections.seq.max" href="#expression.c
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def of(value: Iterable[TSource]) -&gt; Seq[TSource]:
+<pre><code class="python">def of(*args: TSource) -&gt; Seq[TSource]:
     &#34;&#34;&#34;Create sequence from iterable.
 
     Enables fluent dot chaining on the created sequence object.
     &#34;&#34;&#34;
-    return Seq(value)</code></pre>
+    return Seq(args)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.seq.of_iterable"><code class="name flex">
-<span>def <span class="ident">of_iterable</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
+<span>def <span class="ident">of_iterable</span></span>(<span>source: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create sequence from iterable.</p>
-<p>Enables fluent dot chaining on the created sequence object.</p></div>
+<div class="desc"><p>Alias to <code>Seq.of</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def of(value: Iterable[TSource]) -&gt; Seq[TSource]:
-    &#34;&#34;&#34;Create sequence from iterable.
-
-    Enables fluent dot chaining on the created sequence object.
-    &#34;&#34;&#34;
-    return Seq(value)</code></pre>
+<pre><code class="python">def of_iterable(source: Iterable[TSource]) -&gt; Seq[TSource]:
+    &#34;&#34;&#34;Alias to `Seq.of`.&#34;&#34;&#34;
+    return Seq(source)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.seq.of_list"><code class="name flex">
-<span>def <span class="ident">of_list</span></span>(<span>value: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
+<span>def <span class="ident">of_list</span></span>(<span>source: Iterable[~TSource]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create sequence from iterable.</p>
-<p>Enables fluent dot chaining on the created sequence object.</p></div>
+<div class="desc"><p>Alias to <code>Seq.of</code>.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def of(value: Iterable[TSource]) -&gt; Seq[TSource]:
-    &#34;&#34;&#34;Create sequence from iterable.
-
-    Enables fluent dot chaining on the created sequence object.
-    &#34;&#34;&#34;
-    return Seq(value)</code></pre>
+<pre><code class="python">def of_iterable(source: Iterable[TSource]) -&gt; Seq[TSource]:
+    &#34;&#34;&#34;Alias to `Seq.of`.&#34;&#34;&#34;
+    return Seq(source)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.seq.scan"><code class="name flex">
@@ -1248,6 +1328,23 @@ sequences.</p>
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
         return Seq(filter(predicate)(self))
 
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;Seq[TResult]&#34;:
+        &#34;&#34;&#34;Choose items from the sequence.
+
+        Applies the given function to each element of the list. Returns
+        the list comprised of the results x for each element where the
+        function returns `Some(x)`.
+
+        Args:
+            chooser: The function to generate options from the elements.
+
+        Returns:
+            The list comprising the values selected from the chooser
+            function.
+        &#34;&#34;&#34;
+
+        return Seq(pipe(self, choose(chooser)))
+
     def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
         return Seq(collect(mapping)(self))
 
@@ -1289,7 +1386,7 @@ sequences.</p>
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
+    def match(self) -&gt; &#34;Case[Iterable[TSource]]&#34;:
         ...
 
     @overload
@@ -1297,8 +1394,8 @@ sequences.</p>
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[TSource]] = Case(self)
+        return case(pattern) if pattern else case
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], TResult]) -&gt; TResult:
@@ -1455,6 +1552,44 @@ def unfold(cls, generator: Callable[[TState], Option[Tuple[TSource, TState]]], s
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="expression.collections.seq.Seq.choose"><code class="name flex">
+<span>def <span class="ident">choose</span></span>(<span>self, chooser: Callable[[~TSource], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Choose items from the sequence.</p>
+<p>Applies the given function to each element of the list. Returns
+the list comprised of the results x for each element where the
+function returns <code>Some(x)</code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>chooser</code></strong></dt>
+<dd>The function to generate options from the elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The list comprising the values selected from the chooser
+function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;Seq[TResult]&#34;:
+    &#34;&#34;&#34;Choose items from the sequence.
+
+    Applies the given function to each element of the list. Returns
+    the list comprised of the results x for each element where the
+    function returns `Some(x)`.
+
+    Args:
+        chooser: The function to generate options from the elements.
+
+    Returns:
+        The list comprising the values selected from the chooser
+        function.
+    &#34;&#34;&#34;
+
+    return Seq(pipe(self, choose(chooser)))</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.seq.Seq.collect"><code class="name flex">
 <span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], ForwardRef('<a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a>[TResult]')]) ‑> <a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
@@ -1582,8 +1717,8 @@ collection.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m = Matcher(self)
-    return m.case(pattern) if pattern else m</code></pre>
+    case: Case[Iterable[TSource]] = Case(self)
+    return case(pattern) if pattern else case</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.seq.Seq.pipe"><code class="name flex">
@@ -1692,6 +1827,7 @@ ignored.</p>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="two-column">
+<li><code><a title="expression.collections.seq.choose" href="#expression.collections.seq.choose">choose</a></code></li>
 <li><code><a title="expression.collections.seq.collect" href="#expression.collections.seq.collect">collect</a></code></li>
 <li><code><a title="expression.collections.seq.concat" href="#expression.collections.seq.concat">concat</a></code></li>
 <li><code><a title="expression.collections.seq.filter" href="#expression.collections.seq.filter">filter</a></code></li>
@@ -1716,6 +1852,7 @@ ignored.</p>
 <li>
 <h4><code><a title="expression.collections.seq.Seq" href="#expression.collections.seq.Seq">Seq</a></code></h4>
 <ul class="two-column">
+<li><code><a title="expression.collections.seq.Seq.choose" href="#expression.collections.seq.Seq.choose">choose</a></code></li>
 <li><code><a title="expression.collections.seq.Seq.collect" href="#expression.collections.seq.Seq.collect">collect</a></code></li>
 <li><code><a title="expression.collections.seq.Seq.filter" href="#expression.collections.seq.Seq.filter">filter</a></code></li>
 <li><code><a title="expression.collections.seq.Seq.fold" href="#expression.collections.seq.Seq.fold">fold</a></code></li>

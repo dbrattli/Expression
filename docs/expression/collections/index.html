@@ -138,17 +138,9 @@ appending.</p>
         &gt;&gt;&gt; ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     &#34;&#34;&#34;
 
-    @overload
-    def match(self) -&gt; Matcher:
-        ...
-
-    @overload
-    def match(self, pattern: Any) -&gt; Iterable[List[TSource]]:
-        ...
-
     def match(self, pattern: Any) -&gt; Any:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[TSource] = Case(self)
+        return case(pattern) if pattern else case
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;FrozenList[TSource]&#34;], TResult]) -&gt; TResult:
@@ -450,7 +442,8 @@ appending.</p>
             return [[val for val in self]]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [[val for val in self]]
         except TypeError:
             pass
@@ -915,8 +908,8 @@ list.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m = Matcher(self)
-    return m.case(pattern) if pattern else m</code></pre>
+    case: Case[TSource] = Case(self)
+    return case(pattern) if pattern else case</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.FrozenList.pipe"><code class="name flex">
@@ -1169,18 +1162,18 @@ input lists.</p></div>
         return pipe(self, *args)
 
     @staticmethod
-    def empty() -&gt; &#34;Map[Key, Value]&#34;:
-        return Map(maptree.empty)
-
-    @staticmethod
     def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
-        return Map(maptree.of_seq(ie))
+        return create(ie)
 
     def contains_key(self, key: Key) -&gt; bool:
         return maptree.mem(key, self._tree)
 
     def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         return Map(maptree.change(key, f, self._tree))
+
+    @staticmethod
+    def empty() -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.empty)
 
     def is_empty(self) -&gt; bool:
         return maptree.is_empty(self._tree)
@@ -1390,7 +1383,7 @@ input lists.</p></div>
 </summary>
 <pre><code class="python">@staticmethod
 def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
-    return Map(maptree.of_seq(ie))</code></pre>
+    return create(ie)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.Map.empty"><code class="name flex">
@@ -1840,6 +1833,23 @@ sequences.</p>
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; &#34;Seq[TSource]&#34;:
         return Seq(filter(predicate)(self))
 
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;Seq[TResult]&#34;:
+        &#34;&#34;&#34;Choose items from the sequence.
+
+        Applies the given function to each element of the list. Returns
+        the list comprised of the results x for each element where the
+        function returns `Some(x)`.
+
+        Args:
+            chooser: The function to generate options from the elements.
+
+        Returns:
+            The list comprising the values selected from the chooser
+            function.
+        &#34;&#34;&#34;
+
+        return Seq(pipe(self, choose(chooser)))
+
     def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
         return Seq(collect(mapping)(self))
 
@@ -1881,7 +1891,7 @@ sequences.</p>
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
+    def match(self) -&gt; &#34;Case[Iterable[TSource]]&#34;:
         ...
 
     @overload
@@ -1889,8 +1899,8 @@ sequences.</p>
         ...
 
     def match(self, pattern: Any) -&gt; Any:
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[TSource]] = Case(self)
+        return case(pattern) if pattern else case
 
     @overload
     def pipe(self, __fn1: Callable[[&#34;Seq[TSource]&#34;], TResult]) -&gt; TResult:
@@ -2047,6 +2057,44 @@ def unfold(cls, generator: Callable[[TState], Option[Tuple[TSource, TState]]], s
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="expression.collections.Seq.choose"><code class="name flex">
+<span>def <span class="ident">choose</span></span>(<span>self, chooser: Callable[[~TSource], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> <a title="expression.collections.seq.Seq" href="seq.html#expression.collections.seq.Seq">Seq</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Choose items from the sequence.</p>
+<p>Applies the given function to each element of the list. Returns
+the list comprised of the results x for each element where the
+function returns <code>Some(x)</code>.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>chooser</code></strong></dt>
+<dd>The function to generate options from the elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The list comprising the values selected from the chooser
+function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def choose(self, chooser: Callable[[TSource], Option[TResult]]) -&gt; &#34;Seq[TResult]&#34;:
+    &#34;&#34;&#34;Choose items from the sequence.
+
+    Applies the given function to each element of the list. Returns
+    the list comprised of the results x for each element where the
+    function returns `Some(x)`.
+
+    Args:
+        chooser: The function to generate options from the elements.
+
+    Returns:
+        The list comprising the values selected from the chooser
+        function.
+    &#34;&#34;&#34;
+
+    return Seq(pipe(self, choose(chooser)))</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.Seq.collect"><code class="name flex">
 <span>def <span class="ident">collect</span></span>(<span>self, mapping: Callable[[~TSource], ForwardRef('<a title="expression.collections.Seq" href="#expression.collections.Seq">Seq</a>[TResult]')]) ‑> <a title="expression.collections.seq.Seq" href="seq.html#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
@@ -2174,8 +2222,8 @@ collection.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    m = Matcher(self)
-    return m.case(pattern) if pattern else m</code></pre>
+    case: Case[Iterable[TSource]] = Case(self)
+    return case(pattern) if pattern else case</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.Seq.pipe"><code class="name flex">
@@ -2354,6 +2402,7 @@ ignored.</p>
 <li>
 <h4><code><a title="expression.collections.Seq" href="#expression.collections.Seq">Seq</a></code></h4>
 <ul class="two-column">
+<li><code><a title="expression.collections.Seq.choose" href="#expression.collections.Seq.choose">choose</a></code></li>
 <li><code><a title="expression.collections.Seq.collect" href="#expression.collections.Seq.collect">collect</a></code></li>
 <li><code><a title="expression.collections.Seq.filter" href="#expression.collections.Seq.filter">filter</a></code></li>
 <li><code><a title="expression.collections.Seq.fold" href="#expression.collections.Seq.fold">fold</a></code></li>

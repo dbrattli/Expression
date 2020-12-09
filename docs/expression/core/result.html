@@ -45,22 +45,27 @@ the Result type to Exception.
 &#34;&#34;&#34;
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Generic, Iterable, Iterator, Type, TypeVar, Union, overload
+from typing import Any, Callable, Generator, Iterable, Iterator, Type, TypeVar, Union, get_origin, overload
 
 from .error import EffectError
-from .match import Matcher
+from .match import Case, SupportsMatch
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
 TError = TypeVar(&#34;TError&#34;)
+
+# Underscore types are used for generic methods
+_TSource = TypeVar(&#34;_TSource&#34;)
+_TError = TypeVar(&#34;_TError&#34;)
+
 T1 = TypeVar(&#34;T1&#34;)
 T2 = TypeVar(&#34;T2&#34;)
 T3 = TypeVar(&#34;T3&#34;)
 T4 = TypeVar(&#34;T4&#34;)
 
 
-class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
+class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -106,26 +111,30 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         raise NotImplementedError
 
     @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
+    def match(self, pattern: &#34;Ok[_TSource, _TError]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Error[_TSource, _TError]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Error[TSource, TError]&#34;) -&gt; Iterable[TError]:
+    def match(self, pattern: &#34;Case[Ok[_TSource, _TError]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Result[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Case[Error[_TSource, _TError]]&#34;) -&gt; Iterable[_TError]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Result[_TSource, _TError]]&#34;) -&gt; Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
         &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
 
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[Union[TSource, TError]]] = Case(self)
+        return case(pattern) if pattern else case
 
     @abstractmethod
     def is_error(self) -&gt; bool:
@@ -150,7 +159,7 @@ class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
         return str(self)
 
 
-class Ok(Result[TSource, TError]):
+class Ok(Result[TSource, TError], SupportsMatch[TSource]):
     &#34;&#34;&#34;The Ok result case class.&#34;&#34;&#34;
 
     def __init__(self, value: TSource) -&gt; None:
@@ -186,7 +195,8 @@ class Ok(Result[TSource, TError]):
             return [self.value]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.value]
         except TypeError:
             pass
@@ -249,7 +259,8 @@ class Error(Result[TSource, TError], ResultException):
             return [self.error]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.error]
         except TypeError:
             pass
@@ -287,15 +298,7 @@ def bind(
     return _bind
 
 
-# class Try(Result[TSource, Exception]):
-#    &#34;&#34;&#34;A result type where the failure case can only be a valid
-#    exception.&#34;&#34;&#34;
-#
-#    ...
-Try = Result[TSource, Exception]
-
-
-__all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;bind&#34;, &#34;Try&#34;]</code></pre>
+__all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;bind&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -389,7 +392,8 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
             return [self.error]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.error]
         except TypeError:
             pass
@@ -414,12 +418,18 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <ul class="hlist">
 <li><a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
 <li>expression.core.result.ResultException</li>
 <li><a title="expression.core.error.EffectError" href="error.html#expression.core.error.EffectError">EffectError</a></li>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.result_try.Failure" href="result_try.html#expression.core.result_try.Failure">Failure</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -501,7 +511,7 @@ def error(self) -&gt; TError:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Ok(Result[TSource, TError]):
+<pre><code class="python">class Ok(Result[TSource, TError], SupportsMatch[TSource]):
     &#34;&#34;&#34;The Ok result case class.&#34;&#34;&#34;
 
     def __init__(self, value: TSource) -&gt; None:
@@ -537,7 +547,8 @@ def error(self) -&gt; TError:
             return [self.value]
 
         try:
-            if isinstance(self, pattern):
+            origin: Any = get_origin(pattern)
+            if isinstance(self, origin or pattern):
                 return [self.value]
         except TypeError:
             pass
@@ -560,8 +571,14 @@ def error(self) -&gt; TError:
 <ul class="hlist">
 <li><a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></li>
 <li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="expression.core.result_try.Success" href="result_try.html#expression.core.result_try.Success">Success</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -636,6 +653,7 @@ def value(self) -&gt; TSource:
 </dd>
 <dt id="expression.core.result.Result"><code class="flex name class">
 <span>class <span class="ident">Result</span></span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The result abstract base class.</p></div>
@@ -643,7 +661,7 @@ def value(self) -&gt; TSource:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
+<pre><code class="python">class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -689,26 +707,30 @@ def value(self) -&gt; TSource:
         raise NotImplementedError
 
     @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
+    def match(self, pattern: &#34;Ok[_TSource, _TError]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Error[_TSource, _TError]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Error[TSource, TError]&#34;) -&gt; Iterable[TError]:
+    def match(self, pattern: &#34;Case[Ok[_TSource, _TError]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Result[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Case[Error[_TSource, _TError]]&#34;) -&gt; Iterable[_TError]:
+        ...
+
+    @overload
+    def match(self, pattern: &#34;Type[Result[_TSource, _TError]]&#34;) -&gt; Iterable[TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
         &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
 
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
+        case: Case[Iterable[Union[TSource, TError]]] = Case(self)
+        return case(pattern) if pattern else case
 
     @abstractmethod
     def is_error(self) -&gt; bool:
@@ -735,6 +757,8 @@ def value(self) -&gt; TSource:
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>collections.abc.Iterable</li>
+<li>expression.core.typing.SupportsMatch</li>
+<li>typing.Protocol</li>
 <li>typing.Generic</li>
 <li>abc.ABC</li>
 </ul>
@@ -834,223 +858,8 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <pre><code class="python">def match(self, pattern: Any) -&gt; Any:
     &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
 
-    m = Matcher(self)
-    return m.case(pattern) if pattern else m</code></pre>
-</details>
-</dd>
-<dt id="expression.core.result.Result.pipe"><code class="name flex">
-<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Pipe result through the given functions.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def pipe(self, *args: Any):
-    &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
-    return pipe(self, *args)</code></pre>
-</details>
-</dd>
-</dl>
-</dd>
-<dt id="expression.core.result.Result"><code class="flex name class">
-<span>class <span class="ident">Try</span></span>
-</code></dt>
-<dd>
-<div class="desc"><p>The result abstract base class.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Result(Generic[TSource, TError], Iterable[Union[TSource, TError]], ABC):
-    &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
-
-    @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
-        ...
-
-    @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
-        ...
-
-    @overload
-    def pipe(
-        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
-    ) -&gt; T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-    ) -&gt; T4:
-        ...
-
-    def pipe(self, *args: Any):
-        &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
-        return pipe(self, *args)
-
-    @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
-        raise NotImplementedError
-
-    @abstractmethod
-    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
-        &#34;&#34;&#34;Return a result of the error value after applying the mapping
-        function, or Ok if the input is Ok.&#34;&#34;&#34;
-        raise NotImplementedError
-
-    @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
-        raise NotImplementedError
-
-    @overload
-    def match(self) -&gt; &#34;Matcher&#34;:
-        ...
-
-    @overload
-    def match(self, pattern: &#34;Ok[TSource, TError]&#34;) -&gt; Iterable[TSource]:
-        ...
-
-    @overload
-    def match(self, pattern: &#34;Error[TSource, TError]&#34;) -&gt; Iterable[TError]:
-        ...
-
-    @overload
-    def match(self, pattern: &#34;Type[Result[TSource, TError]]&#34;) -&gt; Iterable[TSource]:
-        ...
-
-    def match(self, pattern: Any) -&gt; Any:
-        &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
-
-        m = Matcher(self)
-        return m.case(pattern) if pattern else m
-
-    @abstractmethod
-    def is_error(self) -&gt; bool:
-        &#34;&#34;&#34;Returns `True` if the result is an `Error` value.&#34;&#34;&#34;
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def is_ok(self) -&gt; bool:
-        &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
-
-        raise NotImplementedError
-
-    def __eq__(self, other: Any) -&gt; bool:
-        raise NotImplementedError
-
-    @abstractmethod
-    def __iter__(self) -&gt; Iterator[TSource]:
-        raise NotImplementedError
-
-    def __repr__(self) -&gt; str:
-        return str(self)</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>collections.abc.Iterable</li>
-<li>typing.Generic</li>
-<li>abc.ABC</li>
-</ul>
-<h3>Methods</h3>
-<dl>
-<dt id="expression.core.result.Result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[TResult, TError]')]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@abstractmethod
-def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
-    raise NotImplementedError</code></pre>
-</details>
-</dd>
-<dt id="expression.core.result.Result.is_error"><code class="name flex">
-<span>def <span class="ident">is_error</span></span>(<span>self) ‑> bool</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Returns <code>True</code> if the result is an <code><a title="expression.core.result.Error" href="#expression.core.result.Error">Error</a></code> value.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@abstractmethod
-def is_error(self) -&gt; bool:
-    &#34;&#34;&#34;Returns `True` if the result is an `Error` value.&#34;&#34;&#34;
-
-    raise NotImplementedError</code></pre>
-</details>
-</dd>
-<dt id="expression.core.result.Result.is_ok"><code class="name flex">
-<span>def <span class="ident">is_ok</span></span>(<span>self) ‑> bool</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Returns <code>True</code> if the result is an <code><a title="expression.core.result.Ok" href="#expression.core.result.Ok">Ok</a></code> value.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@abstractmethod
-def is_ok(self) -&gt; bool:
-    &#34;&#34;&#34;Returns `True` if the result is an `Ok` value.&#34;&#34;&#34;
-
-    raise NotImplementedError</code></pre>
-</details>
-</dd>
-<dt id="expression.core.result.Result.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@abstractmethod
-def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
-    raise NotImplementedError</code></pre>
-</details>
-</dd>
-<dt id="expression.core.result.Result.map_error"><code class="name flex">
-<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return a result of the error value after applying the mapping
-function, or Ok if the input is Ok.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@abstractmethod
-def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
-    &#34;&#34;&#34;Return a result of the error value after applying the mapping
-    function, or Ok if the input is Ok.&#34;&#34;&#34;
-    raise NotImplementedError</code></pre>
-</details>
-</dd>
-<dt id="expression.core.result.Result.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Match result with pattern.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def match(self, pattern: Any) -&gt; Any:
-    &#34;&#34;&#34;Match result with pattern.&#34;&#34;&#34;
-
-    m = Matcher(self)
-    return m.case(pattern) if pattern else m</code></pre>
+    case: Case[Iterable[Union[TSource, TError]]] = Case(self)
+    return case(pattern) if pattern else case</code></pre>
 </details>
 </dd>
 <dt id="expression.core.result.Result.pipe"><code class="name flex">
@@ -1107,18 +916,6 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.result.Ok.is_error" href="#expression.core.result.Ok.is_error">is_error</a></code></li>
 <li><code><a title="expression.core.result.Ok.map" href="#expression.core.result.Ok.map">map</a></code></li>
 <li><code><a title="expression.core.result.Ok.value" href="#expression.core.result.Ok.value">value</a></code></li>
-</ul>
-</li>
-<li>
-<h4><code><a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></code></h4>
-<ul class="two-column">
-<li><code><a title="expression.core.result.Result.bind" href="#expression.core.result.Result.bind">bind</a></code></li>
-<li><code><a title="expression.core.result.Result.is_error" href="#expression.core.result.Result.is_error">is_error</a></code></li>
-<li><code><a title="expression.core.result.Result.is_ok" href="#expression.core.result.Result.is_ok">is_ok</a></code></li>
-<li><code><a title="expression.core.result.Result.map" href="#expression.core.result.Result.map">map</a></code></li>
-<li><code><a title="expression.core.result.Result.map_error" href="#expression.core.result.Result.map_error">map_error</a></code></li>
-<li><code><a title="expression.core.result.Result.match" href="#expression.core.result.Result.match">match</a></code></li>
-<li><code><a title="expression.core.result.Result.pipe" href="#expression.core.result.Result.pipe">pipe</a></code></li>
 </ul>
 </li>
 <li>

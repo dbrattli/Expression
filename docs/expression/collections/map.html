@@ -124,18 +124,18 @@ class Map(Mapping[Key, Value]):
         return pipe(self, *args)
 
     @staticmethod
-    def empty() -&gt; &#34;Map[Key, Value]&#34;:
-        return Map(maptree.empty)
-
-    @staticmethod
     def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
-        return Map(maptree.of_seq(ie))
+        return create(ie)
 
     def contains_key(self, key: Key) -&gt; bool:
         return maptree.mem(key, self._tree)
 
     def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         return Map(maptree.change(key, f, self._tree))
+
+    @staticmethod
+    def empty() -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.empty)
 
     def is_empty(self) -&gt; bool:
         return maptree.is_empty(self._tree)
@@ -379,9 +379,20 @@ def change(key: Key, fn: Callable[[Option[Value]], Option[Value]]) -&gt; Callabl
     return _change
 
 
+def contains_key(key: Key) -&gt; Callable[[Map[Key, Value]], bool]:
+    def _contains_key(table: Map[Key, Value]) -&gt; bool:
+        return table.contains_key(key)
+
+    return _contains_key
+
+
 def count(table: Map[Key, Value]) -&gt; int:
     &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
     return len(table)
+
+
+def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
+    return Map(maptree.of_seq(ie))
 
 
 def find(key: Key) -&gt; Callable[[Map[Key, Value]], Value]:
@@ -410,13 +421,6 @@ def is_empty(table: Map[Key, Value]) -&gt; bool:
         True if the map is empty.
     &#34;&#34;&#34;
     return table.is_empty()
-
-
-def contains_key(key: Key) -&gt; Callable[[Map[Key, Value]], bool]:
-    def _contains_key(table: Map[Key, Value]) -&gt; bool:
-        return table.contains_key(key)
-
-    return _contains_key
 
 
 def iterate(action: Callable[[Key, Value], None]) -&gt; Callable[[Map[Key, Value]], None]:
@@ -623,6 +627,7 @@ __all__ = [
     &#34;Map&#34;,
     &#34;add&#34;,
     &#34;change&#34;,
+    &#34;create&#34;,
     &#34;contains_key&#34;,
     &#34;count&#34;,
     &#34;empty&#34;,
@@ -779,6 +784,19 @@ according to f.</p>
 <pre><code class="python">def count(table: Map[Key, Value]) -&gt; int:
     &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
     return len(table)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.create"><code class="name flex">
+<span>def <span class="ident">create</span></span>(<span>ie: Iterable[Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
+    return Map(maptree.of_seq(ie))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.exists"><code class="name flex">
@@ -1228,18 +1246,18 @@ and returns the first result.</p></div>
         return pipe(self, *args)
 
     @staticmethod
-    def empty() -&gt; &#34;Map[Key, Value]&#34;:
-        return Map(maptree.empty)
-
-    @staticmethod
     def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
-        return Map(maptree.of_seq(ie))
+        return create(ie)
 
     def contains_key(self, key: Key) -&gt; bool:
         return maptree.mem(key, self._tree)
 
     def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -&gt; &#34;Map[Key, Value]&#34;:
         return Map(maptree.change(key, f, self._tree))
+
+    @staticmethod
+    def empty() -&gt; &#34;Map[Key, Value]&#34;:
+        return Map(maptree.empty)
 
     def is_empty(self) -&gt; bool:
         return maptree.is_empty(self._tree)
@@ -1449,7 +1467,7 @@ and returns the first result.</p></div>
 </summary>
 <pre><code class="python">@staticmethod
 def create(ie: Iterable[Tuple[Key, Value]]) -&gt; &#34;Map[Key, Value]&#34;:
-    return Map(maptree.of_seq(ie))</code></pre>
+    return create(ie)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.Map.empty"><code class="name flex">
@@ -1886,6 +1904,7 @@ element being transformed.</p>
 <li><code><a title="expression.collections.map.change" href="#expression.collections.map.change">change</a></code></li>
 <li><code><a title="expression.collections.map.contains_key" href="#expression.collections.map.contains_key">contains_key</a></code></li>
 <li><code><a title="expression.collections.map.count" href="#expression.collections.map.count">count</a></code></li>
+<li><code><a title="expression.collections.map.create" href="#expression.collections.map.create">create</a></code></li>
 <li><code><a title="expression.collections.map.exists" href="#expression.collections.map.exists">exists</a></code></li>
 <li><code><a title="expression.collections.map.filter" href="#expression.collections.map.filter">filter</a></code></li>
 <li><code><a title="expression.collections.map.find" href="#expression.collections.map.find">find</a></code></li>
