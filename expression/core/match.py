@@ -132,7 +132,6 @@ class Case(Generic[TSource]):
         return []
 
     def default(self) -> Iterable[Any]:
-        print("default()")
         if self.is_matched:
             return []
 
