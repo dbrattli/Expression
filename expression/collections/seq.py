@@ -471,7 +471,7 @@ def min(source: Iterable[TSupportsLessThan]) -> TSupportsLessThan:
     return builtins.min(source)
 
 
-def min_by(projection: Callable[[TSource], TSupportsLessThan]) -> Callable[[Iterable[TSource]], TResult]:
+def min_by(projection: Callable[[TSource], TSupportsLessThan]) -> Callable[[Iterable[TSource]], TSupportsLessThan]:
     def _min_by(source: Iterable[TSource]) -> TSupportsLessThan:
         return builtins.min(projection(x) for x in source)
 

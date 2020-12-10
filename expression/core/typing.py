@@ -5,6 +5,7 @@ A = TypeVar("A")
 B = TypeVar("B")
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
+
 Base = TypeVar("Base")
 Derived = TypeVar("Derived")
 
@@ -28,11 +29,21 @@ class SupportsMatch(Protocol[TSource]):
         raise NotImplementedError
 
 
+def upcast(type: Type[Base], expr: Base) -> Base:
+    """Upcast expression from a `Derived` to `Base`.
+
+    Note: F# `:>` or `upcast`.
+    """
+    x: type = expr
+    return x
+
+
 def downcast(type: Type[Derived], expr: Base) -> Derived:
     """Downcast expression `Derived` to `Base`
 
-    Checks at compile time that the type of expression E is a supertype
-    of T, and checks at runtime that E is in fact an instance of T.
+    Checks at compile time that the type of expression Base is a
+    supertype of Derived, and checks at runtime that Base is in fact an
+    instance of Derived.
 
     Note: F# `:?>` or `downcast`.
     """
@@ -40,20 +51,8 @@ def downcast(type: Type[Derived], expr: Base) -> Derived:
     return cast(type, expr)
 
 
-def upcast(type: Type[Base], expr: Derived) -> Base:
-    """Upcast expression `Derived` to `Base`.
-
-    Check that the `Derived` type is a supertype of Base.
-
-    Note: F# `:>` or `upcast`.
-    """
-
-    # assert isinstance(expr, type), f"The expression {expr} is not derived from type {type}"
-    return cast("Base", expr)
-
-
-def try_upcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:
-    """Upcast expression `Base` to `Derived`.
+def try_downcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:
+    """Downcast expression `Base` to `Derived`.
 
     Check that the `Derived` type is a supertype of `Base`.
 
@@ -70,4 +69,4 @@ def try_upcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:
         return None
 
 
-__all__ = ["SupportsLessThan", "downcast", "upcast", "try_upcast"]
+__all__ = ["SupportsLessThan", "downcast", "upcast", "try_downcast"]

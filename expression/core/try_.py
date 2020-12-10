@@ -1,5 +1,8 @@
 """The `Try` type  is a simpler `Result` type that pins the error type
-to Exception."""
+to Exception.
+
+Everything else is the same as `Result`.
+"""
 
 from typing import TypeVar
 

@@ -15,7 +15,7 @@ from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
-from .result_try import Failure, Success, Try
+from .try_ import Failure, Success, Try
 from .typing import SupportsLessThan, SupportsMatch
 
 __all__ = [

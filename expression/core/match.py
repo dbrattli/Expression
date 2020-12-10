@@ -1,6 +1,8 @@
 from types import TracebackType
 from typing import Any, Generic, Iterable, Optional, Type, TypeVar, cast, get_origin, overload
 
+from expression.core.builder import TResult
+
 # from .choice import Choice1of2, Choice2of2
 from .error import MatchFailureError
 from .typing import SupportsMatch
@@ -137,14 +139,22 @@ class Case(Generic[TSource]):
         """Handle default case. Always matches."""
         return self.default()
 
-    def default(self) -> Iterable[Any]:
+    @overload
+    def default(self) -> Iterable[TSource]:
+        ...
+
+    @overload
+    def default(self, ret: Optional[TResult]) -> TResult:
+        ...
+
+    def default(self, ret: Optional[Any] = None) -> Any:
         """Handle default case. Always matches."""
 
         if self.is_matched:
             return []
 
         self.is_matched = True
-        return [self.value]
+        return [ret or self.value]
 
     def __enter__(self) -> "Case[TSource]":
         """Enter context management."""

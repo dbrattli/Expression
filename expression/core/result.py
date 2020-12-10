@@ -239,7 +239,11 @@ class Error(Result[TSource, TError], ResultException):
 
     def __iter__(self) -> Iterator[TSource]:
         """Return iterator for Error case."""
-        raise Error(self._error)
+
+        # Raise class here so sub-classes like Failure works as well.
+        raise self.__class__(self._error)
+
+        # We're a generator
         while False:
             yield
 
