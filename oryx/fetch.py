@@ -1,7 +1,7 @@
 from typing import Any, Callable, TypeVar
 
 from aiohttp import ClientResponse
-from expression.core import Error, Option, Result, Some, option, pipe
+from expression.core import Error, Option, Some, Try, option, pipe
 
 from .context import Context, HttpContent, HttpContext
 from .handler import HttpFunc, HttpFuncResult
@@ -13,13 +13,13 @@ TNext = TypeVar("TNext")
 
 
 async def fetch(
-    next: HttpFunc[Option[ClientResponse], TResult, TError],
+    next: HttpFunc[Option[ClientResponse], TResult],
     ctx: HttpContext,
-) -> Result[Context[TResult], TError]:
+) -> Try[Context[TResult]]:
     session = ctx.Request.SessionFactory()
     builder: Callable[[Any], HttpContent] = lambda builder: builder()
 
-    result: HttpFuncResult
+    result: HttpFuncResult[TResult]
     try:
         content: Option[Any] = pipe(ctx.Request.ContentBuilder, option.map(builder))
         json = pipe(content, option.default_value(None))

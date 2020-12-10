@@ -1,6 +1,7 @@
-from typing import Any, List
+from typing import Any, List, cast
 
-from expression.core.typing import downcast, try_upcast, upcast
+import pytest
+from expression.core.typing import downcast, try_downcast, upcast
 
 
 class Base:
@@ -11,80 +12,76 @@ class Derived(Base):
     pass
 
 
-class Other(Base):
+class Other:
     pass
 
 
-def test_downcast():
+def test_upcast():
     # Arrange
     d = Derived()
 
     # Act
-    b = downcast(Base, d)
+    b = upcast(Base, d)
 
     # Assert
     assert isinstance(b, Base)
     assert isinstance(b, Derived)
 
 
-def test_downcast_negative():
+def test_upcast_negative():
     # Arrange
     d = Derived()
 
     # Act / Assert
-    try:
-        downcast(Other, d)
-    except AssertionError:
-        pass
+    x = upcast(Other, d)
+
+    with pytest.raises(AssertionError):
+        assert isinstance(x, Other)
 
 
-def test_upcast():
+def test_downcast():
     # Arrange
-    d = Derived()
-    c = downcast(Base, d)
+    b = cast(Base, Derived())
 
     # Act
-    d = upcast(Derived, c)
+    d = downcast(Derived, b)
 
     # Assert
     assert isinstance(d, Base)
     assert isinstance(d, Derived)
 
 
-def test_upcast_negative():
+def test_downcast_negative():
     # Arrange
-    d = Derived()
-    c = downcast(Base, d)
+    b = cast(Base, Derived())
 
     # Act / Assert
     try:
-        d = upcast(Other, c)
+        downcast(Other, b)
     except AssertionError:
         pass
 
 
-def test_try_cast():
+def test_try_downcast():
     # Arrange
-    d = Derived()
-    b = downcast(Base, d)
+    b = cast(Base, Derived())
 
     # Act
-    c = try_upcast(Derived, b)
+    c = try_downcast(Derived, b)
 
     # Assert
     assert isinstance(c, Derived)
 
 
-def test_try_cast_negative():
+def test_try_downcast_negative():
     # Arrange
-    d = Derived()
-    b = downcast(Base, d)
+    b = cast(Base, Derived())
 
     # Act
-    c = try_upcast(Other, b)
+    c = try_downcast(Other, b)
 
     # Assert
-    assert not c
+    assert c is None
 
 
 def test_try_cast_generic():
@@ -92,7 +89,7 @@ def test_try_cast_generic():
     d: List[Derived] = [Derived()]
 
     # Act
-    b = try_upcast(List[Any], d)
+    b = try_downcast(List[Any], d)
 
     # Assert
     assert isinstance(b, List)
@@ -103,7 +100,7 @@ def test_try_cast_generic_negative():
     d: List[Derived] = [Derived()]
 
     # Act
-    b = try_upcast(str, d)
+    b = try_downcast(str, d)
 
     # Assert
     assert b is None

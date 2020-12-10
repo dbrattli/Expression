@@ -10,6 +10,14 @@ def test_default_matches():
             assert value == 42
 
 
+def test_default_falsy_matches():
+    with match(None) as case:
+        if case._:
+            assert True
+        else:
+            assert False
+
+
 def test_match_type():
     with match(42) as case:
         for value in case(int):

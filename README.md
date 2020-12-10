@@ -39,7 +39,7 @@ oriented programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
 and predictable error handling. Pipelining for workflows, computational
 expressions, etc.
 
-*Expressions evaluate to a value. Statements do something.*
+> *Expressions evaluate to a value. Statements do something.*
 
 F# is a functional programming language for .NET that is succinct (concise,
 readable, and type-safe) and kind of
@@ -89,10 +89,7 @@ $ pip3 install expression
     should be hidden within the SDK.
 - Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
-- Code must pass strict static type checking by [mypy](http://mypy-lang.org/)
-  and
-  [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
-  Pylance is awesome, use it!
+- Code must pass strict static type checking by [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/). Pylance is awesome, use it!
 
 ## Supported features
 
@@ -102,13 +99,14 @@ on-demand as we go along.
 
 - **Pipelining** - for creating workflows.
 - **Composition** - for composing and creating new operators
+- **Fluent or Functional** syntax, i.e dot chain or pipeline operators.
 - **Pattern Matching** - an alternative flow control to
   `if-elif-else`.
 - **Error Handling** - Several error handling types
   - **Option** - for optional stuff and better `None` handling.
   - **Result** - for better error handling and enables railway-oriented
     programming in Python.
-  - **Try** - a simpler result type that pins the error to Exception.
+  - **Try** - a simpler result type that pins the error to an Exception.
 - **Collections** - immutable collections.
   - **Sequence** - a better
     [itertools](https://docs.python.org/3/library/itertools.html) and
@@ -179,7 +177,7 @@ ys = xs.pipe(
 
 Functions may even be composed directly into custom operators:
 
-```py
+```python
 from expression.core import compose
 
 custom = compose(
@@ -190,6 +188,39 @@ custom = compose(
 
 ys = custom(xs)
 ```
+## Fluent and Functional
+
+Expression can be used both with a fluent or functional syntax (or both.)
+
+### Fluent syntax
+
+```python
+xs = Seq.of(1, 2, 3)
+ys = xs.map(lambda x: x * 100).filter(lambda x: x > 100).fold(lambda s, x: s + x, 0)
+```
+
+The fluent syntax uses methods and is very compact. But it might get you into
+trouble for large pipelines since it's not a natural way of adding line breaks.
+
+### Functional syntax
+
+The functional syntax is a bit more verbose but you can easily add new
+operations on new lines.
+
+```python
+xs = Seq.of(1, 2, 3)
+ys = pipe(xs,
+    seq.map(lambda x: x * 100),
+    seq.filter(lambda x: x > 100),
+    seq.fold(lambda s, x: s + x, 0),
+)
+```
+Both fluent and functional syntax may be mixed and even pipe can be used
+fluently.
+
+```python
+xs = Seq.of(1, 2, 3).pipe(seq.map(...))
+````
 
 ### Options
 
