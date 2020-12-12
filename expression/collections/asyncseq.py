@@ -26,12 +26,17 @@ class AsyncSeq(AsyncIterable[TSource]):
 
     @overload
     @classmethod
-    def range(cls, start: int, stop: int, step: Optional[int]) -> AsyncIterable[int]:
+    def range(cls, start: int, stop: int) -> AsyncIterable[int]:
+        ...
+
+    @overload
+    @classmethod
+    def range(cls, start: int, stop: int, step: int) -> AsyncIterable[int]:
         ...
 
     @classmethod
-    def range(cls, *args: Any) -> AsyncIterable[int]:
-        return AsyncSeq(range(*args))
+    def range(cls, *args: Any, **kw: Any) -> AsyncIterable[int]:
+        return AsyncSeq(range(*args, **kw))
 
     def __aiter__(self) -> AsyncIterator[TSource]:
         return self._ai.__aiter__()
@@ -63,12 +68,17 @@ async def range(stop: int) -> AsyncIterable[int]:
 
 
 @overload
-async def range(start: int, stop: int, step: Optional[int]) -> AsyncIterable[int]:
+async def range(start: int, stop: int) -> AsyncIterable[int]:
     ...
 
 
-async def range(*args: Any) -> AsyncIterable[int]:
-    for value in builtins.range(*args):
+@overload
+async def range(start: int, stop: int, step: int) -> AsyncIterable[int]:
+    ...
+
+
+async def range(*args: Any, **kw: Any) -> Any:
+    for value in builtins.range(*args, **kw):
         yield value
 
 

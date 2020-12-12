@@ -89,8 +89,10 @@ def test_compose_associative(x: int, y: int, z: int):
     cn_: Func = lambda x: hn(gn(fn(x)))
 
     rn = compose(fn, compose(gn, hn))
-    rn_: Func = lambda x: (lambda b: hn(gn(b)))(fn(x))  # type: ignore , right associative
+    # right associative
+    rn_: Func = lambda x: (lambda b: hn(gn(b)))(fn(x))  # type: ignore
     ln = compose(compose(fn, gn), hn)
-    ln_: Func = lambda x: hn((lambda b: gn(fn(b)))(x))  # type: ignore , left associative
+    # left associative
+    ln_: Func = lambda x: hn((lambda b: gn(fn(b)))(x))  # type: ignore
 
     assert cn(x) == cn_(x) == rn(x) == rn_(x) == ln(x) == ln_(x)

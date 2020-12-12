@@ -156,6 +156,17 @@ def test_seq_collect(xs: List[int]):
     assert list(xs) == list(ys)
 
 
+@given(st.lists(st.integers()), st.integers(min_value=0))
+def test_seq_take(xs: List[int], x: int):
+    ys = seq.of_iterable(xs)
+    zs: Seq[int]
+    try:
+        zs = pipe(ys, seq.take(x))
+        assert list(zs) == xs[:x]
+    except ValueError:
+        assert x > len(xs)
+
+
 @given(st.lists(st.integers()))
 def test_seq_pipeline(xs: List[int]):
     mapper: Callable[[int], int] = lambda x: x * 10

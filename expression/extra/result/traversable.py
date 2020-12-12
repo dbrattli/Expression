@@ -1,5 +1,5 @@
 """Data structures that can be traversed from left to right, performing an action on each element."""
-from typing import Callable, Generator, List, TypeVar
+from typing import Callable, Generator, List, TypeVar, overload
 
 from expression import effect
 from expression.collections import seq
@@ -8,6 +8,13 @@ from expression.core import Ok, Result, identity, pipe
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TError = TypeVar("TError")
+
+
+@overload
+def traverse(
+    fn: Callable[[Result[TResult, TError]], Result[TResult, TError]], lst: List[Result[TResult, TError]]
+) -> Result[List[TResult], TError]:
+    ...
 
 
 def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -> Result[List[TResult], TError]:

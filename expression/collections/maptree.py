@@ -24,9 +24,11 @@ Do not use directly. Use the `map` module instead.
 """
 import builtins
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
+from typing import (Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar,
+                    cast)
 
-from expression.core import Nothing, Option, Some, SupportsLessThan, failwith, pipe
+from expression.core import (Nothing, Option, Some, SupportsLessThan, failwith,
+                             pipe)
 
 from . import frozenlist, seq
 from .frozenlist import FrozenList
@@ -47,10 +49,6 @@ MapTree = Option[MapTreeLeaf[Key, Value]]
 
 @dataclass
 class MapTreeNode(MapTreeLeaf[Key, Value]):
-    # TODO: Remove key and value here when pylance bug fixed
-    key: Key
-    value: Value
-
     left: MapTree[Key, Value]
     right: MapTree[Key, Value]
 
@@ -467,12 +465,8 @@ def mk_from_iterator(acc: MapTree[Key, Value], e: Iterator[Tuple[Key, Value]]) -
 
 
 def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
-    if isinstance(xs, FrozenList):
-        xs = cast(FrozenList[Tuple[Key, Value]], xs)
-        return of_list(xs)
-    else:
-        ie = builtins.iter(xs)
-        return mk_from_iterator(empty, ie)
+    ie = builtins.iter(xs)
+    return mk_from_iterator(empty, ie)
 
 
 # Imperative left-to-right iterators.

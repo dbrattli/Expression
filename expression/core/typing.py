@@ -5,6 +5,7 @@ A = TypeVar("A")
 B = TypeVar("B")
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
+T_co = TypeVar("T_co", covariant=True)
 
 Base = TypeVar("Base")
 Derived = TypeVar("Derived")
@@ -16,11 +17,11 @@ class SupportsLessThan(Protocol):
         raise NotImplementedError
 
 
-class SupportsMatch(Protocol[TSource]):
+class SupportsMatch(Protocol[T_co]):
     """Pattern matching protocol."""
 
     @abstractmethod
-    def __match__(self, pattern: Any) -> Iterable[TSource]:
+    def __match__(self, pattern: Any) -> Iterable[T_co]:
         """Match pattern with value.
 
         Return a singleton iterable item (e.g `[ value ]`) if pattern
@@ -34,8 +35,7 @@ def upcast(type: Type[Base], expr: Base) -> Base:
 
     Note: F# `:>` or `upcast`.
     """
-    x: type = expr
-    return x
+    return expr
 
 
 def downcast(type: Type[Derived], expr: Base) -> Derived:
@@ -48,7 +48,7 @@ def downcast(type: Type[Derived], expr: Base) -> Derived:
     Note: F# `:?>` or `downcast`.
     """
     assert isinstance(expr, type), f"The type of expression {expr} is not a supertype of {type}"
-    return cast(type, expr)
+    return cast("Derived", expr)
 
 
 def try_downcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:
@@ -63,10 +63,10 @@ def try_downcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:
     """
     origin: Optional[Type[Derived]] = get_origin(type_) or type_
     if origin is not None and isinstance(expr, origin):
-        derived = cast(type(type_), expr)
+        derived = cast("Derived", expr)
         return derived
-    else:
-        return None
+
+    return None
 
 
 __all__ = ["SupportsLessThan", "downcast", "upcast", "try_downcast"]

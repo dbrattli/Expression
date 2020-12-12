@@ -51,5 +51,4 @@ async def test_mailbox_post_and_async_reply(x: int):
     build_message: Callable[[AsyncReplyChannel[str]], Tuple[int, AsyncReplyChannel[str]]] = lambda r: (x, r)
     reply = await agent.post_and_async_reply(build_message)
 
-    await asyncio.sleep(0)
     assert reply == f"Got {x}"

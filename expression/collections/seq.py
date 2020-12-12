@@ -19,7 +19,7 @@ Example:
 import builtins
 import functools
 import itertools
-from typing import Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, overload
+from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Tuple, TypeVar, overload
 
 from expression.core import Case, Option, SupportsLessThan, identity, pipe
 
@@ -115,7 +115,7 @@ class Seq(Iterable[TSource]):
     def match(self, pattern: Any) -> Iterable[Iterable[TSource]]:
         ...
 
-    def match(self, pattern: Any) -> Any:
+    def match(self, pattern: Optional[Any] = None) -> Any:
         case: Case[Iterable[TSource]] = Case(self)
         return case(pattern) if pattern else case
 
@@ -152,7 +152,12 @@ class Seq(Iterable[TSource]):
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: Optional[int] = None) -> Iterable[int]:
+    def range(start: int, stop: int) -> Iterable[int]:
+        ...
+
+    @overload
+    @staticmethod
+    def range(start: int, stop: int, step: int) -> Iterable[int]:
         ...
 
     @staticmethod
@@ -378,14 +383,14 @@ def init_infinite(initializer: Callable[[int], TSource]) -> Iterable[TSource]:
     Iteration can continue up to `sys.maxsize`.
     """
 
-    class Infinite(Iterable[int]):
+    class Infinite(Iterable[TResult]):
         """An infinite iterable where each iterator starts counting at
         0."""
 
-        def __init__(self, initializer: Callable[[int], TSource]) -> None:
+        def __init__(self, initializer: Callable[[int], TResult]) -> None:
             self.initializer = initializer
 
-        def __iter__(self) -> Iterator[TSource]:
+        def __iter__(self) -> Iterator[TResult]:
             return builtins.map(self.initializer, itertools.count(0, 1))
 
     return Infinite(initializer)
@@ -449,6 +454,13 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
     return _map
 
 
+class FilterFn(Protocol):
+    """Sequence filtering protocol."""
+
+    def __call__(self, source: Iterable[TSource]) -> Iterable[TSource]:
+        raise NotImplementedError
+
+
 def max(source: Iterable[TSupportsLessThan]) -> TSupportsLessThan:
     """Returns the greatest of all elements of the sequence,
     compared via `max()`."""
@@ -501,7 +513,15 @@ def range(stop: int) -> Iterable[int]:
 
 
 @overload
-def range(start: int, stop: int, step: Optional[int] = None) -> Iterable[int]:
+def range(
+    start: int,
+    stop: int,
+) -> Iterable[int]:
+    ...
+
+
+@overload
+def range(start: int, stop: int, step: int) -> Iterable[int]:
     ...
 
 
@@ -542,6 +562,33 @@ def singleton(item: TSource) -> Seq[TSource]:
         The result sequence of one item.
     """
     return Seq([item])
+
+
+def take(count: int) -> FilterFn:
+    """Returns the first N elements of the sequence.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result sequence.
+    """
+
+    def _take(source: Iterable[TSource]) -> Iterable[TSource]:
+        n = count
+
+        def gen():
+            nonlocal n
+            for x in source:
+                if n > 0:
+                    yield x
+                    n -= 1
+                else:
+                    break
+
+        return gen()
+
+    return _take
 
 
 def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]]) -> Callable[[TState], Iterable[TSource]]:

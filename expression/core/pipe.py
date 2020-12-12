@@ -131,30 +131,30 @@ def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:
 
 
 @overload
-def pipe2(value: Tuple[A, B]) -> Tuple[A, B]:
+def pipe2(values: Tuple[A, B]) -> Tuple[A, B]:
     ...
 
 
 @overload
-def pipe2(value: Tuple[A, B], __fn1: Callable[[A, B], C]) -> C:
+def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C]) -> C:
     ...
 
 
 @overload
-def pipe2(value: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D]) -> D:
+def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D]) -> D:
     ...
 
 
 @overload
-def pipe2(value: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D], __fn3: Callable[[D], E]) -> D:
+def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D], __fn3: Callable[[D], E]) -> D:
     ...
 
 
-def pipe2(args: Any, *fns: Any):
-    return starpipe(args, *fns)
+def pipe2(values: Any, *fns: Any) -> Any:
+    return starpipe(values, *fns)
 
 
-def pipe3(args: Any, *fns: Any):
+def pipe3(args: Any, *fns: Any) -> Any:
     return starpipe(args, *fns)
 
 

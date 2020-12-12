@@ -3,14 +3,13 @@ from typing import Any, Iterable
 from expression.core import Nothing, Option, Some, SupportsMatch, match
 
 
-def test_default_matches():
+def test_default_matches() -> None:
     with match(42) as case:
-
         for value in case._:
             assert value == 42
 
 
-def test_default_falsy_matches():
+def test_default_falsy_matches() -> None:
     with match(None) as case:
         if case._:
             assert True
@@ -18,7 +17,7 @@ def test_default_falsy_matches():
             assert False
 
 
-def test_match_type():
+def test_match_type() -> None:
     with match(42) as case:
         for value in case(int):
             assert value == 42
@@ -27,16 +26,16 @@ def test_match_type():
             assert False
 
 
-def test_not_match_type():
+def test_not_match_type() -> None:
     with match(42) as case:
-        while case(float):  # NOTE: Should show type error
+        if case(float):  # NOTE: Should show type error
             assert False
 
-        while case._:
+        if case._:
             assert True
 
 
-def test_match_instance():
+def test_match_instance() -> None:
     with match(42) as case:
         for value in case(42):
             assert value == 42
@@ -45,26 +44,26 @@ def test_match_instance():
             assert False
 
 
-def test_not_match_instance():
+def test_not_match_instance() -> None:
     x = 42
     with match(x) as case:
-        while case(43):
+        if case(43):
             assert False
 
         if case._:
             assert True
 
 
-def test_match_equals():
+def test_match_equals() -> None:
     with match(Some(42)) as case:
-        while case(Some(42)):
+        if case(Some(42)):
             assert True
 
         if case._:
             assert False
 
 
-def test_match_not_equals():
+def test_match_not_equals() -> None:
     with match(Some(42)) as case:
         if case(Some(4)):
             assert False
@@ -81,7 +80,7 @@ class B(A):
     pass
 
 
-def test_match_isinstance():
+def test_match_isinstance() -> None:
     with match(B()) as case:
         for _ in case(A):
             assert True
@@ -90,16 +89,16 @@ def test_match_isinstance():
             assert False
 
 
-def test_not_match_isinstance():
+def test_not_match_isinstance() -> None:
     with match(A()) as case:
-        while case(B):
+        if case(B):
             assert False
 
         if case._:
             assert True
 
 
-def test_match_multiple_cases():
+def test_match_multiple_cases() -> None:
     with match("expression") as case:
         while case("rxpy"):  # NOTE: should show type error
             assert False
@@ -114,7 +113,7 @@ def test_match_multiple_cases():
             assert False
 
 
-def test_match_multiple_cases_return_value():
+def test_match_multiple_cases_return_value() -> None:
     def matcher(value: str) -> Option[str]:
         with match(value) as case:
             while case("rxpy"):
@@ -136,7 +135,7 @@ def test_match_multiple_cases_return_value():
     assert result.value == "expression"
 
 
-def test_match_multiple_only_matches_first():
+def test_match_multiple_only_matches_first() -> None:
     with match("expression") as case:
         for value in case(str):
             assert value == "expression"
@@ -165,7 +164,7 @@ class ParseInteger_(SupportsMatch[int]):
 ParseInteger = ParseInteger_()
 
 
-def test_active_pattern_matches():
+def test_active_pattern_matches() -> None:
     text = "42"
     with match(text) as case:
         for value in case(ParseInteger):
@@ -175,7 +174,7 @@ def test_active_pattern_matches():
             assert False
 
 
-def test_active_pattern_not_matches():
+def test_active_pattern_not_matches() -> None:
     text = "abc"
     with match(text) as case:
         for _ in case(ParseInteger):

@@ -20,7 +20,21 @@ Example:
 
 import builtins
 import functools
-from typing import Any, Callable, Iterable, List, Optional, Tuple, TypeVar, cast, get_origin, overload
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    cast,
+    get_origin,
+    overload,
+)
 
 from expression.core import Case, Nothing, Option, Some, pipe
 
@@ -37,7 +51,7 @@ T5 = TypeVar("T5")
 T6 = TypeVar("T6")
 
 
-class FrozenList(Tuple[TSource]):
+class FrozenList(Generic[TSource]):
     """Immutable list type.
 
     Is faster than `List` for prepending, but slower for
@@ -54,6 +68,11 @@ class FrozenList(Tuple[TSource]):
         >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
+
+    def __init__(self, value: Optional[Iterable[TSource]] = None) -> None:
+        # Use composition instead of inheritance since generic tuples
+        # are not suppored by mypy.
+        self.value: Tuple[TSource, ...] = tuple(value) if value else tuple()
 
     def match(self, pattern: Any) -> Any:
         case: Case[TSource] = Case(self)
@@ -113,7 +132,7 @@ class FrozenList(Tuple[TSource]):
     def append(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
         """Append frozen list to end of the frozen list."""
 
-        return FrozenList(self + other)
+        return FrozenList(self.value + other.value)
 
     def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "FrozenList[TResult]":
         """Choose items from the list.
@@ -136,14 +155,14 @@ class FrozenList(Tuple[TSource]):
         return self.collect(mapper)
 
     def collect(self, mapping: Callable[[TSource], "FrozenList[TResult]"]) -> "FrozenList[TResult]":
-        mapped = builtins.map(mapping, self)
+        mapped = builtins.map(mapping, self.value)
         xs = (y for x in mapped for y in x)
         return FrozenList(xs)
 
     def cons(self, element: TSource) -> "FrozenList[TSource]":
         """Add element to front of List."""
 
-        return FrozenList((element,) + self)  # NOTE: Faster than (element, *self)
+        return FrozenList((element,) + self.value)  # NOTE: Faster than (element, *self)
 
     def filter(self, predicate: Callable[[TSource], bool]) -> "FrozenList[TSource]":
         """Filter list.
@@ -158,7 +177,7 @@ class FrozenList(Tuple[TSource]):
             A list containing only the elements that satisfy the
             predicate.
         """
-        return FrozenList(builtins.filter(predicate, self))
+        return FrozenList(builtins.filter(predicate, self.value))
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
         """Applies a function to each element of the collection,
@@ -263,7 +282,12 @@ class FrozenList(Tuple[TSource]):
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: Optional[int] = None) -> "FrozenList[int]":
+    def range(start: int, stop: int) -> "FrozenList[int]":
+        ...
+
+    @overload
+    @staticmethod
+    def range(start: int, stop: int, step: int) -> "FrozenList[int]":
         ...
 
     @staticmethod
@@ -283,15 +307,15 @@ class FrozenList(Tuple[TSource]):
         Returns:
             The list after removing the first N elements.
         """
-        return FrozenList(self[count:])
+        return FrozenList(self.value[count:])
 
     def skip_last(self, count: int) -> "FrozenList[TSource]":
-        return FrozenList(self[:-count])
+        return FrozenList(self.value[:-count])
 
     def tail(self) -> "FrozenList[TSource]":
         """Return tail of List."""
 
-        _, *tail = self
+        _, *tail = self.value
         return FrozenList(tail)
 
     def take(self, count: int) -> "FrozenList[TSource]":
@@ -303,7 +327,7 @@ class FrozenList(Tuple[TSource]):
         Returns:
             The result list.
         """
-        return FrozenList(self[:count])
+        return FrozenList(self.value[:count])
 
     def take_last(self, count: int) -> "FrozenList[TSource]":
         """Returns a specified number of contiguous elements from the
@@ -315,13 +339,17 @@ class FrozenList(Tuple[TSource]):
         Returns:
             The result list.
         """
-        return FrozenList(self[-count:])
+        return FrozenList(self.value[-count:])
 
     def try_head(self) -> Option[TSource]:
         """Returns the first element of the list, or None if the list is
         empty.
         """
-        return Some(self[0]) if self else Nothing
+        if self.value:
+            value = cast("TSource", self.value[0])
+            return Some(value)
+
+        return Nothing
 
     @staticmethod
     def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -> "FrozenList[TSource]":
@@ -352,7 +380,30 @@ class FrozenList(Tuple[TSource]):
             A single list containing pairs of matching elements from the
             input lists.
         """
-        return of_seq(builtins.zip(self, other))
+        return of_seq(builtins.zip(self.value, other.value))
+
+    def __add__(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
+        return FrozenList(self.value + other.value)
+
+    @overload
+    def __getitem__(self, key: slice) -> "FrozenList[TSource]":
+        ...
+
+    @overload
+    def __getitem__(self, key: int) -> TSource:
+        ...
+
+    def __getitem__(self, key: Any) -> Any:
+        return self.value[key]
+
+    def __iter__(self) -> Iterator[TSource]:
+        return iter(self.value)
+
+    def __eq__(self, other: Any) -> bool:
+        return self.value == other
+
+    def __len__(self) -> int:
+        return len(self.value)
 
     def __match__(self, pattern: Any) -> Iterable[List[TSource]]:
         if self == pattern:
@@ -372,6 +423,20 @@ class FrozenList(Tuple[TSource]):
 
     def __repr__(self) -> str:
         return str(self)
+
+
+class ExitFn(Protocol):
+    """A partially applied exit function."""
+
+    def __call__(self, source: FrozenList[TSource]) -> TSource:
+        ...
+
+
+class FilterFn(Protocol):
+    """A partially applied filter function."""
+
+    def __call__(self, source: FrozenList[TSource]) -> FrozenList[TSource]:
+        ...
 
 
 def append(source: FrozenList[TSource]) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
@@ -513,7 +578,7 @@ def indexed(source: FrozenList[TSource]) -> FrozenList[Tuple[int, TSource]]:
     return source.indexed()
 
 
-def item(index: int) -> Callable[[FrozenList[TSource]], TSource]:
+def item(index: int) -> ExitFn:
     """Indexes into the list. The first element has index 0.
 
     Args:
@@ -575,7 +640,12 @@ def range(stop: int) -> FrozenList[int]:
 
 
 @overload
-def range(start: int, stop: int, step: Optional[int] = None) -> FrozenList[int]:
+def range(start: int, stop: int) -> FrozenList[int]:
+    ...
+
+
+@overload
+def range(start: int, stop: int, step: int) -> FrozenList[int]:
     ...
 
 
@@ -587,7 +657,7 @@ def singleton(value: TSource) -> FrozenList[TSource]:
     return FrozenList((value,))
 
 
-def skip(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
+def skip(count: int) -> FilterFn:
     """Returns the list after removing the first N elements.
 
     Args:
@@ -603,7 +673,7 @@ def skip(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     return _skip
 
 
-def skip_last(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
+def skip_last(count: int) -> FilterFn:
     """Returns the list after removing the last N elements.
 
     Args:
@@ -623,7 +693,7 @@ def tail(source: FrozenList[TSource]) -> FrozenList[TSource]:
     return source.tail()
 
 
-def take(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
+def take(count: int) -> FilterFn:
     """Returns the first N elements of the list.
 
     Args:
@@ -639,7 +709,7 @@ def take(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     return _take
 
 
-def take_last(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
+def take_last(count: int) -> FilterFn:
     """Returns a specified number of contiguous elements from the end of
     the list.
 

@@ -36,8 +36,8 @@ class MailboxProcessor(Generic[Msg]):
     def __init__(self, cancellation_token: Optional[CancellationToken]) -> None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
         self.token = cancellation_token or CancellationToken.none()
-        self.lock = RLock()
         self.loop = asyncio.get_event_loop()
+        self.lock = RLock()
 
         # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
         self.continuation: Optional[Continuation[Msg]] = None

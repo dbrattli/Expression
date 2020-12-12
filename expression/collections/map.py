@@ -260,7 +260,7 @@ class Map(Mapping[Key, Value]):
         """Return the number of bindings in the map."""
         return maptree.size(self._tree)
 
-    def __contains__(self, key: Key) -> bool:
+    def __contains__(self, key: Any) -> bool:
         return self.contains_key(key)
 
     def __eq__(self, other: Any) -> bool:
@@ -286,7 +286,8 @@ class Map(Mapping[Key, Value]):
     def __str__(self) -> str:
         def to_str(item: Tuple[Key, Value]) -> str:
             key, value = item
-            key = f'"{key}"' if isinstance(key, str) else key
+            if isinstance(key, str):
+                return f'("{key}", {value})'
             return f"({key}, {value})"
 
         items = pipe(self.to_seq(), seq.map(to_str))

@@ -104,8 +104,8 @@ def test_result_map_piped(x: int, y: int):
     xs: Result[int, Exception] = Ok(x)
     mapper: Callable[[int], int] = lambda x: x + y
 
-    ys = xs.pipe(result.map(mapper))
-    for value in ys.match(Ok):
+    ys = xs.pipe(result.map(mapper))  # NOTE: shows type error for mypy
+    for value in ys.match(Ok[int, Exception]):
         assert value == mapper(x)
         break
     else:
@@ -267,10 +267,13 @@ def test_result_effect_yield_from_ok():
 def test_result_effect_yield_from_error():
     error = "Do'h"
 
+    def mayfail() -> Error[int, str]:
+        return Error(error)
+
     @effect.result
     def fn() -> Generator[int, int, int]:
-        x = yield from Error(error)
-        return x
+        x = yield from mayfail()
+        return x + 1
 
     xs = fn()
     for err in xs.match(Error):

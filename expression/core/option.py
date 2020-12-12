@@ -6,7 +6,20 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, get_origin, overload
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    get_origin,
+    overload,
+)
 
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
@@ -20,7 +33,7 @@ T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 
 
-class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC):
+class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource, bool]], ABC):
     """Option abstract base class."""
 
     @overload
@@ -106,12 +119,12 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC
         raise NotImplementedError
 
     @classmethod
-    def of_obj(cls: "Option[TSource]", value: TSource) -> "Option[TSource]":
+    def of_obj(cls, value: TSource) -> "Option[TSource]":
         """Convert object to an option."""
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls: "Option[TSource]", value: Optional[TSource]) -> "Option[TSource]":
+    def of_optional(cls, value: Optional[TSource]) -> "Option[TSource]":
         """Convert optional value to an option."""
         return of_optional(value)
 
@@ -292,9 +305,9 @@ class Nothing_(Option[TSource], EffectError):
 
         raise ValueError("There is no value.")
 
-    def __match__(self, pattern: Any) -> "Iterable[Nothing_[TSource]]":
+    def __match__(self, pattern: Any) -> "Iterable[bool]":
         if self is pattern:
-            return [Nothing]
+            return [True]
 
         return []
 

@@ -10,7 +10,20 @@ the Result type to Exception.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, Type, TypeVar, Union, get_origin, overload
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Protocol,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    get_origin,
+    overload,
+)
 
 from .error import EffectError
 from .match import Case, SupportsMatch
@@ -34,7 +47,7 @@ class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TErr
     """The result abstract base class."""
 
     @overload
-    def pipe(self, __fn1: Callable[["Result[TSource, TError]"], TResult]) -> TResult:
+    def pipe(self: T1, __fn1: Callable[[T1], T2]) -> T2:
         ...
 
     @overload
@@ -251,11 +264,16 @@ class Error(Result[TSource, TError], ResultException):
         return f"Error {self._error}"
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+class PartialTransformFn(Protocol[TSource, TResult]):
+    def __call__(self, source: Result[TSource, TError]) -> Result[TResult, TError]:
+        ...
+
+
+def map(mapper: Callable[[TSource], TResult]) -> PartialTransformFn[TSource, TResult]:
     def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.map(mapper)
 
-    return _map
+    return cast(PartialTransformFn[TSource, TResult], _map)  # NOTE: cast for mypy
 
 
 def bind(

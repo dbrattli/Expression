@@ -13,7 +13,7 @@ B = TypeVar("B")
 
 
 class MatchMixin(SupportsMatch[TSource]):
-    def match(self, pattern: Any) -> Iterable[TSource]:
+    def match(self, pattern: Any) -> Iterable[Any]:
         """Match with pattern.
 
         NOTE: This is just the basic default implementation for fluent
