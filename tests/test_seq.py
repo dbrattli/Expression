@@ -1,6 +1,6 @@
 import functools
 from itertools import accumulate
-from typing import Callable, Generator, Iterable, List, Optional, Tuple
+from typing import Callable, Generator, Iterable, List, Tuple
 
 import pytest
 from expression import effect
@@ -159,7 +159,6 @@ def test_seq_collect(xs: List[int]):
 @given(st.lists(st.integers()), st.integers(min_value=0))
 def test_seq_take(xs: List[int], x: int):
     ys = seq.of_iterable(xs)
-    zs: Seq[int]
     try:
         zs = pipe(ys, seq.take(x))
         assert list(zs) == xs[:x]

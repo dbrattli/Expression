@@ -1,8 +1,11 @@
 from functools import reduce
 from typing import Any, TypeVar, overload
 
+from aiohttp import ClientResponse
+from expression.core import Option
+
 from .context import Context
-from .handler import HttpFunc, HttpFuncResultAsync, HttpHandler
+from .handler import HttpFunc, HttpFuncResultAsync, HttpHandler, HttpHandlerFn
 
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
@@ -17,66 +20,76 @@ TResult = TypeVar("TResult")
 
 
 @overload
-def pipeline(__fn1: HttpHandler[T2, TResult, T1], __fn2: HttpHandler[T3, TResult, T2]) -> HttpHandler[T3, TResult, T1]:
+def pipeline(
+    __fn: HttpHandlerFn[Option[ClientResponse], T2],
+) -> HttpHandlerFn[Option[ClientResponse], T2]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: HttpHandler[T2, TResult, T1],
-    __fn2: HttpHandler[T3, TResult, T2],
-    __fn3: HttpHandler[T4, TResult, T3],
-) -> HttpHandler[T4, TResult, T1]:
+    __fn1: HttpHandlerFn[Option[ClientResponse], T2],
+    __fn2: HttpHandlerFn[T2, T3],
+) -> HttpHandlerFn[Option[ClientResponse], T3]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: HttpHandler[T2, TResult, T1],
-    __fn2: HttpHandler[T3, TResult, T2],
-    __fn3: HttpHandler[T4, TResult, T3],
-    __fn4: HttpHandler[T5, TResult, T4],
-) -> HttpHandler[T5, TResult, T1]:
+    __fn1: HttpHandlerFn[Option[ClientResponse], T2],
+    __fn2: HttpHandlerFn[T2, T3],
+    __fn3: HttpHandlerFn[T3, T4],
+) -> HttpHandlerFn[Option[ClientResponse], T4]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: HttpHandler[T2, TResult, T1],
-    __fn2: HttpHandler[T3, TResult, T2],
-    __fn3: HttpHandler[T4, TResult, T3],
-    __fn4: HttpHandler[T5, TResult, T4],
-    __fn5: HttpHandler[T6, TResult, T5],
-) -> HttpHandler[T6, TResult, T1]:
+    __fn1: HttpHandlerFn[Option[ClientResponse], T2],
+    __fn2: HttpHandlerFn[T2, T3],
+    __fn3: HttpHandlerFn[T3, T4],
+    __fn4: HttpHandlerFn[T4, T5],
+) -> HttpHandlerFn[Option[ClientResponse], T5]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: HttpHandler[T2, TResult, T1],
-    __fn2: HttpHandler[T3, TResult, T2],
-    __fn3: HttpHandler[T4, TResult, T3],
-    __fn4: HttpHandler[T5, TResult, T4],
-    __fn5: HttpHandler[T6, TResult, T5],
-    __fn6: HttpHandler[T7, TResult, T6],
-) -> HttpHandler[T7, TResult, T1]:
+    __fn1: HttpHandlerFn[Option[ClientResponse], T2],
+    __fn2: HttpHandlerFn[T2, T3],
+    __fn3: HttpHandlerFn[T3, T4],
+    __fn4: HttpHandlerFn[T4, T5],
+    __fn5: HttpHandlerFn[T5, T6],
+) -> HttpHandlerFn[Option[ClientResponse], T6]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: HttpHandler[T2, TResult, T1],
-    __fn2: HttpHandler[T3, TResult, T2],
-    __fn3: HttpHandler[T4, TResult, T3],
-    __fn4: HttpHandler[T5, TResult, T4],
-    __fn5: HttpHandler[T6, TResult, T5],
-    __fn6: HttpHandler[T7, TResult, T6],
-    __fn7: HttpHandler[T8, TResult, T7],
-) -> HttpHandler[T8, TResult, T1]:
+    __fn1: HttpHandlerFn[Option[ClientResponse], T2],
+    __fn2: HttpHandlerFn[T2, T3],
+    __fn3: HttpHandlerFn[T3, T4],
+    __fn4: HttpHandlerFn[T4, T5],
+    __fn5: HttpHandlerFn[T5, T6],
+    __fn6: HttpHandlerFn[T6, T7],
+) -> HttpHandlerFn[Option[ClientResponse], T7]:
     ...
 
 
-def pipeline(*fns: HttpHandler[Any, TResult, Any]) -> HttpHandler[Any, TResult, Any]:
+@overload
+def pipeline(
+    __fn1: HttpHandlerFn[Option[ClientResponse], T2],
+    __fn2: HttpHandlerFn[T2, T3],
+    __fn3: HttpHandlerFn[T3, T4],
+    __fn4: HttpHandlerFn[T4, T5],
+    __fn5: HttpHandlerFn[T5, T6],
+    __fn6: HttpHandlerFn[T6, T7],
+    __fn7: HttpHandlerFn[T7, T8],
+) -> HttpHandlerFn[Option[ClientResponse], T8]:
+    ...
+
+
+def pipeline(*fns: HttpHandlerFn[Any, Any]) -> HttpHandlerFn[Any, Any]:
     """Kleisli compose multiple http handlers left to right.
 
     Kleisli composes zero or more http handlers into a functional composition.

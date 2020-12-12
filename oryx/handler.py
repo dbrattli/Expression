@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Callable, Dict, TypeVar
+from typing import Any, Awaitable, Callable, Dict, Protocol, TypeVar
 
 from aiohttp import ClientResponse
 from expression.core import Nothing, Option, Success, Try, aiotools, compose, option
@@ -33,6 +33,16 @@ HttpHandler = Callable[
 finish_early: HttpFunc[Any, Any] = compose(Success, aiotools.from_result)
 
 
+class HttpFuncFn(Protocol[TNext]):
+    def __call__(self, context: Context[TNext]) -> HttpFuncResultAsync[TResult]:
+        raise NotImplementedError
+
+
+class HttpHandlerFn(Protocol[TSource, TNext]):
+    def __call__(self, next: HttpFunc[TNext, TResult], context: Context[TSource]) -> HttpFuncResultAsync[TResult]:
+        raise NotImplementedError
+
+
 async def run_async(
     ctx: Context[TSource],
     handler: HttpHandler[TNext, TResult, TSource],
@@ -46,9 +56,7 @@ async def run_async(
     return result.map(mapper)
 
 
-def with_url_builder(
-    builder: Callable[[Any], str]
-) -> HttpHandler[Option[ClientResponse], TResult, Option[ClientResponse]]:
+def with_url_builder(builder: Callable[[Any], str]) -> HttpHandlerFn[Option[ClientResponse], Option[ClientResponse]]:
     def _with_url_builder(
         next: HttpFunc[Option[ClientResponse], TResult],
         context: HttpContext,
@@ -60,21 +68,24 @@ def with_url_builder(
 
 def with_url(
     url: str,
-) -> HttpHandler[Option[ClientResponse], TResult, Option[ClientResponse]]:
+) -> HttpHandlerFn[Option[ClientResponse], Option[ClientResponse]]:
+    return with_url_builder(lambda _: url)
+
+
+def with_url2(url: str) -> HttpHandlerFn[Option[ClientResponse], Option[ClientResponse]]:
     def _with_url(
         next: HttpFunc[Option[ClientResponse], TResult],
-        context: HttpContext,
+        context: Context[Option[ClientResponse]],
     ) -> HttpFuncResultAsync[TResult]:
         fn = with_url_builder(lambda _: url)
-        ret: HttpFuncResultAsync[TResult] = fn(next, context)
-        return ret
+        return fn(next, context)
 
     return _with_url
 
 
 def with_method(
     method: HttpMethod,
-) -> HttpHandler[Option[ClientResponse], TResult, Option[ClientResponse]]:
+) -> HttpHandlerFn[Option[ClientResponse], Option[ClientResponse]]:
     def _with_method(
         next: HttpFunc[Option[ClientResponse], TResult],
         ctx: HttpContext,
