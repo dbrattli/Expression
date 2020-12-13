@@ -15,8 +15,7 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
-                    Set, Tuple, TypeVar, cast, overload)
+from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Set, Tuple, TypeVar, cast, overload
 
 from expression.core import Option, SupportsLessThan, pipe
 
@@ -189,7 +188,7 @@ class Map(Mapping[Key, Value]):
         """Convert to sequence.
 
         Returns:
-            Sequenc of key, value tuples.
+            Sequence of key, value tuples.
         """
         return maptree.to_seq(self._tree)
 
@@ -487,11 +486,6 @@ def fold_back(
     return _fold_back
 
 
-def of(**args: Value) -> Map[str, Value]:
-    """Create map from arguments."""
-    return Map(maptree.of_seq(args.items()))
-
-
 def partition(
     predicate: Callable[[Key, Value], bool]
 ) -> Callable[[Map[Key, Value]], Tuple[Map[Key, Value], Map[Key, Value]]]:
@@ -519,10 +513,6 @@ def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
     return _remove
 
 
-def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
-    return table.to_seq()
-
-
 # // [<CompiledName("FindKey")>]
 # let findKey predicate (table : Map<_, _>) =
 #     table |> Seq.pick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
@@ -530,6 +520,11 @@ def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
 # // [<CompiledName("TryFindKey")>]
 # let tryFindKey predicate (table : Map<_, _>) =
 #     table |> Seq.tryPick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
+
+
+def of(**args: Value) -> Map[str, Value]:
+    """Create map from arguments."""
+    return Map(maptree.of_seq(args.items()))
 
 
 def of_frozenlist(elements: FrozenList[Tuple[Key, Value]]) -> Map[Key, Value]:
@@ -546,6 +541,10 @@ def of_seq(elements: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
 
 def to_list(table: Map[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
     return table.to_list()
+
+
+def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
+    return table.to_seq()
 
 
 def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
@@ -618,7 +617,10 @@ __all__ = [
     "is_empty",
     "iterate",
     "map",
+    "of",
+    "of_frozenlist",
     "of_list",
+    "of_seq",
     "partition",
     "pick",
     "remove",

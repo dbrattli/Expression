@@ -20,21 +20,8 @@ Example:
 
 import builtins
 import functools
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Protocol,
-    Tuple,
-    TypeVar,
-    cast,
-    get_origin,
-    overload,
-)
+from typing import (Any, Callable, Generic, Iterable, Iterator, List, Optional,
+                    Protocol, Tuple, TypeVar, cast, get_origin, overload)
 
 from expression.core import Case, Nothing, Option, Some, pipe
 
@@ -435,7 +422,7 @@ class ExitFn(Protocol):
 class FilterFn(Protocol):
     """A partially applied filter function."""
 
-    def __call__(self, source: FrozenList[TSource]) -> FrozenList[TSource]:
+    def __call__(self, __source: FrozenList[TSource]) -> FrozenList[TSource]:
         ...
 
 

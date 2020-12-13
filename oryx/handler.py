@@ -1,7 +1,7 @@
-from typing import Any, Awaitable, Callable, Dict, Protocol, TypeVar
+from typing import Any, Awaitable, Callable, Dict, Protocol, TypeVar, cast
 
 from aiohttp import ClientResponse
-from expression.core import Nothing, Option, Success, Try, aiotools, compose, option
+from expression.core import Nothing, Option, Success, Try, aiotools, compose, match, option
 
 from .context import Context, HttpContext, HttpMethod
 
@@ -30,11 +30,11 @@ HttpHandler = Callable[
     HttpFuncResultAsync[TResult],
 ]
 
-finish_early: HttpFunc[Any, Any] = compose(Success, aiotools.from_result)
+finish_early = cast(HttpFunc[Any, Any], compose(Success, aiotools.from_result))
 
 
 class HttpHandlerFn(Protocol[TSource, TNext]):
-    def __call__(self, next: HttpFunc[TNext, TResult], context: Context[TSource]) -> HttpFuncResultAsync[TResult]:
+    def __call__(self, __next: HttpFunc[TNext, TResult], __context: Context[TSource]) -> HttpFuncResultAsync[TResult]:
         raise NotImplementedError
 
 
@@ -42,8 +42,7 @@ async def run_async(
     ctx: Context[TSource],
     handler: HttpHandler[TNext, TResult, TSource],
 ) -> Try[TResult]:
-    next: Callable[[Context[TResult]], HttpFuncResultAsync[TResult]] = finish_early
-    result = await handler(next, ctx)
+    result = await handler(finish_early, ctx)
 
     def mapper(x: Context[TResult]) -> TResult:
         return x.Response
@@ -109,8 +108,9 @@ async def text(
 
     resp = context.Response
     ret: str = ""
-    for resp in option.to_list(context.Response):
-        ret = await resp.text()
+    with match(context.Response) as case:
+        for resp in case(Success[ClientResponse]):
+            ret = await resp.text()
 
     return await next(context.replace(Response=ret))
 

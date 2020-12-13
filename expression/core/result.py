@@ -10,20 +10,7 @@ the Result type to Exception.
 """
 
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Callable,
-    Generator,
-    Iterable,
-    Iterator,
-    Protocol,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    get_origin,
-    overload,
-)
+from typing import Any, Callable, Generator, Iterable, Iterator, Protocol, Type, TypeVar, Union, get_origin, overload
 
 from .error import EffectError
 from .match import Case, SupportsMatch
@@ -264,16 +251,17 @@ class Error(Result[TSource, TError], ResultException):
         return f"Error {self._error}"
 
 
-class PartialTransformFn(Protocol[TSource, TResult]):
-    def __call__(self, source: Result[TSource, TError]) -> Result[TResult, TError]:
+class TransformFn(Protocol[TSource, TResult]):
+    def __call__(self, __source: Result[TSource, TError]) -> Result[TResult, TError]:
         ...
 
 
-def map(mapper: Callable[[TSource], TResult]) -> PartialTransformFn[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TSource, TResult]:
     def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.map(mapper)
 
-    return cast(PartialTransformFn[TSource, TResult], _map)  # NOTE: cast for mypy
+    # return cast(TransformFn[TSource, TResult], _map)  # NOTE: cast for mypy
+    return _map
 
 
 def bind(

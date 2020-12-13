@@ -19,7 +19,8 @@ Example:
 import builtins
 import functools
 import itertools
-from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Tuple, TypeVar, overload
+from typing import (Any, Callable, Iterable, Iterator, Optional, Protocol,
+                    Tuple, TypeVar, overload)
 
 from expression.core import Case, Option, SupportsLessThan, identity, pipe
 
@@ -65,10 +66,12 @@ class Seq(Iterable[TSource]):
             function.
         """
 
-        return Seq(pipe(self, choose(chooser)))
+        xs = pipe(self, choose(chooser))
+        return Seq(xs)
 
     def collect(self, mapping: Callable[[TSource], "Seq[TResult]"]) -> "Seq[TResult]":
-        return Seq(collect(mapping)(self))
+        xs = pipe(self, collect(mapping))
+        return Seq(xs)
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
         """Applies a function to each element of the collection,
@@ -215,7 +218,27 @@ class Seq(Iterable[TSource]):
         return builtins.iter(self._value)
 
 
-def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
+class FilterFn(Protocol):
+    """Sequence filtering protocol function.
+
+    `Iterable[TSource]) -> Iterable[TSource]`
+    """
+
+    def __call__(self, __source: Iterable[TSource]) -> Iterable[TSource]:
+        raise NotImplementedError
+
+
+class TransformFn(Protocol[TResult]):
+    """Sequence transforming protocol function.
+
+    `Iterable[TSource]) -> Iterable[TResult]`
+    """
+
+    def __call__(self, __source: Iterable[TSource]) -> Iterable[TResult]:
+        raise NotImplementedError
+
+
+def choose(chooser: Callable[[TSource], Option[TResult]]) -> TransformFn[TResult]:
     """Choose items from the sequence.
 
     Applies the given function to each element of the list. Returns
@@ -239,7 +262,7 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[Iterable[
     return _choose
 
 
-def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
+def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> TransformFn[TResult]:
     def _collect(source: Iterable[TSource]) -> Iterable[TResult]:
         return (x for xs in source for x in mapping(xs))
 
@@ -452,16 +475,6 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
         return (mapper(x) for x in source)
 
     return _map
-
-
-class FilterFn(Protocol):
-    """Sequence filtering protocol function.
-
-    `Iterable[TSource]) -> Iterable[TSource]`
-    """
-
-    def __call__(self, source: Iterable[TSource]) -> Iterable[TSource]:
-        raise NotImplementedError
 
 
 def max(source: Iterable[TSupportsLessThan]) -> TSupportsLessThan:

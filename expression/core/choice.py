@@ -24,13 +24,11 @@ class Choice(ABC, SupportsMatch[TSource]):
 
     def __match__(self, pattern: Any) -> Iterable[Any]:
         if self.value is pattern or self.value == pattern:
-            self.is_matched = True
             return [self.value]
 
         try:
             origin: Any = get_origin(pattern)
             if isinstance(self, origin or pattern):
-                self.is_matched = True
                 return [self.value]
         except TypeError:
             pass
