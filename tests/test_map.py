@@ -1,3 +1,4 @@
+from enum import unique
 from typing import Callable, Dict, ItemsView, Iterable, Tuple
 
 from expression.collections import FrozenList, Map, map
@@ -72,3 +73,25 @@ def test_map_map(xs: Dict[str, int]):
 
     expected = [(k, mapper(k, v)) for k, v in sorted(list(items))]
     assert expected == list(ys.to_list())
+
+
+def test_map_pipe_fluent():
+    xs = map.of(a=1, b=2)
+    mapper: Callable[[str, int], int] = lambda k, v: v * 10
+    ys = xs.pipe(map.map(mapper))
+
+    assert ys == map.of(a=10, b=20)
+
+
+@given(st.dictionaries(keys=st.text(), values=st.integers()))
+def test_map_count(xs: Dict[str, int]):
+    ys = map.of(**xs)
+
+    assert len(ys) == len(xs)
+
+
+@given(st.dictionaries(keys=st.text(), values=st.integers()))
+def test_map_iterate(xs: Dict[str, int]):
+    ys = [k for k in map.of(**xs)]
+
+    assert sorted(ys) == sorted(list(xs.keys()))

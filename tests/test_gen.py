@@ -1,7 +1,7 @@
 """
 This file is just to explore how generators works
 """
-from typing import Generator, Optional
+from typing import Generator
 
 import pytest
 
@@ -84,7 +84,7 @@ def test_generator_with_multiple_return_value():
 
 
 def test_generator_with_yield_assignment_and_yield():
-    def fn() -> Generator[int, int, Optional[int]]:
+    def fn() -> Generator[int, int, None]:
         x = yield 42
         yield x
 

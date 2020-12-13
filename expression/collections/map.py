@@ -15,7 +15,8 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Set, Tuple, TypeVar, cast, overload
+from typing import (Any, Callable, Iterable, Iterator, List, Mapping, Optional,
+                    Set, Tuple, TypeVar, cast, overload)
 
 from expression.core import Option, SupportsLessThan, pipe
 
@@ -484,6 +485,11 @@ def fold_back(
         return table.fold_back(folder, state)
 
     return _fold_back
+
+
+def of(**args: Value) -> Map[str, Value]:
+    """Create map from arguments."""
+    return Map(maptree.of_seq(args.items()))
 
 
 def partition(
