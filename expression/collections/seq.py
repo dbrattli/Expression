@@ -455,7 +455,10 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
 
 
 class FilterFn(Protocol):
-    """Sequence filtering protocol."""
+    """Sequence filtering protocol function.
+
+    `Iterable[TSource]) -> Iterable[TSource]`
+    """
 
     def __call__(self, source: Iterable[TSource]) -> Iterable[TSource]:
         raise NotImplementedError

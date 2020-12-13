@@ -8,7 +8,7 @@ from oryx.handler import GET, run_async, text, with_url
 from oryx.pipeline import pipeline
 
 
-async def main():
+async def main() -> None:
     async with aiohttp.ClientSession() as session:
         ctx = pipe(default_context, with_http_session(session))
 

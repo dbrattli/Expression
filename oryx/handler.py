@@ -33,11 +33,6 @@ HttpHandler = Callable[
 finish_early: HttpFunc[Any, Any] = compose(Success, aiotools.from_result)
 
 
-class HttpFuncFn(Protocol[TNext]):
-    def __call__(self, context: Context[TNext]) -> HttpFuncResultAsync[TResult]:
-        raise NotImplementedError
-
-
 class HttpHandlerFn(Protocol[TSource, TNext]):
     def __call__(self, next: HttpFunc[TNext, TResult], context: Context[TSource]) -> HttpFuncResultAsync[TResult]:
         raise NotImplementedError
@@ -70,17 +65,6 @@ def with_url(
     url: str,
 ) -> HttpHandlerFn[Option[ClientResponse], Option[ClientResponse]]:
     return with_url_builder(lambda _: url)
-
-
-def with_url2(url: str) -> HttpHandlerFn[Option[ClientResponse], Option[ClientResponse]]:
-    def _with_url(
-        next: HttpFunc[Option[ClientResponse], TResult],
-        context: Context[Option[ClientResponse]],
-    ) -> HttpFuncResultAsync[TResult]:
-        fn = with_url_builder(lambda _: url)
-        return fn(next, context)
-
-    return _with_url
 
 
 def with_method(
