@@ -45,7 +45,7 @@ the Result type to Exception.
 &#34;&#34;&#34;
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, Type, TypeVar, Union, get_origin, overload
+from typing import Any, Callable, Generator, Iterable, Iterator, Protocol, Type, TypeVar, Union, get_origin, overload
 
 from .error import EffectError
 from .match import Case, SupportsMatch
@@ -69,7 +69,7 @@ class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TErr
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
+    def pipe(self: T1, __fn1: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
@@ -274,7 +274,11 @@ class Error(Result[TSource, TError], ResultException):
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for Error case.&#34;&#34;&#34;
-        raise Error(self._error)
+
+        # Raise class here so sub-classes like Failure works as well.
+        raise self.__class__(self._error)
+
+        # We&#39;re a generator
         while False:
             yield
 
@@ -282,16 +286,20 @@ class Error(Result[TSource, TError], ResultException):
         return f&#34;Error {self._error}&#34;
 
 
-def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+class TransformFn(Protocol[TResult]):
+    def __call__(self, __source: Result[TSource, TError]) -&gt; Result[TResult, TError]:
+        ...
+
+
+def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
     def _map(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.map(mapper)
 
+    # return cast(TransformFn[TSource, TResult], _map)  # NOTE: cast for mypy
     return _map
 
 
-def bind(
-    mapper: Callable[[TSource], Result[TResult, TError]]
-) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+def bind(mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; TransformFn[TResult]:
     def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.bind(mapper)
 
@@ -309,7 +317,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>]) ‑> Callable[[<a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>]) ‑> expression.core.result.TransformFn[~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -317,9 +325,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(
-    mapper: Callable[[TSource], Result[TResult, TError]]
-) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+<pre><code class="python">def bind(mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; TransformFn[TResult]:
     def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.bind(mapper)
 
@@ -327,7 +333,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 </details>
 </dd>
 <dt id="expression.core.result.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[<a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> expression.core.result.TransformFn[~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -335,10 +341,11 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
     def _map(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.map(mapper)
 
+    # return cast(TransformFn[TSource, TResult], _map)  # NOTE: cast for mypy
     return _map</code></pre>
 </details>
 </dd>
@@ -407,7 +414,11 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for Error case.&#34;&#34;&#34;
-        raise Error(self._error)
+
+        # Raise class here so sub-classes like Failure works as well.
+        raise self.__class__(self._error)
+
+        # We&#39;re a generator
         while False:
             yield
 
@@ -429,7 +440,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li><a title="expression.core.result_try.Failure" href="result_try.html#expression.core.result_try.Failure">Failure</a></li>
+<li><a title="expression.core.try_.Failure" href="try_.html#expression.core.try_.Failure">Failure</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -578,7 +589,7 @@ def error(self) -&gt; TError:
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li><a title="expression.core.result_try.Success" href="result_try.html#expression.core.result_try.Success">Success</a></li>
+<li><a title="expression.core.try_.Success" href="try_.html#expression.core.try_.Success">Success</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -665,7 +676,7 @@ def value(self) -&gt; TSource:
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
+    def pipe(self: T1, __fn1: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload

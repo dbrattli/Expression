@@ -56,13 +56,11 @@ class Choice(ABC, SupportsMatch[TSource]):
 
     def __match__(self, pattern: Any) -&gt; Iterable[Any]:
         if self.value is pattern or self.value == pattern:
-            self.is_matched = True
             return [self.value]
 
         try:
             origin: Any = get_origin(pattern)
             if isinstance(self, origin or pattern):
-                self.is_matched = True
                 return [self.value]
         except TypeError:
             pass
@@ -177,7 +175,19 @@ class Choice3of3(Choice3[A, B, C], Choice[C]):
     @classmethod
     def case(cls, case: Case[C]) -&gt; Iterable[C]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
-        return case(cls)</code></pre>
+        return case(cls)
+
+
+__all__ = [
+    &#34;Choice&#34;,
+    &#34;Choice2&#34;,
+    &#34;Choice3&#34;,
+    &#34;Choice1of2&#34;,
+    &#34;Choice2of2&#34;,
+    &#34;Choice1of3&#34;,
+    &#34;Choice2of3&#34;,
+    &#34;Choice3of3&#34;,
+]</code></pre>
 </details>
 </section>
 <section>
@@ -206,13 +216,11 @@ inheritance.</p></div>
 
     def __match__(self, pattern: Any) -&gt; Iterable[Any]:
         if self.value is pattern or self.value == pattern:
-            self.is_matched = True
             return [self.value]
 
         try:
             origin: Any = get_origin(pattern)
             if isinstance(self, origin or pattern):
-                self.is_matched = True
                 return [self.value]
         except TypeError:
             pass

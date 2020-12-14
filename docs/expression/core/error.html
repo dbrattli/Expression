@@ -46,10 +46,11 @@ class MatchFailureError(Exception):
 
 
 def failwith(message: str) -&gt; NoReturn:
+    &#34;&#34;&#34;Raise exception with the given message string.&#34;&#34;&#34;
     raise Exception(message)
 
 
-__all__ = [&#34;EffectError&#34;, &#34;failwith&#34;]</code></pre>
+__all__ = [&#34;EffectError&#34;, &#34;failwith&#34;, &#34;MatchFailureError&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -63,12 +64,13 @@ __all__ = [&#34;EffectError&#34;, &#34;failwith&#34;]</code></pre>
 <span>def <span class="ident">failwith</span></span>(<span>message: str) ‑> NoReturn</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Raise exception with the given message string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def failwith(message: str) -&gt; NoReturn:
+    &#34;&#34;&#34;Raise exception with the given message string.&#34;&#34;&#34;
     raise Exception(message)</code></pre>
 </details>
 </dd>
@@ -107,6 +109,29 @@ yielding nothing will be silently ignored.</p></div>
 <li>expression.core.result.ResultException</li>
 </ul>
 </dd>
+<dt id="expression.core.error.MatchFailureError"><code class="flex name class">
+<span>class <span class="ident">MatchFailureError</span></span>
+<span>(</span><span>expr: Any)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pattern match failure error.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MatchFailureError(Exception):
+    &#34;&#34;&#34;Pattern match failure error.&#34;&#34;&#34;
+
+    def __init__(self, expr: Any):
+        msg = f&#34;Incomplete pattern matches on this expression. {expr} did not match any cases.&#34;
+        super().__init__(msg)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.Exception</li>
+<li>builtins.BaseException</li>
+</ul>
+</dd>
 </dl>
 </section>
 </article>
@@ -130,6 +155,9 @@ yielding nothing will be silently ignored.</p></div>
 <ul>
 <li>
 <h4><code><a title="expression.core.error.EffectError" href="#expression.core.error.EffectError">EffectError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="expression.core.error.MatchFailureError" href="#expression.core.error.MatchFailureError">MatchFailureError</a></code></h4>
 </li>
 </ul>
 </li>

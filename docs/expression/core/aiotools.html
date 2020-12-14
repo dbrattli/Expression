@@ -133,9 +133,12 @@ async def empty() -&gt; None:
     pass
 
 
-async def from_result(result: TSource) -&gt; TSource:
-    &#34;&#34;&#34;Async return value&#34;&#34;&#34;
-    return result
+def from_result(result: TSource) -&gt; Awaitable[TSource]:
+    async def from_result(result: TSource) -&gt; TSource:
+        &#34;&#34;&#34;Async return value&#34;&#34;&#34;
+        return result
+
+    return from_result(result)
 
 
 __all__ = [

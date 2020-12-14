@@ -44,7 +44,7 @@ from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
-from .result_try import Failure, Success, Try
+from .try_ import Failure, Success, Try
 from .typing import SupportsLessThan, SupportsMatch
 
 __all__ = [
@@ -138,19 +138,11 @@ __all__ = [
 <dd>
 <div class="desc"><p>Result module …</p></div>
 </dd>
-<dt><code class="name"><a title="expression.core.result_try" href="result_try.html">expression.core.result_try</a></code></dt>
+<dt><code class="name"><a title="expression.core.try_" href="try_.html">expression.core.try_</a></code></dt>
 <dd>
 <div class="desc"><p>The <code><a title="expression.core.Result" href="#expression.core.Result">Result</a></code> type
 is a simpler <code><a title="expression.core.Result" href="#expression.core.Result">Result</a></code> type that pins the error type
-to Exception.</p></div>
-</dd>
-<dt><code class="name"><a title="expression.core.test" href="test.html">expression.core.test</a></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="expression.core.test2" href="test2.html">expression.core.test2</a></code></dt>
-<dd>
-<div class="desc"></div>
+to Exception …</p></div>
 </dd>
 <dt><code class="name"><a title="expression.core.typing" href="typing.html">expression.core.typing</a></code></dt>
 <dd>
@@ -280,12 +272,13 @@ assert add(3)(4) == 7</p></div>
 <span>def <span class="ident">failwith</span></span>(<span>message: str) ‑> NoReturn</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Raise exception with the given message string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def failwith(message: str) -&gt; NoReturn:
+    &#34;&#34;&#34;Raise exception with the given message string.&#34;&#34;&#34;
     raise Exception(message)</code></pre>
 </details>
 </dd>
@@ -395,7 +388,7 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.pipe2"><code class="name flex">
-<span>def <span class="ident">pipe2</span></span>(<span>args: Any, *fns: Any)</span>
+<span>def <span class="ident">pipe2</span></span>(<span>values: Any, *fns: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -403,12 +396,12 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe2(args: Any, *fns: Any):
-    return starpipe(args, *fns)</code></pre>
+<pre><code class="python">def pipe2(values: Any, *fns: Any) -&gt; Any:
+    return starpipe(values, *fns)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.pipe3"><code class="name flex">
-<span>def <span class="ident">pipe3</span></span>(<span>args: Any, *fns: Any)</span>
+<span>def <span class="ident">pipe3</span></span>(<span>args: Any, *fns: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -416,7 +409,7 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe3(args: Any, *fns: Any):
+<pre><code class="python">def pipe3(args: Any, *fns: Any) -&gt; Any:
     return starpipe(args, *fns)</code></pre>
 </details>
 </dd>
@@ -760,7 +753,7 @@ i.e returns None</p></div>
 
     @overload
     def __call__(self, pattern: Type[SupportsMatch[A]]) -&gt; Iterable[A]:
-        &#34;&#34;&#34;Active type pattern.
+        &#34;&#34;&#34;Match with active type pattern.
 
         Handle the case where pattern is an active pattern type e.g
         `ParseInteger`
@@ -769,7 +762,7 @@ i.e returns None</p></div>
 
     @overload
     def __call__(self, pattern: SupportsMatch[A]) -&gt; Iterable[A]:
-        &#34;&#34;&#34;Intance pattern.
+        &#34;&#34;&#34;Match with intance of `SupportsMatch` pattern.
 
         Handle the case where pattern is instance of a type that
         sub-classes `SupportsMatch`, e.g an active pattern.
@@ -794,7 +787,7 @@ i.e returns None</p></div>
 
     @overload
     def __call__(self, pattern: Type[TSource]) -&gt; Iterable[TSource]:
-        &#34;&#34;&#34;Type pattern.
+        &#34;&#34;&#34;Match with type pattern.
 
         Handle the case where pattern is a type e.g `int`, `str`,
         `float`.
@@ -802,7 +795,7 @@ i.e returns None</p></div>
 
     @overload
     def __call__(self, pattern: A) -&gt; Iterable[A]:
-        &#34;&#34;&#34;Intance pattern.
+        &#34;&#34;&#34;Match with intance pattern.
 
         Handle the case where pattern is instance of a type e.g `42`,
         `&#34;test&#34;`, `23.4`.
@@ -810,6 +803,7 @@ i.e returns None</p></div>
         ...
 
     def __call__(self, pattern: Any) -&gt; Iterable[Any]:
+        &#34;&#34;&#34;Match with pattern.&#34;&#34;&#34;
         if self.is_matched:
             return []
 
@@ -847,12 +841,27 @@ i.e returns None</p></div>
         # No match
         return []
 
-    def default(self) -&gt; Iterable[Any]:
+    @property
+    def _(self):
+        &#34;&#34;&#34;Handle default case. Always matches.&#34;&#34;&#34;
+        return self.default()
+
+    @overload
+    def default(self) -&gt; Iterable[TSource]:
+        ...
+
+    @overload
+    def default(self, ret: Optional[TResult]) -&gt; TResult:
+        ...
+
+    def default(self, ret: Optional[Any] = None) -&gt; Any:
+        &#34;&#34;&#34;Handle default case. Always matches.&#34;&#34;&#34;
+
         if self.is_matched:
             return []
 
         self.is_matched = True
-        return [self.value]
+        return [ret or self.value]
 
     def __enter__(self) -&gt; &#34;Case[TSource]&#34;:
         &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
@@ -876,20 +885,22 @@ i.e returns None</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.Case.default"><code class="name flex">
-<span>def <span class="ident">default</span></span>(<span>self) ‑> Iterable[Any]</span>
+<span>def <span class="ident">default</span></span>(<span>self, ret: Optional[Any] = None) ‑> Any</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Handle default case. Always matches.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def default(self) -&gt; Iterable[Any]:
+<pre><code class="python">def default(self, ret: Optional[Any] = None) -&gt; Any:
+    &#34;&#34;&#34;Handle default case. Always matches.&#34;&#34;&#34;
+
     if self.is_matched:
         return []
 
     self.is_matched = True
-    return [self.value]</code></pre>
+    return [ret or self.value]</code></pre>
 </details>
 </dd>
 </dl>
@@ -911,13 +922,11 @@ inheritance.</p></div>
 
     def __match__(self, pattern: Any) -&gt; Iterable[Any]:
         if self.value is pattern or self.value == pattern:
-            self.is_matched = True
             return [self.value]
 
         try:
             origin: Any = get_origin(pattern)
             if isinstance(self, origin or pattern):
-                self.is_matched = True
                 return [self.value]
         except TypeError:
             pass
@@ -1391,7 +1400,11 @@ yielding nothing will be silently ignored.</p></div>
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for Error case.&#34;&#34;&#34;
-        raise Error(self._error)
+
+        # Raise class here so sub-classes like Failure works as well.
+        raise self.__class__(self._error)
+
+        # We&#39;re a generator
         while False:
             yield
 
@@ -1413,7 +1426,7 @@ yielding nothing will be silently ignored.</p></div>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li><a title="expression.core.result_try.Failure" href="result_try.html#expression.core.result_try.Failure">Failure</a></li>
+<li><a title="expression.core.try_.Failure" href="try_.html#expression.core.try_.Failure">Failure</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -1552,8 +1565,8 @@ return default</p></div>
     def __init__(self, cancellation_token: Optional[CancellationToken]) -&gt; None:
         self.messages: SimpleQueue[Msg] = SimpleQueue()
         self.token = cancellation_token or CancellationToken.none()
-        self.lock = RLock()
         self.loop = asyncio.get_event_loop()
+        self.lock = RLock()
 
         # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
         self.continuation: Optional[Continuation[Msg]] = None
@@ -1842,7 +1855,7 @@ the timeout is exceeded.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class MatchMixin(SupportsMatch[TSource]):
-    def match(self, pattern: Any) -&gt; Iterable[TSource]:
+    def match(self, pattern: Any) -&gt; Iterable[Any]:
         &#34;&#34;&#34;Match with pattern.
 
         NOTE: This is just the basic default implementation for fluent
@@ -1871,7 +1884,7 @@ the timeout is exceeded.</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.MatchMixin.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Iterable[Any]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Match with pattern.</p>
@@ -1887,7 +1900,7 @@ correctly.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, pattern: Any) -&gt; Iterable[TSource]:
+<pre><code class="python">def match(self, pattern: Any) -&gt; Iterable[Any]:
     &#34;&#34;&#34;Match with pattern.
 
     NOTE: This is just the basic default implementation for fluent
@@ -1985,9 +1998,9 @@ return True</p></div>
 
         raise ValueError(&#34;There is no value.&#34;)
 
-    def __match__(self, pattern: Any) -&gt; &#34;Iterable[Nothing_[TSource]]&#34;:
+    def __match__(self, pattern: Any) -&gt; &#34;Iterable[bool]&#34;:
         if self is pattern:
-            return [Nothing]
+            return [True]
 
         return []
 
@@ -1997,6 +2010,7 @@ return True</p></div>
         We basically want to return nothing, but we have to return
         something to signal fail.
         &#34;&#34;&#34;
+
         raise Nothing
         while False:
             yield
@@ -2213,7 +2227,7 @@ return True</p></div>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li><a title="expression.core.result_try.Success" href="result_try.html#expression.core.result_try.Success">Success</a></li>
+<li><a title="expression.core.try_.Success" href="try_.html#expression.core.try_.Success">Success</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
@@ -2296,7 +2310,7 @@ def value(self) -&gt; TSource:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC):
+<pre><code class="python">class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource, bool]], ABC):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -2382,12 +2396,12 @@ def value(self) -&gt; TSource:
         raise NotImplementedError
 
     @classmethod
-    def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+    def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
         &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls: &#34;Option[TSource]&#34;, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+    def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
         &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
         return of_optional(value)
 
@@ -2437,7 +2451,7 @@ def value(self) -&gt; TSource:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
     &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
     return of_optional(value)</code></pre>
 </details>
@@ -2452,7 +2466,7 @@ def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSo
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def of_optional(cls: &#34;Option[TSource]&#34;, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
     &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
     return of_optional(value)</code></pre>
 </details>
@@ -2667,7 +2681,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
+    def pipe(self: T1, __fn1: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
@@ -2894,7 +2908,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], TResult]) -&gt; TResult:
+    def pipe(self: T1, __fn1: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
@@ -3351,11 +3365,11 @@ Protocol classes can be generic, they are defined as::</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class SupportsMatch(Protocol[TSource]):
+<pre><code class="python">class SupportsMatch(Protocol[T_co]):
     &#34;&#34;&#34;Pattern matching protocol.&#34;&#34;&#34;
 
     @abstractmethod
-    def __match__(self, pattern: Any) -&gt; Iterable[TSource]:
+    def __match__(self, pattern: Any) -&gt; Iterable[T_co]:
         &#34;&#34;&#34;Match pattern with value.
 
         Return a singleton iterable item (e.g `[ value ]`) if pattern
@@ -3427,9 +3441,7 @@ function will be called again with the new arguments provided.</p></div>
 <li><code><a title="expression.core.misc" href="misc.html">expression.core.misc</a></code></li>
 <li><code><a title="expression.core.option" href="option.html">expression.core.option</a></code></li>
 <li><code><a title="expression.core.result" href="result.html">expression.core.result</a></code></li>
-<li><code><a title="expression.core.result_try" href="result_try.html">expression.core.result_try</a></code></li>
-<li><code><a title="expression.core.test" href="test.html">expression.core.test</a></code></li>
-<li><code><a title="expression.core.test2" href="test2.html">expression.core.test2</a></code></li>
+<li><code><a title="expression.core.try_" href="try_.html">expression.core.try_</a></code></li>
 <li><code><a title="expression.core.typing" href="typing.html">expression.core.typing</a></code></li>
 </ul>
 </li>

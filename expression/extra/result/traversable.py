@@ -1,5 +1,5 @@
 """Data structures that can be traversed from left to right, performing an action on each element."""
-from typing import Callable, Generator, List, TypeVar, overload
+from typing import Callable, Generator, List, TypeVar, Union, cast, overload
 
 from expression import effect
 from expression.collections import seq
@@ -24,12 +24,17 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
     """
 
     @effect.result
-    def folder(head: TSource, tail: Result[List[TResult], TError]) -> Generator[TResult, TResult, List[TResult]]:
+    def folder(
+        head: TSource, tail: Result[List[TResult], TError]
+    ) -> Generator[Union[List[TResult], TResult], Union[List[TResult], TResult], List[TResult]]:
         """Same as:
         >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
         """
         h = yield from fn(head)
         t = yield from tail
+
+        h = cast("TResult", h)
+        t = cast(List[TResult], t)
         return [h] + t
 
     state: Result[List[TSource], TError] = Ok([])

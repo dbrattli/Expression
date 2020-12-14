@@ -216,7 +216,7 @@ class Map(Mapping[Key, Value]):
         &#34;&#34;&#34;Convert to sequence.
 
         Returns:
-            Sequenc of key, value tuples.
+            Sequence of key, value tuples.
         &#34;&#34;&#34;
         return maptree.to_seq(self._tree)
 
@@ -288,7 +288,7 @@ class Map(Mapping[Key, Value]):
         &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
         return maptree.size(self._tree)
 
-    def __contains__(self, key: Key) -&gt; bool:
+    def __contains__(self, key: Any) -&gt; bool:
         return self.contains_key(key)
 
     def __eq__(self, other: Any) -&gt; bool:
@@ -314,7 +314,8 @@ class Map(Mapping[Key, Value]):
     def __str__(self) -&gt; str:
         def to_str(item: Tuple[Key, Value]) -&gt; str:
             key, value = item
-            key = f&#39;&#34;{key}&#34;&#39; if isinstance(key, str) else key
+            if isinstance(key, str):
+                return f&#39;(&#34;{key}&#34;, {value})&#39;
             return f&#34;({key}, {value})&#34;
 
         items = pipe(self.to_seq(), seq.map(to_str))
@@ -540,10 +541,6 @@ def remove(key: Key) -&gt; Callable[[Map[Key, Value]], Map[Key, Value]]:
     return _remove
 
 
-def to_seq(table: Map[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
-    return table.to_seq()
-
-
 # // [&lt;CompiledName(&#34;FindKey&#34;)&gt;]
 # let findKey predicate (table : Map&lt;_, _&gt;) =
 #     table |&gt; Seq.pick (fun kvp -&gt; let k = kvp.Key in if predicate k kvp.Value then Some k else None)
@@ -551,6 +548,11 @@ def to_seq(table: Map[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 # // [&lt;CompiledName(&#34;TryFindKey&#34;)&gt;]
 # let tryFindKey predicate (table : Map&lt;_, _&gt;) =
 #     table |&gt; Seq.tryPick (fun kvp -&gt; let k = kvp.Key in if predicate k kvp.Value then Some k else None)
+
+
+def of(**args: Value) -&gt; Map[str, Value]:
+    &#34;&#34;&#34;Create map from arguments.&#34;&#34;&#34;
+    return Map(maptree.of_seq(args.items()))
 
 
 def of_frozenlist(elements: FrozenList[Tuple[Key, Value]]) -&gt; Map[Key, Value]:
@@ -567,6 +569,10 @@ def of_seq(elements: Iterable[Tuple[Key, Value]]) -&gt; Map[Key, Value]:
 
 def to_list(table: Map[Key, Value]) -&gt; FrozenList[Tuple[Key, Value]]:
     return table.to_list()
+
+
+def to_seq(table: Map[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
+    return table.to_seq()
 
 
 def try_find(key: Key) -&gt; Callable[[Map[Key, Value]], Option[Value]]:
@@ -639,7 +645,10 @@ __all__ = [
     &#34;is_empty&#34;,
     &#34;iterate&#34;,
     &#34;map&#34;,
+    &#34;of&#34;,
+    &#34;of_frozenlist&#34;,
     &#34;of_list&#34;,
+    &#34;of_seq&#34;,
     &#34;partition&#34;,
     &#34;pick&#34;,
     &#34;remove&#34;,
@@ -976,6 +985,33 @@ binding exists in the map</p>
     return _map</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.map.of"><code class="name flex">
+<span>def <span class="ident">of</span></span>(<span>**args: ~Value) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create map from arguments.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def of(**args: Value) -&gt; Map[str, Value]:
+    &#34;&#34;&#34;Create map from arguments.&#34;&#34;&#34;
+    return Map(maptree.of_seq(args.items()))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.of_frozenlist"><code class="name flex">
+<span>def <span class="ident">of_frozenlist</span></span>(<span>elements: <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[typing.Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def of_frozenlist(elements: FrozenList[Tuple[Key, Value]]) -&gt; Map[Key, Value]:
+    return Map(maptree.of_list(elements))</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.map.of_list"><code class="name flex">
 <span>def <span class="ident">of_list</span></span>(<span>elements: List[Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a></span>
 </code></dt>
@@ -987,6 +1023,19 @@ binding exists in the map</p>
 </summary>
 <pre><code class="python">def of_list(elements: List[Tuple[Key, Value]]) -&gt; Map[Key, Value]:
     return Map(maptree.of_list(FrozenList(elements)))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.map.of_seq"><code class="name flex">
+<span>def <span class="ident">of_seq</span></span>(<span>elements: Iterable[Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def of_seq(elements: Iterable[Tuple[Key, Value]]) -&gt; Map[Key, Value]:
+    return Map(maptree.of_seq(elements))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.map.partition"><code class="name flex">
@@ -1064,7 +1113,7 @@ raised if the element is not present.</p>
 </details>
 </dd>
 <dt id="expression.collections.map.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
+<span>def <span class="ident">to_list</span></span>(<span>table: <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a>) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[typing.Tuple[~Key, ~Value]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1338,7 +1387,7 @@ and returns the first result.</p></div>
         &#34;&#34;&#34;Convert to sequence.
 
         Returns:
-            Sequenc of key, value tuples.
+            Sequence of key, value tuples.
         &#34;&#34;&#34;
         return maptree.to_seq(self._tree)
 
@@ -1410,7 +1459,7 @@ and returns the first result.</p></div>
         &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
         return maptree.size(self._tree)
 
-    def __contains__(self, key: Key) -&gt; bool:
+    def __contains__(self, key: Any) -&gt; bool:
         return self.contains_key(key)
 
     def __eq__(self, other: Any) -&gt; bool:
@@ -1436,7 +1485,8 @@ and returns the first result.</p></div>
     def __str__(self) -&gt; str:
         def to_str(item: Tuple[Key, Value]) -&gt; str:
             key, value = item
-            key = f&#39;&#34;{key}&#34;&#39; if isinstance(key, str) else key
+            if isinstance(key, str):
+                return f&#39;(&#34;{key}&#34;, {value})&#39;
             return f&#34;({key}, {value})&#34;
 
         items = pipe(self.to_seq(), seq.map(to_str))
@@ -1499,7 +1549,7 @@ def of(**args: Value) -&gt; &#34;Map[str, Value]&#34;:
 </details>
 </dd>
 <dt id="expression.collections.map.Map.of_frozenlist"><code class="name flex">
-<span>def <span class="ident">of_frozenlist</span></span>(<span>lst: <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a></span>
+<span>def <span class="ident">of_frozenlist</span></span>(<span>lst: <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[typing.Tuple[~Key, ~Value]]) ‑> <a title="expression.collections.map.Map" href="#expression.collections.map.Map">Map</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Generate map from list.</p>
@@ -1807,7 +1857,7 @@ element being transformed.</p>
 </details>
 </dd>
 <dt id="expression.collections.map.Map.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>self) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a></span>
+<span>def <span class="ident">to_list</span></span>(<span>self) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[typing.Tuple[~Key, ~Value]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1825,7 +1875,7 @@ element being transformed.</p>
 <dd>
 <div class="desc"><p>Convert to sequence.</p>
 <h2 id="returns">Returns</h2>
-<p>Sequenc of key, value tuples.</p></div>
+<p>Sequence of key, value tuples.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1834,7 +1884,7 @@ element being transformed.</p>
     &#34;&#34;&#34;Convert to sequence.
 
     Returns:
-        Sequenc of key, value tuples.
+        Sequence of key, value tuples.
     &#34;&#34;&#34;
     return maptree.to_seq(self._tree)</code></pre>
 </details>
@@ -1913,7 +1963,10 @@ element being transformed.</p>
 <li><code><a title="expression.collections.map.is_empty" href="#expression.collections.map.is_empty">is_empty</a></code></li>
 <li><code><a title="expression.collections.map.iterate" href="#expression.collections.map.iterate">iterate</a></code></li>
 <li><code><a title="expression.collections.map.map" href="#expression.collections.map.map">map</a></code></li>
+<li><code><a title="expression.collections.map.of" href="#expression.collections.map.of">of</a></code></li>
+<li><code><a title="expression.collections.map.of_frozenlist" href="#expression.collections.map.of_frozenlist">of_frozenlist</a></code></li>
 <li><code><a title="expression.collections.map.of_list" href="#expression.collections.map.of_list">of_list</a></code></li>
+<li><code><a title="expression.collections.map.of_seq" href="#expression.collections.map.of_seq">of_seq</a></code></li>
 <li><code><a title="expression.collections.map.partition" href="#expression.collections.map.partition">partition</a></code></li>
 <li><code><a title="expression.collections.map.pick" href="#expression.collections.map.pick">pick</a></code></li>
 <li><code><a title="expression.collections.map.remove" href="#expression.collections.map.remove">remove</a></code></li>

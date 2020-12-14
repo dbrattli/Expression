@@ -61,7 +61,7 @@ Example:
 import builtins
 import functools
 import itertools
-from typing import Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, overload
+from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Tuple, TypeVar, overload
 
 from expression.core import Case, Option, SupportsLessThan, identity, pipe
 
@@ -107,10 +107,12 @@ class Seq(Iterable[TSource]):
             function.
         &#34;&#34;&#34;
 
-        return Seq(pipe(self, choose(chooser)))
+        xs = pipe(self, choose(chooser))
+        return Seq(xs)
 
     def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
-        return Seq(collect(mapping)(self))
+        xs = pipe(self, collect(mapping))
+        return Seq(xs)
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
         &#34;&#34;&#34;Applies a function to each element of the collection,
@@ -157,7 +159,7 @@ class Seq(Iterable[TSource]):
     def match(self, pattern: Any) -&gt; Iterable[Iterable[TSource]]:
         ...
 
-    def match(self, pattern: Any) -&gt; Any:
+    def match(self, pattern: Optional[Any] = None) -&gt; Any:
         case: Case[Iterable[TSource]] = Case(self)
         return case(pattern) if pattern else case
 
@@ -194,7 +196,12 @@ class Seq(Iterable[TSource]):
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: Optional[int] = None) -&gt; Iterable[int]:
+    def range(start: int, stop: int) -&gt; Iterable[int]:
+        ...
+
+    @overload
+    @staticmethod
+    def range(start: int, stop: int, step: int) -&gt; Iterable[int]:
         ...
 
     @staticmethod
@@ -252,7 +259,27 @@ class Seq(Iterable[TSource]):
         return builtins.iter(self._value)
 
 
-def choose(chooser: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+class FilterFn(Protocol):
+    &#34;&#34;&#34;Sequence filtering protocol function.
+
+    `Iterable[TSource]) -&gt; Iterable[TSource]`
+    &#34;&#34;&#34;
+
+    def __call__(self, __source: Iterable[TSource]) -&gt; Iterable[TSource]:
+        raise NotImplementedError
+
+
+class TransformFn(Protocol[TResult]):
+    &#34;&#34;&#34;Sequence transforming protocol function.
+
+    `Iterable[TSource]) -&gt; Iterable[TResult]`
+    &#34;&#34;&#34;
+
+    def __call__(self, __source: Iterable[TSource]) -&gt; Iterable[TResult]:
+        raise NotImplementedError
+
+
+def choose(chooser: Callable[[TSource], Option[TResult]]) -&gt; TransformFn[TResult]:
     &#34;&#34;&#34;Choose items from the sequence.
 
     Applies the given function to each element of the list. Returns
@@ -276,7 +303,7 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Iterab
     return _choose
 
 
-def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; TransformFn[TResult]:
     def _collect(source: Iterable[TSource]) -&gt; Iterable[TResult]:
         return (x for xs in source for x in mapping(xs))
 
@@ -304,7 +331,7 @@ empty: Seq[Any] = Seq()
 &#34;&#34;&#34;The empty sequence.&#34;&#34;&#34;
 
 
-def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
+def filter(predicate: Callable[[TSource], bool]) -&gt; FilterFn:
     &#34;&#34;&#34;Filter sequence.
 
     Filters the sequence to a new sequence containing only the
@@ -420,14 +447,14 @@ def init_infinite(initializer: Callable[[int], TSource]) -&gt; Iterable[TSource]
     Iteration can continue up to `sys.maxsize`.
     &#34;&#34;&#34;
 
-    class Infinite(Iterable[int]):
+    class Infinite(Iterable[TResult]):
         &#34;&#34;&#34;An infinite iterable where each iterator starts counting at
         0.&#34;&#34;&#34;
 
-        def __init__(self, initializer: Callable[[int], TSource]) -&gt; None:
+        def __init__(self, initializer: Callable[[int], TResult]) -&gt; None:
             self.initializer = initializer
 
-        def __iter__(self) -&gt; Iterator[TSource]:
+        def __iter__(self) -&gt; Iterator[TResult]:
             return builtins.map(self.initializer, itertools.count(0, 1))
 
     return Infinite(initializer)
@@ -464,7 +491,7 @@ def iter(action: Callable[[TSource], None]) -&gt; Callable[[Iterable[TSource]], 
     return _iter
 
 
-def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
     &#34;&#34;&#34;Map source sequence.
 
     Builds a new collection whose elements are the results of
@@ -513,7 +540,7 @@ def min(source: Iterable[TSupportsLessThan]) -&gt; TSupportsLessThan:
     return builtins.min(source)
 
 
-def min_by(projection: Callable[[TSource], TSupportsLessThan]) -&gt; Callable[[Iterable[TSource]], TResult]:
+def min_by(projection: Callable[[TSource], TSupportsLessThan]) -&gt; Callable[[Iterable[TSource]], TSupportsLessThan]:
     def _min_by(source: Iterable[TSource]) -&gt; TSupportsLessThan:
         return builtins.min(projection(x) for x in source)
 
@@ -543,7 +570,15 @@ def range(stop: int) -&gt; Iterable[int]:
 
 
 @overload
-def range(start: int, stop: int, step: Optional[int] = None) -&gt; Iterable[int]:
+def range(
+    start: int,
+    stop: int,
+) -&gt; Iterable[int]:
+    ...
+
+
+@overload
+def range(start: int, stop: int, step: int) -&gt; Iterable[int]:
     ...
 
 
@@ -584,6 +619,33 @@ def singleton(item: TSource) -&gt; Seq[TSource]:
         The result sequence of one item.
     &#34;&#34;&#34;
     return Seq([item])
+
+
+def take(count: int) -&gt; FilterFn:
+    &#34;&#34;&#34;Returns the first N elements of the sequence.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result sequence.
+    &#34;&#34;&#34;
+
+    def _take(source: Iterable[TSource]) -&gt; Iterable[TSource]:
+        n = count
+
+        def gen():
+            nonlocal n
+            for x in source:
+                if n &gt; 0:
+                    yield x
+                    n -= 1
+                else:
+                    break
+
+        return gen()
+
+    return _take
 
 
 def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]]) -&gt; Callable[[TState], Iterable[TSource]]:
@@ -671,9 +733,12 @@ __all__ = [
     &#34;of&#34;,
     &#34;of_list&#34;,
     &#34;of_iterable&#34;,
+    &#34;range&#34;,
     &#34;scan&#34;,
     &#34;singleton&#34;,
+    &#34;take&#34;,
     &#34;unfold&#34;,
+    &#34;zip&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -692,7 +757,7 @@ __all__ = [
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.collections.seq.choose"><code class="name flex">
-<span>def <span class="ident">choose</span></span>(<span>chooser: Callable[[~TSource], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
+<span>def <span class="ident">choose</span></span>(<span>chooser: Callable[[~TSource], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> expression.collections.seq.TransformFn[~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Choose items from the sequence.</p>
@@ -711,7 +776,7 @@ function.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def choose(chooser: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+<pre><code class="python">def choose(chooser: Callable[[TSource], Option[TResult]]) -&gt; TransformFn[TResult]:
     &#34;&#34;&#34;Choose items from the sequence.
 
     Applies the given function to each element of the list. Returns
@@ -736,7 +801,7 @@ function.</p></div>
 </details>
 </dd>
 <dt id="expression.collections.seq.collect"><code class="name flex">
-<span>def <span class="ident">collect</span></span>(<span>mapping: Callable[[~TSource], Iterable[~TResult]]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
+<span>def <span class="ident">collect</span></span>(<span>mapping: Callable[[~TSource], Iterable[~TResult]]) ‑> expression.collections.seq.TransformFn[~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -744,7 +809,7 @@ function.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+<pre><code class="python">def collect(mapping: Callable[[TSource], Iterable[TResult]]) -&gt; TransformFn[TResult]:
     def _collect(source: Iterable[TSource]) -&gt; Iterable[TResult]:
         return (x for xs in source for x in mapping(xs))
 
@@ -787,7 +852,7 @@ enumeration.</p>
 </details>
 </dd>
 <dt id="expression.collections.seq.filter"><code class="name flex">
-<span>def <span class="ident">filter</span></span>(<span>predicate: Callable[[~TSource], bool]) ‑> Callable[[Iterable[~TSource]], Iterable[~TSource]]</span>
+<span>def <span class="ident">filter</span></span>(<span>predicate: Callable[[~TSource], bool]) ‑> expression.collections.seq.FilterFn</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Filter sequence.</p>
@@ -808,7 +873,7 @@ input sequence should be included in the output.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def filter(predicate: Callable[[TSource], bool]) -&gt; Callable[[Iterable[TSource]], Iterable[TSource]]:
+<pre><code class="python">def filter(predicate: Callable[[TSource], bool]) -&gt; FilterFn:
     &#34;&#34;&#34;Filter sequence.
 
     Filters the sequence to a new sequence containing only the
@@ -1022,7 +1087,7 @@ from the sequence.</dd>
 </details>
 </dd>
 <dt id="expression.collections.seq.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[Iterable[~TSource]], Iterable[~TResult]]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> expression.collections.seq.TransformFn[~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Map source sequence.</p>
@@ -1040,7 +1105,7 @@ collection.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Iterable[TSource]], Iterable[TResult]]:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
     &#34;&#34;&#34;Map source sequence.
 
     Builds a new collection whose elements are the results of
@@ -1103,7 +1168,7 @@ compared via <code><a title="expression.collections.seq.max" href="#expression.c
 </details>
 </dd>
 <dt id="expression.collections.seq.min_by"><code class="name flex">
-<span>def <span class="ident">min_by</span></span>(<span>projection: Callable[[~TSource], ~TSupportsLessThan]) ‑> Callable[[Iterable[~TSource]], ~TResult]</span>
+<span>def <span class="ident">min_by</span></span>(<span>projection: Callable[[~TSource], ~TSupportsLessThan]) ‑> Callable[[Iterable[~TSource]], ~TSupportsLessThan]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1111,7 +1176,7 @@ compared via <code><a title="expression.collections.seq.max" href="#expression.c
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def min_by(projection: Callable[[TSource], TSupportsLessThan]) -&gt; Callable[[Iterable[TSource]], TResult]:
+<pre><code class="python">def min_by(projection: Callable[[TSource], TSupportsLessThan]) -&gt; Callable[[Iterable[TSource]], TSupportsLessThan]:
     def _min_by(source: Iterable[TSource]) -&gt; TSupportsLessThan:
         return builtins.min(projection(x) for x in source)
 
@@ -1162,6 +1227,19 @@ compared via <code><a title="expression.collections.seq.max" href="#expression.c
 <pre><code class="python">def of_iterable(source: Iterable[TSource]) -&gt; Seq[TSource]:
     &#34;&#34;&#34;Alias to `Seq.of`.&#34;&#34;&#34;
     return Seq(source)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.seq.range"><code class="name flex">
+<span>def <span class="ident">range</span></span>(<span>*args: int, **kw: int) ‑> Iterable[int]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def range(*args: int, **kw: int) -&gt; Iterable[int]:
+    return Seq(builtins.range(*args, **kw))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.seq.scan"><code class="name flex">
@@ -1232,6 +1310,49 @@ intermediary and final results.</p>
     return Seq([item])</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.seq.take"><code class="name flex">
+<span>def <span class="ident">take</span></span>(<span>count: int) ‑> expression.collections.seq.FilterFn</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the first N elements of the sequence.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>count</code></strong></dt>
+<dd>The number of items to take.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The result sequence.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def take(count: int) -&gt; FilterFn:
+    &#34;&#34;&#34;Returns the first N elements of the sequence.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result sequence.
+    &#34;&#34;&#34;
+
+    def _take(source: Iterable[TSource]) -&gt; Iterable[TSource]:
+        n = count
+
+        def gen():
+            nonlocal n
+            for x in source:
+                if n &gt; 0:
+                    yield x
+                    n -= 1
+                else:
+                    break
+
+        return gen()
+
+    return _take</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.seq.unfold"><code class="name flex">
 <span>def <span class="ident">unfold</span></span>(<span>generator: Callable[[~TState], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Callable[[~TState], Iterable[~TSource]]</span>
 </code></dt>
@@ -1290,6 +1411,55 @@ returns the result list.</p></div>
     return _unfold</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.seq.zip"><code class="name flex">
+<span>def <span class="ident">zip</span></span>(<span>source1: Iterable[~TSource]) ‑> Callable[[Iterable[~TResult]], Iterable[Tuple[~TSource, ~TResult]]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Combines the two sequences into a list of pairs. The two
+sequences need not have equal lengths: when one sequence is
+exhausted any remaining elements in the other sequence are
+ignored.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>source1</code></strong></dt>
+<dd>The first input sequence.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Partially applied zip function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def zip(source1: Iterable[TSource]) -&gt; Callable[[Iterable[TResult]], Iterable[Tuple[TSource, TResult]]]:
+    &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+    sequences need not have equal lengths: when one sequence is
+    exhausted any remaining elements in the other sequence are
+    ignored.
+
+    Args:
+        source1: The first input sequence.
+
+    Returns:
+        Partially applied zip function.
+    &#34;&#34;&#34;
+
+    def _zip(source2: Iterable[TResult]) -&gt; Iterable[Tuple[TSource, TResult]]:
+        &#34;&#34;&#34;Combines the two sequences into a list of pairs. The two
+        sequences need not have equal lengths: when one sequence is
+        exhausted any remaining elements in the other sequence are
+        ignored.
+
+        Args:
+            source2: The second input sequence.
+
+        Returns:
+            The result sequence.
+        &#34;&#34;&#34;
+        return builtins.zip(source1, source2)
+
+    return _zip</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -1343,10 +1513,12 @@ sequences.</p>
             function.
         &#34;&#34;&#34;
 
-        return Seq(pipe(self, choose(chooser)))
+        xs = pipe(self, choose(chooser))
+        return Seq(xs)
 
     def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
-        return Seq(collect(mapping)(self))
+        xs = pipe(self, collect(mapping))
+        return Seq(xs)
 
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -&gt; TState:
         &#34;&#34;&#34;Applies a function to each element of the collection,
@@ -1393,7 +1565,7 @@ sequences.</p>
     def match(self, pattern: Any) -&gt; Iterable[Iterable[TSource]]:
         ...
 
-    def match(self, pattern: Any) -&gt; Any:
+    def match(self, pattern: Optional[Any] = None) -&gt; Any:
         case: Case[Iterable[TSource]] = Case(self)
         return case(pattern) if pattern else case
 
@@ -1430,7 +1602,12 @@ sequences.</p>
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: Optional[int] = None) -&gt; Iterable[int]:
+    def range(start: int, stop: int) -&gt; Iterable[int]:
+        ...
+
+    @overload
+    @staticmethod
+    def range(start: int, stop: int, step: int) -&gt; Iterable[int]:
         ...
 
     @staticmethod
@@ -1587,7 +1764,8 @@ function.</p></div>
         function.
     &#34;&#34;&#34;
 
-    return Seq(pipe(self, choose(chooser)))</code></pre>
+    xs = pipe(self, choose(chooser))
+    return Seq(xs)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.seq.Seq.collect"><code class="name flex">
@@ -1600,7 +1778,8 @@ function.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def collect(self, mapping: Callable[[TSource], &#34;Seq[TResult]&#34;]) -&gt; &#34;Seq[TResult]&#34;:
-    return Seq(collect(mapping)(self))</code></pre>
+    xs = pipe(self, collect(mapping))
+    return Seq(xs)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.seq.Seq.filter"><code class="name flex">
@@ -1708,7 +1887,7 @@ collection.</p>
 </details>
 </dd>
 <dt id="expression.collections.seq.Seq.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>self, pattern: Any) ‑> Any</span>
+<span>def <span class="ident">match</span></span>(<span>self, pattern: Optional[Any] = None) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1716,7 +1895,7 @@ collection.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def match(self, pattern: Any) -&gt; Any:
+<pre><code class="python">def match(self, pattern: Optional[Any] = None) -&gt; Any:
     case: Case[Iterable[TSource]] = Case(self)
     return case(pattern) if pattern else case</code></pre>
 </details>
@@ -1842,9 +2021,12 @@ ignored.</p>
 <li><code><a title="expression.collections.seq.of" href="#expression.collections.seq.of">of</a></code></li>
 <li><code><a title="expression.collections.seq.of_iterable" href="#expression.collections.seq.of_iterable">of_iterable</a></code></li>
 <li><code><a title="expression.collections.seq.of_list" href="#expression.collections.seq.of_list">of_list</a></code></li>
+<li><code><a title="expression.collections.seq.range" href="#expression.collections.seq.range">range</a></code></li>
 <li><code><a title="expression.collections.seq.scan" href="#expression.collections.seq.scan">scan</a></code></li>
 <li><code><a title="expression.collections.seq.singleton" href="#expression.collections.seq.singleton">singleton</a></code></li>
+<li><code><a title="expression.collections.seq.take" href="#expression.collections.seq.take">take</a></code></li>
 <li><code><a title="expression.collections.seq.unfold" href="#expression.collections.seq.unfold">unfold</a></code></li>
+<li><code><a title="expression.collections.seq.zip" href="#expression.collections.seq.zip">zip</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

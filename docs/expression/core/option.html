@@ -39,7 +39,21 @@ argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 &#34;&#34;&#34;
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, TypeVar, cast, get_origin, overload
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    Union,
+    cast,
+    get_origin,
+    overload,
+)
 
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
@@ -53,7 +67,7 @@ T3 = TypeVar(&#34;T3&#34;)
 T4 = TypeVar(&#34;T4&#34;)
 
 
-class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC):
+class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource, bool]], ABC):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -139,12 +153,12 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC
         raise NotImplementedError
 
     @classmethod
-    def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+    def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
         &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls: &#34;Option[TSource]&#34;, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+    def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
         &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
         return of_optional(value)
 
@@ -325,9 +339,9 @@ class Nothing_(Option[TSource], EffectError):
 
         raise ValueError(&#34;There is no value.&#34;)
 
-    def __match__(self, pattern: Any) -&gt; &#34;Iterable[Nothing_[TSource]]&#34;:
+    def __match__(self, pattern: Any) -&gt; &#34;Iterable[bool]&#34;:
         if self is pattern:
-            return [Nothing]
+            return [True]
 
         return []
 
@@ -337,6 +351,7 @@ class Nothing_(Option[TSource], EffectError):
         We basically want to return nothing, but we have to return
         something to signal fail.
         &#34;&#34;&#34;
+
         raise Nothing
         while False:
             yield
@@ -353,6 +368,16 @@ class Nothing_(Option[TSource], EffectError):
         return &#34;Nothing&#34;
 
 
+class TransformFn(Protocol[TResult]):
+    &#34;&#34;&#34;Option transforming protocol function.
+
+    `Option[TSource]) -&gt; Option[TResult]`
+    &#34;&#34;&#34;
+
+    def __call__(self, __source: Option[TSource]) -&gt; Option[TResult]:
+        raise NotImplementedError
+
+
 # The singleton None class. We use the name &#39;Nothing&#39; here instead of `None` to
 # avoid conflicts with the builtin `None` value in Python.
 # Note to self: Must be of type `Nothing_` or pattern matching will not work.
@@ -365,7 +390,7 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 &#34;&#34;&#34;
 
 
-def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
+def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; TransformFn[TResult]:
     &#34;&#34;&#34;Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -406,7 +431,7 @@ def is_some(option: Option[TSource]) -&gt; bool:
     return option.is_some()
 
 
-def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
+def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
     def _map(option: Option[TSource]) -&gt; Option[TResult]:
         return option.map(mapper)
 
@@ -507,7 +532,7 @@ return True</p></div>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.option.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]) ‑> expression.core.option.TransformFn[~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Bind option.</p>
@@ -527,7 +552,7 @@ option of the output type of the mapper.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
+<pre><code class="python">def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; TransformFn[TResult]:
     &#34;&#34;&#34;Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -597,7 +622,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> expression.core.option.TransformFn[~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -605,7 +630,7 @@ returns the specified default value.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
     def _map(option: Option[TSource]) -&gt; Option[TResult]:
         return option.map(mapper)
 
@@ -823,9 +848,9 @@ return True</p></div>
 
         raise ValueError(&#34;There is no value.&#34;)
 
-    def __match__(self, pattern: Any) -&gt; &#34;Iterable[Nothing_[TSource]]&#34;:
+    def __match__(self, pattern: Any) -&gt; &#34;Iterable[bool]&#34;:
         if self is pattern:
-            return [Nothing]
+            return [True]
 
         return []
 
@@ -835,6 +860,7 @@ return True</p></div>
         We basically want to return nothing, but we have to return
         something to signal fail.
         &#34;&#34;&#34;
+
         raise Nothing
         while False:
             yield
@@ -984,7 +1010,7 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[TSource], ABC):
+<pre><code class="python">class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource, bool]], ABC):
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -1070,12 +1096,12 @@ return True</p></div>
         raise NotImplementedError
 
     @classmethod
-    def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+    def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
         &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls: &#34;Option[TSource]&#34;, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+    def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
         &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
         return of_optional(value)
 
@@ -1125,7 +1151,7 @@ return True</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
     &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
     return of_optional(value)</code></pre>
 </details>
@@ -1140,7 +1166,7 @@ def of_obj(cls: &#34;Option[TSource]&#34;, value: TSource) -&gt; &#34;Option[TSo
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def of_optional(cls: &#34;Option[TSource]&#34;, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
     &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
     return of_optional(value)</code></pre>
 </details>

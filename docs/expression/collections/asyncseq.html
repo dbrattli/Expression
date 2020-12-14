@@ -54,12 +54,17 @@ class AsyncSeq(AsyncIterable[TSource]):
 
     @overload
     @classmethod
-    def range(cls, start: int, stop: int, step: Optional[int]) -&gt; AsyncIterable[int]:
+    def range(cls, start: int, stop: int) -&gt; AsyncIterable[int]:
+        ...
+
+    @overload
+    @classmethod
+    def range(cls, start: int, stop: int, step: int) -&gt; AsyncIterable[int]:
         ...
 
     @classmethod
-    def range(cls, *args: Any) -&gt; AsyncIterable[int]:
-        return AsyncSeq(range(*args))
+    def range(cls, *args: Any, **kw: Any) -&gt; AsyncIterable[int]:
+        return AsyncSeq(range(*args, **kw))
 
     def __aiter__(self) -&gt; AsyncIterator[TSource]:
         return self._ai.__aiter__()
@@ -91,12 +96,17 @@ async def range(stop: int) -&gt; AsyncIterable[int]:
 
 
 @overload
-async def range(start: int, stop: int, step: Optional[int]) -&gt; AsyncIterable[int]:
+async def range(start: int, stop: int) -&gt; AsyncIterable[int]:
     ...
 
 
-async def range(*args: Any) -&gt; AsyncIterable[int]:
-    for value in builtins.range(*args):
+@overload
+async def range(start: int, stop: int, step: int) -&gt; AsyncIterable[int]:
+    ...
+
+
+async def range(*args: Any, **kw: Any) -&gt; Any:
+    for value in builtins.range(*args, **kw):
         yield value
 
 
@@ -169,7 +179,7 @@ __all__ = [
 </details>
 </dd>
 <dt id="expression.collections.asyncseq.range"><code class="name flex">
-<span>async def <span class="ident">range</span></span>(<span>*args: Any) ‑> AsyncIterable[int]</span>
+<span>async def <span class="ident">range</span></span>(<span>*args: Any, **kw: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -177,8 +187,8 @@ __all__ = [
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">async def range(*args: Any) -&gt; AsyncIterable[int]:
-    for value in builtins.range(*args):
+<pre><code class="python">async def range(*args: Any, **kw: Any) -&gt; Any:
+    for value in builtins.range(*args, **kw):
         yield value</code></pre>
 </details>
 </dd>
@@ -242,12 +252,17 @@ return default</p></div>
 
     @overload
     @classmethod
-    def range(cls, start: int, stop: int, step: Optional[int]) -&gt; AsyncIterable[int]:
+    def range(cls, start: int, stop: int) -&gt; AsyncIterable[int]:
+        ...
+
+    @overload
+    @classmethod
+    def range(cls, start: int, stop: int, step: int) -&gt; AsyncIterable[int]:
         ...
 
     @classmethod
-    def range(cls, *args: Any) -&gt; AsyncIterable[int]:
-        return AsyncSeq(range(*args))
+    def range(cls, *args: Any, **kw: Any) -&gt; AsyncIterable[int]:
+        return AsyncSeq(range(*args, **kw))
 
     def __aiter__(self) -&gt; AsyncIterator[TSource]:
         return self._ai.__aiter__()</code></pre>
@@ -274,7 +289,7 @@ def empty(cls) -&gt; AsyncIterable[Any]:
 </details>
 </dd>
 <dt id="expression.collections.asyncseq.AsyncSeq.range"><code class="name flex">
-<span>def <span class="ident">range</span></span>(<span>*args: Any) ‑> AsyncIterable[int]</span>
+<span>def <span class="ident">range</span></span>(<span>*args: Any, **kw: Any) ‑> AsyncIterable[int]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -283,8 +298,8 @@ def empty(cls) -&gt; AsyncIterable[Any]:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def range(cls, *args: Any) -&gt; AsyncIterable[int]:
-    return AsyncSeq(range(*args))</code></pre>
+def range(cls, *args: Any, **kw: Any) -&gt; AsyncIterable[int]:
+    return AsyncSeq(range(*args, **kw))</code></pre>
 </details>
 </dd>
 </dl>

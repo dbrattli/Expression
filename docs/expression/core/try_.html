@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.3.dev5+gbec6307" />
-<title>expression.core.result_try API documentation</title>
+<title>expression.core.try_ API documentation</title>
 <meta name="description" content="The `Try` type
 is a simpler `Result` type that pins the error type
-to Exception." />
+to Exception …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -21,18 +21,22 @@ to Exception." />
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>expression.core.result_try</code></h1>
+<h1 class="title">Module <code>expression.core.try_</code></h1>
 </header>
 <section id="section-intro">
 <p>The <code>Try</code> type
 is a simpler <code>Result</code> type that pins the error type
 to Exception.</p>
+<p>Everything else is the same as <code>Result</code>.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;The `Try` type  is a simpler `Result` type that pins the error type
-to Exception.&#34;&#34;&#34;
+to Exception.
+
+Everything else is the same as `Result`.
+&#34;&#34;&#34;
 
 from typing import TypeVar
 
@@ -60,7 +64,7 @@ class Failure(Error[TSource, Exception]):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="expression.core.result_try.Failure"><code class="flex name class">
+<dt id="expression.core.try_.Failure"><code class="flex name class">
 <span>class <span class="ident">Failure</span></span>
 <span>(</span><span>error: ~TError)</span>
 </code></dt>
@@ -100,7 +104,7 @@ class Failure(Error[TSource, Exception]):
 </li>
 </ul>
 </dd>
-<dt id="expression.core.result_try.Success"><code class="flex name class">
+<dt id="expression.core.try_.Success"><code class="flex name class">
 <span>class <span class="ident">Success</span></span>
 <span>(</span><span>value: ~TSource)</span>
 </code></dt>
@@ -153,10 +157,10 @@ class Failure(Error[TSource, Exception]):
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="expression.core.result_try.Failure" href="#expression.core.result_try.Failure">Failure</a></code></h4>
+<h4><code><a title="expression.core.try_.Failure" href="#expression.core.try_.Failure">Failure</a></code></h4>
 </li>
 <li>
-<h4><code><a title="expression.core.result_try.Success" href="#expression.core.result_try.Success">Success</a></code></h4>
+<h4><code><a title="expression.core.try_.Success" href="#expression.core.try_.Success">Success</a></code></h4>
 </li>
 </ul>
 </li>

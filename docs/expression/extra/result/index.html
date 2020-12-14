@@ -128,12 +128,17 @@ sequence of their response.</p></div>
     &#34;&#34;&#34;
 
     @effect.result
-    def folder(head: TSource, tail: Result[List[TResult], TError]) -&gt; Generator[TResult, TResult, List[TResult]]:
+    def folder(
+        head: TSource, tail: Result[List[TResult], TError]
+    ) -&gt; Generator[Union[List[TResult], TResult], Union[List[TResult], TResult], List[TResult]]:
         &#34;&#34;&#34;Same as:
         &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
         &#34;&#34;&#34;
         h = yield from fn(head)
         t = yield from tail
+
+        h = cast(&#34;TResult&#34;, h)
+        t = cast(List[TResult], t)
         return [h] + t
 
     state: Result[List[TSource], TError] = Ok([])
