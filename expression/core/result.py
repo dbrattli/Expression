@@ -251,12 +251,12 @@ class Error(Result[TSource, TError], ResultException):
         return f"Error {self._error}"
 
 
-class TransformFn(Protocol[TSource, TResult]):
+class TransformFn(Protocol[TResult]):
     def __call__(self, __source: Result[TSource, TError]) -> Result[TResult, TError]:
         ...
 
 
-def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
     def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.map(mapper)
 
@@ -264,9 +264,7 @@ def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TSource, TResult]:
     return _map
 
 
-def bind(
-    mapper: Callable[[TSource], Result[TResult, TError]]
-) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:
+def bind(mapper: Callable[[TSource], Result[TResult, TError]]) -> TransformFn[TResult]:
     def _bind(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.bind(mapper)
 

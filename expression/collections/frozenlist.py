@@ -20,8 +20,21 @@ Example:
 
 import builtins
 import functools
-from typing import (Any, Callable, Generic, Iterable, Iterator, List, Optional,
-                    Protocol, Tuple, TypeVar, cast, get_origin, overload)
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    cast,
+    get_origin,
+    overload,
+)
 
 from expression.core import Case, Nothing, Option, Some, pipe
 
@@ -426,6 +439,13 @@ class FilterFn(Protocol):
         ...
 
 
+class TransformFn(Protocol[TResult]):
+    """A partially applied filter function."""
+
+    def __call__(self, __source: FrozenList[TSource]) -> FrozenList[TResult]:
+        ...
+
+
 def append(source: FrozenList[TSource]) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     def _append(other: FrozenList[TSource]) -> FrozenList[TSource]:
         return source.append(other)
@@ -586,7 +606,7 @@ def is_empty(source: FrozenList[TSource]) -> bool:
     return source.is_empty()
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Callable[[FrozenList[TSource]], FrozenList[TResult]]:
+def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
     """Map list.
 
     Builds a new collection whose elements are the results of applying

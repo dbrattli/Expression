@@ -18,7 +18,8 @@ class MatchFailureError(Exception):
 
 
 def failwith(message: str) -> NoReturn:
+    """Raise exception with the given message string."""
     raise Exception(message)
 
 
-__all__ = ["EffectError", "failwith"]
+__all__ = ["EffectError", "failwith", "MatchFailureError"]

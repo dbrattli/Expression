@@ -144,3 +144,15 @@ class Choice3of3(Choice3[A, B, C], Choice[C]):
     def case(cls, case: Case[C]) -> Iterable[C]:
         """Helper to cast the match result to correct type."""
         return case(cls)
+
+
+__all__ = [
+    "Choice",
+    "Choice2",
+    "Choice3",
+    "Choice1of2",
+    "Choice2of2",
+    "Choice1of3",
+    "Choice2of3",
+    "Choice3of3",
+]

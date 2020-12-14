@@ -19,8 +19,7 @@ Example:
 import builtins
 import functools
 import itertools
-from typing import (Any, Callable, Iterable, Iterator, Optional, Protocol,
-                    Tuple, TypeVar, overload)
+from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Tuple, TypeVar, overload
 
 from expression.core import Case, Option, SupportsLessThan, identity, pipe
 
@@ -290,7 +289,7 @@ empty: Seq[Any] = Seq()
 """The empty sequence."""
 
 
-def filter(predicate: Callable[[TSource], bool]) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
+def filter(predicate: Callable[[TSource], bool]) -> FilterFn:
     """Filter sequence.
 
     Filters the sequence to a new sequence containing only the
@@ -450,7 +449,7 @@ def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], Non
     return _iter
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
+def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
     """Map source sequence.
 
     Builds a new collection whose elements are the results of
@@ -692,7 +691,10 @@ __all__ = [
     "of",
     "of_list",
     "of_iterable",
+    "range",
     "scan",
     "singleton",
+    "take",
     "unfold",
+    "zip",
 ]

@@ -14,6 +14,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Protocol,
     TypeVar,
     Union,
     cast,
@@ -317,6 +318,7 @@ class Nothing_(Option[TSource], EffectError):
         We basically want to return nothing, but we have to return
         something to signal fail.
         """
+
         raise Nothing
         while False:
             yield
@@ -333,6 +335,16 @@ class Nothing_(Option[TSource], EffectError):
         return "Nothing"
 
 
+class TransformFn(Protocol[TResult]):
+    """Option transforming protocol function.
+
+    `Option[TSource]) -> Option[TResult]`
+    """
+
+    def __call__(self, __source: Option[TSource]) -> Option[TResult]:
+        raise NotImplementedError
+
+
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
 # avoid conflicts with the builtin `None` value in Python.
 # Note to self: Must be of type `Nothing_` or pattern matching will not work.
@@ -345,7 +357,7 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 """
 
 
-def bind(mapper: Callable[[TSource], Option[TResult]]) -> Callable[[Option[TSource]], Option[TResult]]:
+def bind(mapper: Callable[[TSource], Option[TResult]]) -> TransformFn[TResult]:
     """Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -386,7 +398,7 @@ def is_some(option: Option[TSource]) -> bool:
     return option.is_some()
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Callable[[Option[TSource]], Option[TResult]]:
+def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
     def _map(option: Option[TSource]) -> Option[TResult]:
         return option.map(mapper)
 
