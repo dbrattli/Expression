@@ -35,7 +35,7 @@ def pipeline(
     __fn1: Callable[[A], Result[B, TError]],
     __fn2: Callable[[B], Result[C, TError]],
     __fn3: Callable[[C], Result[D, TError]],
-) -> Callable[[A], D]:
+) -> Callable[[A], Result[D, TError]]:
     ...
 
 
@@ -45,7 +45,7 @@ def pipeline(
     __fn2: Callable[[B], Result[C, TError]],
     __fn3: Callable[[C], Result[D, TError]],
     __fn4: Callable[[D], Result[E, TError]],
-) -> Callable[[A], E]:
+) -> Callable[[A], Result[E, TError]]:
     ...
 
 
@@ -56,7 +56,7 @@ def pipeline(
     __fn3: Callable[[C], Result[D, TError]],
     __fn4: Callable[[D], Result[E, TError]],
     __fn5: Callable[[E], Result[F, TError]],
-) -> Callable[[A], F]:
+) -> Callable[[A], Result[F, TError]]:
     ...
 
 
@@ -68,7 +68,7 @@ def pipeline(
     __fn4: Callable[[D], Result[E, TError]],
     __fn5: Callable[[E], Result[F, TError]],
     __fn6: Callable[[F], Result[G, TError]],
-) -> Callable[[A], G]:
+) -> Callable[[A], Result[G, TError]]:
     ...
 
 
