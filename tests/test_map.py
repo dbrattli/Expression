@@ -1,4 +1,4 @@
-from typing import Callable, Dict, ItemsView, Iterable, Tuple
+from typing import Callable, Dict, ItemsView, Iterable, List, Tuple
 
 from hypothesis import given
 from hypothesis import strategies as st
@@ -36,16 +36,16 @@ def test_map_of_seq(xs: Dict[str, int]):
 
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
-def test_map_to_seq_fluent(xs: Dict[str, int]):
+def test_map_to_list_fluent(xs: Dict[str, int]):
     items: ItemsView[str, int] = xs.items()
-    ys = map.of_seq(items).to_seq()
-    assert list(sorted(xs.items())) == list(sorted(ys))
+    ys = map.of_seq(items).to_list()
+    assert sorted(xs.items()) == sorted(ys)
 
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_to_seq(xs: Dict[str, int]):
-    items: ItemsView[str, int] = xs.items()
-    ys = map.of_seq(items)
+    items: List[Tuple[str, int]] = list(xs.items())
+    ys = map.of_list(items)
     zs = pipe(ys, map.to_seq)
     assert sorted(list(items)) == list(zs)
 
@@ -74,6 +74,14 @@ def test_map_remove(xs: Dict[str, int]):
         m = pipe(m, map.remove(key))
         count -= 1
     assert len(m) == count == 0
+
+
+@given(st.dictionaries(keys=st.text(), values=st.integers()))
+def test_map_to_seq_fluent(xs: Dict[str, int]):
+    items: ItemsView[str, int] = xs.items()
+    ys = map.of_seq(items).to_seq()
+
+    assert sorted(list(items)) == list(ys)
 
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
