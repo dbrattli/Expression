@@ -44,23 +44,21 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
     """Option abstract base class."""
 
     @overload
-    def pipe(self, __fn1: Callable[["Option[TSource]"], TResult]) -> TResult:
+    def pipe(self, __fn1: Callable[[Option[TSource]], TResult]) -> TResult:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[["Option[TSource]"], T1], __fn2: Callable[[T1], T2]) -> T2:
+    def pipe(self, __fn1: Callable[[Option[TSource]], T1], __fn2: Callable[[T1], T2]) -> T2:
         ...
 
     @overload
-    def pipe(
-        self, __fn1: Callable[["Option[TSource]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
-    ) -> T3:
+    def pipe(self, __fn1: Callable[[Option[TSource]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -> T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[["Option[TSource]"], T1],
+        __fn1: Callable[[Option[TSource]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -78,15 +76,15 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -> "Option[TResult]":
+    def map(self, mapper: Callable[[TSource], TResult]) -> Option[TResult]:
         raise NotImplementedError
 
     @abstractmethod
-    def map2(self, mapper: Callable[[TSource, T2], TResult], other: "Option[T2]") -> "Option[TResult]":
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -> Option[TResult]:
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], "Option[TResult]"]) -> "Option[TResult]":
+    def bind(self, mapper: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
         """Bind option.
 
         Applies and returns the result of the mapper if the value is
@@ -103,7 +101,7 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @abstractmethod
-    def or_else(self, if_none: "Option[TSource]") -> "Option[TSource]":
+    def or_else(self, if_none: Option[TSource]) -> Option[TSource]:
         """Returns option if it is Some, otherwise returns `if_one`. """
         raise NotImplementedError
 
@@ -126,12 +124,12 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @classmethod
-    def of_obj(cls, value: TSource) -> "Option[TSource]":
+    def of_obj(cls, value: TSource) -> Option[TSource]:
         """Convert object to an option."""
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls, value: Optional[TSource]) -> "Option[TSource]":
+    def of_optional(cls, value: Optional[TSource]) -> Option[TSource]:
         """Convert optional value to an option."""
         return of_optional(value)
 
@@ -316,7 +314,7 @@ class Nothing_(Option[TSource], EffectError):
 
         raise ValueError("There is no value.")
 
-    def __match__(self, pattern: Any) -> "Iterable[bool]":
+    def __match__(self, pattern: Any) -> Iterable[bool]:
         if self is pattern:
             return [True]
 

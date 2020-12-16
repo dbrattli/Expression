@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from threading import RLock
 from typing import Callable, Dict, Optional
 
@@ -19,7 +21,7 @@ class CancellationToken:
     objects that receive the notification can respond in whatever manner
     is appropriate."""
 
-    def __init__(self, cancelled: bool = True, source: "Optional[CancellationTokenSource]" = None) -> None:
+    def __init__(self, cancelled: bool = True, source: Optional[CancellationTokenSource] = None) -> None:
         """Should not be used directly. Create cancellation tokens using
         the `CancellationTokenSource` instead."""
 
@@ -98,7 +100,7 @@ class CancellationTokenSource(Disposable):
         return self.token
 
     @staticmethod
-    def cancelled_source() -> "CancellationTokenSource":
+    def cancelled_source() -> CancellationTokenSource:
         source = CancellationTokenSource()
         source.cancel()
         return source

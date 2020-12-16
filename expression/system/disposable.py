@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from asyncio import iscoroutinefunction
 from threading import RLock
@@ -15,7 +17,7 @@ class Disposable(ABC):
     def dispose(self) -> None:
         raise NotImplementedError
 
-    def __enter__(self) -> "Disposable":
+    def __enter__(self) -> Disposable:
         """Enter context management."""
         return self
 
@@ -66,7 +68,7 @@ class AsyncDisposable(ABC):
     async def dispose_async(self) -> None:
         raise NotImplementedError
 
-    async def __aenter__(self) -> "AsyncDisposable":
+    async def __aenter__(self) -> AsyncDisposable:
         """Enter context management."""
         return self
 
@@ -77,15 +79,15 @@ class AsyncDisposable(ABC):
         await self.dispose_async()
 
     @staticmethod
-    def create(action: Callable[[], Awaitable[None]]) -> "AsyncDisposable":
+    def create(action: Callable[[], Awaitable[None]]) -> AsyncDisposable:
         return AsyncAnonymousDisposable(action)
 
     @staticmethod
-    def composite(*disposables: "AsyncDisposable") -> "AsyncDisposable":
+    def composite(*disposables: AsyncDisposable) -> AsyncDisposable:
         return AsyncCompositeDisposable(*disposables)
 
     @staticmethod
-    def empty() -> "AsyncDisposable":
+    def empty() -> AsyncDisposable:
         async def anoop() -> None:
             pass
 

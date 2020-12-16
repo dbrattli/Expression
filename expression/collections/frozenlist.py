@@ -17,6 +17,7 @@ Example:
 ...     frozenlist.filter(lambda x: x<10)
 ... )
 """
+from __future__ import annotations
 
 import builtins
 import functools
@@ -79,23 +80,23 @@ class FrozenList(Generic[TSource]):
         return case(pattern) if pattern else case
 
     @overload
-    def pipe(self, __fn1: Callable[["FrozenList[TSource]"], TResult]) -> TResult:
+    def pipe(self, __fn1: Callable[[FrozenList[TSource]], TResult]) -> TResult:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[["FrozenList[TSource]"], T1], __fn2: Callable[[T1], T2]) -> T2:
+    def pipe(self, __fn1: Callable[[FrozenList[TSource]], T1], __fn2: Callable[[T1], T2]) -> T2:
         ...
 
     @overload
     def pipe(
-        self, __fn1: Callable[["FrozenList[TSource]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+        self, __fn1: Callable[[FrozenList[TSource]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
     ) -> T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[["FrozenList[TSource]"], T1],
+        __fn1: Callable[[FrozenList[TSource]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -105,7 +106,7 @@ class FrozenList(Generic[TSource]):
     @overload
     def pipe(
         self,
-        __fn1: Callable[["FrozenList[TSource]"], T1],
+        __fn1: Callable[[FrozenList[TSource]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -116,7 +117,7 @@ class FrozenList(Generic[TSource]):
     @overload
     def pipe(
         self,
-        __fn1: Callable[["FrozenList[TSource]"], T1],
+        __fn1: Callable[[FrozenList[TSource]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -129,12 +130,12 @@ class FrozenList(Generic[TSource]):
         """Pipe list through the given functions."""
         return pipe(self, *args)
 
-    def append(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
+    def append(self, other: FrozenList[TSource]) -> FrozenList[TSource]:
         """Append frozen list to end of the frozen list."""
 
         return FrozenList(self.value + other.value)
 
-    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "FrozenList[TResult]":
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> FrozenList[TResult]:
         """Choose items from the list.
 
         Applies the given function to each element of the list. Returns
@@ -154,17 +155,17 @@ class FrozenList(Generic[TSource]):
 
         return self.collect(mapper)
 
-    def collect(self, mapping: Callable[[TSource], "FrozenList[TResult]"]) -> "FrozenList[TResult]":
+    def collect(self, mapping: Callable[[TSource], FrozenList[TResult]]) -> FrozenList[TResult]:
         mapped = builtins.map(mapping, self.value)
         xs = (y for x in mapped for y in x)
         return FrozenList(xs)
 
-    def cons(self, element: TSource) -> "FrozenList[TSource]":
+    def cons(self, element: TSource) -> FrozenList[TSource]:
         """Add element to front of List."""
 
         return FrozenList((element,) + self.value)  # NOTE: Faster than (element, *self)
 
-    def filter(self, predicate: Callable[[TSource], bool]) -> "FrozenList[TSource]":
+    def filter(self, predicate: Callable[[TSource], bool]) -> FrozenList[TSource]:
         """Filter list.
 
         Returns a new collection containing only the elements of the
@@ -216,7 +217,7 @@ class FrozenList(Generic[TSource]):
         head, *_ = self
         return head
 
-    def indexed(self, start: int = 0) -> "FrozenList[Tuple[int, TSource]]":
+    def indexed(self, start: int = 0) -> FrozenList[Tuple[int, TSource]]:
         """Returns a new list whose elements are the corresponding
         elements of the input list paired with the index (from `start`)
         of each element.
@@ -245,7 +246,7 @@ class FrozenList(Generic[TSource]):
 
         return not bool(self)
 
-    def map(self, mapping: Callable[[TSource], TResult]) -> "FrozenList[TResult]":
+    def map(self, mapping: Callable[[TSource], TResult]) -> FrozenList[TResult]:
         """Map list.
 
         Builds a new collection whose elements are the results of
@@ -262,43 +263,43 @@ class FrozenList(Generic[TSource]):
         return FrozenList((*builtins.map(mapping, self),))
 
     @staticmethod
-    def of(*args: TSource) -> "FrozenList[TSource]":
+    def of(*args: TSource) -> FrozenList[TSource]:
         """Create list from a number of arguments."""
         return FrozenList((*args,))
 
     @staticmethod
-    def of_seq(xs: Iterable[TSource]) -> "FrozenList[TSource]":
+    def of_seq(xs: Iterable[TSource]) -> FrozenList[TSource]:
         """Create list from iterable sequence."""
         return FrozenList((*xs,))
 
     @staticmethod
-    def of_option(option: Option[TSource]) -> "FrozenList[TSource]":
+    def of_option(option: Option[TSource]) -> FrozenList[TSource]:
         return of_option(option)
 
     @overload
     @staticmethod
-    def range(stop: int) -> "FrozenList[int]":
+    def range(stop: int) -> FrozenList[int]:
         ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int) -> "FrozenList[int]":
+    def range(start: int, stop: int) -> FrozenList[int]:
         ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: int) -> "FrozenList[int]":
+    def range(start: int, stop: int, step: int) -> FrozenList[int]:
         ...
 
     @staticmethod
-    def range(*args: int, **kw: int) -> "FrozenList[int]":
+    def range(*args: int, **kw: int) -> FrozenList[int]:
         return range(*args, **kw)
 
     @staticmethod
-    def singleton(item: TSource) -> "FrozenList[TSource]":
+    def singleton(item: TSource) -> FrozenList[TSource]:
         return singleton(item)
 
-    def skip(self, count: int) -> "FrozenList[TSource]":
+    def skip(self, count: int) -> FrozenList[TSource]:
         """Returns the list after removing the first N elements.
 
         Args:
@@ -309,16 +310,16 @@ class FrozenList(Generic[TSource]):
         """
         return FrozenList(self.value[count:])
 
-    def skip_last(self, count: int) -> "FrozenList[TSource]":
+    def skip_last(self, count: int) -> FrozenList[TSource]:
         return FrozenList(self.value[:-count])
 
-    def tail(self) -> "FrozenList[TSource]":
+    def tail(self) -> FrozenList[TSource]:
         """Return tail of List."""
 
         _, *tail = self.value
         return FrozenList(tail)
 
-    def take(self, count: int) -> "FrozenList[TSource]":
+    def take(self, count: int) -> FrozenList[TSource]:
         """Returns the first N elements of the list.
 
         Args:
@@ -329,7 +330,7 @@ class FrozenList(Generic[TSource]):
         """
         return FrozenList(self.value[:count])
 
-    def take_last(self, count: int) -> "FrozenList[TSource]":
+    def take_last(self, count: int) -> FrozenList[TSource]:
         """Returns a specified number of contiguous elements from the
         end of the list.
 
@@ -352,7 +353,7 @@ class FrozenList(Generic[TSource]):
         return Nothing
 
     @staticmethod
-    def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -> "FrozenList[TSource]":
+    def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -> FrozenList[TSource]:
         """Returns a list that contains the elements generated by the
         given computation. The given initial state argument is passed to
         the element generator.
@@ -369,7 +370,7 @@ class FrozenList(Generic[TSource]):
 
         return pipe(state, unfold(generator))
 
-    def zip(self, other: "FrozenList[TResult]") -> "FrozenList[Tuple[TSource, TResult]]":
+    def zip(self, other: FrozenList[TResult]) -> FrozenList[Tuple[TSource, TResult]]:
         """Combines the two lists into a list of pairs. The two lists
         must have equal lengths. .
 
@@ -382,11 +383,11 @@ class FrozenList(Generic[TSource]):
         """
         return of_seq(builtins.zip(self.value, other.value))
 
-    def __add__(self, other: "FrozenList[TSource]") -> "FrozenList[TSource]":
+    def __add__(self, other: FrozenList[TSource]) -> FrozenList[TSource]:
         return FrozenList(self.value + other.value)
 
     @overload
-    def __getitem__(self, key: slice) -> "FrozenList[TSource]":
+    def __getitem__(self, key: slice) -> FrozenList[TSource]:
         ...
 
     @overload

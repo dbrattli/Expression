@@ -15,6 +15,7 @@ Example:
         Seq.filter(lambda x: x < 3)
     )
 """
+from __future__ import annotations
 
 import builtins
 import functools
@@ -48,17 +49,17 @@ class Seq(Iterable[TSource]):
         self._value = iterable
 
     @classmethod
-    def of(cls, *args: TSource) -> "Seq[TSource]":
+    def of(cls, *args: TSource) -> Seq[TSource]:
         return cls(args)
 
     @classmethod
-    def of_iterable(cls, source: Iterable[TSource]) -> "Seq[TSource]":
+    def of_iterable(cls, source: Iterable[TSource]) -> Seq[TSource]:
         return cls(source)
 
-    def filter(self, predicate: Callable[[TSource], bool]) -> "Seq[TSource]":
+    def filter(self, predicate: Callable[[TSource], bool]) -> Seq[TSource]:
         return Seq(filter(predicate)(self))
 
-    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> "Seq[TResult]":
+    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> Seq[TResult]:
         """Choose items from the sequence.
 
         Applies the given function to each element of the list. Returns
@@ -76,7 +77,7 @@ class Seq(Iterable[TSource]):
         xs = pipe(self, choose(chooser))
         return Seq(xs)
 
-    def collect(self, mapping: Callable[[TSource], "Seq[TResult]"]) -> "Seq[TResult]":
+    def collect(self, mapping: Callable[[TSource], "Seq[TResult]"]) -> Seq[TResult]:
         xs = pipe(self, collect(mapping))
         return Seq(xs)
 
@@ -101,7 +102,7 @@ class Seq(Iterable[TSource]):
 
         return head(self)
 
-    def map(self, mapper: Callable[[TSource], TResult]) -> "Seq[TResult]":
+    def map(self, mapper: Callable[[TSource], TResult]) -> Seq[TResult]:
         """Map sequence.
 
         Builds a new collection whose elements are the results of
@@ -118,7 +119,7 @@ class Seq(Iterable[TSource]):
         return Seq(map(mapper)(self))
 
     @overload
-    def match(self) -> "Case[Iterable[TSource]]":
+    def match(self) -> Case[Iterable[TSource]]:
         ...
 
     @overload
