@@ -47,7 +47,7 @@ def test_map_to_seq(xs: Dict[str, int]):
     items: ItemsView[str, int] = xs.items()
     ys = map.of_seq(items)
     zs = pipe(ys, map.to_seq)
-    assert list(xs) == list(zs)
+    assert sorted(list(items)) == list(zs)
 
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
