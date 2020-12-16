@@ -1,7 +1,8 @@
 import pytest
-from expression.collections.asyncseq import AsyncSeq
 from hypothesis import given
 from hypothesis import strategies as st
+
+from expression.collections.asyncseq import AsyncSeq
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

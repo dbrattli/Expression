@@ -2,6 +2,7 @@ from functools import reduce
 from typing import Any, TypeVar, overload
 
 from aiohttp import ClientResponse
+
 from expression.core import Option
 
 from .context import Context

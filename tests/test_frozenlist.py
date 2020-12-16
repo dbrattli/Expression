@@ -2,10 +2,11 @@ import functools
 from builtins import list as list
 from typing import Any, Callable, List, Tuple
 
-from expression.collections import FrozenList, frozenlist
-from expression.core import Nothing, Option, Some, pipe
 from hypothesis import given
 from hypothesis import strategies as st
+
+from expression.collections import FrozenList, frozenlist
+from expression.core import Nothing, Option, Some, pipe
 
 Func = Callable[[int], int]
 

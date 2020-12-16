@@ -1,11 +1,12 @@
 from typing import Callable, Generator, List, Optional
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
+
 from expression import effect
 from expression.core import Error, Ok, Result, match, result
 from expression.extra.result import pipeline, sequence
-from hypothesis import given
-from hypothesis import strategies as st
 
 from .utils import CustomException
 

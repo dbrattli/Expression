@@ -1,8 +1,9 @@
 from typing import Callable
 
-from expression.core import compose, identity
 from hypothesis import given
 from hypothesis import strategies as st
+
+from expression.core import compose, identity
 
 Func = Callable[[int], int]
 

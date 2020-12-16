@@ -1,12 +1,12 @@
 from typing import Any, Callable, Generator
 
 import pytest
-from expression import effect
-from expression.core import Nothing, Option, Some, match, option, pipe, pipe2
-from expression.extra.option import pipeline
 from hypothesis import given
 from hypothesis import strategies as st
 
+from expression import effect
+from expression.core import Nothing, Option, Some, match, option, pipe, pipe2
+from expression.extra.option import pipeline
 from tests.utils import CustomException
 
 

@@ -1,9 +1,10 @@
 from typing import Callable, Dict, ItemsView, Iterable, Tuple
 
-from expression.collections import FrozenList, Map, map
-from expression.core import pipe
 from hypothesis import given
 from hypothesis import strategies as st
+
+from expression.collections import FrozenList, Map, map
+from expression.core import pipe
 
 
 def test_map_empty():
@@ -73,14 +74,6 @@ def test_map_remove(xs: Dict[str, int]):
         m = pipe(m, map.remove(key))
         count -= 1
     assert len(m) == count == 0
-
-
-@given(st.dictionaries(keys=st.text(), values=st.integers()))
-def test_map_to_seq(xs: Dict[str, int]):
-    items: ItemsView[str, int] = xs.items()
-    ys = map.of_seq(items).to_seq()
-
-    assert sorted(list(items)) == list(ys)
 
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))

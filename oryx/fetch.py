@@ -1,6 +1,7 @@
 from typing import Any, Callable, TypeVar
 
 from aiohttp import ClientResponse
+
 from expression.core import Error, Option, Some, Try, option, pipe
 
 from .context import Context, HttpContent, HttpContext
