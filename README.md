@@ -560,8 +560,17 @@ nice if you can try to align the code and naming with F# modules, functions,
 and documentation if possible. But submit a PR even if you should feel unsure.
 
 Code, doc-strings, and comments should also follow the [Google Python Style
-Guide](https://google.github.io/styleguide/pyguide.html). Code is formatted
-using [Black](https://github.com/psf/black).
+Guide](https://google.github.io/styleguide/pyguide.html). 
+
+Code checks are done using
+- [Black](https://github.com/psf/black)
+- [flake8](https://github.com/PyCQA/flake8)
+- [isort](https://github.com/PyCQA/isort)
+
+To run code checks on changed files every time you commit, install the pre-commit hooks by running:
+```
+pre-commit install
+```
 
 ## Code of Conduct
 

@@ -1,0 +1,23 @@
+default_language_version:
+  python: python3.8
+exclude: "_version.py|versioneer.py"
+repos:
+- hooks:
+    - args:
+        - --remove-all-unused-imports
+        - --in-place
+      id: autoflake
+  repo: https://github.com/humitos/mirrors-autoflake
+  rev: v1.1
+- hooks:
+    - id: isort
+  repo: https://github.com/timothycrosley/isort
+  rev: 5.6.4
+- hooks:
+    - id: black
+  repo: https://github.com/psf/black
+  rev: 20.8b1
+- hooks:
+    - id: flake8
+  repo: https://gitlab.com/pycqa/flake8
+  rev: 3.8.4
