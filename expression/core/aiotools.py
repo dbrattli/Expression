@@ -32,7 +32,7 @@ def from_continuations(callback: Callbacks[TSource]) -> Awaitable[TSource]:
         An asynchronous computation that provides the callback with the
         current continuations.
     """
-    future: Future[TSource] = asyncio.Future()
+    future: "Future[TSource]" = asyncio.Future()
 
     def done(value: TSource) -> None:
         future.set_result(value)

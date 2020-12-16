@@ -5,8 +5,11 @@ options. All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 """
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Generator,
@@ -25,6 +28,9 @@ from typing import (
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
 from .pipe import pipe
+
+if TYPE_CHECKING:
+    from ..collections.seq import Seq
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -106,7 +112,7 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @abstractmethod
-    def to_seq(self) -> Iterable[TSource]:
+    def to_seq(self) -> Seq[TSource]:
         raise NotImplementedError
 
     @abstractmethod
@@ -201,8 +207,10 @@ class Some(Option[TSource]):
     def to_list(self) -> List[TSource]:
         return [self._value]
 
-    def to_seq(self) -> Iterable[TSource]:
-        return [self._value]
+    def to_seq(self) -> Seq[TSource]:
+        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+        return Seq.of(self._value)
 
     @property
     def value(self) -> TSource:
@@ -294,8 +302,10 @@ class Nothing_(Option[TSource], EffectError):
     def to_list(self) -> List[TSource]:
         return []
 
-    def to_seq(self) -> Iterable[TSource]:
-        return []
+    def to_seq(self) -> Seq[TSource]:
+        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+        return Seq()
 
     @property
     def value(self) -> TSource:
@@ -425,8 +435,8 @@ def to_list(option: Option[TSource]) -> List[TSource]:
     return option.to_list()
 
 
-def to_seq(option: Option[TSource]) -> Iterable[TSource]:
-    return option.to_list()
+def to_seq(option: Option[TSource]) -> Seq[TSource]:
+    return option.to_seq()
 
 
 def of_optional(value: Optional[TSource]) -> Option[TSource]:
