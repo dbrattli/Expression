@@ -3,11 +3,12 @@ from itertools import accumulate
 from typing import Callable, Generator, Iterable, List, Tuple
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
+
 from expression import effect
 from expression.collections import Seq, seq
 from expression.core import Nothing, Option, Some, option, pipe
-from hypothesis import given
-from hypothesis import strategies as st
 
 
 def test_seq_empty():

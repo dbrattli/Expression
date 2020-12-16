@@ -576,31 +576,6 @@ def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
 
 empty: Map[Any, Any] = Map.empty()
 
-# let groupBy (projection: 'T -> 'Key) (xs: 'T seq) ([<Fable.Core.Inject>] comparer: IEqualityComparer<'Key>): ('Key * 'T seq) seq =
-#     let dict: Fable.Core.JS.Map<_,ResizeArray<'T>> = createMutable Seq.empty comparer
-
-#     // Build the groupings
-#     for v in xs do
-#         let key = projection v
-#         if dict.has(key) then dict.get(key).Add(v)
-#         else dict.set(key, ResizeArray [v]) |> ignore
-
-#     // Mapping shouldn't be necessary because KeyValuePair compiles
-#     // as a tuple, but let's do it just in case the implementation changes
-#     dict.entries() |> Seq.map (fun (k,v) -> k, upcast v)
-
-# let countBy (projection: 'T -> 'Key) (xs: 'T seq) ([<Fable.Core.Inject>] comparer: IEqualityComparer<'Key>): ('Key * int) seq =
-#     let dict = createMutable Seq.empty comparer
-
-#     for value in xs do
-#         let key = projection value
-#         if dict.has(key) then dict.set(key, dict.get(key) + 1)
-#         else dict.set(key, 1)
-#         |> ignore
-
-#     dict.entries()
-
-
 __all__ = [
     "Map",
     "add",

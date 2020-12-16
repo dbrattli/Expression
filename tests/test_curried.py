@@ -1,6 +1,7 @@
 from typing import Callable, overload
 
 import pytest
+
 from expression.core import curried
 
 

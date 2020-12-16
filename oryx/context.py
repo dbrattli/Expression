@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, Generic, NamedTuple, Tuple, TypeVar
 
 from aiohttp import ClientResponse, ClientSession
+
 from expression.collections import Seq, seq
 from expression.core import Nothing, Option, failwith
 

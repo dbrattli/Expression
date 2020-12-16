@@ -96,7 +96,6 @@ async def sleep(msecs: int) -> None:
 
 async def empty() -> None:
     """Async no-op"""
-    pass
 
 
 def from_result(result: TSource) -> Awaitable[TSource]:

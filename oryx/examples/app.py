@@ -1,6 +1,7 @@
 import asyncio
 
 import aiohttp
+
 from expression.core import pipe
 from oryx.context import default_context, with_http_session
 from oryx.fetch import fetch

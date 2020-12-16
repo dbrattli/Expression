@@ -1,9 +1,6 @@
-from typing import Callable, Generator, List, Optional
-
 import pytest
+
 from expression.core import Failure, Success, Try, match
-from hypothesis import given
-from hypothesis import strategies as st
 
 from .utils import CustomException
 
