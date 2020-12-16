@@ -14,6 +14,7 @@
 # - Copyright (c) Microsoft Corporation. All Rights Reserved.
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
+from __future__ import annotations
 
 from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Set, Tuple, TypeVar, cast, overload
 
@@ -41,27 +42,25 @@ class Map(Mapping[Key, Value]):
     def __init__(self, __tree: Optional[MapTree[Key, Value]] = None) -> None:
         self._tree: MapTree[Key, Value] = __tree if __tree else maptree.empty
 
-    def add(self, key: Key, value: Value) -> "Map[Key, Value]":
+    def add(self, key: Key, value: Value) -> Map[Key, Value]:
         return Map(maptree.add(key, value, self._tree))
 
     @overload
-    def pipe(self, __fn1: Callable[["Map[Key, Value]"], Result]) -> Result:
+    def pipe(self, __fn1: Callable[[Map[Key, Value]], Result]) -> Result:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[["Map[Key, Value]"], T1], __fn2: Callable[[T1], T2]) -> T2:
+    def pipe(self, __fn1: Callable[[Map[Key, Value]], T1], __fn2: Callable[[T1], T2]) -> T2:
         ...
 
     @overload
-    def pipe(
-        self, __fn1: Callable[["Map[Key, Value]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
-    ) -> T3:
+    def pipe(self, __fn1: Callable[[Map[Key, Value]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -> T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[["Map[Key, Value]"], T1],
+        __fn1: Callable[[Map[Key, Value]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -71,7 +70,7 @@ class Map(Mapping[Key, Value]):
     @overload
     def pipe(
         self,
-        __fn1: Callable[["Map[Key, Value]"], T1],
+        __fn1: Callable[[Map[Key, Value]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -82,7 +81,7 @@ class Map(Mapping[Key, Value]):
     @overload
     def pipe(
         self,
-        __fn1: Callable[["Map[Key, Value]"], T1],
+        __fn1: Callable[[Map[Key, Value]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -96,17 +95,17 @@ class Map(Mapping[Key, Value]):
         return pipe(self, *args)
 
     @staticmethod
-    def create(ie: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
+    def create(ie: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
         return create(ie)
 
     def contains_key(self, key: Key) -> bool:
         return maptree.mem(key, self._tree)
 
-    def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -> "Map[Key, Value]":
+    def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -> Map[Key, Value]:
         return Map(maptree.change(key, f, self._tree))
 
     @staticmethod
-    def empty() -> "Map[Key, Value]":
+    def empty() -> Map[Key, Value]:
         return Map(maptree.empty)
 
     def is_empty(self) -> bool:
@@ -115,7 +114,7 @@ class Map(Mapping[Key, Value]):
     def exists(self, predicate: Callable[[Key, Value], bool]) -> bool:
         return maptree.exists(predicate, self._tree)
 
-    def filter(self, predicate: Callable[[Key, Value], bool]) -> "Map[Key, Value]":
+    def filter(self, predicate: Callable[[Key, Value], bool]) -> Map[Key, Value]:
         return Map(maptree.filter(predicate, self._tree))
 
     def for_all(self, predicate: Callable[[Key, Value], bool]) -> bool:
@@ -143,7 +142,7 @@ class Map(Mapping[Key, Value]):
     def fold_back(self, folder: Callable[[Tuple[Key, Value], Result], Result], state: Result) -> Result:
         return maptree.fold_back(folder, self._tree, state)
 
-    def map(self, mapping: Callable[[Key, Value], Result]) -> "Map[Key, Result]":
+    def map(self, mapping: Callable[[Key, Value], Result]) -> Map[Key, Result]:
         """Builds a new collection whose elements are the results of
         applying the given function to each of the elements of the
         collection. The key passed to the function indicates the key of
@@ -157,7 +156,7 @@ class Map(Mapping[Key, Value]):
         """
         return Map(maptree.map(mapping, self._tree))
 
-    def partition(self, predicate: Callable[[Key, Value], bool]) -> "Tuple[Map[Key, Value], Map[Key, Value]]":
+    def partition(self, predicate: Callable[[Key, Value], bool]) -> Tuple[Map[Key, Value], Map[Key, Value]]:
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
 
@@ -178,7 +177,7 @@ class Map(Mapping[Key, Value]):
     def items(self) -> Set[Tuple[Key, Value]]:
         return set(maptree.to_seq(self._tree))
 
-    def remove(self, key: Key) -> "Map[Key, Value]":
+    def remove(self, key: Key) -> Map[Key, Value]:
         return Map(maptree.remove(key, self._tree))
 
     def to_list(self) -> FrozenList[Tuple[Key, Value]]:
@@ -206,11 +205,11 @@ class Map(Mapping[Key, Value]):
         return maptree.try_pick(chooser, self._tree)
 
     @staticmethod
-    def of(**args: Value) -> "Map[str, Value]":
+    def of(**args: Value) -> Map[str, Value]:
         return Map(maptree.of_seq(args.items()))
 
     @staticmethod
-    def of_frozenlist(lst: FrozenList[Tuple[Key, Value]]) -> "Map[Key, Value]":
+    def of_frozenlist(lst: FrozenList[Tuple[Key, Value]]) -> Map[Key, Value]:
         """Generate map from list.
 
         Returns:
@@ -219,7 +218,7 @@ class Map(Mapping[Key, Value]):
         return of_frozenlist((lst))
 
     @staticmethod
-    def of_list(lst: List[Tuple[Key, Value]]) -> "Map[Key, Value]":
+    def of_list(lst: List[Tuple[Key, Value]]) -> Map[Key, Value]:
         """Generate map from list.
 
         Returns:
@@ -228,7 +227,7 @@ class Map(Mapping[Key, Value]):
         return of_list((lst))
 
     @staticmethod
-    def of_seq(sequence: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
+    def of_seq(sequence: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
         """Generate map from sequence.
 
         Generates a new map from an iterable of key/value tuples. This
@@ -364,7 +363,7 @@ def count(table: Map[Key, Value]) -> int:
     return len(table)
 
 
-def create(ie: Iterable[Tuple[Key, Value]]) -> "Map[Key, Value]":
+def create(ie: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_seq(ie))
 
 

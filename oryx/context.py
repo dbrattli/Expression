@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Any, Callable, Dict, Generic, NamedTuple, Tuple, TypeVar
 
@@ -30,7 +32,7 @@ class HttpRequest(NamedTuple):
     Headers: Seq[Tuple[str, str]]
     UrlBuilder: Callable[[Any], str]
 
-    def replace(self, **kw: Any) -> "HttpRequest":
+    def replace(self, **kw: Any) -> HttpRequest:
         return self._replace(**kw)
 
 
@@ -42,7 +44,7 @@ class Context_(NamedTuple):
 class Context(Context_, Generic[T]):
     Response: T
 
-    def replace(self, **kw: Any) -> "Context[TResult]":
+    def replace(self, **kw: Any) -> Context[TResult]:
         return self._replace(**kw)
 
 

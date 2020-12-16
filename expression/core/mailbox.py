@@ -10,6 +10,7 @@
 # You can find the original implementation here:
 # - https://github.com/fable-compiler/Fable/blob/nagareyama/src/fable-library/MailboxProcessor.ts
 
+from __future__ import annotations
 
 import asyncio
 from queue import SimpleQueue
@@ -144,9 +145,9 @@ class MailboxProcessor(Generic[Msg]):
 
     @staticmethod
     def start(
-        body: Callable[["MailboxProcessor[Any]"], Awaitable[None]],
+        body: Callable[[MailboxProcessor[Any]], Awaitable[None]],
         cancellation_token: Optional[CancellationToken] = None,
-    ) -> "MailboxProcessor[Any]":
+    ) -> MailboxProcessor[Any]:
         mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
         start_immediate(body(mbox), cancellation_token)
         return mbox

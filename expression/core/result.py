@@ -8,6 +8,7 @@ Programming.
 There is also a simplifyed alias of this type called `Maybe` that pins
 the Result type to Exception.
 """
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Generator, Iterable, Iterator, Protocol, Type, TypeVar, Union, get_origin, overload
@@ -38,19 +39,19 @@ class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TErr
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[["Result[TSource, TError]"], T1], __fn2: Callable[[T1], T2]) -> T2:
+    def pipe(self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2]) -> T2:
         ...
 
     @overload
     def pipe(
-        self, __fn1: Callable[["Result[TSource, TError]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+        self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
     ) -> T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[["Result[TSource, TError]"], T1],
+        __fn1: Callable[[Result[TSource, TError]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -62,17 +63,17 @@ class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TErr
         return pipe(self, *args)
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -> "Result[TResult, TError]":
+    def map(self, mapper: Callable[[TSource], TResult]) -> Result[TResult, TError]:
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(self, mapper: Callable[[TError], TResult]) -> "Result[TSource, TResult]":
+    def map_error(self, mapper: Callable[[TError], TResult]) -> Result[TSource, TResult]:
         """Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok."""
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], "Result[TResult, TError]"]) -> "Result[TResult, TError]":
+    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -> Result[TResult, TError]:
         raise NotImplementedError
 
     @overload

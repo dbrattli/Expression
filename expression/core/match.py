@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from types import TracebackType
 from typing import Any, Generic, Iterable, Optional, Type, TypeVar, cast, get_origin, overload
 
 from expression.core.builder import TResult
 
-# from .choice import Choice1of2, Choice2of2
 from .error import MatchFailureError
 from .typing import SupportsMatch
 
@@ -156,7 +157,7 @@ class Case(Generic[TSource]):
         self.is_matched = True
         return [ret or self.value]
 
-    def __enter__(self) -> "Case[TSource]":
+    def __enter__(self) -> Case[TSource]:
         """Enter context management."""
         return self
 
