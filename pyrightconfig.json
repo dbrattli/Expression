@@ -1,3 +1,7 @@
 {
-  "exclude": ["expression/_version.py"]
+  "exclude": [
+    "expression/_version.py",
+    ".eggs",
+    "oryx"
+  ]
 }

@@ -19,3 +19,13 @@ repos:
     - id: flake8
   repo: https://gitlab.com/pycqa/flake8
   rev: 3.8.4
+- hooks:
+  - id: pyright
+    name: pyright
+    entry: pyright
+    language: node
+    pass_filenames: false
+    types: [python]
+    additional_dependencies: ['pyright@1.1.95']
+  repo: local
+  

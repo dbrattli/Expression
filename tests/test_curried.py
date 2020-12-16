@@ -89,6 +89,3 @@ def test_curried_typed():
 
     assert add(3, 4) == 7
     assert add(3)(4) == 7
-
-    with pytest.raises(TypeError):  # type:ignore
-        add(3, 4)(4)  # NOTE: This should show type error in vscode

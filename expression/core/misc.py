@@ -35,12 +35,14 @@ def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
 
 def snd(value: Tuple[A, B]) -> B:
     """Return second argument of the tuple."""
+
     _, b = value
     return b
 
 
 def fst(value: Tuple[A, B]) -> A:
     """Return first argument of the tuple."""
+
     a, _ = value
     return a
 
