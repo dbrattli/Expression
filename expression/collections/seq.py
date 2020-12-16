@@ -47,6 +47,14 @@ class Seq(Iterable[TSource]):
     def __init__(self, iterable: Iterable[TSource] = []) -> None:
         self._value = iterable
 
+    @classmethod
+    def of(cls, *args: TSource) -> "Seq[TSource]":
+        return cls(args)
+
+    @classmethod
+    def of_iterable(cls, source: Iterable[TSource]) -> "Seq[TSource]":
+        return cls(source)
+
     def filter(self, predicate: Callable[[TSource], bool]) -> "Seq[TSource]":
         return Seq(filter(predicate)(self))
 
