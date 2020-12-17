@@ -1,8 +1,9 @@
 {
+  "include": [
+    "expression",
+    "tests"
+  ],
   "exclude": [
-    "expression/_version.py",
-    ".eggs",
-    "node_modules",
-    "oryx"
+    "expression/_version.py"
   ]
 }
