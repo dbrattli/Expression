@@ -1,3 +1,9 @@
 {
-  "exclude": ["expression/_version.py"]
+  "include": [
+    "expression",
+    "tests"
+  ],
+  "exclude": [
+    "expression/_version.py"
+  ]
 }
