@@ -2,6 +2,7 @@
   "exclude": [
     "expression/_version.py",
     ".eggs",
+    "node_modules",
     "oryx"
   ]
 }
