@@ -161,9 +161,15 @@ class FrozenList(Generic[TSource]):
         return FrozenList(xs)
 
     def cons(self, element: TSource) -> FrozenList[TSource]:
-        """Add element to front of List."""
+        """Add element to front of list."""
 
         return FrozenList((element,) + self.value)  # NOTE: Faster than (element, *self)
+
+    @staticmethod
+    def empty() -> FrozenList[TSource]:
+        """Returns empty list."""
+
+        return FrozenList()
 
     def filter(self, predicate: Callable[[TSource], bool]) -> FrozenList[TSource]:
         """Filter list.
