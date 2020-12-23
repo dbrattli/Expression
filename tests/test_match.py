@@ -1,5 +1,6 @@
-from typing import Any, Iterable
+from typing import Any, Iterable, List
 
+from expression.collections import FrozenList
 from expression.core import Nothing, Option, Some, SupportsMatch, match
 
 
@@ -28,7 +29,7 @@ def test_match_type() -> None:
 
 def test_not_match_type() -> None:
     with match(42) as case:
-        if case(float):  # NOTE: Should show type error
+        if case(float):
             assert False
 
         if case._:
@@ -72,6 +73,13 @@ def test_match_not_equals() -> None:
             assert True
 
 
+def test_match_destructure() -> None:
+    xs: FrozenList[int] = FrozenList.empty().cons(42)
+    with match(xs) as case:
+        for (head, *_) in case(FrozenList[int]):
+            assert head == 42
+
+
 class A:
     pass
 
@@ -100,13 +108,13 @@ def test_not_match_isinstance() -> None:
 
 def test_match_multiple_cases() -> None:
     with match("expression") as case:
-        while case("rxpy"):  # NOTE: should show type error
+        while case("rxpy"):
             assert False
 
         for value in case(str):
             assert value == "expression"
 
-        for value in case(float):  # NOTE: should show type error
+        for value in case(float):
             assert False
 
         if case._:
@@ -182,3 +190,11 @@ def test_active_pattern_not_matches() -> None:
 
         if case._:
             assert True
+
+
+def test_match_generic_matches() -> None:
+    xs = [1, 2, 3]
+
+    with match(xs) as case:
+        for x in case(List[int]):
+            assert x == xs

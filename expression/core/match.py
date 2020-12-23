@@ -80,7 +80,7 @@ class Case(Generic[TSource]):
     #     ...
 
     @overload
-    def __call__(self, pattern: Type[TSource]) -> Iterable[TSource]:
+    def __call__(self, pattern: Type[A]) -> Iterable[A]:
         """Match with type pattern.
 
         Handle the case where pattern is a type e.g `int`, `str`,

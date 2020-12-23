@@ -81,6 +81,11 @@ class Seq(Iterable[TSource]):
         xs = pipe(self, collect(mapping))
         return Seq(xs)
 
+    @staticmethod
+    def empty() -> Seq[TSource]:
+        """Returns empty sequence."""
+        return Seq()
+
     def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
         """Applies a function to each element of the collection,
         threading an accumulator argument through the computation. If
