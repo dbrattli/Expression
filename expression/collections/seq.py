@@ -231,7 +231,7 @@ class Seq(Iterable[TSource]):
         return builtins.iter(self._value)
 
 
-class FilterFn(Protocol):
+class FilterFn(Protocol[TSource]):
     """Sequence filtering protocol function.
 
     `Iterable[TSource]) -> Iterable[TSource]`
@@ -241,7 +241,7 @@ class FilterFn(Protocol):
         raise NotImplementedError
 
 
-class TransformFn(Protocol[TResult]):
+class TransformFn(Protocol[TSource, TResult]):
     """Sequence transforming protocol function.
 
     `Iterable[TSource]) -> Iterable[TResult]`
@@ -251,7 +251,7 @@ class TransformFn(Protocol[TResult]):
         raise NotImplementedError
 
 
-def choose(chooser: Callable[[TSource], Option[TResult]]) -> TransformFn[TResult]:
+def choose(chooser: Callable[[TSource], Option[TResult]]) -> TransformFn[TSource, TResult]:
     """Choose items from the sequence.
 
     Applies the given function to each element of the list. Returns
@@ -275,7 +275,7 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> TransformFn[TResult
     return _choose
 
 
-def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> TransformFn[TResult]:
+def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> TransformFn[TSource, TResult]:
     def _collect(source: Iterable[TSource]) -> Iterable[TResult]:
         return (x for xs in source for x in mapping(xs))
 
@@ -303,7 +303,7 @@ empty: Seq[Any] = Seq()
 """The empty sequence."""
 
 
-def filter(predicate: Callable[[TSource], bool]) -> FilterFn:
+def filter(predicate: Callable[[TSource], bool]) -> FilterFn[TSource]:
     """Filter sequence.
 
     Filters the sequence to a new sequence containing only the
@@ -463,7 +463,7 @@ def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], Non
     return _iter
 
 
-def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TSource, TResult]:
     """Map source sequence.
 
     Builds a new collection whose elements are the results of
@@ -593,7 +593,7 @@ def singleton(item: TSource) -> Seq[TSource]:
     return Seq([item])
 
 
-def take(count: int) -> FilterFn:
+def take(count: int) -> FilterFn[Any]:
     """Returns the first N elements of the sequence.
 
     Args:

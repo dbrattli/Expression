@@ -1,6 +1,6 @@
 import functools
 from itertools import accumulate
-from typing import Callable, Generator, Iterable, List, Tuple
+from typing import Callable, Generator, Iterable, List, Optional, Tuple
 
 import pytest
 from hypothesis import given
@@ -8,6 +8,7 @@ from hypothesis import strategies as st
 
 from expression import effect
 from expression.collections import Seq, seq
+from expression.collections.seq import TransformFn
 from expression.core import Nothing, Option, Some, option, pipe
 
 
@@ -152,7 +153,8 @@ def test_seq_concat_pipe3(xs: List[int], ys: List[int], zs: List[int]):
 
 @given(st.lists(st.integers()))
 def test_seq_collect(xs: List[int]):
-    ys = pipe(xs, seq.collect(seq.singleton))
+    collector: TransformFn[int, int] = seq.collect(seq.singleton)
+    ys = pipe(xs, collector)
 
     assert list(xs) == list(ys)
 
@@ -182,9 +184,9 @@ def test_seq_pipeline(xs: List[int]):
 
 
 def test_seq_choose_option():
-    xs = seq.of(None, 42)
+    xs: Iterable[Optional[int]] = seq.of(None, 42)
 
-    chooser = seq.choose(option.of_optional)
+    chooser: TransformFn[Optional[int], int] = seq.choose(option.of_optional)
     ys = pipe(xs, chooser)
 
     assert list(ys) == [42]

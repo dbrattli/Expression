@@ -446,7 +446,7 @@ class FilterFn(Protocol):
         ...
 
 
-class TransformFn(Protocol[TResult]):
+class TransformFn(Protocol[TSource, TResult]):
     """A partially applied filter function."""
 
     def __call__(self, __source: FrozenList[TSource]) -> FrozenList[TResult]:
@@ -608,12 +608,12 @@ def item(index: int) -> ExitFn:
     return _item
 
 
-def is_empty(source: FrozenList[TSource]) -> bool:
+def is_empty(source: FrozenList[Any]) -> bool:
     """Returns `True` if the list is empty, `False` otherwise."""
     return source.is_empty()
 
 
-def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TSource, TResult]:
     """Map list.
 
     Builds a new collection whose elements are the results of applying

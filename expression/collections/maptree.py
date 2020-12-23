@@ -56,11 +56,11 @@ class MapTreeNode(MapTreeLeaf[Key, Value]):
 empty: MapTree[Any, Any] = Nothing
 
 
-def is_empty(m: MapTree[Key, Value]):
+def is_empty(m: MapTree[Any, Any]):
     return m.is_none()
 
 
-def size_aux(acc: int, m: MapTree[Key, Value]) -> int:
+def size_aux(acc: int, m: MapTree[Any, Any]) -> int:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
@@ -71,11 +71,11 @@ def size_aux(acc: int, m: MapTree[Key, Value]) -> int:
         return acc
 
 
-def size(x: MapTree[Key, Value]):
+def size(x: MapTree[Any, Any]):
     return size_aux(0, x)
 
 
-def height(m: MapTree[Key, Value]) -> int:
+def height(m: MapTree[Any, Any]) -> int:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
@@ -324,7 +324,7 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
             return m
 
 
-def mem(k: Key, m: MapTree[Key, Value]) -> bool:
+def mem(k: Key, m: MapTree[Key, Any]) -> bool:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)

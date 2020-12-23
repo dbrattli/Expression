@@ -38,7 +38,7 @@ def upcast(type: Type[Base], expr: Base) -> Base:
     return expr
 
 
-def downcast(type: Type[Derived], expr: Base) -> Derived:
+def downcast(type: Type[Derived], expr: Any) -> Derived:
     """Downcast expression `Derived` to `Base`
 
     Checks at compile time that the type of expression Base is a
@@ -51,7 +51,7 @@ def downcast(type: Type[Derived], expr: Base) -> Derived:
     return cast("Derived", expr)
 
 
-def try_downcast(type_: Type[Derived], expr: Base) -> Optional[Derived]:
+def try_downcast(type_: Type[Derived], expr: Any) -> Optional[Derived]:
     """Downcast expression `Base` to `Derived`.
 
     Check that the `Derived` type is a supertype of `Base`.

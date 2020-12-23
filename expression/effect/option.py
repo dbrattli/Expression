@@ -7,7 +7,7 @@ TResult = TypeVar("TResult")
 
 
 class OptionBuilder(Builder[Option[TSource], TSource]):
-    def bind(self, xs: Option[TSource], fn: Callable[[TSource], Option[TResult]]):
+    def bind(self, xs: Option[TSource], fn: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
         return option.bind(fn)(xs)
 
     def return_(self, x: TSource) -> Option[TSource]:
@@ -17,8 +17,7 @@ class OptionBuilder(Builder[Option[TSource], TSource]):
         return xs
 
     def combine(self, xs: Option[TSource], ys: Option[TSource]) -> Option[TSource]:
-        binder: Callable[[Any], Option[TSource]] = lambda _: ys
-        return option.bind(binder)(xs)
+        return xs.bind(lambda _: ys)
 
     def zero(self) -> Option[TSource]:
         return Nothing

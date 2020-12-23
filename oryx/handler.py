@@ -41,7 +41,7 @@ class HttpHandlerFn(Protocol[TSource, TNext]):
 
 async def run_async(
     ctx: Context[TSource],
-    handler: HttpHandler[TNext, TResult, TSource],
+    handler: HttpHandler[TResult, TResult, TSource],
 ) -> Try[TResult]:
     result = await handler(finish_early, ctx)
 
@@ -117,7 +117,7 @@ async def text(
 
 
 async def json(
-    next: Callable[[Context[TSource]], Awaitable[Try[Context[TResult]]]],
+    next: Callable[[Context[Any]], Awaitable[Try[Context[TResult]]]],
     context: HttpContext,
 ) -> HttpFuncResult[TResult]:
     """JSON decoding handler."""
