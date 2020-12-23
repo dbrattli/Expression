@@ -343,7 +343,7 @@ class Nothing_(Option[TSource], EffectError):
         return "Nothing"
 
 
-class TransformFn(Protocol[TSource, TResult]):
+class Projection(Protocol[TSource, TResult]):
     """Option transforming protocol function.
 
     `Option[TSource]) -> Option[TResult]`
@@ -365,7 +365,7 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 """
 
 
-def bind(mapper: Callable[[TSource], Option[TResult]]) -> TransformFn[TSource, TResult]:
+def bind(mapper: Callable[[TSource], Option[TResult]]) -> Projection[TSource, TResult]:
     """Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -406,7 +406,7 @@ def is_some(option: Option[Any]) -> bool:
     return option.is_some()
 
 
-def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     def _map(option: Option[TSource]) -> Option[TResult]:
         return option.map(mapper)
 
@@ -485,4 +485,5 @@ __all__ = [
     "to_seq",
     "of_optional",
     "of_obj",
+    "Projection",
 ]

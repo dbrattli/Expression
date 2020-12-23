@@ -172,11 +172,9 @@ def test_list_index(xs: List[int], x: int):
     ys: FrozenList[int] = frozenlist.of_seq(xs)
     y = ys[x]
 
-    h = ys.pipe(frozenlist.item(x))  # NOTE: type error with mypy, see below
+    item: Callable[[FrozenList[int]], int] = frozenlist.item(x)
+    h = ys.pipe(item)
 
-    # For mypy you currently need to narrow the operator to int before
-    # piping item: Callable[[FrozenList[int]], int] = frozenlist.item(x)
-    # So it's easier to use fluent syntax.
     i = ys.item(x)
 
     assert y == h == i == expected

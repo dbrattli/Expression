@@ -252,12 +252,12 @@ class Error(Result[TSource, TError], ResultException):
         return f"Error {self._error}"
 
 
-class TransformFn(Protocol[TSource, TResult]):
+class Projection(Protocol[TSource, TResult]):
     def __call__(self, __source: Result[TSource, TError]) -> Result[TResult, TError]:
         ...
 
 
-def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.map(mapper)
 
@@ -265,11 +265,18 @@ def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TSource, TResult]:
     return _map
 
 
-def bind(mapper: Callable[[TSource], Result[TResult, Any]]) -> TransformFn[TSource, TResult]:
+def bind(mapper: Callable[[TSource], Result[TResult, Any]]) -> Projection[TSource, TResult]:
     def _bind(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.bind(mapper)
 
     return _bind
 
 
-__all__ = ["Result", "Ok", "Error", "map", "bind"]
+__all__ = [
+    "Result",
+    "Ok",
+    "Error",
+    "map",
+    "bind",
+    "Projection",
+]
