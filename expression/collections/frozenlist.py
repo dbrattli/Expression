@@ -432,21 +432,14 @@ class FrozenList(Generic[TSource]):
         return str(self)
 
 
-class ExitFn(Protocol):
+class Cata(Protocol[TSource, TResult]):
     """A partially applied exit function."""
 
-    def __call__(self, source: FrozenList[TSource]) -> TSource:
+    def __call__(self, source: FrozenList[TSource]) -> TResult:
         ...
 
 
-class FilterFn(Protocol):
-    """A partially applied filter function."""
-
-    def __call__(self, __source: FrozenList[TSource]) -> FrozenList[TSource]:
-        ...
-
-
-class TransformFn(Protocol[TResult]):
+class Projection(Protocol[TSource, TResult]):
     """A partially applied filter function."""
 
     def __call__(self, __source: FrozenList[TSource]) -> FrozenList[TResult]:
@@ -592,7 +585,7 @@ def indexed(source: FrozenList[TSource]) -> FrozenList[Tuple[int, TSource]]:
     return source.indexed()
 
 
-def item(index: int) -> ExitFn:
+def item(index: int) -> Cata[TSource, TSource]:
     """Indexes into the list. The first element has index 0.
 
     Args:
@@ -608,12 +601,12 @@ def item(index: int) -> ExitFn:
     return _item
 
 
-def is_empty(source: FrozenList[TSource]) -> bool:
+def is_empty(source: FrozenList[Any]) -> bool:
     """Returns `True` if the list is empty, `False` otherwise."""
     return source.is_empty()
 
 
-def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     """Map list.
 
     Builds a new collection whose elements are the results of applying
@@ -671,7 +664,7 @@ def singleton(value: TSource) -> FrozenList[TSource]:
     return FrozenList((value,))
 
 
-def skip(count: int) -> FilterFn:
+def skip(count: int) -> Projection[TSource, TSource]:
     """Returns the list after removing the first N elements.
 
     Args:
@@ -687,7 +680,7 @@ def skip(count: int) -> FilterFn:
     return _skip
 
 
-def skip_last(count: int) -> FilterFn:
+def skip_last(count: int) -> Projection[TSource, TSource]:
     """Returns the list after removing the last N elements.
 
     Args:
@@ -707,7 +700,7 @@ def tail(source: FrozenList[TSource]) -> FrozenList[TSource]:
     return source.tail()
 
 
-def take(count: int) -> FilterFn:
+def take(count: int) -> Projection[TSource, TSource]:
     """Returns the first N elements of the list.
 
     Args:
@@ -723,7 +716,7 @@ def take(count: int) -> FilterFn:
     return _take
 
 
-def take_last(count: int) -> FilterFn:
+def take_last(count: int) -> Projection[TSource, TSource]:
     """Returns a specified number of contiguous elements from the end of
     the list.
 

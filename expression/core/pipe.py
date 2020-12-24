@@ -96,7 +96,7 @@ def pipe(
     __fn6: Callable[[F], G],
     __fn7: Callable[[G], H],
     __fn8: Callable[[H], T],
-) -> H:
+) -> T:
     ...
 
 
@@ -146,7 +146,7 @@ def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], 
 
 
 @overload
-def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D], __fn3: Callable[[D], E]) -> D:
+def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D], __fn3: Callable[[D], E]) -> E:
     ...
 
 

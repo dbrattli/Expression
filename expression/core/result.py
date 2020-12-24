@@ -77,23 +77,23 @@ class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TErr
         raise NotImplementedError
 
     @overload
-    def match(self, pattern: "Ok[_TSource, _TError]") -> Iterable[_TSource]:
+    def match(self, pattern: "Ok[_TSource, Any]") -> Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: "Error[_TSource, _TError]") -> Iterable[_TError]:
+    def match(self, pattern: "Error[Any, _TError]") -> Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: "Case[Ok[_TSource, _TError]]") -> Iterable[_TSource]:
+    def match(self, pattern: "Case[Ok[_TSource, Any]]") -> Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: "Case[Error[_TSource, _TError]]") -> Iterable[_TError]:
+    def match(self, pattern: "Case[Error[Any, _TError]]") -> Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: "Type[Result[_TSource, _TError]]") -> Iterable[TSource]:
+    def match(self, pattern: "Type[Result[_TSource, Any]]") -> Iterable[_TSource]:
         ...
 
     def match(self, pattern: Any) -> Any:
@@ -252,12 +252,12 @@ class Error(Result[TSource, TError], ResultException):
         return f"Error {self._error}"
 
 
-class TransformFn(Protocol[TResult]):
+class Projection(Protocol[TSource, TResult]):
     def __call__(self, __source: Result[TSource, TError]) -> Result[TResult, TError]:
         ...
 
 
-def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.map(mapper)
 
@@ -265,11 +265,18 @@ def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
     return _map
 
 
-def bind(mapper: Callable[[TSource], Result[TResult, TError]]) -> TransformFn[TResult]:
+def bind(mapper: Callable[[TSource], Result[TResult, Any]]) -> Projection[TSource, TResult]:
     def _bind(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.bind(mapper)
 
     return _bind
 
 
-__all__ = ["Result", "Ok", "Error", "map", "bind"]
+__all__ = [
+    "Result",
+    "Ok",
+    "Error",
+    "map",
+    "bind",
+    "Projection",
+]

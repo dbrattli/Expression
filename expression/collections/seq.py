@@ -231,27 +231,18 @@ class Seq(Iterable[TSource]):
         return builtins.iter(self._value)
 
 
-class FilterFn(Protocol):
-    """Sequence filtering protocol function.
+class Projection(Protocol[TSource, TResult]):
+    """Sequence transformation protocol.
 
-    `Iterable[TSource]) -> Iterable[TSource]`
-    """
-
-    def __call__(self, __source: Iterable[TSource]) -> Iterable[TSource]:
-        raise NotImplementedError
-
-
-class TransformFn(Protocol[TResult]):
-    """Sequence transforming protocol function.
-
-    `Iterable[TSource]) -> Iterable[TResult]`
+    A sequence transformation protocol that encapsulates a function of
+    type `Iterable[TSource]) -> Iterable[TResult]`
     """
 
     def __call__(self, __source: Iterable[TSource]) -> Iterable[TResult]:
         raise NotImplementedError
 
 
-def choose(chooser: Callable[[TSource], Option[TResult]]) -> TransformFn[TResult]:
+def choose(chooser: Callable[[TSource], Option[TResult]]) -> Projection[TSource, TResult]:
     """Choose items from the sequence.
 
     Applies the given function to each element of the list. Returns
@@ -275,7 +266,7 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> TransformFn[TResult
     return _choose
 
 
-def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> TransformFn[TResult]:
+def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Projection[TSource, TResult]:
     def _collect(source: Iterable[TSource]) -> Iterable[TResult]:
         return (x for xs in source for x in mapping(xs))
 
@@ -303,7 +294,7 @@ empty: Seq[Any] = Seq()
 """The empty sequence."""
 
 
-def filter(predicate: Callable[[TSource], bool]) -> FilterFn:
+def filter(predicate: Callable[[TSource], bool]) -> Projection[TSource, TSource]:
     """Filter sequence.
 
     Filters the sequence to a new sequence containing only the
@@ -463,7 +454,7 @@ def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], Non
     return _iter
 
 
-def map(mapper: Callable[[TSource], TResult]) -> TransformFn[TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     """Map source sequence.
 
     Builds a new collection whose elements are the results of
@@ -593,7 +584,7 @@ def singleton(item: TSource) -> Seq[TSource]:
     return Seq([item])
 
 
-def take(count: int) -> FilterFn:
+def take(count: int) -> Projection[Any, Any]:
     """Returns the first N elements of the sequence.
 
     Args:
@@ -709,6 +700,7 @@ __all__ = [
     "scan",
     "singleton",
     "take",
+    "Projection",
     "unfold",
     "zip",
 ]

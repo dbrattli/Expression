@@ -351,14 +351,14 @@ def change(key: Key, fn: Callable[[Option[Value]], Option[Value]]) -> Callable[[
     return _change
 
 
-def contains_key(key: Key) -> Callable[[Map[Key, Value]], bool]:
-    def _contains_key(table: Map[Key, Value]) -> bool:
+def contains_key(key: Key) -> Callable[[Map[Key, Any]], bool]:
+    def _contains_key(table: Map[Key, Any]) -> bool:
         return table.contains_key(key)
 
     return _contains_key
 
 
-def count(table: Map[Key, Value]) -> int:
+def count(table: Map[Any, Any]) -> int:
     """Return the number of bindings in the map."""
     return len(table)
 
@@ -383,7 +383,7 @@ def find(key: Key) -> Callable[[Map[Key, Value]], Value]:
     return _find
 
 
-def is_empty(table: Map[Key, Value]) -> bool:
+def is_empty(table: Map[Any, Any]) -> bool:
     """Is the map empty?
 
     Args:
@@ -558,7 +558,7 @@ def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
         instance and returns the result.
     """
 
-    def _try_find(table: Map[Key, Value]):
+    def _try_find(table: Map[Key, Value]) -> Option[Value]:
         """Lookup an element in the map, returning a `Some` value if the
         element is in the domain of the map and `Nothing` if not.
 

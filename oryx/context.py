@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, Generic, NamedTuple, Tuple, TypeVar
+from typing import Any, Callable, Dict, Generic, NamedTuple, Optional, Tuple, TypeVar
 
 from aiohttp import ClientResponse, ClientSession
 
@@ -44,7 +44,9 @@ class Context_(NamedTuple):
 class Context(Context_, Generic[T]):
     Response: T
 
-    def replace(self, **kw: Any) -> Context[TResult]:
+    def replace(self, Response: Optional[TResult] = None, **kw: Any) -> Context[TResult]:
+        if Response is not None:
+            kw.update(Response=Response)
         return self._replace(**kw)
 
 

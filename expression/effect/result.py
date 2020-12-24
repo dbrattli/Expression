@@ -20,8 +20,7 @@ class ResultBuilder(Builder[Result[TSource, TError], TSource]):
         return xs
 
     def combine(self, xs: Result[TSource, TError], ys: Result[TSource, TError]) -> Result[TSource, TError]:
-        binder: Callable[[Any], Result[TSource, TError]] = lambda _: ys
-        return pipe(xs, result.bind(binder))
+        return xs.bind(lambda _: ys)
 
     def zero(self) -> Result[TSource, TError]:
         raise NotImplementedError
