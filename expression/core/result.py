@@ -31,7 +31,7 @@ T3 = TypeVar("T3")
 T4 = TypeVar("T4")
 
 
-class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
+class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     """The result abstract base class."""
 
     @overload
