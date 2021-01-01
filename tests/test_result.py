@@ -1,4 +1,4 @@
-from typing import Callable, Generator, List, Optional
+from typing import Any, Callable, Generator, List, Optional
 
 import pytest
 from hypothesis import given
@@ -62,10 +62,10 @@ def test_result_error():
     assert xs.is_error()
     assert str(xs) == f"Error {error}"
 
-    for _ in xs.match(Ok):
+    for _ in xs.match(Ok[str, Exception]):
         assert False
 
-    for ex in xs.match(Error):
+    for ex in xs.match(Error[str, Exception]):
         assert ex == error
 
 
@@ -119,7 +119,7 @@ def test_result_map_ok_fluent(x: int, y: int):
     mapper: Callable[[int], int] = lambda x: x + y
 
     ys = xs.map(mapper)
-    for value in ys.match(Ok):
+    for value in ys.match(Ok[int, Exception]):
         assert value == mapper(x)
         break
     else:
@@ -134,7 +134,7 @@ def test_result_ok_chained_map(x: int, y: int):
 
     ys = xs.map(mapper1).map(mapper2)
 
-    for value in ys.match(Ok):
+    for value in ys.match(Ok[int, Exception]):
         assert value == mapper2(mapper1(x))
         break
     else:
@@ -148,7 +148,7 @@ def test_result_map_error_piped(msg: str, y: int):
 
     ys = xs.pipe(result.map(mapper))
 
-    for err in ys.match(Error):
+    for err in ys.match(Error[int, str]):
         assert err == msg
         break
     else:
@@ -161,7 +161,7 @@ def test_result_map_error_fluent(msg: str, y: int):
     mapper: Callable[[int], int] = lambda x: x + y
 
     ys = xs.map(mapper)
-    for err in ys.match(Error):
+    for err in ys.match(Error[int, str]):
         assert err == msg
         break
     else:
@@ -175,7 +175,7 @@ def test_result_error_chained_map(msg: str, y: int):
     mapper2: Callable[[int], int] = lambda x: x * 10
 
     ys = xs.map(mapper1).map(mapper2)
-    for err in ys.match(Error):
+    for err in ys.match(Error[int, str]):
         assert err == msg
         break
     else:
@@ -188,7 +188,7 @@ def test_result_bind_piped(x: int, y: int):
     mapper: Callable[[int], Result[int, str]] = lambda x: Ok(x + y)
 
     ys = xs.pipe(result.bind(mapper))
-    for value in ys.match(Ok):
+    for value in ys.match(Ok[int, str]):
         assert Ok(value) == mapper(x)
         break
     else:
@@ -212,7 +212,7 @@ def test_result_traverse_error(xs: List[int]):
     ys: List[Result[int, str]] = [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
 
     zs = sequence(ys)
-    for err in zs.match(Error):
+    for err in zs.match(Error[int, str]):
         assert err == error
 
 
@@ -244,7 +244,7 @@ def test_result_effect_return_ok():
         return x
 
     xs = fn()
-    for x in xs.match(Ok):
+    for x in xs.match(Ok[int, Any]):
         assert x == 42
         break
     else:
@@ -258,7 +258,7 @@ def test_result_effect_yield_from_ok():
         return x + 1
 
     xs = fn()
-    for x in xs.match(Ok):
+    for x in xs.match(Ok[int, Any]):
         assert x == 43
         break
     else:
@@ -273,11 +273,12 @@ def test_result_effect_yield_from_error():
 
     @effect.result
     def fn() -> Generator[int, int, int]:
-        x = yield from mayfail()
+        xs = mayfail()
+        x = yield from xs
         return x + 1
 
     xs = fn()
-    for err in xs.match(Error):
+    for err in xs.match(Error[int, str]):
         assert err == error
         break
     else:
@@ -293,7 +294,7 @@ def test_result_effect_multiple_ok():
         return x + y
 
     xs = fn()
-    for value in xs.match(Ok):
+    for value in xs.match(Ok[int, Any]):
         assert value == 85
         break
     else:
