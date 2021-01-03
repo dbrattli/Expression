@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractstaticmethod
 from typing import List
 
 
@@ -9,8 +9,8 @@ class Union(ABC):
         self.tag: int
         self.fields: List[int] = []
 
-    @abstractmethod
-    def cases(self) -> List[str]:
+    @abstractstaticmethod
+    def cases() -> List[str]:
         ...
 
     @property

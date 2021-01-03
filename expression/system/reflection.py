@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, cast
+
+from .types import Union as FsUnion
 
 Constructor = Callable[..., Any]
 
@@ -41,14 +43,12 @@ def class_type(
 
 
 def union_type(
-    fullname: str,
-    generics: List[TypeInfo],
-    construct: Constructor,
-    cases: Callable[[], List[List[FieldInfo]]]
+    fullname: str, generics: List[TypeInfo], construct: Constructor, cases: Callable[[], List[List[FieldInfo]]]
 ) -> TypeInfo:
     def fn():
+        construct = cast(FsUnion, construct)
         caseNames: List[str] = construct.cases()
-        return cases().map((fields, i) => CaseInfo(t, i, caseNames[i], fields))
+        return map(lambda fields, i: CaseInfo(t, i, caseNames[i], fields), cases())
 
     t: TypeInfo = TypeInfo(fullname, generics, construct, None, None, fn, None)
     return t
