@@ -49,13 +49,13 @@ def multiply(x: Numeric, y: int) -> Numeric:
         return x.multiply(y)
 
 
-# export function toFixed(x: Numeric, dp?: number) {
-#     if (typeof x === "number") {
-#         return x.toFixed(dp);
-#     } else {
-#         return x[symbol]().toFixed(dp);
-#     }
-# }
+def to_fixed(x: Numeric, dp: Optional[int]) -> str:
+    if isinstance(x, int) and dp is not None:
+        fmt = "{:.%sf}" % dp
+        return fmt.format(x)
+
+    return "{}".format(x)
+
 
 # export function toPrecision(x: Numeric, sd?: number) {
 #     if (typeof x === "number") {
