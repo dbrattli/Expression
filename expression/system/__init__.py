@@ -3,7 +3,6 @@
 Contains tools and utilities for dealing with (async) disposables and
 cancellation tokens.
 """
-from . import types
 from .cancellation import CancellationToken, CancellationTokenSource
 from .disposable import (
     AnonymousDisposable,
@@ -24,5 +23,4 @@ __all__ = [
     "AnonymousDisposable",
     "ObjectDisposedException",
     "OperationCanceledError",
-    "types",
 ]

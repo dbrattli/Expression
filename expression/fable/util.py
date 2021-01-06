@@ -9,10 +9,10 @@ class IEquatable(Generic[T], ABC):
     def GetHashCode(self) -> int:
         raise NotImplementedError
 
-    def Equals(self, x: T) -> bool:
+    def Equals(self, other: T) -> bool:
         raise NotImplementedError
 
 
 class IComparable(IEquatable[T]):
-    def CompareTo(self, x: T) -> int:
+    def CompareTo(self, other: T) -> int:
         raise NotImplementedError

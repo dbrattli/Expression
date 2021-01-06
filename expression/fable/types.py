@@ -3,8 +3,10 @@ from __future__ import annotations
 from abc import ABC, abstractstaticmethod
 from typing import List
 
+from .util import IComparable
 
-class Union(ABC):
+
+class Union(IComparable["Union"]):
     def __init__(self):
         self.tag: int
         self.fields: List[int] = []
@@ -17,8 +19,9 @@ class Union(ABC):
     def name(self) -> str:
         return self.cases()[self.tag]
 
-    # def to_JSON(self) -> str:
-    #    return str([self.name] + self.fields) if len(self.fields) else self.name
+    def to_JSON(self) -> str:
+        raise NotImplementedError
+        # return str([self.name] + self.fields) if len(self.fields) else self.name
 
     def __str__(self) -> str:
         if not len(self.fields):
@@ -46,6 +49,23 @@ class Union(ABC):
             return self.fields == other.fields
 
         return False
+
+
+class Record(IComparable["Record"]):
+    def toJSON(self) -> str:
+        return recordToJSON(this)
+
+    def toString(self) -> str:
+        return recordToString(self)
+
+    def GetHashCode(self) -> int:
+        return recordGetHashCode(self)
+
+    def Equals(self, other: Record) -> bool:
+        return recordEquals(self, other)
+
+    def CompareTo(self, other: Record) -> int:
+        return recordCompareTo(self, other)
 
 
 __all__ = ["Union"]
