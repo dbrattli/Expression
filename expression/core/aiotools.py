@@ -68,7 +68,7 @@ def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None
 def start_immediate(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -> None:
     task = asyncio.create_task(computation)
 
-    def cb():
+    def cb() -> None:
         task.cancel()
 
     if token:
@@ -76,7 +76,7 @@ def start_immediate(computation: Awaitable[Any], token: Optional[CancellationTok
     return None
 
 
-def run_synchronous(computation: Awaitable[TSource]) -> TSource:
+def run_synchronously(computation: Awaitable[TSource]) -> TSource:
     """Runs the asynchronous computation and await its result."""
     return asyncio.run(computation)
 
@@ -114,4 +114,5 @@ __all__ = [
     "sleep",
     "start",
     "start_immediate",
+    "run_synchronously",
 ]

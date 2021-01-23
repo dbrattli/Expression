@@ -67,6 +67,15 @@ def test_seq_pipe_map(xs: List[int]):
     assert [y for y in ys] == [x + 1 for x in xs]
 
 
+@given(st.lists(st.integers()))
+def test_seq_pipe_mapi(xs: List[int]):
+    mapper: Callable[[int, int], int] = lambda i, x: x + i
+    ys = pipe(xs, seq.mapi(mapper))
+
+    assert isinstance(ys, Iterable)
+    assert [y for y in ys] == [x + i for i, x in enumerate(xs)]
+
+
 @given(st.lists(st.integers(), min_size=1))
 def test_seq_head_pipe(xs: List[int]):
     value = pipe(xs, seq.head)
@@ -130,24 +139,45 @@ def test_seq_scan_fluent(xs: List[int], s: int):
 
 
 @given(st.lists(st.integers()))
-def test_seq_concat_pipe(xs: List[int]):
+def test_seq_concat_1(xs: List[int]):
     value = seq.concat(xs)
 
     assert list(value) == xs
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()))
-def test_seq_concat_pipe2(xs: List[int], ys: List[int]):
+def test_seq_concat_2(xs: List[int], ys: List[int]):
     value = seq.concat(xs, ys)
 
     assert list(value) == xs + ys
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()), st.lists(st.integers()))
-def test_seq_concat_pipe3(xs: List[int], ys: List[int], zs: List[int]):
+def test_seq_concat_3(xs: List[int], ys: List[int], zs: List[int]):
     value = seq.concat(xs, ys, zs)
 
     assert list(value) == xs + ys + zs
+
+
+@given(st.lists(st.integers()), st.lists(st.integers()))
+def test_seq_append_2(xs: List[int], ys: List[int]):
+    value = pipe(xs, seq.append(ys))
+
+    assert list(value) == xs + ys
+
+
+@given(st.lists(st.integers()), st.lists(st.integers()), st.lists(st.integers()))
+def test_seq_append_3(xs: List[int], ys: List[int], zs: List[int]):
+    value = pipe(xs, seq.append(ys, zs))
+
+    assert list(value) == xs + ys + zs
+
+
+@given(st.lists(st.integers()), st.lists(st.integers()))
+def test_seq_append_flient(xs: List[int], ys: List[int]):
+    value = Seq(xs).append(ys)
+
+    assert list(value) == xs + ys
 
 
 @given(st.lists(st.integers()))

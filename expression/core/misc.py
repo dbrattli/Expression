@@ -20,7 +20,7 @@ def starid(*value: Any) -> Tuple[Any, ...]:
     return value
 
 
-def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
+def flip(fn: Callable[[A, B], TResult]) -> Callable[[B, A], TResult]:
     """Flips the arguments for a function taking two arguments.
 
     Example:
@@ -33,14 +33,14 @@ def flip(fn: Callable[[A, B], Any]) -> Callable[[B, A], Any]:
     return _flip
 
 
-def snd(value: Tuple[Any, B]) -> B:
+def snd(value: Tuple[Any, TSource]) -> TSource:
     """Return second argument of the tuple."""
 
     _, b = value
     return b
 
 
-def fst(value: Tuple[A, Any]) -> A:
+def fst(value: Tuple[TSource, Any]) -> TSource:
     """Return first argument of the tuple."""
 
     a, _ = value
