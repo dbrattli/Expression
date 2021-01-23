@@ -212,6 +212,22 @@ def test_seq_pipeline(xs: List[int]):
     assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
 
+@given(st.lists(st.integers()))
+def test_seq_delay(xs: List[int]):
+    ran = False
+
+    def generator():
+        nonlocal ran
+        ran = True
+        return seq.of_list(xs)
+
+    ys = seq.delay(generator)
+    assert not ran
+
+    assert list(ys) == xs
+    assert ran
+
+
 def test_seq_choose_option():
     xs: Iterable[Optional[int]] = seq.of(None, 42)
 
