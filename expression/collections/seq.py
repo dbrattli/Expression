@@ -56,6 +56,11 @@ class Seq(Iterable[TSource]):
     def of_iterable(cls, source: Iterable[TSource]) -> Seq[TSource]:
         return cls(source)
 
+    def append(self, *others: Iterable[TSource]) -> Seq[TSource]:
+        """Wraps the two given enumerations as a single concatenated
+        enumeration."""
+        return Seq(concat(self, *others))
+
     def filter(self, predicate: Callable[[TSource], bool]) -> Seq[TSource]:
         return Seq(filter(predicate)(self))
 
@@ -80,6 +85,20 @@ class Seq(Iterable[TSource]):
     def collect(self, mapping: Callable[[TSource], "Seq[TResult]"]) -> Seq[TResult]:
         xs = pipe(self, collect(mapping))
         return Seq(xs)
+
+    @staticmethod
+    def delay(generator: Callable[[], Iterable[TSource]]) -> Iterable[TSource]:
+        """Returns a sequence that is built from the given delayed specification of a
+        sequence.
+
+        The input function is evaluated each time an IEnumerator for the sequence
+        is requested.
+
+        Args:
+            generator: The generating function for the sequence.
+        """
+
+        return delay(generator)
 
     @staticmethod
     def empty() -> Seq[TSource]:
@@ -122,6 +141,23 @@ class Seq(Iterable[TSource]):
         """
 
         return Seq(map(mapper)(self))
+
+    def mapi(self, mapping: Callable[[int, TSource], TResult]) -> Seq[TResult]:
+        """Map list with index.
+
+        Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection. The integer index passed to the function indicates
+        the index (from 0) of element being transformed.
+
+        Args:
+            mapping: The function to transform elements and their
+                indices.
+
+        Returns:
+            The list of transformed elements.
+        """
+        return Seq(mapi(mapping)(self))
 
     @overload
     def match(self) -> Case[Iterable[TSource]]:
@@ -242,6 +278,16 @@ class Projection(Protocol[TSource, TResult]):
         raise NotImplementedError
 
 
+def append(*others: Iterable[TSource]) -> Projection[TSource, TSource]:
+    """Wraps the given enumerations as a single concatenated
+    enumeration."""
+
+    def _(source: Iterable[TSource]) -> Iterable[TSource]:
+        return concat(source, *others)
+
+    return _
+
+
 def choose(chooser: Callable[[TSource], Option[TResult]]) -> Projection[TSource, TResult]:
     """Choose items from the sequence.
 
@@ -288,6 +334,31 @@ def concat(*iterables: Iterable[TSource]) -> Iterable[TSource]:
     for it in iterables:
         for element in it:
             yield element
+
+
+def delay(generator: Callable[[], Iterable[TSource]]) -> Iterable[TSource]:
+    """Returns a sequence that is built from the given delayed
+    specification of a sequence.
+
+    The input function is evaluated each time an Iterator for the
+    sequence is requested.
+
+    Args:
+        generator: The generating function for the sequence.
+    """
+
+    class Delayed(Iterable[TResult]):
+        """An infinite iterable where each iterator starts counting at
+        0."""
+
+        def __init__(self, gen: Callable[[], Iterable[TResult]]) -> None:
+            self.gen = gen
+
+        def __iter__(self) -> Iterator[TResult]:
+            xs = self.gen()
+            return builtins.iter(xs)
+
+    return Delayed(generator)
 
 
 empty: Seq[Any] = Seq()
@@ -479,6 +550,28 @@ def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
         return (mapper(x) for x in source)
 
     return _map
+
+
+def mapi(mapping: Callable[[int, TSource], TResult]) -> Projection[TSource, TResult]:
+    """Map list with index.
+
+    Builds a new collection whose elements are the results of
+    applying the given function to each of the elements of the
+    collection. The integer index passed to the function indicates
+    the index (from 0) of element being transformed.
+
+    Args:
+        mapping: The function to transform elements and their
+            indices.
+
+    Returns:
+        The list of transformed elements.
+    """
+
+    def _mapi(source: Iterable[TSource]) -> Iterable[TResult]:
+        return (*itertools.starmap(mapping, builtins.enumerate(source)),)
+
+    return _mapi
 
 
 def max(source: Iterable[TSupportsLessThan]) -> TSupportsLessThan:
@@ -680,9 +773,11 @@ def zip(source1: Iterable[TSource]) -> Callable[[Iterable[TResult]], Iterable[Tu
 
 __all__ = [
     "Seq",
+    "append",
     "choose",
     "concat",
     "collect",
+    "delay",
     "empty",
     "filter",
     "fold",
@@ -690,6 +785,7 @@ __all__ = [
     "head",
     "iter",
     "map",
+    "mapi",
     "max",
     "min",
     "min_by",

@@ -101,6 +101,18 @@ def test_list_pipe_map(xs: List[int]):
 
 
 @given(st.lists(st.integers()))
+def test_list_pipe_mapi(xs: List[int]):
+    def mapper(i: int, x: int):
+        return x + i
+
+    ys = frozenlist.of_seq(xs)
+    zs = ys.pipe(frozenlist.mapi(mapper))
+
+    assert isinstance(zs, FrozenList)
+    assert [z for z in zs] == [x + i for i, x in enumerate(xs)]
+
+
+@given(st.lists(st.integers()))
 def test_list_len(xs: List[int]):
     ys = frozenlist.of_seq(xs)
     assert len(xs) == len(ys)

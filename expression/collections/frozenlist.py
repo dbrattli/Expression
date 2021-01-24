@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import builtins
 import functools
+import itertools
 from typing import (
     Any,
     Callable,
@@ -267,6 +268,23 @@ class FrozenList(Generic[TSource]):
             The list of transformed elements.
         """
         return FrozenList((*builtins.map(mapping, self),))
+
+    def mapi(self, mapping: Callable[[int, TSource], TResult]) -> FrozenList[TResult]:
+        """Map list with index.
+
+        Builds a new collection whose elements are the results of
+        applying the given function to each of the elements of the
+        collection. The integer index passed to the function indicates
+        the index (from 0) of element being transformed.
+
+        Args:
+            mapping: The function to transform elements and their
+                indices.
+
+        Returns:
+            The list of transformed elements.
+        """
+        return FrozenList((*itertools.starmap(mapping, enumerate(self)),))
 
     @staticmethod
     def of(*args: TSource) -> FrozenList[TSource]:
@@ -625,6 +643,28 @@ def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     return _map
 
 
+def mapi(mapper: Callable[[int, TSource], TResult]) -> Projection[TSource, TResult]:
+    """Map list with index.
+
+    Builds a new collection whose elements are the results of
+    applying the given function to each of the elements of the
+    collection. The integer index passed to the function indicates
+    the index (from 0) of element being transformed.
+
+    Args:
+        mapping: The function to transform elements and their
+            indices.
+
+    Returns:
+        The list of transformed elements.
+    """
+
+    def _mapi(source: FrozenList[TSource]) -> FrozenList[TResult]:
+        return source.mapi(mapper)
+
+    return _mapi
+
+
 def of(*args: TSource) -> FrozenList[TSource]:
     """Create list from a number of arguments."""
     return FrozenList((*args,))
@@ -812,6 +852,7 @@ __all__ = [
     "item",
     "is_empty",
     "map",
+    "mapi",
     "of_seq",
     "of_option",
     "singleton",
