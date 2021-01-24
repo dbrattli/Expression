@@ -30,10 +30,8 @@ def catch(
         def wrapper(*args: Any, **kwargs: Any) -> Result[TSource, TError]:
             try:
                 out = fn(*args, **kwargs)
-            except Exception as exn:
-                if isinstance(exn, exception):
-                    return Error(cast("TError", exn))
-                raise
+            except exception as exn:
+                return Error(cast("TError", exn))
             else:
                 if isinstance(out, Result):
                     return cast(Result[TSource, TError], out)
