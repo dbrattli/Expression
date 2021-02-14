@@ -189,6 +189,16 @@ def test_seq_collect(xs: List[int]):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))
+def test_seq_skip(xs: List[int], x: int):
+    ys = seq.of_iterable(xs)
+    try:
+        zs = pipe(ys, seq.skip(x))
+        assert list(zs) == xs[x:]
+    except ValueError:
+        assert x > len(xs)
+
+
+@given(st.lists(st.integers()), st.integers(min_value=0))
 def test_seq_take(xs: List[int], x: int):
     ys = seq.of_iterable(xs)
     try:
