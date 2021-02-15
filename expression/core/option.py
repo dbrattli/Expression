@@ -475,8 +475,8 @@ def default_arg(value: Option[TSource], default_value: TSource) -> TSource:
     """Specify default argument.
 
     Used to specify a default value for an optional argument in the
-    implementation of a function. Same as `default_value`, but with the
-    arguments swapped.
+    implementation of a function. Same as `default_value`, but
+    "uncurried" and with the arguments swapped.
     """
     return value.default_value(default_value)
 
