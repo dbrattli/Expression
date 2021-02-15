@@ -70,7 +70,9 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         return pipe(self, *args)
 
     def default_value(self, value: TSource) -> TSource:
-        """Gets the value of the option if the option is Some, otherwise
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
         """
         raise NotImplementedError
@@ -469,12 +471,23 @@ def of_obj(value: Any) -> Option[Any]:
     return of_optional(value)
 
 
+def default_arg(value: Option[TSource], default_value: TSource) -> TSource:
+    """Specify default argument.
+
+    Used to specify a default value for an optional argument in the
+    implementation of a function. Same as `default_value`, but with the
+    arguments swapped.
+    """
+    return value.default_value(default_value)
+
+
 __all__ = [
     "Option",
     "Some",
     "Nothing",
     "Nothing_",
     "bind",
+    "default_arg",
     "default_value",
     "map",
     "map2",
