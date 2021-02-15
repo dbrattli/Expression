@@ -83,6 +83,35 @@ def test_option_none_not_equals_some():
     assert ys != xs
 
 
+def test_option_none_default_value():
+    xs = Nothing
+
+    zs = xs.default_value(42)
+
+    assert zs == 42
+
+
+def test_option_some_default_value():
+    xs: Option[int] = Some(42)
+    zs = xs.default_value(0)
+
+    assert zs == 42
+
+
+def test_option_none_default_arg():
+    xs = Nothing
+    zs = option.default_arg(xs, 42)
+
+    assert zs == 42
+
+
+def test_option_some_default_arg():
+    xs: Option[int] = Some(42)
+    zs = option.default_arg(xs, 0)
+
+    assert zs == 42
+
+
 @given(st.one_of(st.integers(), st.text(), st.floats()), st.one_of(st.integers(), st.text(), st.floats()))
 def test_option_some_equals_some(a: Any, b: Any):
     xs = Some(a)
