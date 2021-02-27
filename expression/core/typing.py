@@ -13,7 +13,7 @@ Derived = TypeVar("Derived")
 
 class SupportsLessThan(Protocol):
     @abstractmethod
-    def __lt__(self, other: Any) -> bool:
+    def __lt__(self, __other: Any) -> bool:
         raise NotImplementedError
 
 
