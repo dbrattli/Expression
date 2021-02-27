@@ -55,11 +55,9 @@ Do not use directly. Use the `map` module instead.
 &#34;&#34;&#34;
 import builtins
 from dataclasses import dataclass
-from typing import (Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar,
-                    cast)
+from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
 
-from expression.core import (Nothing, Option, Some, SupportsLessThan, failwith,
-                             pipe)
+from expression.core import Nothing, Option, Some, SupportsLessThan, failwith, pipe
 
 from . import frozenlist, seq
 from .frozenlist import FrozenList
@@ -89,11 +87,11 @@ class MapTreeNode(MapTreeLeaf[Key, Value]):
 empty: MapTree[Any, Any] = Nothing
 
 
-def is_empty(m: MapTree[Key, Value]):
+def is_empty(m: MapTree[Any, Any]):
     return m.is_none()
 
 
-def size_aux(acc: int, m: MapTree[Key, Value]) -&gt; int:
+def size_aux(acc: int, m: MapTree[Any, Any]) -&gt; int:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
@@ -104,11 +102,11 @@ def size_aux(acc: int, m: MapTree[Key, Value]) -&gt; int:
         return acc
 
 
-def size(x: MapTree[Key, Value]):
+def size(x: MapTree[Any, Any]):
     return size_aux(0, x)
 
 
-def height(m: MapTree[Key, Value]) -&gt; int:
+def height(m: MapTree[Any, Any]) -&gt; int:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
@@ -357,7 +355,7 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
             return m
 
 
-def mem(k: Key, m: MapTree[Key, Value]) -&gt; bool:
+def mem(k: Key, m: MapTree[Key, Any]) -&gt; bool:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
@@ -617,7 +615,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 </details>
 </dd>
 <dt id="expression.collections.maptree.change"><code class="name flex">
-<span>def <span class="ident">change</span></span>(<span>k: ~Key, u: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">change</span></span>(<span>k: ~Key, u: Callable[[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Value]], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -669,7 +667,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 </details>
 </dd>
 <dt id="expression.collections.maptree.collapseLHS"><code class="name flex">
-<span>def <span class="ident">collapseLHS</span></span>(<span>stack: <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">collapseLHS</span></span>(<span>stack: <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]) ‑> <a title="expression.collections.frozenlist.FrozenList" href="frozenlist.html#expression.collections.frozenlist.FrozenList">FrozenList</a>[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -854,7 +852,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def height(m: MapTree[Key, Value]) -&gt; int:
+<pre><code class="python">def height(m: MapTree[Any, Any]) -&gt; int:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
@@ -874,7 +872,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def is_empty(m: MapTree[Key, Value]):
+<pre><code class="python">def is_empty(m: MapTree[Any, Any]):
     return m.is_none()</code></pre>
 </details>
 </dd>
@@ -931,7 +929,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def mem(k: Key, m: MapTree[Key, Value]) -&gt; bool:
+<pre><code class="python">def mem(k: Key, m: MapTree[Key, Any]) -&gt; bool:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
@@ -1040,7 +1038,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 </details>
 </dd>
 <dt id="expression.collections.maptree.partition"><code class="name flex">
-<span>def <span class="ident">partition</span></span>(<span>predicate: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>, <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">partition</span></span>(<span>predicate: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1055,7 +1053,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 </details>
 </dd>
 <dt id="expression.collections.maptree.partition1"><code class="name flex">
-<span>def <span class="ident">partition1</span></span>(<span>predicate: Callable[[~Key, ~Value], bool], k: ~Key, v: ~Value, acc: Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>, <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>, <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">partition1</span></span>(<span>predicate: Callable[[~Key, ~Value], bool], k: ~Key, v: ~Value, acc: Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1075,7 +1073,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 </details>
 </dd>
 <dt id="expression.collections.maptree.partition_aux"><code class="name flex">
-<span>def <span class="ident">partition_aux</span></span>(<span>predicate: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>, acc: Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>, <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>, <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">partition_aux</span></span>(<span>predicate: Callable[[~Key, ~Value], bool], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>, acc: Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]) ‑> Tuple[<a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1191,7 +1189,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def size(x: MapTree[Key, Value]):
+<pre><code class="python">def size(x: MapTree[Any, Any]):
     return size_aux(0, x)</code></pre>
 </details>
 </dd>
@@ -1204,7 +1202,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def size_aux(acc: int, m: MapTree[Key, Value]) -&gt; int:
+<pre><code class="python">def size_aux(acc: int, m: MapTree[Any, Any]) -&gt; int:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = cast(MapTreeNode[Key, Value], m2)
@@ -1216,7 +1214,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 </details>
 </dd>
 <dt id="expression.collections.maptree.splice_out_successor"><code class="name flex">
-<span>def <span class="ident">splice_out_successor</span></span>(<span>m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> Tuple[~Key, ~Value, <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">splice_out_successor</span></span>(<span>m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> Tuple[~Key, ~Value, <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[<a title="expression.collections.maptree.MapTreeLeaf" href="#expression.collections.maptree.MapTreeLeaf">MapTreeLeaf</a>[~Key, ~Value]]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1309,7 +1307,7 @@ def to_seq(s: MapTree[Key, Value]) -&gt; Iterable[Tuple[Key, Value]]:
 </details>
 </dd>
 <dt id="expression.collections.maptree.try_pick"><code class="name flex">
-<span>def <span class="ident">try_pick</span></span>(<span>f: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">try_pick</span></span>(<span>f: Callable[[~Key, ~Value], <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>[~Result]], m: <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="../core/option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>

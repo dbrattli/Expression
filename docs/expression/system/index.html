@@ -83,7 +83,7 @@ __all__ = [
 <dl>
 <dt id="expression.system.AnonymousDisposable"><code class="flex name class">
 <span>class <span class="ident">AnonymousDisposable</span></span>
-<span>(</span><span>action: Callable[[], NoneType])</span>
+<span>(</span><span>action: Callable[[], None])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A disposable class with a context manager. Must implement the
@@ -156,7 +156,7 @@ dispose method. Will dispoose on exit.</p></div>
 </dd>
 <dt id="expression.system.AsyncAnonymousDisposable"><code class="flex name class">
 <span>class <span class="ident">AsyncAnonymousDisposable</span></span>
-<span>(</span><span>action: Callable[[], Awaitable[NoneType]])</span>
+<span>(</span><span>action: Callable[[], Awaitable[None]])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A disposable class with a context manager. Must implement the
@@ -212,7 +212,7 @@ dispose method. Will dispoose on exit.</p></div>
 </dd>
 <dt id="expression.system.AsyncCompositeDisposable"><code class="flex name class">
 <span>class <span class="ident">AsyncCompositeDisposable</span></span>
-<span>(</span><span>*disposables: <a title="expression.system.disposable.AsyncDisposable" href="disposable.html#expression.system.disposable.AsyncDisposable">AsyncDisposable</a>)</span>
+<span>(</span><span>*disposables: <a title="expression.system.AsyncDisposable" href="#expression.system.AsyncDisposable">AsyncDisposable</a>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A disposable class with a context manager. Must implement the
@@ -270,7 +270,7 @@ dispose method. Will dispoose on exit.</p></div>
     async def dispose_async(self) -&gt; None:
         raise NotImplementedError
 
-    async def __aenter__(self) -&gt; &#34;AsyncDisposable&#34;:
+    async def __aenter__(self) -&gt; AsyncDisposable:
         &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
         return self
 
@@ -281,15 +281,15 @@ dispose method. Will dispoose on exit.</p></div>
         await self.dispose_async()
 
     @staticmethod
-    def create(action: Callable[[], Awaitable[None]]) -&gt; &#34;AsyncDisposable&#34;:
+    def create(action: Callable[[], Awaitable[None]]) -&gt; AsyncDisposable:
         return AsyncAnonymousDisposable(action)
 
     @staticmethod
-    def composite(*disposables: &#34;AsyncDisposable&#34;) -&gt; &#34;AsyncDisposable&#34;:
+    def composite(*disposables: AsyncDisposable) -&gt; AsyncDisposable:
         return AsyncCompositeDisposable(*disposables)
 
     @staticmethod
-    def empty() -&gt; &#34;AsyncDisposable&#34;:
+    def empty() -&gt; AsyncDisposable:
         async def anoop() -&gt; None:
             pass
 
@@ -316,12 +316,12 @@ dispose method. Will dispoose on exit.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def composite(*disposables: &#34;AsyncDisposable&#34;) -&gt; &#34;AsyncDisposable&#34;:
+def composite(*disposables: AsyncDisposable) -&gt; AsyncDisposable:
     return AsyncCompositeDisposable(*disposables)</code></pre>
 </details>
 </dd>
 <dt id="expression.system.AsyncDisposable.create"><code class="name flex">
-<span>def <span class="ident">create</span></span>(<span>action: Callable[[], Awaitable[NoneType]]) ‑> <a title="expression.system.disposable.AsyncDisposable" href="disposable.html#expression.system.disposable.AsyncDisposable">AsyncDisposable</a></span>
+<span>def <span class="ident">create</span></span>(<span>action: Callable[[], Awaitable[None]]) ‑> <a title="expression.system.disposable.AsyncDisposable" href="disposable.html#expression.system.disposable.AsyncDisposable">AsyncDisposable</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -330,7 +330,7 @@ def composite(*disposables: &#34;AsyncDisposable&#34;) -&gt; &#34;AsyncDisposabl
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def create(action: Callable[[], Awaitable[None]]) -&gt; &#34;AsyncDisposable&#34;:
+def create(action: Callable[[], Awaitable[None]]) -&gt; AsyncDisposable:
     return AsyncAnonymousDisposable(action)</code></pre>
 </details>
 </dd>
@@ -344,7 +344,7 @@ def create(action: Callable[[], Awaitable[None]]) -&gt; &#34;AsyncDisposable&#34
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def empty() -&gt; &#34;AsyncDisposable&#34;:
+def empty() -&gt; AsyncDisposable:
     async def anoop() -&gt; None:
         pass
 
@@ -407,7 +407,7 @@ the <code><a title="expression.system.CancellationTokenSource" href="#expression
     objects that receive the notification can respond in whatever manner
     is appropriate.&#34;&#34;&#34;
 
-    def __init__(self, cancelled: bool = True, source: &#34;Optional[CancellationTokenSource]&#34; = None) -&gt; None:
+    def __init__(self, cancelled: bool = True, source: Optional[CancellationTokenSource] = None) -&gt; None:
         &#34;&#34;&#34;Should not be used directly. Create cancellation tokens using
         the `CancellationTokenSource` instead.&#34;&#34;&#34;
 
@@ -480,7 +480,7 @@ def is_cancellation_requested(self) -&gt; bool:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.system.CancellationToken.register"><code class="name flex">
-<span>def <span class="ident">register</span></span>(<span>self, callback: Callable[[], NoneType]) ‑> <a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></span>
+<span>def <span class="ident">register</span></span>(<span>self, callback: Callable[[], None]) ‑> <a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -570,7 +570,7 @@ dispose method. Will dispoose on exit.</p></div>
         return self.token
 
     @staticmethod
-    def cancelled_source() -&gt; &#34;CancellationTokenSource&#34;:
+    def cancelled_source() -&gt; CancellationTokenSource:
         source = CancellationTokenSource()
         source.cancel()
         return source</code></pre>
@@ -592,7 +592,7 @@ dispose method. Will dispoose on exit.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def cancelled_source() -&gt; &#34;CancellationTokenSource&#34;:
+def cancelled_source() -&gt; CancellationTokenSource:
     source = CancellationTokenSource()
     source.cancel()
     return source</code></pre>
@@ -665,7 +665,7 @@ def token(self) -&gt; CancellationToken:
 </details>
 </dd>
 <dt id="expression.system.CancellationTokenSource.register_internal"><code class="name flex">
-<span>def <span class="ident">register_internal</span></span>(<span>self, callback: Callable[[], NoneType]) ‑> <a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></span>
+<span>def <span class="ident">register_internal</span></span>(<span>self, callback: Callable[[], None]) ‑> <a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -717,7 +717,7 @@ dispose method. Will dispoose on exit.</p></div>
     def dispose(self) -&gt; None:
         raise NotImplementedError
 
-    def __enter__(self) -&gt; &#34;Disposable&#34;:
+    def __enter__(self) -&gt; Disposable:
         &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
         return self
 
@@ -747,7 +747,7 @@ dispose method. Will dispoose on exit.</p></div>
 <h3>Static methods</h3>
 <dl>
 <dt id="expression.system.Disposable.create"><code class="name flex">
-<span>def <span class="ident">create</span></span>(<span>action: Callable[[], NoneType])</span>
+<span>def <span class="ident">create</span></span>(<span>action: Callable[[], None])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create disposable from action. Will call action when

@@ -26,10 +26,11 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from .pipeline import pipeline
+<pre><code class="python">from .catch import catch
+from .pipeline import pipeline
 from .traversable import sequence, traverse
 
-__all__ = [&#34;sequence&#34;, &#34;traverse&#34;, &#34;pipeline&#34;]</code></pre>
+__all__ = [&#34;catch&#34;, &#34;sequence&#34;, &#34;traverse&#34;, &#34;pipeline&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -46,8 +47,41 @@ __all__ = [&#34;sequence&#34;, &#34;traverse&#34;, &#34;pipeline&#34;]</code></p
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="expression.extra.result.catch"><code class="name flex">
+<span>def <span class="ident">catch</span></span>(<span>f: Optional[Callable[..., ~TSource]] = None, *, exception: Type[~TError]) ‑> Callable[[Callable[..., ~TSource]], Union[Callable[..., <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[~TSource, ~TError]], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[~TSource, ~TError]]]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def catch(
+    f: Optional[Callable[..., TSource]] = None, *, exception: Type[TError]
+) -&gt; Callable[[Callable[..., TSource]], Union[Callable[..., Result[TSource, TError]], Result[TSource, TError]]]:
+    def decorator(fn: Callable[..., TSource]) -&gt; Callable[..., Result[TSource, TError]]:
+        @wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -&gt; Result[TSource, TError]:
+            try:
+                out = fn(*args, **kwargs)
+            except exception as exn:
+                return Error(cast(&#34;TError&#34;, exn))
+            else:
+                if isinstance(out, Result):
+                    return cast(Result[TSource, TError], out)
+
+                return Ok(out)
+
+        return wrapper
+
+    if f is not None:
+        return decorator(f)
+
+    return decorator</code></pre>
+</details>
+</dd>
 <dt id="expression.extra.result.pipeline"><code class="name flex">
-<span>def <span class="ident">pipeline</span></span>(<span>*fns: Callable[[Any], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>]) ‑> Callable[[Any], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>]</span>
+<span>def <span class="ident">pipeline</span></span>(<span>*fns: Callable[[Any], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[Any, Any]]) ‑> Callable[[Any], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[Any, Any]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>pipeline multiple result returning functions left to right.</p>
@@ -95,7 +129,7 @@ composition of zero functions gives back the identity function.</p>
 </details>
 </dd>
 <dt id="expression.extra.result.sequence"><code class="name flex">
-<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[~TSource, ~TError]]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Execute a sequence of result returning commands and collect the
@@ -112,7 +146,7 @@ sequence of their response.</p></div>
 </details>
 </dd>
 <dt id="expression.extra.result.traverse"><code class="name flex">
-<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>], lst: List[~TSource]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]], lst: List[~TSource]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Traverses a list of items.</p>
@@ -168,6 +202,7 @@ sequence of their response.</p></div>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="expression.extra.result.catch" href="#expression.extra.result.catch">catch</a></code></li>
 <li><code><a title="expression.extra.result.pipeline" href="#expression.extra.result.pipeline">pipeline</a></code></li>
 <li><code><a title="expression.extra.result.sequence" href="#expression.extra.result.sequence">sequence</a></code></li>
 <li><code><a title="expression.extra.result.traverse" href="#expression.extra.result.traverse">traverse</a></code></li>

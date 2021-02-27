@@ -41,7 +41,7 @@ from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .match import Case, MatchMixin, match
 from .misc import flip, fst, identity, snd
-from .option import Nothing, Nothing_, Option, Some
+from .option import Nothing, Nothing_, Option, Some, default_arg
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
 from .try_ import Failure, Success, Try
@@ -62,6 +62,7 @@ __all__ = [
     &#34;Choice3of3&#34;,
     &#34;compose&#34;,
     &#34;curried&#34;,
+    &#34;default_arg&#34;,
     &#34;MatchMixin&#34;,
     &#34;EffectError&#34;,
     &#34;Error&#34;,
@@ -268,6 +269,28 @@ assert add(3)(4) == 7</p></div>
     return wrapper</code></pre>
 </details>
 </dd>
+<dt id="expression.core.default_arg"><code class="name flex">
+<span>def <span class="ident">default_arg</span></span>(<span>value: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TSource], default_value: TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Specify default argument.</p>
+<p>Used to specify a default value for an optional argument in the
+implementation of a function. Same as <code>default_value</code>, but
+"uncurried" and with the arguments swapped.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_arg(value: Option[TSource], default_value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Specify default argument.
+
+    Used to specify a default value for an optional argument in the
+    implementation of a function. Same as `default_value`, but
+    &#34;uncurried&#34; and with the arguments swapped.
+    &#34;&#34;&#34;
+    return value.default_value(default_value)</code></pre>
+</details>
+</dd>
 <dt id="expression.core.failwith"><code class="name flex">
 <span>def <span class="ident">failwith</span></span>(<span>message: str) ‑> NoReturn</span>
 </code></dt>
@@ -283,7 +306,7 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.flip"><code class="name flex">
-<span>def <span class="ident">flip</span></span>(<span>fn: Callable[[~A, ~B], Any]) ‑> Callable[[~B, ~A], Any]</span>
+<span>def <span class="ident">flip</span></span>(<span>fn: Callable[[~A, ~B], ~TResult]) ‑> Callable[[~B, ~A], ~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Flips the arguments for a function taking two arguments.</p>
@@ -294,7 +317,7 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
+<pre><code class="python">def flip(fn: Callable[[A, B], TResult]) -&gt; Callable[[B, A], TResult]:
     &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
 
     Example:
@@ -308,7 +331,7 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.fst"><code class="name flex">
-<span>def <span class="ident">fst</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~A</span>
+<span>def <span class="ident">fst</span></span>(<span>value: Tuple[~TSource, Any]) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return first argument of the tuple.</p></div>
@@ -316,8 +339,9 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def fst(value: Tuple[A, B]) -&gt; A:
+<pre><code class="python">def fst(value: Tuple[TSource, Any]) -&gt; TSource:
     &#34;&#34;&#34;Return first argument of the tuple.&#34;&#34;&#34;
+
     a, _ = value
     return a</code></pre>
 </details>
@@ -341,7 +365,7 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.match"><code class="name flex">
-<span>def <span class="ident">match</span></span>(<span>value: ~TSource) ‑> expression.core.match.Case[~TSource]</span>
+<span>def <span class="ident">match</span></span>(<span>value: TSource) ‑> expression.core.match.Case[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convenience case matcher create method to get typing right</p>
@@ -414,7 +438,7 @@ assert add(3)(4) == 7</p></div>
 </details>
 </dd>
 <dt id="expression.core.snd"><code class="name flex">
-<span>def <span class="ident">snd</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~B</span>
+<span>def <span class="ident">snd</span></span>(<span>value: Tuple[Any, ~TSource]) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return second argument of the tuple.</p></div>
@@ -422,8 +446,9 @@ assert add(3)(4) == 7</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def snd(value: Tuple[A, B]) -&gt; B:
+<pre><code class="python">def snd(value: Tuple[Any, TSource]) -&gt; TSource:
     &#34;&#34;&#34;Return second argument of the tuple.&#34;&#34;&#34;
+
     _, b = value
     return b</code></pre>
 </details>
@@ -496,7 +521,7 @@ of <code><a title="expression.core.TailCall" href="#expression.core.TailCall">Ta
 <dl>
 <dt id="expression.core.AsyncReplyChannel"><code class="flex name class">
 <span>class <span class="ident">AsyncReplyChannel</span></span>
-<span>(</span><span>fn: Callable[[~Reply], NoneType])</span>
+<span>(</span><span>fn: Callable[[Reply], None])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for generic types.</p>
@@ -531,7 +556,7 @@ return default</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.AsyncReplyChannel.reply"><code class="name flex">
-<span>def <span class="ident">reply</span></span>(<span>self, r: ~Reply) ‑> NoneType</span>
+<span>def <span class="ident">reply</span></span>(<span>self, r: Reply) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -786,7 +811,7 @@ i.e returns None</p></div>
     #     ...
 
     @overload
-    def __call__(self, pattern: Type[TSource]) -&gt; Iterable[TSource]:
+    def __call__(self, pattern: Type[A]) -&gt; Iterable[A]:
         &#34;&#34;&#34;Match with type pattern.
 
         Handle the case where pattern is a type e.g `int`, `str`,
@@ -863,7 +888,7 @@ i.e returns None</p></div>
         self.is_matched = True
         return [ret or self.value]
 
-    def __enter__(self) -&gt; &#34;Case[TSource]&#34;:
+    def __enter__(self) -&gt; Case[TSource]:
         &#34;&#34;&#34;Enter context management.&#34;&#34;&#34;
         return self
 
@@ -969,13 +994,13 @@ inheritance.</p></div>
 
     @overload
     @classmethod
-    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[A_]:
+    def match(cls, case: Case[Choice2[A_, Any]]) -&gt; Iterable[A_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
     @overload
     @classmethod
-    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[A_]:
+    def match(cls, case: &#34;Case[Choice1of2[A_, Any]]&#34;) -&gt; Iterable[A_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
@@ -1124,13 +1149,13 @@ inheritance.</p></div>
 
     @overload
     @classmethod
-    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[B_]:
+    def match(cls, case: Case[Choice2[Any, B_]]) -&gt; Iterable[B_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
     @overload
     @classmethod
-    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[B_]:
+    def match(cls, case: &#34;Case[Choice1of2[Any, B_]]&#34;) -&gt; Iterable[B_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
@@ -1342,7 +1367,7 @@ yielding nothing will be silently ignored.</p></div>
 </dd>
 <dt id="expression.core.Error"><code class="flex name class">
 <span>class <span class="ident">Error</span></span>
-<span>(</span><span>error: ~TError)</span>
+<span>(</span><span>error: TError)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The Error result case class.</p></div>
@@ -1446,7 +1471,7 @@ def error(self) -&gt; TError:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.Error.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.Result" href="#expression.core.Result">Result</a>[TResult, TError]]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1473,7 +1498,7 @@ def error(self) -&gt; TError:
 </details>
 </dd>
 <dt id="expression.core.Error.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1500,15 +1525,23 @@ def error(self) -&gt; TError:
 </dd>
 <dt id="expression.core.Failure"><code class="flex name class">
 <span>class <span class="ident">Failure</span></span>
-<span>(</span><span>error: ~TError)</span>
+<span>(</span><span>error: TError)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>The Error result case class.</p></div>
+<div class="desc"><p>The failure Try case.</p>
+<p>Same as result <code><a title="expression.core.Error" href="#expression.core.Error">Error</a></code> but with error type pinned to an exception,
+i.e: <code><a title="expression.core.Error" href="#expression.core.Error">Error</a>[TSource, Exception]</code></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Failure(Error[TSource, Exception]):
+    &#34;&#34;&#34;The failure Try case.
+
+    Same as result `Error` but with error type pinned to an exception,
+    i.e: `Error[TSource, Exception]`
+    &#34;&#34;&#34;
+
     ...</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1540,7 +1573,7 @@ def error(self) -&gt; TError:
 </dd>
 <dt id="expression.core.MailboxProcessor"><code class="flex name class">
 <span>class <span class="ident">MailboxProcessor</span></span>
-<span>(</span><span>cancellation_token: Optional[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>])</span>
+<span>(</span><span>cancellation_token: Optional[CancellationToken])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Abstract base class for generic types.</p>
@@ -1673,9 +1706,9 @@ return default</p></div>
 
     @staticmethod
     def start(
-        body: Callable[[&#34;MailboxProcessor[Any]&#34;], Awaitable[None]],
+        body: Callable[[MailboxProcessor[Any]], Awaitable[None]],
         cancellation_token: Optional[CancellationToken] = None,
-    ) -&gt; &#34;MailboxProcessor[Any]&#34;:
+    ) -&gt; MailboxProcessor[Any]:
         mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
         start_immediate(body(mbox), cancellation_token)
         return mbox</code></pre>
@@ -1687,7 +1720,7 @@ return default</p></div>
 <h3>Static methods</h3>
 <dl>
 <dt id="expression.core.MailboxProcessor.start"><code class="name flex">
-<span>def <span class="ident">start</span></span>(<span>body: Callable[[ForwardRef('<a title="expression.core.MailboxProcessor" href="#expression.core.MailboxProcessor">MailboxProcessor</a>[Any]')], Awaitable[NoneType]], cancellation_token: Optional[<a title="expression.system.cancellation.CancellationToken" href="../system/cancellation.html#expression.system.cancellation.CancellationToken">CancellationToken</a>] = None) ‑> <a title="expression.core.mailbox.MailboxProcessor" href="mailbox.html#expression.core.mailbox.MailboxProcessor">MailboxProcessor</a>[typing.Any]</span>
+<span>def <span class="ident">start</span></span>(<span>body: Callable[[<a title="expression.core.MailboxProcessor" href="#expression.core.MailboxProcessor">MailboxProcessor</a>[Any]], Awaitable[None]], cancellation_token: Optional[CancellationToken] = None) ‑> <a title="expression.core.mailbox.MailboxProcessor" href="mailbox.html#expression.core.mailbox.MailboxProcessor">MailboxProcessor</a>[typing.Any]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1697,9 +1730,9 @@ return default</p></div>
 </summary>
 <pre><code class="python">@staticmethod
 def start(
-    body: Callable[[&#34;MailboxProcessor[Any]&#34;], Awaitable[None]],
+    body: Callable[[MailboxProcessor[Any]], Awaitable[None]],
     cancellation_token: Optional[CancellationToken] = None,
-) -&gt; &#34;MailboxProcessor[Any]&#34;:
+) -&gt; MailboxProcessor[Any]:
     mbox: MailboxProcessor[Any] = MailboxProcessor(cancellation_token)
     start_immediate(body(mbox), cancellation_token)
     return mbox</code></pre>
@@ -1709,7 +1742,7 @@ def start(
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.MailboxProcessor.post"><code class="name flex">
-<span>def <span class="ident">post</span></span>(<span>self, msg: ~Msg) ‑> NoneType</span>
+<span>def <span class="ident">post</span></span>(<span>self, msg: Msg) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Post a message synchronously to the mailbox processor.</p>
@@ -1745,7 +1778,7 @@ processor and returns.</p>
 </details>
 </dd>
 <dt id="expression.core.MailboxProcessor.post_and_async_reply"><code class="name flex">
-<span>def <span class="ident">post_and_async_reply</span></span>(<span>self, build_message: Callable[[<a title="expression.core.mailbox.AsyncReplyChannel" href="mailbox.html#expression.core.mailbox.AsyncReplyChannel">AsyncReplyChannel</a>[~Reply]], ~Msg]) ‑> Awaitable[~Reply]</span>
+<span>def <span class="ident">post_and_async_reply</span></span>(<span>self, build_message: Callable[[<a title="expression.core.AsyncReplyChannel" href="#expression.core.AsyncReplyChannel">AsyncReplyChannel</a>[Reply]], Msg]) ‑> Awaitable[~Reply]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Post a message asynchronously to the mailbox processor and
@@ -1986,8 +2019,10 @@ return True</p></div>
     def to_list(self) -&gt; List[TSource]:
         return []
 
-    def to_seq(self) -&gt; Iterable[TSource]:
-        return []
+    def to_seq(self) -&gt; Seq[TSource]:
+        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+        return Seq()
 
     @property
     def value(self) -&gt; TSource:
@@ -1998,7 +2033,7 @@ return True</p></div>
 
         raise ValueError(&#34;There is no value.&#34;)
 
-    def __match__(self, pattern: Any) -&gt; &#34;Iterable[bool]&#34;:
+    def __match__(self, pattern: Any) -&gt; Iterable[bool]:
         if self is pattern:
             return [True]
 
@@ -2041,6 +2076,23 @@ return True</p></div>
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="expression.core.Nothing_.default_value"><code class="name flex">
+<span>def <span class="ident">default_value</span></span>(<span>self, value: TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+returns the specified default value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
+    return value</code></pre>
+</details>
+</dd>
 <dt id="expression.core.Nothing_.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -2070,7 +2122,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.Nothing_.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2083,7 +2135,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.Nothing_.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[TSource, T2], TResult], other: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2096,7 +2148,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.Nothing_.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TSource]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns <code>if_none</code>.</p></div>
@@ -2123,7 +2175,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.Nothing_.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Seq[TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2131,8 +2183,10 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def to_seq(self) -&gt; Iterable[TSource]:
-    return []</code></pre>
+<pre><code class="python">def to_seq(self) -&gt; Seq[TSource]:
+    from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+    return Seq()</code></pre>
 </details>
 </dd>
 </dl>
@@ -2141,7 +2195,6 @@ return True</p></div>
 <li><code><b><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="option.html#expression.core.option.Option.bind">bind</a></code></li>
-<li><code><a title="expression.core.option.Option.default_value" href="option.html#expression.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Option.of_obj" href="option.html#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="option.html#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="option.html#expression.core.option.Option.pipe">pipe</a></code></li>
@@ -2152,7 +2205,7 @@ return True</p></div>
 </dd>
 <dt id="expression.core.Ok"><code class="flex name class">
 <span>class <span class="ident">Ok</span></span>
-<span>(</span><span>value: ~TSource)</span>
+<span>(</span><span>value: TSource)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The Ok result case class.</p></div>
@@ -2247,7 +2300,7 @@ def value(self) -&gt; TSource:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.Ok.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a>]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.Result" href="#expression.core.Result">Result</a>[TResult, TError]]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2275,7 +2328,7 @@ def value(self) -&gt; TSource:
 </details>
 </dd>
 <dt id="expression.core.Ok.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2314,23 +2367,21 @@ def value(self) -&gt; TSource:
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], TResult]) -&gt; TResult:
+    def pipe(self, __fn1: Callable[[Option[TSource]], TResult]) -&gt; TResult:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self, __fn1: Callable[[Option[TSource]], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
-    def pipe(
-        self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
-    ) -&gt; T3:
+    def pipe(self, __fn1: Callable[[Option[TSource]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -&gt; T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[[&#34;Option[TSource]&#34;], T1],
+        __fn1: Callable[[Option[TSource]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -2342,21 +2393,23 @@ def value(self) -&gt; TSource:
         return pipe(self, *args)
 
     def default_value(self, value: TSource) -&gt; TSource:
-        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        &#34;&#34;&#34;Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
         &#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
         raise NotImplementedError
 
     @abstractmethod
-    def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+    def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
         &#34;&#34;&#34;Bind option.
 
         Applies and returns the result of the mapper if the value is
@@ -2373,7 +2426,7 @@ def value(self) -&gt; TSource:
         raise NotImplementedError
 
     @abstractmethod
-    def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+    def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
         &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
         raise NotImplementedError
 
@@ -2382,7 +2435,7 @@ def value(self) -&gt; TSource:
         raise NotImplementedError
 
     @abstractmethod
-    def to_seq(self) -&gt; Iterable[TSource]:
+    def to_seq(self) -&gt; Seq[TSource]:
         raise NotImplementedError
 
     @abstractmethod
@@ -2396,12 +2449,12 @@ def value(self) -&gt; TSource:
         raise NotImplementedError
 
     @classmethod
-    def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+    def of_obj(cls, value: TSource) -&gt; Option[TSource]:
         &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+    def of_optional(cls, value: Optional[TSource]) -&gt; Option[TSource]:
         &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
         return of_optional(value)
 
@@ -2442,7 +2495,7 @@ def value(self) -&gt; TSource:
 <h3>Static methods</h3>
 <dl>
 <dt id="expression.core.Option.of_obj"><code class="name flex">
-<span>def <span class="ident">of_obj</span></span>(<span>value: ~TSource) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">of_obj</span></span>(<span>value: TSource) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert object to an option.</p></div>
@@ -2451,13 +2504,13 @@ def value(self) -&gt; TSource:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+def of_obj(cls, value: TSource) -&gt; Option[TSource]:
     &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
     return of_optional(value)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.Option.of_optional"><code class="name flex">
-<span>def <span class="ident">of_optional</span></span>(<span>value: Optional[~TSource]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">of_optional</span></span>(<span>value: Optional[TSource]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert optional value to an option.</p></div>
@@ -2466,7 +2519,7 @@ def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+def of_optional(cls, value: Optional[TSource]) -&gt; Option[TSource]:
     &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
     return of_optional(value)</code></pre>
 </details>
@@ -2496,7 +2549,7 @@ def value(self) -&gt; TSource:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.Option.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.Option" href="#expression.core.Option">Option</a>[TResult]')]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TResult]]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Bind option.</p>
@@ -2516,7 +2569,7 @@ value of type TResult.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
     &#34;&#34;&#34;Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -2534,17 +2587,20 @@ def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#3
 </details>
 </dd>
 <dt id="expression.core.Option.default_value"><code class="name flex">
-<span>def <span class="ident">default_value</span></span>(<span>self, value: ~TSource) ‑> ~TSource</span>
+<span>def <span class="ident">default_value</span></span>(<span>self, value: TSource) ‑> ~TSource</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+<div class="desc"><p>Get with default value.</p>
+<p>Gets the value of the option if the option is Some, otherwise
 returns the specified default value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
-    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    &#34;&#34;&#34;Get with default value.
+
+    Gets the value of the option if the option is Some, otherwise
     returns the specified default value.
     &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
@@ -2581,7 +2637,7 @@ def is_some(self) -&gt; bool:
 </details>
 </dd>
 <dt id="expression.core.Option.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2590,12 +2646,12 @@ def is_some(self) -&gt; bool:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 <dt id="expression.core.Option.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[TSource, T2], TResult], other: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2604,7 +2660,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
+def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -2618,7 +2674,7 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
     &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
@@ -2652,7 +2708,7 @@ def to_list(self) -&gt; List[TSource]:
 </details>
 </dd>
 <dt id="expression.core.Option.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Seq[TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2661,7 +2717,7 @@ def to_list(self) -&gt; List[TSource]:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def to_seq(self) -&gt; Iterable[TSource]:
+def to_seq(self) -&gt; Seq[TSource]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -2677,7 +2733,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
+<pre><code class="python">class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -2685,19 +2741,19 @@ def to_seq(self) -&gt; Iterable[TSource]:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
     def pipe(
-        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+        self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
     ) -&gt; T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
+        __fn1: Callable[[Result[TSource, TError]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -2709,37 +2765,37 @@ def to_seq(self) -&gt; Iterable[TSource]:
         return pipe(self, *args)
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
         &#34;&#34;&#34;Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok.&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
         raise NotImplementedError
 
     @overload
-    def match(self, pattern: &#34;Ok[_TSource, _TError]&#34;) -&gt; Iterable[_TSource]:
+    def match(self, pattern: &#34;Ok[_TSource, Any]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Error[_TSource, _TError]&#34;) -&gt; Iterable[_TError]:
+    def match(self, pattern: &#34;Error[Any, _TError]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Case[Ok[_TSource, _TError]]&#34;) -&gt; Iterable[_TSource]:
+    def match(self, pattern: &#34;Case[Ok[_TSource, Any]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Case[Error[_TSource, _TError]]&#34;) -&gt; Iterable[_TError]:
+    def match(self, pattern: &#34;Case[Error[Any, _TError]]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Result[_TSource, _TError]]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Type[Result[_TSource, Any]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
@@ -2786,7 +2842,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.Result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.Result" href="#expression.core.Result">Result</a>[TResult, TError]')]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.Result" href="#expression.core.Result">Result</a>[TResult, TError]]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2795,7 +2851,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -2832,7 +2888,7 @@ def is_ok(self) -&gt; bool:
 </details>
 </dd>
 <dt id="expression.core.Result.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -2841,12 +2897,12 @@ def is_ok(self) -&gt; bool:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 <dt id="expression.core.Result.map_error"><code class="name flex">
-<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[TError], TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return a result of the error value after applying the mapping
@@ -2856,7 +2912,7 @@ function, or Ok if the input is Ok.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
+def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
     &#34;&#34;&#34;Return a result of the error value after applying the mapping
     function, or Ok if the input is Ok.&#34;&#34;&#34;
     raise NotImplementedError</code></pre>
@@ -2904,7 +2960,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
+<pre><code class="python">class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -2912,19 +2968,19 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
     def pipe(
-        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+        self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
     ) -&gt; T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
+        __fn1: Callable[[Result[TSource, TError]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -2936,37 +2992,37 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
         return pipe(self, *args)
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
         &#34;&#34;&#34;Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok.&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
         raise NotImplementedError
 
     @overload
-    def match(self, pattern: &#34;Ok[_TSource, _TError]&#34;) -&gt; Iterable[_TSource]:
+    def match(self, pattern: &#34;Ok[_TSource, Any]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Error[_TSource, _TError]&#34;) -&gt; Iterable[_TError]:
+    def match(self, pattern: &#34;Error[Any, _TError]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Case[Ok[_TSource, _TError]]&#34;) -&gt; Iterable[_TSource]:
+    def match(self, pattern: &#34;Case[Ok[_TSource, Any]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Case[Error[_TSource, _TError]]&#34;) -&gt; Iterable[_TError]:
+    def match(self, pattern: &#34;Case[Error[Any, _TError]]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Result[_TSource, _TError]]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Type[Result[_TSource, Any]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
@@ -3009,7 +3065,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.Result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.Result" href="#expression.core.Result">Result</a>[TResult, TError]')]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.Result" href="#expression.core.Result">Result</a>[TResult, TError]]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -3018,12 +3074,12 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 <dt id="expression.core.Result.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Result" href="result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -3032,7 +3088,7 @@ def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -3052,7 +3108,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 </dd>
 <dt id="expression.core.Some"><code class="flex name class">
 <span>class <span class="ident">Some</span></span>
-<span>(</span><span>value: ~TSource)</span>
+<span>(</span><span>value: TSource)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The Some option case class.</p></div>
@@ -3080,7 +3136,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
         &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
         return False
 
-    def map(self, mapper: Callable[[TSource], TResult]):
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
         return Some(mapper(self._value))
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
@@ -3111,8 +3167,10 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
     def to_list(self) -&gt; List[TSource]:
         return [self._value]
 
-    def to_seq(self) -&gt; Iterable[TSource]:
-        return [self._value]
+    def to_seq(self) -&gt; Seq[TSource]:
+        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+        return Seq.of(self._value)
 
     @property
     def value(self) -&gt; TSource:
@@ -3163,6 +3221,23 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="expression.core.Some.default_value"><code class="name flex">
+<span>def <span class="ident">default_value</span></span>(<span>self, value: TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+returns the specified default value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
+    return self._value</code></pre>
+</details>
+</dd>
 <dt id="expression.core.Some.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -3192,7 +3267,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 </details>
 </dd>
 <dt id="expression.core.Some.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult])</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -3200,12 +3275,12 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]):
+<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
     return Some(mapper(self._value))</code></pre>
 </details>
 </dd>
 <dt id="expression.core.Some.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[TSource, T2], TResult], other: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -3220,7 +3295,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 </details>
 </dd>
 <dt id="expression.core.Some.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TSource]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns <code>self</code>.</p></div>
@@ -3247,7 +3322,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 </details>
 </dd>
 <dt id="expression.core.Some.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Seq[TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -3255,8 +3330,10 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def to_seq(self) -&gt; Iterable[TSource]:
-    return [self._value]</code></pre>
+<pre><code class="python">def to_seq(self) -&gt; Seq[TSource]:
+    from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+    return Seq.of(self._value)</code></pre>
 </details>
 </dd>
 </dl>
@@ -3265,7 +3342,6 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 <li><code><b><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="option.html#expression.core.option.Option.bind">bind</a></code></li>
-<li><code><a title="expression.core.option.Option.default_value" href="option.html#expression.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Option.of_obj" href="option.html#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="option.html#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="option.html#expression.core.option.Option.pipe">pipe</a></code></li>
@@ -3276,15 +3352,23 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, T
 </dd>
 <dt id="expression.core.Success"><code class="flex name class">
 <span>class <span class="ident">Success</span></span>
-<span>(</span><span>value: ~TSource)</span>
+<span>(</span><span>value: TSource)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>The Ok result case class.</p></div>
+<div class="desc"><p>The successful Try case.</p>
+<p>Same as result <code><a title="expression.core.Ok" href="#expression.core.Ok">Ok</a></code> but with error type pinned to an exception, i.e:
+<code><a title="expression.core.Ok" href="#expression.core.Ok">Ok</a>[TSource, Exception]</code></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Success(Ok[TSource, Exception]):
+    &#34;&#34;&#34;The successful Try case.
+
+    Same as result `Ok` but with error type pinned to an exception, i.e:
+    `Ok[TSource, Exception]`
+    &#34;&#34;&#34;
+
     ...</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -3346,7 +3430,7 @@ Protocol classes can be generic, they are defined as::</p>
 </summary>
 <pre><code class="python">class SupportsLessThan(Protocol):
     @abstractmethod
-    def __lt__(self, other: Any) -&gt; bool:
+    def __lt__(self, __other: Any) -&gt; bool:
         raise NotImplementedError</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -3449,6 +3533,7 @@ function will be called again with the new arguments provided.</p></div>
 <ul class="two-column">
 <li><code><a title="expression.core.compose" href="#expression.core.compose">compose</a></code></li>
 <li><code><a title="expression.core.curried" href="#expression.core.curried">curried</a></code></li>
+<li><code><a title="expression.core.default_arg" href="#expression.core.default_arg">default_arg</a></code></li>
 <li><code><a title="expression.core.failwith" href="#expression.core.failwith">failwith</a></code></li>
 <li><code><a title="expression.core.flip" href="#expression.core.flip">flip</a></code></li>
 <li><code><a title="expression.core.fst" href="#expression.core.fst">fst</a></code></li>
@@ -3558,6 +3643,7 @@ function will be called again with the new arguments provided.</p></div>
 <li>
 <h4><code><a title="expression.core.Nothing_" href="#expression.core.Nothing_">Nothing_</a></code></h4>
 <ul class="two-column">
+<li><code><a title="expression.core.Nothing_.default_value" href="#expression.core.Nothing_.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.Nothing_.is_none" href="#expression.core.Nothing_.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.Nothing_.is_some" href="#expression.core.Nothing_.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.Nothing_.map" href="#expression.core.Nothing_.map">map</a></code></li>
@@ -3616,6 +3702,7 @@ function will be called again with the new arguments provided.</p></div>
 <li>
 <h4><code><a title="expression.core.Some" href="#expression.core.Some">Some</a></code></h4>
 <ul class="two-column">
+<li><code><a title="expression.core.Some.default_value" href="#expression.core.Some.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.Some.is_none" href="#expression.core.Some.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.Some.is_some" href="#expression.core.Some.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.Some.map" href="#expression.core.Some.map">map</a></code></li>
