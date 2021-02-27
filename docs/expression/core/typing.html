@@ -41,7 +41,7 @@ Derived = TypeVar(&#34;Derived&#34;)
 
 class SupportsLessThan(Protocol):
     @abstractmethod
-    def __lt__(self, other: Any) -&gt; bool:
+    def __lt__(self, __other: Any) -&gt; bool:
         raise NotImplementedError
 
 
@@ -66,7 +66,7 @@ def upcast(type: Type[Base], expr: Base) -&gt; Base:
     return expr
 
 
-def downcast(type: Type[Derived], expr: Base) -&gt; Derived:
+def downcast(type: Type[Derived], expr: Any) -&gt; Derived:
     &#34;&#34;&#34;Downcast expression `Derived` to `Base`
 
     Checks at compile time that the type of expression Base is a
@@ -79,7 +79,7 @@ def downcast(type: Type[Derived], expr: Base) -&gt; Derived:
     return cast(&#34;Derived&#34;, expr)
 
 
-def try_downcast(type_: Type[Derived], expr: Base) -&gt; Optional[Derived]:
+def try_downcast(type_: Type[Derived], expr: Any) -&gt; Optional[Derived]:
     &#34;&#34;&#34;Downcast expression `Base` to `Derived`.
 
     Check that the `Derived` type is a supertype of `Base`.
@@ -108,7 +108,7 @@ __all__ = [&#34;SupportsLessThan&#34;, &#34;downcast&#34;, &#34;upcast&#34;, &#3
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.typing.downcast"><code class="name flex">
-<span>def <span class="ident">downcast</span></span>(<span>type: Type[~Derived], expr: ~Base) ‑> ~Derived</span>
+<span>def <span class="ident">downcast</span></span>(<span>type: Type[~Derived], expr: Any) ‑> ~Derived</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Downcast expression <code>Derived</code> to <code>Base</code></p>
@@ -120,7 +120,7 @@ instance of Derived.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def downcast(type: Type[Derived], expr: Base) -&gt; Derived:
+<pre><code class="python">def downcast(type: Type[Derived], expr: Any) -&gt; Derived:
     &#34;&#34;&#34;Downcast expression `Derived` to `Base`
 
     Checks at compile time that the type of expression Base is a
@@ -134,7 +134,7 @@ instance of Derived.</p>
 </details>
 </dd>
 <dt id="expression.core.typing.try_downcast"><code class="name flex">
-<span>def <span class="ident">try_downcast</span></span>(<span>type_: Type[~Derived], expr: ~Base) ‑> Optional[~Derived]</span>
+<span>def <span class="ident">try_downcast</span></span>(<span>type_: Type[~Derived], expr: Any) ‑> Optional[~Derived]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Downcast expression <code>Base</code> to <code>Derived</code>.</p>
@@ -146,7 +146,7 @@ instance of Derived.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def try_downcast(type_: Type[Derived], expr: Base) -&gt; Optional[Derived]:
+<pre><code class="python">def try_downcast(type_: Type[Derived], expr: Any) -&gt; Optional[Derived]:
     &#34;&#34;&#34;Downcast expression `Base` to `Derived`.
 
     Check that the `Derived` type is a supertype of `Base`.
@@ -223,7 +223,7 @@ Protocol classes can be generic, they are defined as::</p>
 </summary>
 <pre><code class="python">class SupportsLessThan(Protocol):
     @abstractmethod
-    def __lt__(self, other: Any) -&gt; bool:
+    def __lt__(self, __other: Any) -&gt; bool:
         raise NotImplementedError</code></pre>
 </details>
 <h3>Ancestors</h3>

@@ -85,7 +85,7 @@ def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TEr
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.extra.result.traversable.sequence"><code class="name flex">
-<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">sequence</span></span>(<span>lst: List[<a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[~TSource, ~TError]]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Execute a sequence of result returning commands and collect the
@@ -102,7 +102,7 @@ sequence of their response.</p></div>
 </details>
 </dd>
 <dt id="expression.extra.result.traversable.traverse"><code class="name flex">
-<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>], lst: List[~TSource]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">traverse</span></span>(<span>fn: Callable[[~TSource], <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a>[~TResult, ~TError]], lst: List[~TSource]) ‑> <a title="expression.core.result.Result" href="../../core/result.html#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Traverses a list of items.</p>

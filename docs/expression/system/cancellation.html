@@ -26,7 +26,9 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from threading import RLock
+<pre><code class="python">from __future__ import annotations
+
+from threading import RLock
 from typing import Callable, Dict, Optional
 
 from .disposable import Disposable
@@ -47,7 +49,7 @@ class CancellationToken:
     objects that receive the notification can respond in whatever manner
     is appropriate.&#34;&#34;&#34;
 
-    def __init__(self, cancelled: bool = True, source: &#34;Optional[CancellationTokenSource]&#34; = None) -&gt; None:
+    def __init__(self, cancelled: bool = True, source: Optional[CancellationTokenSource] = None) -&gt; None:
         &#34;&#34;&#34;Should not be used directly. Create cancellation tokens using
         the `CancellationTokenSource` instead.&#34;&#34;&#34;
 
@@ -126,7 +128,7 @@ class CancellationTokenSource(Disposable):
         return self.token
 
     @staticmethod
-    def cancelled_source() -&gt; &#34;CancellationTokenSource&#34;:
+    def cancelled_source() -&gt; CancellationTokenSource:
         source = CancellationTokenSource()
         source.cancel()
         return source</code></pre>
@@ -178,7 +180,7 @@ the <code><a title="expression.system.cancellation.CancellationTokenSource" href
     objects that receive the notification can respond in whatever manner
     is appropriate.&#34;&#34;&#34;
 
-    def __init__(self, cancelled: bool = True, source: &#34;Optional[CancellationTokenSource]&#34; = None) -&gt; None:
+    def __init__(self, cancelled: bool = True, source: Optional[CancellationTokenSource] = None) -&gt; None:
         &#34;&#34;&#34;Should not be used directly. Create cancellation tokens using
         the `CancellationTokenSource` instead.&#34;&#34;&#34;
 
@@ -251,7 +253,7 @@ def is_cancellation_requested(self) -&gt; bool:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.system.cancellation.CancellationToken.register"><code class="name flex">
-<span>def <span class="ident">register</span></span>(<span>self, callback: Callable[[], NoneType]) ‑> <a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></span>
+<span>def <span class="ident">register</span></span>(<span>self, callback: Callable[[], None]) ‑> <a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -341,7 +343,7 @@ dispose method. Will dispoose on exit.</p></div>
         return self.token
 
     @staticmethod
-    def cancelled_source() -&gt; &#34;CancellationTokenSource&#34;:
+    def cancelled_source() -&gt; CancellationTokenSource:
         source = CancellationTokenSource()
         source.cancel()
         return source</code></pre>
@@ -363,7 +365,7 @@ dispose method. Will dispoose on exit.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def cancelled_source() -&gt; &#34;CancellationTokenSource&#34;:
+def cancelled_source() -&gt; CancellationTokenSource:
     source = CancellationTokenSource()
     source.cancel()
     return source</code></pre>
@@ -436,7 +438,7 @@ def token(self) -&gt; CancellationToken:
 </details>
 </dd>
 <dt id="expression.system.cancellation.CancellationTokenSource.register_internal"><code class="name flex">
-<span>def <span class="ident">register_internal</span></span>(<span>self, callback: Callable[[], NoneType]) ‑> <a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></span>
+<span>def <span class="ident">register_internal</span></span>(<span>self, callback: Callable[[], None]) ‑> <a title="expression.system.disposable.Disposable" href="disposable.html#expression.system.disposable.Disposable">Disposable</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>

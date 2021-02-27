@@ -38,8 +38,11 @@ options. All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 &#34;&#34;&#34;
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Generator,
@@ -59,6 +62,9 @@ from .error import EffectError
 from .match import MatchMixin, SupportsMatch
 from .pipe import pipe
 
+if TYPE_CHECKING:
+    from ..collections.seq import Seq
+
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
 T1 = TypeVar(&#34;T1&#34;)
@@ -71,23 +77,21 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], TResult]) -&gt; TResult:
+    def pipe(self, __fn1: Callable[[Option[TSource]], TResult]) -&gt; TResult:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self, __fn1: Callable[[Option[TSource]], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
-    def pipe(
-        self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
-    ) -&gt; T3:
+    def pipe(self, __fn1: Callable[[Option[TSource]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -&gt; T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[[&#34;Option[TSource]&#34;], T1],
+        __fn1: Callable[[Option[TSource]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -99,21 +103,23 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         return pipe(self, *args)
 
     def default_value(self, value: TSource) -&gt; TSource:
-        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        &#34;&#34;&#34;Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
         &#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
         raise NotImplementedError
 
     @abstractmethod
-    def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+    def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
         &#34;&#34;&#34;Bind option.
 
         Applies and returns the result of the mapper if the value is
@@ -130,7 +136,7 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @abstractmethod
-    def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+    def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
         &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
         raise NotImplementedError
 
@@ -139,7 +145,7 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @abstractmethod
-    def to_seq(self) -&gt; Iterable[TSource]:
+    def to_seq(self) -&gt; Seq[TSource]:
         raise NotImplementedError
 
     @abstractmethod
@@ -153,12 +159,12 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @classmethod
-    def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+    def of_obj(cls, value: TSource) -&gt; Option[TSource]:
         &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+    def of_optional(cls, value: Optional[TSource]) -&gt; Option[TSource]:
         &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
         return of_optional(value)
 
@@ -203,7 +209,7 @@ class Some(Option[TSource]):
         &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
         return False
 
-    def map(self, mapper: Callable[[TSource], TResult]):
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
         return Some(mapper(self._value))
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
@@ -234,8 +240,10 @@ class Some(Option[TSource]):
     def to_list(self) -&gt; List[TSource]:
         return [self._value]
 
-    def to_seq(self) -&gt; Iterable[TSource]:
-        return [self._value]
+    def to_seq(self) -&gt; Seq[TSource]:
+        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+        return Seq.of(self._value)
 
     @property
     def value(self) -&gt; TSource:
@@ -327,8 +335,10 @@ class Nothing_(Option[TSource], EffectError):
     def to_list(self) -&gt; List[TSource]:
         return []
 
-    def to_seq(self) -&gt; Iterable[TSource]:
-        return []
+    def to_seq(self) -&gt; Seq[TSource]:
+        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+        return Seq()
 
     @property
     def value(self) -&gt; TSource:
@@ -339,7 +349,7 @@ class Nothing_(Option[TSource], EffectError):
 
         raise ValueError(&#34;There is no value.&#34;)
 
-    def __match__(self, pattern: Any) -&gt; &#34;Iterable[bool]&#34;:
+    def __match__(self, pattern: Any) -&gt; Iterable[bool]:
         if self is pattern:
             return [True]
 
@@ -368,7 +378,7 @@ class Nothing_(Option[TSource], EffectError):
         return &#34;Nothing&#34;
 
 
-class TransformFn(Protocol[TResult]):
+class Projection(Protocol[TSource, TResult]):
     &#34;&#34;&#34;Option transforming protocol function.
 
     `Option[TSource]) -&gt; Option[TResult]`
@@ -390,7 +400,7 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 &#34;&#34;&#34;
 
 
-def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; TransformFn[TResult]:
+def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Projection[TSource, TResult]:
     &#34;&#34;&#34;Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -423,15 +433,15 @@ def default_value(value: TSource) -&gt; Callable[[Option[TSource]], TSource]:
     return _default_value
 
 
-def is_none(option: Option[TSource]) -&gt; bool:
+def is_none(option: Option[Any]) -&gt; bool:
     return option.is_none()
 
 
-def is_some(option: Option[TSource]) -&gt; bool:
+def is_some(option: Option[Any]) -&gt; bool:
     return option.is_some()
 
 
-def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
+def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
     def _map(option: Option[TSource]) -&gt; Option[TResult]:
         return option.map(mapper)
 
@@ -458,8 +468,8 @@ def to_list(option: Option[TSource]) -&gt; List[TSource]:
     return option.to_list()
 
 
-def to_seq(option: Option[TSource]) -&gt; Iterable[TSource]:
-    return option.to_list()
+def to_seq(option: Option[TSource]) -&gt; Seq[TSource]:
+    return option.to_seq()
 
 
 def of_optional(value: Optional[TSource]) -&gt; Option[TSource]:
@@ -494,12 +504,23 @@ def of_obj(value: Any) -&gt; Option[Any]:
     return of_optional(value)
 
 
+def default_arg(value: Option[TSource], default_value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Specify default argument.
+
+    Used to specify a default value for an optional argument in the
+    implementation of a function. Same as `default_value`, but
+    &#34;uncurried&#34; and with the arguments swapped.
+    &#34;&#34;&#34;
+    return value.default_value(default_value)
+
+
 __all__ = [
     &#34;Option&#34;,
     &#34;Some&#34;,
     &#34;Nothing&#34;,
     &#34;Nothing_&#34;,
     &#34;bind&#34;,
+    &#34;default_arg&#34;,
     &#34;default_value&#34;,
     &#34;map&#34;,
     &#34;map2&#34;,
@@ -510,6 +531,7 @@ __all__ = [
     &#34;to_seq&#34;,
     &#34;of_optional&#34;,
     &#34;of_obj&#34;,
+    &#34;Projection&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -532,7 +554,7 @@ return True</p></div>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.option.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]) ‑> expression.core.option.TransformFn[~TResult]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TResult]]) ‑> <a title="expression.core.option.Projection" href="#expression.core.option.Projection">Projection</a>[~TSource, ~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Bind option.</p>
@@ -552,7 +574,7 @@ option of the output type of the mapper.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; TransformFn[TResult]:
+<pre><code class="python">def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Projection[TSource, TResult]:
     &#34;&#34;&#34;Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -574,8 +596,30 @@ option of the output type of the mapper.</p></div>
     return _bind</code></pre>
 </details>
 </dd>
+<dt id="expression.core.option.default_arg"><code class="name flex">
+<span>def <span class="ident">default_arg</span></span>(<span>value: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource], default_value: TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Specify default argument.</p>
+<p>Used to specify a default value for an optional argument in the
+implementation of a function. Same as <code><a title="expression.core.option.default_value" href="#expression.core.option.default_value">default_value()</a></code>, but
+"uncurried" and with the arguments swapped.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_arg(value: Option[TSource], default_value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Specify default argument.
+
+    Used to specify a default value for an optional argument in the
+    implementation of a function. Same as `default_value`, but
+    &#34;uncurried&#34; and with the arguments swapped.
+    &#34;&#34;&#34;
+    return value.default_value(default_value)</code></pre>
+</details>
+</dd>
 <dt id="expression.core.option.default_value"><code class="name flex">
-<span>def <span class="ident">default_value</span></span>(<span>value: ~TSource) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], ~TSource]</span>
+<span>def <span class="ident">default_value</span></span>(<span>value: TSource) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], ~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Gets the value of the option if the option is Some, otherwise
@@ -596,7 +640,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.is_none"><code class="name flex">
-<span>def <span class="ident">is_none</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> bool</span>
+<span>def <span class="ident">is_none</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[Any]) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -604,12 +648,12 @@ returns the specified default value.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def is_none(option: Option[TSource]) -&gt; bool:
+<pre><code class="python">def is_none(option: Option[Any]) -&gt; bool:
     return option.is_none()</code></pre>
 </details>
 </dd>
 <dt id="expression.core.option.is_some"><code class="name flex">
-<span>def <span class="ident">is_some</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> bool</span>
+<span>def <span class="ident">is_some</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[Any]) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -617,12 +661,12 @@ returns the specified default value.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def is_some(option: Option[TSource]) -&gt; bool:
+<pre><code class="python">def is_some(option: Option[Any]) -&gt; bool:
     return option.is_some()</code></pre>
 </details>
 </dd>
 <dt id="expression.core.option.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> expression.core.option.TransformFn[~TResult]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.option.Projection" href="#expression.core.option.Projection">Projection</a>[~TSource, ~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -630,7 +674,7 @@ returns the specified default value.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
     def _map(option: Option[TSource]) -&gt; Option[TResult]:
         return option.map(mapper)
 
@@ -638,7 +682,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>mapper: Callable[[~T1, ~T2], ~TResult]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>, <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">map2</span></span>(<span>mapper: Callable[[T1, T2], TResult]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~T1], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~T2]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -685,7 +729,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.of_optional"><code class="name flex">
-<span>def <span class="ident">of_optional</span></span>(<span>value: Optional[~TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">of_optional</span></span>(<span>value: Optional[TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert an optional value to an option.</p>
@@ -721,7 +765,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>]</span>
+<span>def <span class="ident">or_else</span></span>(<span>if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns option if it is Some, otherwise returns ifNone.</p></div>
@@ -739,7 +783,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.to_list"><code class="name flex">
-<span>def <span class="ident">to_list</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> List[~TSource]</span>
+<span>def <span class="ident">to_list</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]) ‑> List[~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -752,7 +796,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>option: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]) ‑> Seq[TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -760,8 +804,8 @@ returns the specified default value.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def to_seq(option: Option[TSource]) -&gt; Iterable[TSource]:
-    return option.to_list()</code></pre>
+<pre><code class="python">def to_seq(option: Option[TSource]) -&gt; Seq[TSource]:
+    return option.to_seq()</code></pre>
 </details>
 </dd>
 </dl>
@@ -836,8 +880,10 @@ return True</p></div>
     def to_list(self) -&gt; List[TSource]:
         return []
 
-    def to_seq(self) -&gt; Iterable[TSource]:
-        return []
+    def to_seq(self) -&gt; Seq[TSource]:
+        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+        return Seq()
 
     @property
     def value(self) -&gt; TSource:
@@ -848,7 +894,7 @@ return True</p></div>
 
         raise ValueError(&#34;There is no value.&#34;)
 
-    def __match__(self, pattern: Any) -&gt; &#34;Iterable[bool]&#34;:
+    def __match__(self, pattern: Any) -&gt; Iterable[bool]:
         if self is pattern:
             return [True]
 
@@ -891,6 +937,23 @@ return True</p></div>
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="expression.core.option.Nothing_.default_value"><code class="name flex">
+<span>def <span class="ident">default_value</span></span>(<span>self, value: TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+returns the specified default value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
+    return value</code></pre>
+</details>
+</dd>
 <dt id="expression.core.option.Nothing_.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -920,7 +983,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.Nothing_.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -933,7 +996,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.Nothing_.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[TSource, T2], TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -946,7 +1009,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.Nothing_.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns <code>if_none</code>.</p></div>
@@ -973,7 +1036,7 @@ return True</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.Nothing_.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Seq[TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -981,8 +1044,10 @@ return True</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def to_seq(self) -&gt; Iterable[TSource]:
-    return []</code></pre>
+<pre><code class="python">def to_seq(self) -&gt; Seq[TSource]:
+    from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+    return Seq()</code></pre>
 </details>
 </dd>
 </dl>
@@ -991,7 +1056,6 @@ return True</p></div>
 <li><code><b><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
-<li><code><a title="expression.core.option.Option.default_value" href="#expression.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Option.of_obj" href="#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
@@ -1014,23 +1078,21 @@ return True</p></div>
     &#34;&#34;&#34;Option abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], TResult]) -&gt; TResult:
+    def pipe(self, __fn1: Callable[[Option[TSource]], TResult]) -&gt; TResult:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self, __fn1: Callable[[Option[TSource]], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
-    def pipe(
-        self, __fn1: Callable[[&#34;Option[TSource]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
-    ) -&gt; T3:
+    def pipe(self, __fn1: Callable[[Option[TSource]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -&gt; T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[[&#34;Option[TSource]&#34;], T1],
+        __fn1: Callable[[Option[TSource]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -1042,21 +1104,23 @@ return True</p></div>
         return pipe(self, *args)
 
     def default_value(self, value: TSource) -&gt; TSource:
-        &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+        &#34;&#34;&#34;Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
         &#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
         raise NotImplementedError
 
     @abstractmethod
-    def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
+    def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+    def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
         &#34;&#34;&#34;Bind option.
 
         Applies and returns the result of the mapper if the value is
@@ -1073,7 +1137,7 @@ return True</p></div>
         raise NotImplementedError
 
     @abstractmethod
-    def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+    def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
         &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
         raise NotImplementedError
 
@@ -1082,7 +1146,7 @@ return True</p></div>
         raise NotImplementedError
 
     @abstractmethod
-    def to_seq(self) -&gt; Iterable[TSource]:
+    def to_seq(self) -&gt; Seq[TSource]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1096,12 +1160,12 @@ return True</p></div>
         raise NotImplementedError
 
     @classmethod
-    def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+    def of_obj(cls, value: TSource) -&gt; Option[TSource]:
         &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+    def of_optional(cls, value: Optional[TSource]) -&gt; Option[TSource]:
         &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
         return of_optional(value)
 
@@ -1142,7 +1206,7 @@ return True</p></div>
 <h3>Static methods</h3>
 <dl>
 <dt id="expression.core.option.Option.of_obj"><code class="name flex">
-<span>def <span class="ident">of_obj</span></span>(<span>value: ~TSource) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">of_obj</span></span>(<span>value: TSource) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert object to an option.</p></div>
@@ -1151,13 +1215,13 @@ return True</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
+def of_obj(cls, value: TSource) -&gt; Option[TSource]:
     &#34;&#34;&#34;Convert object to an option.&#34;&#34;&#34;
     return of_optional(value)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.option.Option.of_optional"><code class="name flex">
-<span>def <span class="ident">of_optional</span></span>(<span>value: Optional[~TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">of_optional</span></span>(<span>value: Optional[TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert optional value to an option.</p></div>
@@ -1166,7 +1230,7 @@ def of_obj(cls, value: TSource) -&gt; &#34;Option[TSource]&#34;:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@classmethod
-def of_optional(cls, value: Optional[TSource]) -&gt; &#34;Option[TSource]&#34;:
+def of_optional(cls, value: Optional[TSource]) -&gt; Option[TSource]:
     &#34;&#34;&#34;Convert optional value to an option.&#34;&#34;&#34;
     return of_optional(value)</code></pre>
 </details>
@@ -1196,7 +1260,7 @@ def value(self) -&gt; TSource:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.option.Option.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TResult]')]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TResult]]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Bind option.</p>
@@ -1216,7 +1280,7 @@ value of type TResult.</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#34;Option[TResult]&#34;:
+def bind(self, mapper: Callable[[TSource], Option[TResult]]) -&gt; Option[TResult]:
     &#34;&#34;&#34;Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -1234,17 +1298,20 @@ def bind(self, mapper: Callable[[TSource], &#34;Option[TResult]&#34;]) -&gt; &#3
 </details>
 </dd>
 <dt id="expression.core.option.Option.default_value"><code class="name flex">
-<span>def <span class="ident">default_value</span></span>(<span>self, value: ~TSource) ‑> ~TSource</span>
+<span>def <span class="ident">default_value</span></span>(<span>self, value: TSource) ‑> ~TSource</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+<div class="desc"><p>Get with default value.</p>
+<p>Gets the value of the option if the option is Some, otherwise
 returns the specified default value.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
-    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    &#34;&#34;&#34;Get with default value.
+
+    Gets the value of the option if the option is Some, otherwise
     returns the specified default value.
     &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
@@ -1281,7 +1348,7 @@ def is_some(self) -&gt; bool:
 </details>
 </dd>
 <dt id="expression.core.option.Option.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1290,12 +1357,12 @@ def is_some(self) -&gt; bool:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#34;:
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 <dt id="expression.core.option.Option.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[TSource, T2], TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1304,7 +1371,7 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Option[TResult]&#
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&#34;) -&gt; &#34;Option[TResult]&#34;:
+def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -1318,7 +1385,7 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: &#34;Option[T2]&
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def or_else(self, if_none: &#34;Option[TSource]&#34;) -&gt; &#34;Option[TSource]&#34;:
+def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
     &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
@@ -1352,7 +1419,7 @@ def to_list(self) -&gt; List[TSource]:
 </details>
 </dd>
 <dt id="expression.core.option.Option.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Seq[TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1361,15 +1428,41 @@ def to_list(self) -&gt; List[TSource]:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def to_seq(self) -&gt; Iterable[TSource]:
+def to_seq(self) -&gt; Seq[TSource]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 </dl>
 </dd>
+<dt id="expression.core.option.Projection"><code class="flex name class">
+<span>class <span class="ident">Projection</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Option transforming protocol function.</p>
+<p><code>Option[TSource]) -&gt; Option[TResult]</code></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Projection(Protocol[TSource, TResult]):
+    &#34;&#34;&#34;Option transforming protocol function.
+
+    `Option[TSource]) -&gt; Option[TResult]`
+    &#34;&#34;&#34;
+
+    def __call__(self, __source: Option[TSource]) -&gt; Option[TResult]:
+        raise NotImplementedError</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+</dd>
 <dt id="expression.core.option.Some"><code class="flex name class">
 <span>class <span class="ident">Some</span></span>
-<span>(</span><span>value: ~TSource)</span>
+<span>(</span><span>value: TSource)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The Some option case class.</p></div>
@@ -1397,7 +1490,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
         &#34;&#34;&#34;Returns `False`.&#34;&#34;&#34;
         return False
 
-    def map(self, mapper: Callable[[TSource], TResult]):
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
         return Some(mapper(self._value))
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt; Option[TResult]:
@@ -1428,8 +1521,10 @@ def to_seq(self) -&gt; Iterable[TSource]:
     def to_list(self) -&gt; List[TSource]:
         return [self._value]
 
-    def to_seq(self) -&gt; Iterable[TSource]:
-        return [self._value]
+    def to_seq(self) -&gt; Seq[TSource]:
+        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+        return Seq.of(self._value)
 
     @property
     def value(self) -&gt; TSource:
@@ -1480,6 +1575,23 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="expression.core.option.Some.default_value"><code class="name flex">
+<span>def <span class="ident">default_value</span></span>(<span>self, value: TSource) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the value of the option if the option is Some, otherwise
+returns the specified default value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def default_value(self, value: TSource) -&gt; TSource:
+    &#34;&#34;&#34;Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    &#34;&#34;&#34;
+    return self._value</code></pre>
+</details>
+</dd>
 <dt id="expression.core.option.Some.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -1509,7 +1621,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </details>
 </dd>
 <dt id="expression.core.option.Some.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult])</span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1517,12 +1629,12 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]):
+<pre><code class="python">def map(self, mapper: Callable[[TSource], TResult]) -&gt; Option[TResult]:
     return Some(mapper(self._value))</code></pre>
 </details>
 </dd>
 <dt id="expression.core.option.Some.map2"><code class="name flex">
-<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[~TSource, ~T2], ~TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">map2</span></span>(<span>self, mapper: Callable[[TSource, T2], TResult], other: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[T2]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1537,7 +1649,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </details>
 </dd>
 <dt id="expression.core.option.Some.or_else"><code class="name flex">
-<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+<span>def <span class="ident">or_else</span></span>(<span>self, if_none: <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns <code>self</code>.</p></div>
@@ -1564,7 +1676,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </details>
 </dd>
 <dt id="expression.core.option.Some.to_seq"><code class="name flex">
-<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Iterable[~TSource]</span>
+<span>def <span class="ident">to_seq</span></span>(<span>self) ‑> Seq[TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1572,8 +1684,10 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def to_seq(self) -&gt; Iterable[TSource]:
-    return [self._value]</code></pre>
+<pre><code class="python">def to_seq(self) -&gt; Seq[TSource]:
+    from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+
+    return Seq.of(self._value)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1582,7 +1696,6 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <li><code><b><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
-<li><code><a title="expression.core.option.Option.default_value" href="#expression.core.option.Option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Option.of_obj" href="#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
@@ -1613,6 +1726,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="two-column">
 <li><code><a title="expression.core.option.bind" href="#expression.core.option.bind">bind</a></code></li>
+<li><code><a title="expression.core.option.default_arg" href="#expression.core.option.default_arg">default_arg</a></code></li>
 <li><code><a title="expression.core.option.default_value" href="#expression.core.option.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.is_none" href="#expression.core.option.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.option.is_some" href="#expression.core.option.is_some">is_some</a></code></li>
@@ -1630,6 +1744,7 @@ def to_seq(self) -&gt; Iterable[TSource]:
 <li>
 <h4><code><a title="expression.core.option.Nothing_" href="#expression.core.option.Nothing_">Nothing_</a></code></h4>
 <ul class="two-column">
+<li><code><a title="expression.core.option.Nothing_.default_value" href="#expression.core.option.Nothing_.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.is_none" href="#expression.core.option.Nothing_.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.is_some" href="#expression.core.option.Nothing_.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.map" href="#expression.core.option.Nothing_.map">map</a></code></li>
@@ -1658,8 +1773,12 @@ def to_seq(self) -&gt; Iterable[TSource]:
 </ul>
 </li>
 <li>
+<h4><code><a title="expression.core.option.Projection" href="#expression.core.option.Projection">Projection</a></code></h4>
+</li>
+<li>
 <h4><code><a title="expression.core.option.Some" href="#expression.core.option.Some">Some</a></code></h4>
 <ul class="two-column">
+<li><code><a title="expression.core.option.Some.default_value" href="#expression.core.option.Some.default_value">default_value</a></code></li>
 <li><code><a title="expression.core.option.Some.is_none" href="#expression.core.option.Some.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.option.Some.is_some" href="#expression.core.option.Some.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.option.Some.map" href="#expression.core.option.Some.map">map</a></code></li>

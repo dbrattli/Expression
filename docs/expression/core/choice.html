@@ -82,13 +82,13 @@ class Choice1of2(Choice2[A, B], Choice[A]):
 
     @overload
     @classmethod
-    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[A_]:
+    def match(cls, case: Case[Choice2[A_, Any]]) -&gt; Iterable[A_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
     @overload
     @classmethod
-    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[A_]:
+    def match(cls, case: &#34;Case[Choice1of2[A_, Any]]&#34;) -&gt; Iterable[A_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
@@ -116,13 +116,13 @@ class Choice2of2(Choice2[A, B], Choice[B]):
 
     @overload
     @classmethod
-    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[B_]:
+    def match(cls, case: Case[Choice2[Any, B_]]) -&gt; Iterable[B_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
     @overload
     @classmethod
-    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[B_]:
+    def match(cls, case: &#34;Case[Choice1of2[Any, B_]]&#34;) -&gt; Iterable[B_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
@@ -263,13 +263,13 @@ inheritance.</p></div>
 
     @overload
     @classmethod
-    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[A_]:
+    def match(cls, case: Case[Choice2[A_, Any]]) -&gt; Iterable[A_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
     @overload
     @classmethod
-    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[A_]:
+    def match(cls, case: &#34;Case[Choice1of2[A_, Any]]&#34;) -&gt; Iterable[A_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
@@ -418,13 +418,13 @@ inheritance.</p></div>
 
     @overload
     @classmethod
-    def match(cls, case: Case[Choice2[A_, B_]]) -&gt; Iterable[B_]:
+    def match(cls, case: Case[Choice2[Any, B_]]) -&gt; Iterable[B_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 
     @overload
     @classmethod
-    def match(cls, case: &#34;Case[Choice1of2[A_, B_]]&#34;) -&gt; Iterable[B_]:
+    def match(cls, case: &#34;Case[Choice1of2[Any, B_]]&#34;) -&gt; Iterable[B_]:
         &#34;&#34;&#34;Helper to cast the match result to correct type.&#34;&#34;&#34;
         ...
 

@@ -43,6 +43,7 @@ Programming.
 There is also a simplifyed alias of this type called `Maybe` that pins
 the Result type to Exception.
 &#34;&#34;&#34;
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Generator, Iterable, Iterator, Protocol, Type, TypeVar, Union, get_origin, overload
@@ -65,7 +66,7 @@ T3 = TypeVar(&#34;T3&#34;)
 T4 = TypeVar(&#34;T4&#34;)
 
 
-class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
+class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -73,19 +74,19 @@ class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TErr
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
     def pipe(
-        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+        self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
     ) -&gt; T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
+        __fn1: Callable[[Result[TSource, TError]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -97,37 +98,37 @@ class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TErr
         return pipe(self, *args)
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
         &#34;&#34;&#34;Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok.&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
         raise NotImplementedError
 
     @overload
-    def match(self, pattern: &#34;Ok[_TSource, _TError]&#34;) -&gt; Iterable[_TSource]:
+    def match(self, pattern: &#34;Ok[_TSource, Any]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Error[_TSource, _TError]&#34;) -&gt; Iterable[_TError]:
+    def match(self, pattern: &#34;Error[Any, _TError]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Case[Ok[_TSource, _TError]]&#34;) -&gt; Iterable[_TSource]:
+    def match(self, pattern: &#34;Case[Ok[_TSource, Any]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Case[Error[_TSource, _TError]]&#34;) -&gt; Iterable[_TError]:
+    def match(self, pattern: &#34;Case[Error[Any, _TError]]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Result[_TSource, _TError]]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Type[Result[_TSource, Any]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
@@ -286,12 +287,12 @@ class Error(Result[TSource, TError], ResultException):
         return f&#34;Error {self._error}&#34;
 
 
-class TransformFn(Protocol[TResult]):
+class Projection(Protocol[TSource, TResult]):
     def __call__(self, __source: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         ...
 
 
-def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
+def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
     def _map(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.map(mapper)
 
@@ -299,14 +300,21 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
     return _map
 
 
-def bind(mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; TransformFn[TResult]:
+def bind(mapper: Callable[[TSource], Result[TResult, Any]]) -&gt; Projection[TSource, TResult]:
     def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.bind(mapper)
 
     return _bind
 
 
-__all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;bind&#34;]</code></pre>
+__all__ = [
+    &#34;Result&#34;,
+    &#34;Ok&#34;,
+    &#34;Error&#34;,
+    &#34;map&#34;,
+    &#34;bind&#34;,
+    &#34;Projection&#34;,
+]</code></pre>
 </details>
 </section>
 <section>
@@ -317,7 +325,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>]) ‑> expression.core.result.TransformFn[~TResult]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[TResult, Any]]) ‑> <a title="expression.core.result.Projection" href="#expression.core.result.Projection">Projection</a>[~TSource, ~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -325,7 +333,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; TransformFn[TResult]:
+<pre><code class="python">def bind(mapper: Callable[[TSource], Result[TResult, Any]]) -&gt; Projection[TSource, TResult]:
     def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.bind(mapper)
 
@@ -333,7 +341,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 </details>
 </dd>
 <dt id="expression.core.result.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[~TSource], ~TResult]) ‑> expression.core.result.TransformFn[~TResult]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Projection" href="#expression.core.result.Projection">Projection</a>[~TSource, ~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -341,7 +349,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; TransformFn[TResult]:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
     def _map(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.map(mapper)
 
@@ -356,7 +364,7 @@ __all__ = [&#34;Result&#34;, &#34;Ok&#34;, &#34;Error&#34;, &#34;map&#34;, &#34;
 <dl>
 <dt id="expression.core.result.Error"><code class="flex name class">
 <span>class <span class="ident">Error</span></span>
-<span>(</span><span>error: ~TError)</span>
+<span>(</span><span>error: TError)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The Error result case class.</p></div>
@@ -460,7 +468,7 @@ def error(self) -&gt; TError:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.result.Error.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[TResult, TError]]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -487,7 +495,7 @@ def error(self) -&gt; TError:
 </details>
 </dd>
 <dt id="expression.core.result.Error.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -514,7 +522,7 @@ def error(self) -&gt; TError:
 </dd>
 <dt id="expression.core.result.Ok"><code class="flex name class">
 <span>class <span class="ident">Ok</span></span>
-<span>(</span><span>value: ~TSource)</span>
+<span>(</span><span>value: TSource)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>The Ok result case class.</p></div>
@@ -609,7 +617,7 @@ def value(self) -&gt; TSource:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.result.Ok.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[TResult, TError]]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -637,7 +645,7 @@ def value(self) -&gt; TSource:
 </details>
 </dd>
 <dt id="expression.core.result.Ok.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -662,6 +670,50 @@ def value(self) -&gt; TSource:
 </li>
 </ul>
 </dd>
+<dt id="expression.core.result.Projection"><code class="flex name class">
+<span>class <span class="ident">Projection</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for protocol classes.</p>
+<p>Protocol classes are defined as::</p>
+<pre><code>class Proto(Protocol):
+    def meth(self) -&gt; int:
+        ...
+</code></pre>
+<p>Such classes are primarily used with static type checkers that recognize
+structural subtyping (static duck-typing), for example::</p>
+<pre><code>class C:
+    def meth(self) -&gt; int:
+        return 0
+
+def func(x: Proto) -&gt; int:
+    return x.meth()
+
+func(C())  # Passes static type check
+</code></pre>
+<p>See PEP 544 for details. Protocol classes decorated with
+@typing.runtime_checkable act as simple-minded runtime protocols that check
+only the presence of given attributes, ignoring their type signatures.
+Protocol classes can be generic, they are defined as::</p>
+<pre><code>class GenProto(Protocol[T]):
+    def meth(self) -&gt; T:
+        ...
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Projection(Protocol[TSource, TResult]):
+    def __call__(self, __source: Result[TSource, TError]) -&gt; Result[TResult, TError]:
+        ...</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+</dd>
 <dt id="expression.core.result.Result"><code class="flex name class">
 <span>class <span class="ident">Result</span></span>
 <span>(</span><span>*args, **kwargs)</span>
@@ -672,7 +724,7 @@ def value(self) -&gt; TSource:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Result(Iterable[Union[TSource, TError]], SupportsMatch[Union[TSource, TError]], ABC):
+<pre><code class="python">class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
@@ -680,19 +732,19 @@ def value(self) -&gt; TSource:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2]) -&gt; T2:
         ...
 
     @overload
     def pipe(
-        self, __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
+        self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
     ) -&gt; T3:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[[&#34;Result[TSource, TError]&#34;], T1],
+        __fn1: Callable[[Result[TSource, TError]], T1],
         __fn2: Callable[[T1], T2],
         __fn3: Callable[[T2], T3],
         __fn4: Callable[[T3], T4],
@@ -704,37 +756,37 @@ def value(self) -&gt; TSource:
         return pipe(self, *args)
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+    def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
+    def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
         &#34;&#34;&#34;Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok.&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
         raise NotImplementedError
 
     @overload
-    def match(self, pattern: &#34;Ok[_TSource, _TError]&#34;) -&gt; Iterable[_TSource]:
+    def match(self, pattern: &#34;Ok[_TSource, Any]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Error[_TSource, _TError]&#34;) -&gt; Iterable[_TError]:
+    def match(self, pattern: &#34;Error[Any, _TError]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Case[Ok[_TSource, _TError]]&#34;) -&gt; Iterable[_TSource]:
+    def match(self, pattern: &#34;Case[Ok[_TSource, Any]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Case[Error[_TSource, _TError]]&#34;) -&gt; Iterable[_TError]:
+    def match(self, pattern: &#34;Case[Error[Any, _TError]]&#34;) -&gt; Iterable[_TError]:
         ...
 
     @overload
-    def match(self, pattern: &#34;Type[Result[_TSource, _TError]]&#34;) -&gt; Iterable[TSource]:
+    def match(self, pattern: &#34;Type[Result[_TSource, Any]]&#34;) -&gt; Iterable[_TSource]:
         ...
 
     def match(self, pattern: Any) -&gt; Any:
@@ -781,7 +833,7 @@ def value(self) -&gt; TSource:
 <h3>Methods</h3>
 <dl>
 <dt id="expression.core.result.Result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[~TSource], ForwardRef('<a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[TResult, TError]')]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">bind</span></span>(<span>self, mapper: Callable[[TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[TResult, TError]]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -790,7 +842,7 @@ def value(self) -&gt; TSource:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def bind(self, mapper: Callable[[TSource], &#34;Result[TResult, TError]&#34;]) -&gt; &#34;Result[TResult, TError]&#34;:
+def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -&gt; Result[TResult, TError]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -827,7 +879,7 @@ def is_ok(self) -&gt; bool:
 </details>
 </dd>
 <dt id="expression.core.result.Result.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[~TSource], ~TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -836,12 +888,12 @@ def is_ok(self) -&gt; bool:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map(self, mapper: Callable[[TSource], TResult]) -&gt; &#34;Result[TResult, TError]&#34;:
+def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError]:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
 <dt id="expression.core.result.Result.map_error"><code class="name flex">
-<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[~TError], ~TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
+<span>def <span class="ident">map_error</span></span>(<span>self, mapper: Callable[[TError], TResult]) ‑> <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return a result of the error value after applying the mapping
@@ -851,7 +903,7 @@ function, or Ok if the input is Ok.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSource, TResult]&#34;:
+def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, TResult]:
     &#34;&#34;&#34;Return a result of the error value after applying the mapping
     function, or Ok if the input is Ok.&#34;&#34;&#34;
     raise NotImplementedError</code></pre>
@@ -928,6 +980,9 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; &#34;Result[TSour
 <li><code><a title="expression.core.result.Ok.map" href="#expression.core.result.Ok.map">map</a></code></li>
 <li><code><a title="expression.core.result.Ok.value" href="#expression.core.result.Ok.value">value</a></code></li>
 </ul>
+</li>
+<li>
+<h4><code><a title="expression.core.result.Projection" href="#expression.core.result.Projection">Projection</a></code></h4>
 </li>
 <li>
 <h4><code><a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></code></h4>

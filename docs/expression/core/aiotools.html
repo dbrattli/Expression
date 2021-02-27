@@ -66,7 +66,7 @@ def from_continuations(callback: Callbacks[TSource]) -&gt; Awaitable[TSource]:
         An asynchronous computation that provides the callback with the
         current continuations.
     &#34;&#34;&#34;
-    future: Future[TSource] = asyncio.Future()
+    future: &#34;Future[TSource]&#34; = asyncio.Future()
 
     def done(value: TSource) -&gt; None:
         future.set_result(value)
@@ -102,7 +102,7 @@ def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None
 def start_immediate(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -&gt; None:
     task = asyncio.create_task(computation)
 
-    def cb():
+    def cb() -&gt; None:
         task.cancel()
 
     if token:
@@ -110,7 +110,7 @@ def start_immediate(computation: Awaitable[Any], token: Optional[CancellationTok
     return None
 
 
-def run_synchronous(computation: Awaitable[TSource]) -&gt; TSource:
+def run_synchronously(computation: Awaitable[TSource]) -&gt; TSource:
     &#34;&#34;&#34;Runs the asynchronous computation and await its result.&#34;&#34;&#34;
     return asyncio.run(computation)
 
@@ -130,7 +130,6 @@ async def sleep(msecs: int) -&gt; None:
 
 async def empty() -&gt; None:
     &#34;&#34;&#34;Async no-op&#34;&#34;&#34;
-    pass
 
 
 def from_result(result: TSource) -&gt; Awaitable[TSource]:
@@ -149,6 +148,7 @@ __all__ = [
     &#34;sleep&#34;,
     &#34;start&#34;,
     &#34;start_immediate&#34;,
+    &#34;run_synchronously&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -169,8 +169,7 @@ __all__ = [
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">async def empty() -&gt; None:
-    &#34;&#34;&#34;Async no-op&#34;&#34;&#34;
-    pass</code></pre>
+    &#34;&#34;&#34;Async no-op&#34;&#34;&#34;</code></pre>
 </details>
 </dd>
 <dt id="expression.core.aiotools.from_continuations"><code class="name flex">
@@ -206,7 +205,7 @@ current continuations.</p></div>
         An asynchronous computation that provides the callback with the
         current continuations.
     &#34;&#34;&#34;
-    future: Future[TSource] = asyncio.Future()
+    future: &#34;Future[TSource]&#34; = asyncio.Future()
 
     def done(value: TSource) -&gt; None:
         future.set_result(value)
@@ -219,6 +218,20 @@ current continuations.</p></div>
 
     callback(done, error, cancel)
     return asyncio.ensure_future(future)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.aiotools.run_synchronously"><code class="name flex">
+<span>def <span class="ident">run_synchronously</span></span>(<span>computation: Awaitable[~TSource]) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs the asynchronous computation and await its result.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_synchronously(computation: Awaitable[TSource]) -&gt; TSource:
+    &#34;&#34;&#34;Runs the asynchronous computation and await its result.&#34;&#34;&#34;
+    return asyncio.run(computation)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.aiotools.singleton"><code class="name flex">
@@ -297,7 +310,7 @@ token is used.</p></div>
 <pre><code class="python">def start_immediate(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -&gt; None:
     task = asyncio.create_task(computation)
 
-    def cb():
+    def cb() -&gt; None:
         task.cancel()
 
     if token:
@@ -325,6 +338,7 @@ token is used.</p></div>
 <ul class="two-column">
 <li><code><a title="expression.core.aiotools.empty" href="#expression.core.aiotools.empty">empty</a></code></li>
 <li><code><a title="expression.core.aiotools.from_continuations" href="#expression.core.aiotools.from_continuations">from_continuations</a></code></li>
+<li><code><a title="expression.core.aiotools.run_synchronously" href="#expression.core.aiotools.run_synchronously">run_synchronously</a></code></li>
 <li><code><a title="expression.core.aiotools.singleton" href="#expression.core.aiotools.singleton">singleton</a></code></li>
 <li><code><a title="expression.core.aiotools.sleep" href="#expression.core.aiotools.sleep">sleep</a></code></li>
 <li><code><a title="expression.core.aiotools.start" href="#expression.core.aiotools.start">start</a></code></li>
