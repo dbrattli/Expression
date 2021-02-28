@@ -8,12 +8,18 @@ All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 
-Example:
-    >>> xs = Seq([1, 2, 3])
+Example (functional style):
+    >>> from expression.collections import seq
+    >>> xs = seq.of_iterable([1, 2, 3])
     >>> ys = xs.pipe(
-        Seq.map(lambda x: x + 1),
-        Seq.filter(lambda x: x < 3)
+        seq.map(lambda x: x + 1),
+        seq.filter(lambda x: x < 3)
     )
+
+Example (fluent style):
+    >>> from expression.collections import Seq
+    >>> xs = Seq([1, 2, 3])
+    >>> ys = xs.map(lambda x: x + 1).filter(lambda x: x < 3)
 """
 from __future__ import annotations
 
