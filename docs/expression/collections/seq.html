@@ -29,13 +29,17 @@ functions take (and return) Python iterables.</p>
 <p>All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.</p>
-<h2 id="example">Example</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; xs = Seq([1, 2, 3])
+<p>Example (functional style):
+&gt;&gt;&gt; from expression.collections import seq
+&gt;&gt;&gt; xs = seq.of_iterable([1, 2, 3])
 &gt;&gt;&gt; ys = xs.pipe(
-    Seq.map(lambda x: x + 1),
-    Seq.filter(lambda x: x &lt; 3)
-)
-</code></pre>
+seq.map(lambda x: x + 1),
+seq.filter(lambda x: x &lt; 3)
+)</p>
+<p>Example (fluent style):
+&gt;&gt;&gt; from expression.collections import Seq
+&gt;&gt;&gt; xs = Seq([1, 2, 3])
+&gt;&gt;&gt; ys = xs.map(lambda x: x + 1).filter(lambda x: x &lt; 3)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -50,12 +54,18 @@ All functions takes the source as the last curried
 argument, i.e all functions returns a function that takes the source
 sequence as the only argument.
 
-Example:
-    &gt;&gt;&gt; xs = Seq([1, 2, 3])
+Example (functional style):
+    &gt;&gt;&gt; from expression.collections import seq
+    &gt;&gt;&gt; xs = seq.of_iterable([1, 2, 3])
     &gt;&gt;&gt; ys = xs.pipe(
-        Seq.map(lambda x: x + 1),
-        Seq.filter(lambda x: x &lt; 3)
+        seq.map(lambda x: x + 1),
+        seq.filter(lambda x: x &lt; 3)
     )
+
+Example (fluent style):
+    &gt;&gt;&gt; from expression.collections import Seq
+    &gt;&gt;&gt; xs = Seq([1, 2, 3])
+    &gt;&gt;&gt; ys = xs.map(lambda x: x + 1).filter(lambda x: x &lt; 3)
 &#34;&#34;&#34;
 from __future__ import annotations
 
