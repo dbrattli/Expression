@@ -27,7 +27,7 @@ to Exception …" />
 <p>The <code>Try</code> type
 is a simpler <code>Result</code> type that pins the error type
 to Exception.</p>
-<p>Everything else is the same as <code>Result</code>.</p>
+<p>Everything else is the same as <code>Result</code>, just simpler to use.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -35,7 +35,7 @@ to Exception.</p>
 <pre><code class="python">&#34;&#34;&#34;The `Try` type  is a simpler `Result` type that pins the error type
 to Exception.
 
-Everything else is the same as `Result`.
+Everything else is the same as `Result`, just simpler to use.
 &#34;&#34;&#34;
 
 from typing import TypeVar
@@ -48,10 +48,22 @@ Try = Result[TSource, Exception]
 
 
 class Success(Ok[TSource, Exception]):
+    &#34;&#34;&#34;The successful Try case.
+
+    Same as result `Ok` but with error type pinned to an exception, i.e:
+    `Ok[TSource, Exception]`
+    &#34;&#34;&#34;
+
     ...
 
 
 class Failure(Error[TSource, Exception]):
+    &#34;&#34;&#34;The failure Try case.
+
+    Same as result `Error` but with error type pinned to an exception,
+    i.e: `Error[TSource, Exception]`
+    &#34;&#34;&#34;
+
     ...</code></pre>
 </details>
 </section>
@@ -66,15 +78,23 @@ class Failure(Error[TSource, Exception]):
 <dl>
 <dt id="expression.core.try_.Failure"><code class="flex name class">
 <span>class <span class="ident">Failure</span></span>
-<span>(</span><span>error: ~TError)</span>
+<span>(</span><span>error: TError)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>The Error result case class.</p></div>
+<div class="desc"><p>The failure Try case.</p>
+<p>Same as result <code>Error</code> but with error type pinned to an exception,
+i.e: <code>Error[TSource, Exception]</code></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Failure(Error[TSource, Exception]):
+    &#34;&#34;&#34;The failure Try case.
+
+    Same as result `Error` but with error type pinned to an exception,
+    i.e: `Error[TSource, Exception]`
+    &#34;&#34;&#34;
+
     ...</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -106,15 +126,23 @@ class Failure(Error[TSource, Exception]):
 </dd>
 <dt id="expression.core.try_.Success"><code class="flex name class">
 <span>class <span class="ident">Success</span></span>
-<span>(</span><span>value: ~TSource)</span>
+<span>(</span><span>value: TSource)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>The Ok result case class.</p></div>
+<div class="desc"><p>The successful Try case.</p>
+<p>Same as result <code>Ok</code> but with error type pinned to an exception, i.e:
+<code>Ok[TSource, Exception]</code></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Success(Ok[TSource, Exception]):
+    &#34;&#34;&#34;The successful Try case.
+
+    Same as result `Ok` but with error type pinned to an exception, i.e:
+    `Ok[TSource, Exception]`
+    &#34;&#34;&#34;
+
     ...</code></pre>
 </details>
 <h3>Ancestors</h3>

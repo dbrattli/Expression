@@ -48,7 +48,7 @@ def starid(*value: Any) -&gt; Tuple[Any, ...]:
     return value
 
 
-def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
+def flip(fn: Callable[[A, B], TResult]) -&gt; Callable[[B, A], TResult]:
     &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
 
     Example:
@@ -61,14 +61,16 @@ def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
     return _flip
 
 
-def snd(value: Tuple[A, B]) -&gt; B:
+def snd(value: Tuple[Any, TSource]) -&gt; TSource:
     &#34;&#34;&#34;Return second argument of the tuple.&#34;&#34;&#34;
+
     _, b = value
     return b
 
 
-def fst(value: Tuple[A, B]) -&gt; A:
+def fst(value: Tuple[TSource, Any]) -&gt; TSource:
     &#34;&#34;&#34;Return first argument of the tuple.&#34;&#34;&#34;
+
     a, _ = value
     return a
 
@@ -84,7 +86,7 @@ __all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, 
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.misc.flip"><code class="name flex">
-<span>def <span class="ident">flip</span></span>(<span>fn: Callable[[~A, ~B], Any]) ‑> Callable[[~B, ~A], Any]</span>
+<span>def <span class="ident">flip</span></span>(<span>fn: Callable[[~A, ~B], ~TResult]) ‑> Callable[[~B, ~A], ~TResult]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Flips the arguments for a function taking two arguments.</p>
@@ -95,7 +97,7 @@ __all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def flip(fn: Callable[[A, B], Any]) -&gt; Callable[[B, A], Any]:
+<pre><code class="python">def flip(fn: Callable[[A, B], TResult]) -&gt; Callable[[B, A], TResult]:
     &#34;&#34;&#34;Flips the arguments for a function taking two arguments.
 
     Example:
@@ -109,7 +111,7 @@ __all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, 
 </details>
 </dd>
 <dt id="expression.core.misc.fst"><code class="name flex">
-<span>def <span class="ident">fst</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~A</span>
+<span>def <span class="ident">fst</span></span>(<span>value: Tuple[~TSource, Any]) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return first argument of the tuple.</p></div>
@@ -117,8 +119,9 @@ __all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def fst(value: Tuple[A, B]) -&gt; A:
+<pre><code class="python">def fst(value: Tuple[TSource, Any]) -&gt; TSource:
     &#34;&#34;&#34;Return first argument of the tuple.&#34;&#34;&#34;
+
     a, _ = value
     return a</code></pre>
 </details>
@@ -142,7 +145,7 @@ __all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, 
 </details>
 </dd>
 <dt id="expression.core.misc.snd"><code class="name flex">
-<span>def <span class="ident">snd</span></span>(<span>value: Tuple[~A, ~B]) ‑> ~B</span>
+<span>def <span class="ident">snd</span></span>(<span>value: Tuple[Any, ~TSource]) ‑> ~TSource</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return second argument of the tuple.</p></div>
@@ -150,8 +153,9 @@ __all__ = [&#34;fst&#34;, &#34;identity&#34;, &#34;starid&#34;, &#34;flip&#34;, 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def snd(value: Tuple[A, B]) -&gt; B:
+<pre><code class="python">def snd(value: Tuple[Any, TSource]) -&gt; TSource:
     &#34;&#34;&#34;Return second argument of the tuple.&#34;&#34;&#34;
+
     _, b = value
     return b</code></pre>
 </details>
