@@ -299,8 +299,8 @@ assert xs is Nothing
 
 For more information about options:
 
-- [Tutorial](https://github.com/cognitedata/Expression/blob/maom/notebooks/Options.ipynb)
-- [API reference](https://cognitedata.github.io/Expression/main/core/option.html)
+- [Tutorial](https://github.com/cognitedata/Expression/blob/main/notebooks/04%20-%20Optional%20Values.ipynb)
+- [API reference](https://cognitedata.github.io/Expression/expression/core/option.html)
 
 ### Results
 
