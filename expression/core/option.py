@@ -107,6 +107,7 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         """Returns option if it is Some, otherwise returns `if_one`. """
         raise NotImplementedError
 
+    @abstractmethod
     def or_else_with(self, if_none: Callable[[], Option[TSource]]) -> Option[TSource]:
         """Returns option if it is Some,
         otherwise evaluates the given function and returns the result."""
