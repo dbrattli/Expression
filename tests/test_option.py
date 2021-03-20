@@ -219,6 +219,17 @@ def test_option_some_bind_piped():
         assert False
 
 
+def test_option_filter_none():
+    xs = Nothing
+    assert xs.filter(lambda x: True) == Nothing
+
+
+def test_option_filter_some():
+    xs = Some(42)
+    assert xs.filter(lambda x: x > 41) == Some(42)
+    assert xs.filter(lambda x: x > 42) == Nothing
+
+
 def test_option_none_to_list():
     xs = Nothing
     assert xs.to_list() == []

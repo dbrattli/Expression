@@ -107,9 +107,16 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         """Returns option if it is Some, otherwise returns `if_one`. """
         raise NotImplementedError
 
+    @abstractmethod
     def or_else_with(self, if_none: Callable[[], Option[TSource]]) -> Option[TSource]:
         """Returns option if it is Some,
         otherwise evaluates the given function and returns the result."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def filter(self, predicate: Callable[[TSource], bool]) -> Option[TSource]:
+        """Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`"""
         raise NotImplementedError
 
     @abstractmethod
@@ -213,6 +220,11 @@ class Some(Option[TSource]):
         """Returns `self`."""
         return self
 
+    def filter(self, predicate: Callable[[TSource], bool]) -> Option[TSource]:
+        """Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`"""
+        return self if predicate(self._value) else Nothing
+
     def to_list(self) -> List[TSource]:
         return [self._value]
 
@@ -311,6 +323,9 @@ class Nothing_(Option[TSource], EffectError):
     def or_else_with(self, if_none: Callable[[], Option[TSource]]) -> Option[TSource]:
         """Evaluates `if_none` and returns the result."""
         return if_none()
+
+    def filter(self, predicate: Callable[[TSource], bool]) -> Option[TSource]:
+        return Nothing
 
     def to_list(self) -> List[TSource]:
         return []
