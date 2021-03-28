@@ -67,7 +67,7 @@ class Seq(Iterable[TSource]):
     def append(self, *others: Iterable[TSource]) -> Seq[TSource]:
         """Wraps the two given enumerations as a single concatenated
         enumeration."""
-        return Seq(concat(self, *others))
+        return Seq(concat(self._value, *others))
 
     def filter(self, predicate: Callable[[TSource], bool]) -> Seq[TSource]:
         return Seq(filter(predicate)(self))
@@ -133,6 +133,10 @@ class Seq(Iterable[TSource]):
         """Returns the first element of the sequence."""
 
         return head(self)
+
+    def length(self) -> int:
+        """Returns the length of the sequence."""
+        return length(self)
 
     def map(self, mapper: Callable[[TSource], TResult]) -> Seq[TResult]:
         """Map sequence.
@@ -236,7 +240,7 @@ class Seq(Iterable[TSource]):
         Returns:
             The resulting sequence of computed states.
         """
-        return Seq(itertools.accumulate(self, scanner, initial=state))  # type: ignore
+        return Seq(itertools.accumulate(self._value, scanner, initial=state))
 
     def skip(self, count: int) -> Seq[TSource]:
         """Returns a sequence that skips N elements of the underlying
@@ -548,6 +552,11 @@ def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], Non
             action(x)
 
     return _iter
+
+
+def length(source: Seq[Any]) -> int:
+    """Return the length of the sequence."""
+    return builtins.sum(1 for _ in source)
 
 
 def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
