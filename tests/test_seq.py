@@ -174,7 +174,7 @@ def test_seq_append_3(xs: List[int], ys: List[int], zs: List[int]):
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()))
-def test_seq_append_flient(xs: List[int], ys: List[int]):
+def test_seq_append_fluent(xs: List[int], ys: List[int]):
     value = Seq(xs).append(ys)
 
     assert list(value) == xs + ys
@@ -206,6 +206,20 @@ def test_seq_take(xs: List[int], x: int):
         assert list(zs) == xs[:x]
     except ValueError:
         assert x > len(xs)
+
+
+@given(st.lists(st.integers()))
+def test_seq_length(xs: List[int]):
+    ys = seq.of_iterable(xs)
+    n = pipe(ys, seq.length)
+    assert n == len(xs)
+
+
+@given(st.lists(st.integers()))
+def test_seq_len(xs: List[int]):
+    ys = seq.of_iterable(xs)
+    n = ys.length()
+    assert n == len(xs)
 
 
 @given(st.lists(st.integers()))
