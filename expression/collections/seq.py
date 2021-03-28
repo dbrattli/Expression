@@ -31,7 +31,9 @@ from typing import Any, Callable, Iterable, Iterator, Optional, Protocol, Tuple,
 from expression.core import Case, Option, SupportsLessThan, identity, pipe
 
 TSource = TypeVar("TSource")
+TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
+TResultOut = TypeVar("TResultOut", covariant=True)
 TState = TypeVar("TState")
 TSupportsLessThan = TypeVar("TSupportsLessThan", bound=SupportsLessThan)
 T1 = TypeVar("T1")
@@ -290,14 +292,14 @@ class Seq(Iterable[TSource]):
         return builtins.iter(self._value)
 
 
-class Projection(Protocol[TSource, TResult]):
+class Projection(Protocol[TSourceIn, TResultOut]):
     """Sequence transformation protocol.
 
     A sequence transformation protocol that encapsulates a function of
     type `Iterable[TSource]) -> Iterable[TResult]`
     """
 
-    def __call__(self, __source: Iterable[TSource]) -> Iterable[TResult]:
+    def __call__(self, __source: Iterable[TSourceIn]) -> Iterable[TResultOut]:
         raise NotImplementedError
 
 

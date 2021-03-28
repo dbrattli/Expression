@@ -22,7 +22,7 @@ def catch(f: Callable[..., TSource], *, exception: Type[TError]) -> Callable[...
     ...
 
 
-def catch(
+def catch(  # type: ignore
     f: Optional[Callable[..., TSource]] = None, *, exception: Type[TError]
 ) -> Callable[[Callable[..., TSource]], Union[Callable[..., Result[TSource, TError]], Result[TSource, TError]]]:
     def decorator(fn: Callable[..., TSource]) -> Callable[..., Result[TSource, TError]]:

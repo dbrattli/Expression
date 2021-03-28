@@ -112,7 +112,9 @@ def test_option_some_default_arg():
     assert zs == 42
 
 
-@given(st.one_of(st.integers(), st.text(), st.floats()), st.one_of(st.integers(), st.text(), st.floats()))
+@given(
+    st.one_of(st.integers(), st.text(), st.floats()), st.one_of(st.integers(), st.text(), st.floats())  # type: ignore
+)
 def test_option_some_equals_some(a: Any, b: Any):
     xs = Some(a)
     ys = Some(b)
@@ -385,6 +387,7 @@ def test_option_builder_yield_from_some():
 def test_option_builder_yield_from_none():
     @effect.option
     def fn() -> Generator[int, int, int]:
+        x: int
         x = yield from Nothing
         return x
 
@@ -411,6 +414,7 @@ def test_option_builder_multiple_some():
 def test_option_builder_none_short_circuits():
     @effect.option
     def fn() -> Generator[int, int, int]:
+        x: int
         x = yield from Nothing
         y = yield from Some(43)
 

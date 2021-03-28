@@ -1,10 +1,12 @@
+from typing import List
+
 import pytest
 
 from expression.system import AsyncDisposable, Disposable, ObjectDisposedException
 
 
 def test_disposable_works():
-    called = []
+    called: List[bool] = []
     disp = Disposable.create(lambda: called.append(True))
 
     with disp:
@@ -14,7 +16,7 @@ def test_disposable_works():
 
 
 def test_disposable_disposed():
-    called = []
+    called: List[bool] = []
     disp = Disposable.create(lambda: called.append(True))
     disp.dispose()
     assert called
@@ -27,7 +29,7 @@ def test_disposable_disposed():
 
 
 def test_disposable_disposed_twice_calls_once():
-    called = []
+    called: List[bool] = []
     disp = Disposable.create(lambda: called.append(True))
     disp.dispose()
     disp.dispose()
@@ -37,7 +39,7 @@ def test_disposable_disposed_twice_calls_once():
 
 @pytest.mark.asyncio
 async def test_async_disposable_works():
-    called = []
+    called: List[bool] = []
 
     async def action():
         called.append(True)
@@ -52,7 +54,7 @@ async def test_async_disposable_works():
 
 @pytest.mark.asyncio
 async def test_async_disposable_disposed():
-    called = []
+    called: List[bool] = []
 
     async def action():
         called.append(True)
@@ -70,7 +72,7 @@ async def test_async_disposable_disposed():
 
 @pytest.mark.asyncio
 async def test_async_disposable_disposed_twice_calls_once():
-    called = []
+    called: List[bool] = []
 
     async def action():
         called.append(True)

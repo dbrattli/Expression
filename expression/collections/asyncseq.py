@@ -77,7 +77,7 @@ async def range(start: int, stop: int, step: int) -> AsyncIterable[int]:
     ...
 
 
-async def range(*args: Any, **kw: Any) -> Any:
+async def range(*args: Any, **kw: Any) -> AsyncIterable[Any]:
     for value in builtins.range(*args, **kw):
         yield value
 

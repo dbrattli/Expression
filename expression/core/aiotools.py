@@ -91,7 +91,7 @@ async def sleep(msecs: int) -> None:
     time. This is scheduled using a System.Threading.Timer object. The
     operation will not block operating system threads for the duration
     of the wait."""
-    return await asyncio.sleep(msecs / 1000.0)
+    await asyncio.sleep(msecs / 1000.0)
 
 
 async def empty() -> None:
