@@ -1,5 +1,5 @@
 """Data structures that can be traversed from left to right, performing an action on each element."""
-from typing import Callable, Generator, List, TypeVar, Union, cast, overload
+from typing import Callable, Generator, List, TypeVar, Union, cast
 
 from expression import effect
 from expression.collections import seq
@@ -8,13 +8,6 @@ from expression.core import Ok, Result, identity, pipe
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TError = TypeVar("TError")
-
-
-@overload
-def traverse(
-    fn: Callable[[Result[TResult, TError]], Result[TResult, TError]], lst: List[Result[TResult, TError]]
-) -> Result[List[TResult], TError]:
-    ...
 
 
 def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -> Result[List[TResult], TError]:
@@ -30,11 +23,11 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
         """Same as:
         >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
         """
+        h: TResult
+        t: List[TResult]
         h = yield from fn(head)
         t = yield from tail
 
-        h = cast("TResult", h)
-        t = cast(List[TResult], t)
         return [h] + t
 
     state: Result[List[TSource], TError] = Ok([])
@@ -45,4 +38,5 @@ def sequence(lst: List[Result[TSource, TError]]) -> Result[List[TSource], TError
     """Execute a sequence of result returning commands and collect the
     sequence of their response."""
 
-    return traverse(identity, lst)
+    fn = cast(Callable[[Result[TSource, TError]], Result[TSource, TError]], identity)
+    return traverse(fn, lst)

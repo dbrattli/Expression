@@ -108,7 +108,7 @@ def compose(
     ...
 
 
-def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
+def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:  # type: ignore
     """Compose multiple functions left to right.
 
     Composes zero or more functions into a functional composition. The

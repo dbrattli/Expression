@@ -43,7 +43,9 @@ from expression.core import Case, Nothing, Option, Some, pipe
 from . import seq
 
 TSource = TypeVar("TSource")
+TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
+TResultOut = TypeVar("TResultOut", covariant=True)
 TState = TypeVar("TState")
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
@@ -450,17 +452,17 @@ class FrozenList(Generic[TSource]):
         return str(self)
 
 
-class Cata(Protocol[TSource, TResult]):
+class Cata(Protocol[TSourceIn, TResultOut]):
     """A partially applied exit function."""
 
-    def __call__(self, source: FrozenList[TSource]) -> TResult:
+    def __call__(self, source: FrozenList[TSourceIn]) -> TResultOut:
         ...
 
 
-class Projection(Protocol[TSource, TResult]):
+class Projection(Protocol[TSourceIn, TResultOut]):
     """A partially applied filter function."""
 
-    def __call__(self, __source: FrozenList[TSource]) -> FrozenList[TResult]:
+    def __call__(self, __source: FrozenList[TSourceIn]) -> FrozenList[TResultOut]:
         ...
 
 

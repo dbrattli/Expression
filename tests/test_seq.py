@@ -85,7 +85,7 @@ def test_seq_head_pipe(xs: List[int]):
 
 def test_seq_head_empty_source():
     with pytest.raises(ValueError):
-        pipe([], seq.head)
+        pipe(Seq.empty(), seq.head)
 
 
 @given(st.lists(st.integers(), min_size=1))

@@ -18,7 +18,9 @@ from .match import Case, SupportsMatch
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
+TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
+TResultOut = TypeVar("TResultOut", covariant=True)
 TError = TypeVar("TError")
 
 # Underscore types are used for generic methods
@@ -35,7 +37,7 @@ class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     """The result abstract base class."""
 
     @overload
-    def pipe(self: T1, __fn1: Callable[[T1], T2]) -> T2:
+    def pipe(self: Result[T1, TError], __fn1: Callable[[Result[T1, TError]], Result[T2, TError]]) -> Result[T2, TError]:
         ...
 
     @overload
@@ -58,7 +60,7 @@ class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     ) -> T4:
         ...
 
-    def pipe(self, *args: Any):
+    def pipe(self, *args: Any) -> Any:
         """Pipe result through the given functions."""
         return pipe(self, *args)
 
@@ -252,8 +254,8 @@ class Error(Result[TSource, TError], ResultException):
         return f"Error {self._error}"
 
 
-class Projection(Protocol[TSource, TResult]):
-    def __call__(self, __source: Result[TSource, TError]) -> Result[TResult, TError]:
+class Projection(Protocol[TSourceIn, TResultOut]):
+    def __call__(self, __source: Result[TSourceIn, TError]) -> Result[TResultOut, TError]:
         ...
 
 
@@ -261,7 +263,6 @@ def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.map(mapper)
 
-    # return cast(TransformFn[TSource, TResult], _map)  # NOTE: cast for mypy
     return _map
 
 

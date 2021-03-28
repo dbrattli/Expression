@@ -33,7 +33,9 @@ if TYPE_CHECKING:
     from ..collections.seq import Seq
 
 TSource = TypeVar("TSource")
+TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
+TResultOut = TypeVar("TResultOut", covariant=True)
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 T3 = TypeVar("T3")
@@ -373,13 +375,13 @@ class Nothing_(Option[TSource], EffectError):
         return "Nothing"
 
 
-class Projection(Protocol[TSource, TResult]):
+class Projection(Protocol[TSourceIn, TResultOut]):
     """Option transforming protocol function.
 
     `Option[TSource]) -> Option[TResult]`
     """
 
-    def __call__(self, __source: Option[TSource]) -> Option[TResult]:
+    def __call__(self, __source: Option[TSourceIn]) -> Option[TResultOut]:
         raise NotImplementedError
 
 
