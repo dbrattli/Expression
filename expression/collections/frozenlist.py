@@ -210,6 +210,18 @@ class FrozenList(Generic[TSource]):
         """
         return functools.reduce(folder, self, state)
 
+    def forall(self, predicate: Callable[[TSource], bool]) -> bool:
+        """Tests if all elements of the collection satisfy the given
+        predicate.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            True if all of the elements satisfy the predicate.
+        """
+        return all(predicate(x) for x in self)
+
     def head(self) -> TSource:
         """Returns the first element of the list.
 
@@ -577,6 +589,23 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -> Callable
         return source.fold(folder, state)
 
     return _fold
+
+
+def forall(predicate: Callable[[TSource], bool]) -> Callable[[FrozenList[TSource]], bool]:
+    """Tests if all elements of the collection satisfy the given
+    predicate.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        True if all of the elements satisfy the predicate.
+    """
+
+    def _forall(source: FrozenList[TSource]) -> bool:
+        return source.forall(predicate)
+
+    return _forall
 
 
 def head(source: FrozenList[TSource]) -> TSource:
