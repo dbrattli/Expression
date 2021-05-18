@@ -11,7 +11,7 @@ from .error import ObjectDisposedException
 
 class Disposable(ABC):
     """A disposable class with a context manager. Must implement the
-    dispose method. Will dispoose on exit."""
+    dispose method. Will dispose on exit."""
 
     @abstractmethod
     def dispose(self) -> None:
