@@ -43,7 +43,9 @@ from expression.core import Case, Nothing, Option, Some, pipe
 from . import seq
 
 TSource = TypeVar("TSource")
+TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
+TResultOut = TypeVar("TResultOut", covariant=True)
 TState = TypeVar("TState")
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
@@ -204,6 +206,18 @@ class FrozenList(Generic[TSource]):
             and returns the final state value.
         """
         return functools.reduce(folder, self, state)
+
+    def forall(self, predicate: Callable[[TSource], bool]) -> bool:
+        """Tests if all elements of the collection satisfy the given
+        predicate.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            True if all of the elements satisfy the predicate.
+        """
+        return all(predicate(x) for x in self)
 
     def head(self) -> TSource:
         """Returns the first element of the list.
@@ -447,17 +461,17 @@ class FrozenList(Generic[TSource]):
         return str(self)
 
 
-class Cata(Protocol[TSource, TResult]):
+class Cata(Protocol[TSourceIn, TResultOut]):
     """A partially applied exit function."""
 
-    def __call__(self, source: FrozenList[TSource]) -> TResult:
+    def __call__(self, source: FrozenList[TSourceIn]) -> TResultOut:
         ...
 
 
-class Projection(Protocol[TSource, TResult]):
+class Projection(Protocol[TSourceIn, TResultOut]):
     """A partially applied filter function."""
 
-    def __call__(self, __source: FrozenList[TSource]) -> FrozenList[TResult]:
+    def __call__(self, __source: FrozenList[TSourceIn]) -> FrozenList[TResultOut]:
         ...
 
 
@@ -572,6 +586,23 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -> Callable
         return source.fold(folder, state)
 
     return _fold
+
+
+def forall(predicate: Callable[[TSource], bool]) -> Callable[[FrozenList[TSource]], bool]:
+    """Tests if all elements of the collection satisfy the given
+    predicate.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        True if all of the elements satisfy the predicate.
+    """
+
+    def _forall(source: FrozenList[TSource]) -> bool:
+        return source.forall(predicate)
+
+    return _forall
 
 
 def head(source: FrozenList[TSource]) -> TSource:

@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 
 from expression.system import CancellationToken, CancellationTokenSource, ObjectDisposedException
@@ -44,7 +46,7 @@ def test_token_cancellation_works():
 
 
 def test_token_cancellation_register_works():
-    called = []
+    called: List[bool] = []
     source = CancellationTokenSource()
     with source as token:
         token.register(lambda: called.append(True))
@@ -54,7 +56,7 @@ def test_token_cancellation_register_works():
 
 
 def test_token_cancellation_register_unregister_works():
-    called = []
+    called: List[bool] = []
     source = CancellationTokenSource()
     with source as token:
         registration = token.register(lambda: called.append(True))
@@ -65,7 +67,7 @@ def test_token_cancellation_register_unregister_works():
 
 
 def test_token_cancelled_register_throws():
-    called = []
+    called: List[bool] = []
     source = CancellationTokenSource.cancelled_source()
 
     with pytest.raises(ObjectDisposedException):  # type: ignore

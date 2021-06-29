@@ -14,7 +14,7 @@ TError = TypeVar("TError")
 
 
 @overload
-def pipeline() -> Callable[[A], A]:
+def pipeline() -> Callable[[A], Option[A]]:
     ...
 
 
@@ -68,7 +68,7 @@ def pipeline(
     ...
 
 
-def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:
+def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:  # type: ignore
     """pipeline multiple option returning functions left to right.
 
     A pipeline kleisli (>=>) composes zero or more functions into a

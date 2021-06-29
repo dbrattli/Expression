@@ -33,7 +33,9 @@ if TYPE_CHECKING:
     from ..collections.seq import Seq
 
 TSource = TypeVar("TSource")
+TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
+TResultOut = TypeVar("TResultOut", covariant=True)
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 T3 = TypeVar("T3")
@@ -105,6 +107,18 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
     @abstractmethod
     def or_else(self, if_none: Option[TSource]) -> Option[TSource]:
         """Returns option if it is Some, otherwise returns `if_one`. """
+        raise NotImplementedError
+
+    @abstractmethod
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -> Option[TSource]:
+        """Returns option if it is Some,
+        otherwise evaluates the given function and returns the result."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def filter(self, predicate: Callable[[TSource], bool]) -> Option[TSource]:
+        """Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`"""
         raise NotImplementedError
 
     @abstractmethod
@@ -204,6 +218,15 @@ class Some(Option[TSource]):
         """Returns `self`."""
         return self
 
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -> Option[TSource]:
+        """Returns `self`."""
+        return self
+
+    def filter(self, predicate: Callable[[TSource], bool]) -> Option[TSource]:
+        """Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`"""
+        return self if predicate(self._value) else Nothing
+
     def to_list(self) -> List[TSource]:
         return [self._value]
 
@@ -299,6 +322,13 @@ class Nothing_(Option[TSource], EffectError):
         """Returns `if_none`."""
         return if_none
 
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -> Option[TSource]:
+        """Evaluates `if_none` and returns the result."""
+        return if_none()
+
+    def filter(self, predicate: Callable[[TSource], bool]) -> Option[TSource]:
+        return Nothing
+
     def to_list(self) -> List[TSource]:
         return []
 
@@ -345,13 +375,13 @@ class Nothing_(Option[TSource], EffectError):
         return "Nothing"
 
 
-class Projection(Protocol[TSource, TResult]):
+class Projection(Protocol[TSourceIn, TResultOut]):
     """Option transforming protocol function.
 
     `Option[TSource]) -> Option[TResult]`
     """
 
-    def __call__(self, __source: Option[TSource]) -> Option[TResult]:
+    def __call__(self, __source: Option[TSourceIn]) -> Option[TResultOut]:
         raise NotImplementedError
 
 

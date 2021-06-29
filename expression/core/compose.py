@@ -1,5 +1,5 @@
 from functools import reduce
-from typing import Any, Callable, TypeVar, overload
+from typing import Callable, TypeVar, overload
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -108,7 +108,7 @@ def compose(
     ...
 
 
-def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
+def compose(*fns):  # type: ignore
     """Compose multiple functions left to right.
 
     Composes zero or more functions into a functional composition. The
@@ -129,11 +129,11 @@ def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
         The composed function.
     """
 
-    def _compose(source: Any) -> Any:
+    def _compose(source):  # type: ignore
         """Return a pipeline of composed functions."""
-        return reduce(lambda acc, f: f(acc), fns, source)
+        return reduce(lambda acc, f: f(acc), fns, source)  # type: ignore
 
-    return _compose
+    return _compose  # type: ignore
 
 
 __all__ = ["compose"]

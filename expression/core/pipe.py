@@ -116,7 +116,7 @@ def pipe(
     ...
 
 
-def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:
+def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:  # type: ignore
     """Functional pipe (`|>`)
 
     Allows the use of function argument on the left side of the function.

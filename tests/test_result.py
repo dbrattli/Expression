@@ -268,7 +268,7 @@ def test_result_effect_yield_from_ok():
 def test_result_effect_yield_from_error():
     error = "Do'h"
 
-    def mayfail() -> Error[int, str]:
+    def mayfail() -> Result[int, str]:
         return Error(error)
 
     @effect.result
