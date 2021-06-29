@@ -127,9 +127,6 @@ class FrozenList(Generic[TSource]):
     ) -> T6:
         ...
 
-    def pipe(self, *args: Any) -> Any:
-        """Pipe list through the given functions."""
-        return pipe(self, *args)
 
     def append(self, other: FrozenList[TSource]) -> FrozenList[TSource]:
         """Append frozen list to end of the frozen list."""
