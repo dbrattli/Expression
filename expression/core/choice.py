@@ -69,9 +69,9 @@ class Choice1of2(Choice2[A, B], Choice[A]):
     def match(cls, case: Any) -> Iterable[Any]:
         return case(cls)
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Choice1of2):
-            return self.value == other.value
+    def __eq__(self, o: Any) -> bool:
+        if isinstance(o, Choice1of2):
+            return self.value == o.value
         return False
 
     def __str__(self) -> str:
@@ -103,9 +103,9 @@ class Choice2of2(Choice2[A, B], Choice[B]):
     def match(cls, case: Any) -> Iterable[Any]:
         return case(cls)
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Choice2of2):
-            return self.value == other.value
+    def __eq__(self, o: Any) -> bool:
+        if isinstance(o, Choice2of2):
+            return self.value == o.value
         return False
 
     def __str__(self) -> str:

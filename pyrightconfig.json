@@ -6,5 +6,7 @@
   "exclude": [
     "expression/_version.py"
   ],
-  "reportImportCycles": false
+  "reportImportCycles": false,
+  "reportMissingImports": false,
+  "pythonVersion": "3.9",
 }

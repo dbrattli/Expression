@@ -63,21 +63,21 @@ async def repeat(value: TSource, times: Optional[int] = None) -> AsyncIterable[T
 
 
 @overload
-async def range(stop: int) -> AsyncIterable[int]:
+def range(stop: int) -> AsyncIterable[int]:
     ...
 
 
 @overload
-async def range(start: int, stop: int) -> AsyncIterable[int]:
+def range(start: int, stop: int) -> AsyncIterable[int]:
     ...
 
 
 @overload
-async def range(start: int, stop: int, step: int) -> AsyncIterable[int]:
+def range(start: int, stop: int, step: int) -> AsyncIterable[int]:
     ...
 
 
-async def range(*args: Any, **kw: Any) -> AsyncIterable[Any]:
+async def range(*args: int, **kw: int) -> AsyncIterable[int]:
     for value in builtins.range(*args, **kw):
         yield value
 
