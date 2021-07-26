@@ -4,8 +4,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from expression import effect
-from expression.core import Error, Ok, Result, match, result
+from expression import Error, Ok, Result, effect, match, result
 from expression.extra.result import pipeline, sequence
 
 from .utils import CustomException

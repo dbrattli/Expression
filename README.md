@@ -134,7 +134,7 @@ overload any Python operators e.g `|` so `pipe` is a plain old function taking
 N-arguments, and will let you pipe a value through any number of functions.
 
 ```py
-from expression.core import pipe
+from expression import pipe
 
 gn = lambda g: g * y
 fn = lambda x: x + z
@@ -151,7 +151,7 @@ Expression objects also have a pipe method so you can dot chain pipelines
 directly on the object:
 
 ```py
-from expression.core import pipe
+from expression import pipe
 
 gn = lambda g: g * y
 fn = lambda x: x + z
@@ -179,7 +179,7 @@ ys = xs.pipe(
 Functions may even be composed directly into custom operators:
 
 ```python
-from expression.core import compose
+from expression import compose
 
 custom = compose(
     seq.map(lambda x: x * 10),
@@ -236,7 +236,7 @@ An option value may have a value of a given type i.e `Some(value)`, or it might
 not have any meaningful value, i.e `Nothing`.
 
 ```py
-from expression.core import Some, Nothing, Option
+from expression import Some, Nothing, Option
 
 def keep_positive(a: int) -> Option[int]:
     if a > 0:
@@ -260,8 +260,7 @@ Effects in Expression is implemented as specially decorated coroutines
 `yield`, `yield from` and `return` to consume or generate optional values:
 
 ```py
-from expression import effect
-from expression.core import Some
+from expression import effect, Some
 
 @effect.option
 def fn():
@@ -281,8 +280,7 @@ result of the expression will be `Nothing`. Thus results from such an option
 decorated function can either be `Ok(value)` or `Error(error_value)`.
 
 ```py
-from expression import effect
-from expression.core import Some, Nothing
+from expression import effect, Some, Nothing
 
 @effect.option
 def fn():
@@ -310,8 +308,7 @@ for errors, e.g an exception type or similar. This is great when you want to
 know why some operation failed (not just `Nothing`).
 
 ```py
-from expression import effect
-from expression.core import Result, Ok, Error, pipe
+from expression import effect, Result, Ok, Error, pipe
 
 @effect.result
 def fn():
@@ -371,7 +368,7 @@ management. This lets us write our code inline, decompose, and unwrap inner
 values, and also effectively skip the cases that do not match.
 
 ```py
-from expression.core import match
+from expression import match
 
 with match("expression") as case:
     if case("rxpy"):  # will not match
@@ -504,7 +501,7 @@ Thus in Expression you use `option` as the module to access module functions
 such as `option.map` and the name `Option` for the type itself.
 
 ```py
->>> from expression.core import Option, option
+>>> from expression import Option, option
 >>> Option
 <class 'expression.core.option.Option'>
 >>> option
@@ -560,7 +557,7 @@ nice if you can try to align the code and naming with F# modules, functions,
 and documentation if possible. But submit a PR even if you should feel unsure.
 
 Code, doc-strings, and comments should also follow the [Google Python Style
-Guide](https://google.github.io/styleguide/pyguide.html). 
+Guide](https://google.github.io/styleguide/pyguide.html).
 
 Code checks are done using
 - [Black](https://github.com/psf/black)

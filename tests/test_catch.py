@@ -2,8 +2,7 @@ from typing import Any, Generator
 
 import pytest
 
-from expression import effect
-from expression.core import Error, Ok, Result
+from expression import Error, Ok, Result, effect
 from expression.extra.result import catch
 
 

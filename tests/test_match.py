@@ -1,7 +1,8 @@
 from typing import Any, Iterable, List
 
+from expression import Nothing, Option, Some, match
 from expression.collections import FrozenList
-from expression.core import Nothing, Option, Some, SupportsMatch, match
+from expression.core import SupportsMatch
 
 
 def test_default_matches() -> None:

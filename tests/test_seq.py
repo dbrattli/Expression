@@ -6,9 +6,8 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from expression import effect
+from expression import Nothing, Option, Some, effect, option, pipe
 from expression.collections import Seq, seq
-from expression.core import Nothing, Option, Some, option, pipe
 
 
 def test_seq_empty():
