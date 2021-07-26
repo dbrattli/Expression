@@ -276,8 +276,8 @@ class Map(Mapping[Key, Value]):
             res = combine_hash(res, hash(y))
         return res
 
-    def __getitem__(self, key: Key) -&gt; Value:
-        return maptree.find(key, self._tree)
+    def __getitem__(self, k: Key) -&gt; Value:
+        return maptree.find(k, self._tree)
 
     def __iter__(self) -&gt; Iterator[Key]:
         xs = maptree.mk_iterator(self._tree)
@@ -287,14 +287,14 @@ class Map(Mapping[Key, Value]):
         &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
         return maptree.size(self._tree)
 
-    def __contains__(self, key: Any) -&gt; bool:
-        return self.contains_key(key)
+    def __contains__(self, o: Any) -&gt; bool:
+        return self.contains_key(o)
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if not isinstance(other, Map):
+    def __eq__(self, o: Any) -&gt; bool:
+        if not isinstance(o, Map):
             return False
 
-        other = cast(Map[Any, Any], other)
+        other = cast(Map[Any, Any], o)
         iterator: Iterator[Tuple[Any, Any]] = iter(other.to_seq())
 
         for kv in self.to_seq():
@@ -1420,8 +1420,8 @@ and returns the first result.</p></div>
             res = combine_hash(res, hash(y))
         return res
 
-    def __getitem__(self, key: Key) -&gt; Value:
-        return maptree.find(key, self._tree)
+    def __getitem__(self, k: Key) -&gt; Value:
+        return maptree.find(k, self._tree)
 
     def __iter__(self) -&gt; Iterator[Key]:
         xs = maptree.mk_iterator(self._tree)
@@ -1431,14 +1431,14 @@ and returns the first result.</p></div>
         &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
         return maptree.size(self._tree)
 
-    def __contains__(self, key: Any) -&gt; bool:
-        return self.contains_key(key)
+    def __contains__(self, o: Any) -&gt; bool:
+        return self.contains_key(o)
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if not isinstance(other, Map):
+    def __eq__(self, o: Any) -&gt; bool:
+        if not isinstance(o, Map):
             return False
 
-        other = cast(Map[Any, Any], other)
+        other = cast(Map[Any, Any], o)
         iterator: Iterator[Tuple[Any, Any]] = iter(other.to_seq())
 
         for kv in self.to_seq():

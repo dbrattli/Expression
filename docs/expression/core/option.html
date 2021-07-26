@@ -50,7 +50,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Protocol,
     TypeVar,
     Union,
     cast,
@@ -66,7 +65,9 @@ if TYPE_CHECKING:
     from ..collections.seq import Seq
 
 TSource = TypeVar(&#34;TSource&#34;)
+TSourceIn = TypeVar(&#34;TSourceIn&#34;, contravariant=True)
 TResult = TypeVar(&#34;TResult&#34;)
+TResultOut = TypeVar(&#34;TResultOut&#34;, covariant=True)
 T1 = TypeVar(&#34;T1&#34;)
 T2 = TypeVar(&#34;T2&#34;)
 T3 = TypeVar(&#34;T3&#34;)
@@ -137,7 +138,19 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
 
     @abstractmethod
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
-        &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
+        &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns option if it is Some,
+        otherwise evaluates the given function and returns the result.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -178,7 +191,7 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other: Any) -&gt; bool:
+    def __eq__(self, o: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -237,6 +250,15 @@ class Some(Option[TSource]):
         &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
         return self
 
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
+        return self
+
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`&#34;&#34;&#34;
+        return self if predicate(self._value) else Nothing
+
     def to_list(self) -&gt; List[TSource]:
         return [self._value]
 
@@ -271,9 +293,9 @@ class Some(Option[TSource]):
             return self._value &lt; other._value  # type: ignore
         return False
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Some):
-            return self._value == other._value  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Some):
+            return self._value == o._value  # type: ignore
         return False
 
     def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
@@ -332,6 +354,13 @@ class Nothing_(Option[TSource], EffectError):
         &#34;&#34;&#34;Returns `if_none`.&#34;&#34;&#34;
         return if_none
 
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Evaluates `if_none` and returns the result.&#34;&#34;&#34;
+        return if_none()
+
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        return Nothing
+
     def to_list(self) -&gt; List[TSource]:
         return []
 
@@ -369,23 +398,13 @@ class Nothing_(Option[TSource], EffectError):
     def __lt__(self, other: Any) -&gt; bool:
         return True
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if other is Nothing:
+    def __eq__(self, o: Any) -&gt; bool:
+        if o is Nothing:
             return True
         return False
 
     def __str__(self):
         return &#34;Nothing&#34;
-
-
-class Projection(Protocol[TSource, TResult]):
-    &#34;&#34;&#34;Option transforming protocol function.
-
-    `Option[TSource]) -&gt; Option[TResult]`
-    &#34;&#34;&#34;
-
-    def __call__(self, __source: Option[TSource]) -&gt; Option[TResult]:
-        raise NotImplementedError
 
 
 # The singleton None class. We use the name &#39;Nothing&#39; here instead of `None` to
@@ -400,7 +419,7 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 &#34;&#34;&#34;
 
 
-def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Projection[TSource, TResult]:
+def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
     &#34;&#34;&#34;Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -441,7 +460,7 @@ def is_some(option: Option[Any]) -&gt; bool:
     return option.is_some()
 
 
-def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
     def _map(option: Option[TSource]) -&gt; Option[TResult]:
         return option.map(mapper)
 
@@ -531,7 +550,6 @@ __all__ = [
     &#34;to_seq&#34;,
     &#34;of_optional&#34;,
     &#34;of_obj&#34;,
-    &#34;Projection&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -554,7 +572,7 @@ return True</p></div>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.option.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TResult]]) ‑> <a title="expression.core.option.Projection" href="#expression.core.option.Projection">Projection</a>[~TSource, ~TResult]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[TSource], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TResult]]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Bind option.</p>
@@ -574,7 +592,7 @@ option of the output type of the mapper.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Projection[TSource, TResult]:
+<pre><code class="python">def bind(mapper: Callable[[TSource], Option[TResult]]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
     &#34;&#34;&#34;Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -666,7 +684,7 @@ returns the specified default value.</p></div>
 </details>
 </dd>
 <dt id="expression.core.option.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.option.Projection" href="#expression.core.option.Projection">Projection</a>[~TSource, ~TResult]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[TSource], TResult]) ‑> Callable[[<a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TSource]], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[~TResult]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -674,7 +692,7 @@ returns the specified default value.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Option[TSource]], Option[TResult]]:
     def _map(option: Option[TSource]) -&gt; Option[TResult]:
         return option.map(mapper)
 
@@ -877,6 +895,13 @@ return True</p></div>
         &#34;&#34;&#34;Returns `if_none`.&#34;&#34;&#34;
         return if_none
 
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Evaluates `if_none` and returns the result.&#34;&#34;&#34;
+        return if_none()
+
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        return Nothing
+
     def to_list(self) -&gt; List[TSource]:
         return []
 
@@ -914,8 +939,8 @@ return True</p></div>
     def __lt__(self, other: Any) -&gt; bool:
         return True
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if other is Nothing:
+    def __eq__(self, o: Any) -&gt; bool:
+        if o is Nothing:
             return True
         return False
 
@@ -1022,6 +1047,20 @@ returns the specified default value.</p></div>
     return if_none</code></pre>
 </details>
 </dd>
+<dt id="expression.core.option.Nothing_.or_else_with"><code class="name flex">
+<span>def <span class="ident">or_else_with</span></span>(<span>self, if_none: Callable[[], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Evaluates <code>if_none</code> and returns the result.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Evaluates `if_none` and returns the result.&#34;&#34;&#34;
+    return if_none()</code></pre>
+</details>
+</dd>
 <dt id="expression.core.option.Nothing_.to_list"><code class="name flex">
 <span>def <span class="ident">to_list</span></span>(<span>self) ‑> List[~TSource]</span>
 </code></dt>
@@ -1056,6 +1095,7 @@ returns the specified default value.</p></div>
 <li><code><b><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
+<li><code><a title="expression.core.option.Option.filter" href="#expression.core.option.Option.filter">filter</a></code></li>
 <li><code><a title="expression.core.option.Option.of_obj" href="#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
@@ -1138,7 +1178,19 @@ returns the specified default value.</p></div>
 
     @abstractmethod
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
-        &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
+        &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns option if it is Some,
+        otherwise evaluates the given function and returns the result.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -1179,7 +1231,7 @@ returns the specified default value.</p></div>
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other: Any) -&gt; bool:
+    def __eq__(self, o: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -1317,6 +1369,23 @@ returns the specified default value.</p></div>
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="expression.core.option.Option.filter"><code class="name flex">
+<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[TSource], bool]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the input if the predicate evaluates to true,
+otherwise returns <code><a title="expression.core.option.Nothing" href="#expression.core.option.Nothing">Nothing</a></code></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns the input if the predicate evaluates to true,
+    otherwise returns `Nothing`&#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
 <dt id="expression.core.option.Option.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -1386,7 +1455,24 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt
 </summary>
 <pre><code class="python">@abstractmethod
 def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
-    &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
+    &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`.&#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.option.Option.or_else_with"><code class="name flex">
+<span>def <span class="ident">or_else_with</span></span>(<span>self, if_none: Callable[[], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns option if it is Some,
+otherwise evaluates the given function and returns the result.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns option if it is Some,
+    otherwise evaluates the given function and returns the result.&#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -1433,32 +1519,6 @@ def to_seq(self) -&gt; Seq[TSource]:
 </details>
 </dd>
 </dl>
-</dd>
-<dt id="expression.core.option.Projection"><code class="flex name class">
-<span>class <span class="ident">Projection</span></span>
-<span>(</span><span>*args, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Option transforming protocol function.</p>
-<p><code>Option[TSource]) -&gt; Option[TResult]</code></p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Projection(Protocol[TSource, TResult]):
-    &#34;&#34;&#34;Option transforming protocol function.
-
-    `Option[TSource]) -&gt; Option[TResult]`
-    &#34;&#34;&#34;
-
-    def __call__(self, __source: Option[TSource]) -&gt; Option[TResult]:
-        raise NotImplementedError</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>typing.Protocol</li>
-<li>typing.Generic</li>
-</ul>
 </dd>
 <dt id="expression.core.option.Some"><code class="flex name class">
 <span>class <span class="ident">Some</span></span>
@@ -1518,6 +1578,15 @@ def to_seq(self) -&gt; Seq[TSource]:
         &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
         return self
 
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
+        return self
+
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`&#34;&#34;&#34;
+        return self if predicate(self._value) else Nothing
+
     def to_list(self) -&gt; List[TSource]:
         return [self._value]
 
@@ -1552,9 +1621,9 @@ def to_seq(self) -&gt; Seq[TSource]:
             return self._value &lt; other._value  # type: ignore
         return False
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Some):
-            return self._value == other._value  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Some):
+            return self._value == o._value  # type: ignore
         return False
 
     def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
@@ -1662,6 +1731,20 @@ returns the specified default value.</p></div>
     return self</code></pre>
 </details>
 </dd>
+<dt id="expression.core.option.Some.or_else_with"><code class="name flex">
+<span>def <span class="ident">or_else_with</span></span>(<span>self, if_none: Callable[[], <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a>[TSource]]) ‑> <a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns <code>self</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
+    return self</code></pre>
+</details>
+</dd>
 <dt id="expression.core.option.Some.to_list"><code class="name flex">
 <span>def <span class="ident">to_list</span></span>(<span>self) ‑> List[~TSource]</span>
 </code></dt>
@@ -1696,6 +1779,7 @@ returns the specified default value.</p></div>
 <li><code><b><a title="expression.core.option.Option" href="#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
+<li><code><a title="expression.core.option.Option.filter" href="#expression.core.option.Option.filter">filter</a></code></li>
 <li><code><a title="expression.core.option.Option.of_obj" href="#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
@@ -1750,6 +1834,7 @@ returns the specified default value.</p></div>
 <li><code><a title="expression.core.option.Nothing_.map" href="#expression.core.option.Nothing_.map">map</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.map2" href="#expression.core.option.Nothing_.map2">map2</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.or_else" href="#expression.core.option.Nothing_.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.option.Nothing_.or_else_with" href="#expression.core.option.Nothing_.or_else_with">or_else_with</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.to_list" href="#expression.core.option.Nothing_.to_list">to_list</a></code></li>
 <li><code><a title="expression.core.option.Nothing_.to_seq" href="#expression.core.option.Nothing_.to_seq">to_seq</a></code></li>
 </ul>
@@ -1759,6 +1844,7 @@ returns the specified default value.</p></div>
 <ul class="two-column">
 <li><code><a title="expression.core.option.Option.bind" href="#expression.core.option.Option.bind">bind</a></code></li>
 <li><code><a title="expression.core.option.Option.default_value" href="#expression.core.option.Option.default_value">default_value</a></code></li>
+<li><code><a title="expression.core.option.Option.filter" href="#expression.core.option.Option.filter">filter</a></code></li>
 <li><code><a title="expression.core.option.Option.is_none" href="#expression.core.option.Option.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.option.Option.is_some" href="#expression.core.option.Option.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.option.Option.map" href="#expression.core.option.Option.map">map</a></code></li>
@@ -1766,14 +1852,12 @@ returns the specified default value.</p></div>
 <li><code><a title="expression.core.option.Option.of_obj" href="#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.or_else" href="#expression.core.option.Option.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.option.Option.or_else_with" href="#expression.core.option.Option.or_else_with">or_else_with</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="#expression.core.option.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.option.Option.to_list" href="#expression.core.option.Option.to_list">to_list</a></code></li>
 <li><code><a title="expression.core.option.Option.to_seq" href="#expression.core.option.Option.to_seq">to_seq</a></code></li>
 <li><code><a title="expression.core.option.Option.value" href="#expression.core.option.Option.value">value</a></code></li>
 </ul>
-</li>
-<li>
-<h4><code><a title="expression.core.option.Projection" href="#expression.core.option.Projection">Projection</a></code></h4>
 </li>
 <li>
 <h4><code><a title="expression.core.option.Some" href="#expression.core.option.Some">Some</a></code></h4>
@@ -1784,6 +1868,7 @@ returns the specified default value.</p></div>
 <li><code><a title="expression.core.option.Some.map" href="#expression.core.option.Some.map">map</a></code></li>
 <li><code><a title="expression.core.option.Some.map2" href="#expression.core.option.Some.map2">map2</a></code></li>
 <li><code><a title="expression.core.option.Some.or_else" href="#expression.core.option.Some.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.option.Some.or_else_with" href="#expression.core.option.Some.or_else_with">or_else_with</a></code></li>
 <li><code><a title="expression.core.option.Some.to_list" href="#expression.core.option.Some.to_list">to_list</a></code></li>
 <li><code><a title="expression.core.option.Some.to_seq" href="#expression.core.option.Some.to_seq">to_seq</a></code></li>
 </ul>

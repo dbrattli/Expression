@@ -46,14 +46,16 @@ the Result type to Exception.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, Protocol, Type, TypeVar, Union, get_origin, overload
+from typing import Any, Callable, Generator, Iterable, Iterator, Type, TypeVar, Union, get_origin, overload
 
 from .error import EffectError
 from .match import Case, SupportsMatch
 from .pipe import pipe
 
 TSource = TypeVar(&#34;TSource&#34;)
+TSourceIn = TypeVar(&#34;TSourceIn&#34;, contravariant=True)
 TResult = TypeVar(&#34;TResult&#34;)
+TResultOut = TypeVar(&#34;TResultOut&#34;, covariant=True)
 TError = TypeVar(&#34;TError&#34;)
 
 # Underscore types are used for generic methods
@@ -70,7 +72,7 @@ class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self: T1, __fn1: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self: Result[T1, TError], __fn1: Callable[[Result[T1, TError]], Result[T2, TError]]) -&gt; Result[T2, TError]:
         ...
 
     @overload
@@ -93,7 +95,7 @@ class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
     ) -&gt; T4:
         ...
 
-    def pipe(self, *args: Any):
+    def pipe(self, *args: Any) -&gt; Any:
         &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -149,7 +151,7 @@ class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
 
         raise NotImplementedError
 
-    def __eq__(self, other: Any) -&gt; bool:
+    def __eq__(self, o: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -204,9 +206,9 @@ class Ok(Result[TSource, TError], SupportsMatch[TSource]):
 
         return []
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Ok):
-            return self.value == other.value  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Ok):
+            return self.value == o.value  # type: ignore
         return False
 
     def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
@@ -268,9 +270,9 @@ class Error(Result[TSource, TError], ResultException):
 
         return []
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Error):
-            return self.error == other.error  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Error):
+            return self.error == o.error  # type: ignore
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
@@ -287,20 +289,16 @@ class Error(Result[TSource, TError], ResultException):
         return f&#34;Error {self._error}&#34;
 
 
-class Projection(Protocol[TSource, TResult]):
-    def __call__(self, __source: Result[TSource, TError]) -&gt; Result[TResult, TError]:
-        ...
-
-
-def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _map(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.map(mapper)
 
-    # return cast(TransformFn[TSource, TResult], _map)  # NOTE: cast for mypy
     return _map
 
 
-def bind(mapper: Callable[[TSource], Result[TResult, Any]]) -&gt; Projection[TSource, TResult]:
+def bind(
+    mapper: Callable[[TSource], Result[TResult, Any]]
+) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.bind(mapper)
 
@@ -313,7 +311,6 @@ __all__ = [
     &#34;Error&#34;,
     &#34;map&#34;,
     &#34;bind&#34;,
-    &#34;Projection&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -325,7 +322,7 @@ __all__ = [
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.result.bind"><code class="name flex">
-<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[TResult, Any]]) ‑> <a title="expression.core.result.Projection" href="#expression.core.result.Projection">Projection</a>[~TSource, ~TResult]</span>
+<span>def <span class="ident">bind</span></span>(<span>mapper: Callable[[TSource], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[TResult, Any]]) ‑> Callable[[<a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[~TSource, ~TError]], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[~TResult, ~TError]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -333,7 +330,9 @@ __all__ = [
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def bind(mapper: Callable[[TSource], Result[TResult, Any]]) -&gt; Projection[TSource, TResult]:
+<pre><code class="python">def bind(
+    mapper: Callable[[TSource], Result[TResult, Any]]
+) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _bind(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.bind(mapper)
 
@@ -341,7 +340,7 @@ __all__ = [
 </details>
 </dd>
 <dt id="expression.core.result.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[TSource], TResult]) ‑> <a title="expression.core.result.Projection" href="#expression.core.result.Projection">Projection</a>[~TSource, ~TResult]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[TSource], TResult]) ‑> Callable[[<a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[~TSource, ~TError]], <a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a>[~TResult, ~TError]]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -349,11 +348,10 @@ __all__ = [
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _map(result: Result[TSource, TError]) -&gt; Result[TResult, TError]:
         return result.map(mapper)
 
-    # return cast(TransformFn[TSource, TResult], _map)  # NOTE: cast for mypy
     return _map</code></pre>
 </details>
 </dd>
@@ -415,9 +413,9 @@ __all__ = [
 
         return []
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Error):
-            return self.error == other.error  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Error):
+            return self.error == o.error  # type: ignore
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
@@ -574,9 +572,9 @@ def error(self) -&gt; TError:
 
         return []
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Ok):
-            return self.value == other.value  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Ok):
+            return self.value == o.value  # type: ignore
         return False
 
     def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
@@ -670,50 +668,6 @@ def value(self) -&gt; TSource:
 </li>
 </ul>
 </dd>
-<dt id="expression.core.result.Projection"><code class="flex name class">
-<span>class <span class="ident">Projection</span></span>
-<span>(</span><span>*args, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Base class for protocol classes.</p>
-<p>Protocol classes are defined as::</p>
-<pre><code>class Proto(Protocol):
-    def meth(self) -&gt; int:
-        ...
-</code></pre>
-<p>Such classes are primarily used with static type checkers that recognize
-structural subtyping (static duck-typing), for example::</p>
-<pre><code>class C:
-    def meth(self) -&gt; int:
-        return 0
-
-def func(x: Proto) -&gt; int:
-    return x.meth()
-
-func(C())  # Passes static type check
-</code></pre>
-<p>See PEP 544 for details. Protocol classes decorated with
-@typing.runtime_checkable act as simple-minded runtime protocols that check
-only the presence of given attributes, ignoring their type signatures.
-Protocol classes can be generic, they are defined as::</p>
-<pre><code>class GenProto(Protocol[T]):
-    def meth(self) -&gt; T:
-        ...
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Projection(Protocol[TSource, TResult]):
-    def __call__(self, __source: Result[TSource, TError]) -&gt; Result[TResult, TError]:
-        ...</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>typing.Protocol</li>
-<li>typing.Generic</li>
-</ul>
-</dd>
 <dt id="expression.core.result.Result"><code class="flex name class">
 <span>class <span class="ident">Result</span></span>
 <span>(</span><span>*args, **kwargs)</span>
@@ -728,7 +682,7 @@ Protocol classes can be generic, they are defined as::</p>
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self: T1, __fn1: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self: Result[T1, TError], __fn1: Callable[[Result[T1, TError]], Result[T2, TError]]) -&gt; Result[T2, TError]:
         ...
 
     @overload
@@ -751,7 +705,7 @@ Protocol classes can be generic, they are defined as::</p>
     ) -&gt; T4:
         ...
 
-    def pipe(self, *args: Any):
+    def pipe(self, *args: Any) -&gt; Any:
         &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -807,7 +761,7 @@ Protocol classes can be generic, they are defined as::</p>
 
         raise NotImplementedError
 
-    def __eq__(self, other: Any) -&gt; bool:
+    def __eq__(self, o: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -926,7 +880,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, T
 </details>
 </dd>
 <dt id="expression.core.result.Result.pipe"><code class="name flex">
-<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any)</span>
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Pipe result through the given functions.</p></div>
@@ -934,7 +888,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe(self, *args: Any):
+<pre><code class="python">def pipe(self, *args: Any) -&gt; Any:
     &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
     return pipe(self, *args)</code></pre>
 </details>
@@ -980,9 +934,6 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, T
 <li><code><a title="expression.core.result.Ok.map" href="#expression.core.result.Ok.map">map</a></code></li>
 <li><code><a title="expression.core.result.Ok.value" href="#expression.core.result.Ok.value">value</a></code></li>
 </ul>
-</li>
-<li>
-<h4><code><a title="expression.core.result.Projection" href="#expression.core.result.Projection">Projection</a></code></h4>
 </li>
 <li>
 <h4><code><a title="expression.core.result.Result" href="#expression.core.result.Result">Result</a></code></h4>

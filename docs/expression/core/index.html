@@ -157,7 +157,7 @@ to Exception …</p></div>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="expression.core.compose"><code class="name flex">
-<span>def <span class="ident">compose</span></span>(<span>*fns: Callable[[Any], Any]) ‑> Callable[[Any], Any]</span>
+<span>def <span class="ident">compose</span></span>(<span>*fns)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Compose multiple functions left to right.</p>
@@ -180,7 +180,7 @@ functions gives back the identity function.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def compose(*fns: Callable[[Any], Any]) -&gt; Callable[[Any], Any]:
+<pre><code class="python">def compose(*fns):  # type: ignore
     &#34;&#34;&#34;Compose multiple functions left to right.
 
     Composes zero or more functions into a functional composition. The
@@ -201,11 +201,11 @@ functions gives back the identity function.</p>
         The composed function.
     &#34;&#34;&#34;
 
-    def _compose(source: Any) -&gt; Any:
+    def _compose(source):  # type: ignore
         &#34;&#34;&#34;Return a pipeline of composed functions.&#34;&#34;&#34;
-        return reduce(lambda acc, f: f(acc), fns, source)
+        return reduce(lambda acc, f: f(acc), fns, source)  # type: ignore
 
-    return _compose</code></pre>
+    return _compose  # type: ignore</code></pre>
 </details>
 </dd>
 <dt id="expression.core.curried"><code class="name flex">
@@ -397,7 +397,7 @@ implementation of a function. Same as <code>default_value</code>, but
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe(value: Any, *fns: Callable[[Any], Any]) -&gt; Any:
+<pre><code class="python">def pipe(value: Any, *fns: Callable[[Any], Any]) -&gt; Any:  # type: ignore
     &#34;&#34;&#34;Functional pipe (`|&gt;`)
 
     Allows the use of function argument on the left side of the function.
@@ -1013,9 +1013,9 @@ inheritance.</p></div>
     def match(cls, case: Any) -&gt; Iterable[Any]:
         return case(cls)
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Choice1of2):
-            return self.value == other.value
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Choice1of2):
+            return self.value == o.value
         return False
 
     def __str__(self) -&gt; str:
@@ -1168,9 +1168,9 @@ inheritance.</p></div>
     def match(cls, case: Any) -&gt; Iterable[Any]:
         return case(cls)
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Choice2of2):
-            return self.value == other.value
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Choice2of2):
+            return self.value == o.value
         return False
 
     def __str__(self) -&gt; str:
@@ -1418,9 +1418,9 @@ yielding nothing will be silently ignored.</p></div>
 
         return []
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Error):
-            return self.error == other.error  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Error):
+            return self.error == o.error  # type: ignore
         return False
 
     def __iter__(self) -&gt; Iterator[TSource]:
@@ -2016,6 +2016,13 @@ return True</p></div>
         &#34;&#34;&#34;Returns `if_none`.&#34;&#34;&#34;
         return if_none
 
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Evaluates `if_none` and returns the result.&#34;&#34;&#34;
+        return if_none()
+
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        return Nothing
+
     def to_list(self) -&gt; List[TSource]:
         return []
 
@@ -2053,8 +2060,8 @@ return True</p></div>
     def __lt__(self, other: Any) -&gt; bool:
         return True
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if other is Nothing:
+    def __eq__(self, o: Any) -&gt; bool:
+        if o is Nothing:
             return True
         return False
 
@@ -2161,6 +2168,20 @@ returns the specified default value.</p></div>
     return if_none</code></pre>
 </details>
 </dd>
+<dt id="expression.core.Nothing_.or_else_with"><code class="name flex">
+<span>def <span class="ident">or_else_with</span></span>(<span>self, if_none: Callable[[], <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TSource]]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Evaluates <code>if_none</code> and returns the result.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Evaluates `if_none` and returns the result.&#34;&#34;&#34;
+    return if_none()</code></pre>
+</details>
+</dd>
 <dt id="expression.core.Nothing_.to_list"><code class="name flex">
 <span>def <span class="ident">to_list</span></span>(<span>self) ‑> List[~TSource]</span>
 </code></dt>
@@ -2195,6 +2216,7 @@ returns the specified default value.</p></div>
 <li><code><b><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="option.html#expression.core.option.Option.bind">bind</a></code></li>
+<li><code><a title="expression.core.option.Option.filter" href="option.html#expression.core.option.Option.filter">filter</a></code></li>
 <li><code><a title="expression.core.option.Option.of_obj" href="option.html#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="option.html#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="option.html#expression.core.option.Option.pipe">pipe</a></code></li>
@@ -2257,9 +2279,9 @@ returns the specified default value.</p></div>
 
         return []
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Ok):
-            return self.value == other.value  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Ok):
+            return self.value == o.value  # type: ignore
         return False
 
     def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
@@ -2427,7 +2449,19 @@ def value(self) -&gt; TSource:
 
     @abstractmethod
     def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
-        &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
+        &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns option if it is Some,
+        otherwise evaluates the given function and returns the result.&#34;&#34;&#34;
+        raise NotImplementedError
+
+    @abstractmethod
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -2468,7 +2502,7 @@ def value(self) -&gt; TSource:
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other: Any) -&gt; bool:
+    def __eq__(self, o: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -2606,6 +2640,23 @@ returns the specified default value.</p></div>
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="expression.core.Option.filter"><code class="name flex">
+<span>def <span class="ident">filter</span></span>(<span>self, predicate: Callable[[TSource], bool]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the input if the predicate evaluates to true,
+otherwise returns <code>Nothing</code></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns the input if the predicate evaluates to true,
+    otherwise returns `Nothing`&#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
 <dt id="expression.core.Option.is_none"><code class="name flex">
 <span>def <span class="ident">is_none</span></span>(<span>self) ‑> bool</span>
 </code></dt>
@@ -2675,7 +2726,24 @@ def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -&gt
 </summary>
 <pre><code class="python">@abstractmethod
 def or_else(self, if_none: Option[TSource]) -&gt; Option[TSource]:
-    &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`. &#34;&#34;&#34;
+    &#34;&#34;&#34;Returns option if it is Some, otherwise returns `if_one`.&#34;&#34;&#34;
+    raise NotImplementedError</code></pre>
+</details>
+</dd>
+<dt id="expression.core.Option.or_else_with"><code class="name flex">
+<span>def <span class="ident">or_else_with</span></span>(<span>self, if_none: Callable[[], <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TSource]]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns option if it is Some,
+otherwise evaluates the given function and returns the result.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns option if it is Some,
+    otherwise evaluates the given function and returns the result.&#34;&#34;&#34;
     raise NotImplementedError</code></pre>
 </details>
 </dd>
@@ -2737,7 +2805,7 @@ def to_seq(self) -&gt; Seq[TSource]:
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self: T1, __fn1: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self: Result[T1, TError], __fn1: Callable[[Result[T1, TError]], Result[T2, TError]]) -&gt; Result[T2, TError]:
         ...
 
     @overload
@@ -2760,7 +2828,7 @@ def to_seq(self) -&gt; Seq[TSource]:
     ) -&gt; T4:
         ...
 
-    def pipe(self, *args: Any):
+    def pipe(self, *args: Any) -&gt; Any:
         &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -2816,7 +2884,7 @@ def to_seq(self) -&gt; Seq[TSource]:
 
         raise NotImplementedError
 
-    def __eq__(self, other: Any) -&gt; bool:
+    def __eq__(self, o: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -2935,7 +3003,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, T
 </details>
 </dd>
 <dt id="expression.core.Result.pipe"><code class="name flex">
-<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any)</span>
+<span>def <span class="ident">pipe</span></span>(<span>self, *args: Any) ‑> Any</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Pipe result through the given functions.</p></div>
@@ -2943,7 +3011,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, T
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe(self, *args: Any):
+<pre><code class="python">def pipe(self, *args: Any) -&gt; Any:
     &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
     return pipe(self, *args)</code></pre>
 </details>
@@ -2964,7 +3032,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, T
     &#34;&#34;&#34;The result abstract base class.&#34;&#34;&#34;
 
     @overload
-    def pipe(self: T1, __fn1: Callable[[T1], T2]) -&gt; T2:
+    def pipe(self: Result[T1, TError], __fn1: Callable[[Result[T1, TError]], Result[T2, TError]]) -&gt; Result[T2, TError]:
         ...
 
     @overload
@@ -2987,7 +3055,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, T
     ) -&gt; T4:
         ...
 
-    def pipe(self, *args: Any):
+    def pipe(self, *args: Any) -&gt; Any:
         &#34;&#34;&#34;Pipe result through the given functions.&#34;&#34;&#34;
         return pipe(self, *args)
 
@@ -3043,7 +3111,7 @@ def map_error(self, mapper: Callable[[TError], TResult]) -&gt; Result[TSource, T
 
         raise NotImplementedError
 
-    def __eq__(self, other: Any) -&gt; bool:
+    def __eq__(self, o: Any) -&gt; bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -3164,6 +3232,15 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError
         &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
         return self
 
+    def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
+        return self
+
+    def filter(self, predicate: Callable[[TSource], bool]) -&gt; Option[TSource]:
+        &#34;&#34;&#34;Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`&#34;&#34;&#34;
+        return self if predicate(self._value) else Nothing
+
     def to_list(self) -&gt; List[TSource]:
         return [self._value]
 
@@ -3198,9 +3275,9 @@ def map(self, mapper: Callable[[TSource], TResult]) -&gt; Result[TResult, TError
             return self._value &lt; other._value  # type: ignore
         return False
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if isinstance(other, Some):
-            return self._value == other._value  # type: ignore
+    def __eq__(self, o: Any) -&gt; bool:
+        if isinstance(o, Some):
+            return self._value == o._value  # type: ignore
         return False
 
     def __iter__(self) -&gt; Generator[TSource, TSource, TSource]:
@@ -3308,6 +3385,20 @@ returns the specified default value.</p></div>
     return self</code></pre>
 </details>
 </dd>
+<dt id="expression.core.Some.or_else_with"><code class="name flex">
+<span>def <span class="ident">or_else_with</span></span>(<span>self, if_none: Callable[[], <a title="expression.core.Option" href="#expression.core.Option">Option</a>[TSource]]) ‑> <a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns <code>self</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def or_else_with(self, if_none: Callable[[], Option[TSource]]) -&gt; Option[TSource]:
+    &#34;&#34;&#34;Returns `self`.&#34;&#34;&#34;
+    return self</code></pre>
+</details>
+</dd>
 <dt id="expression.core.Some.to_list"><code class="name flex">
 <span>def <span class="ident">to_list</span></span>(<span>self) ‑> List[~TSource]</span>
 </code></dt>
@@ -3342,6 +3433,7 @@ returns the specified default value.</p></div>
 <li><code><b><a title="expression.core.option.Option" href="option.html#expression.core.option.Option">Option</a></b></code>:
 <ul class="hlist">
 <li><code><a title="expression.core.option.Option.bind" href="option.html#expression.core.option.Option.bind">bind</a></code></li>
+<li><code><a title="expression.core.option.Option.filter" href="option.html#expression.core.option.Option.filter">filter</a></code></li>
 <li><code><a title="expression.core.option.Option.of_obj" href="option.html#expression.core.option.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.option.Option.of_optional" href="option.html#expression.core.option.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.option.Option.pipe" href="option.html#expression.core.option.Option.pipe">pipe</a></code></li>
@@ -3649,6 +3741,7 @@ function will be called again with the new arguments provided.</p></div>
 <li><code><a title="expression.core.Nothing_.map" href="#expression.core.Nothing_.map">map</a></code></li>
 <li><code><a title="expression.core.Nothing_.map2" href="#expression.core.Nothing_.map2">map2</a></code></li>
 <li><code><a title="expression.core.Nothing_.or_else" href="#expression.core.Nothing_.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.Nothing_.or_else_with" href="#expression.core.Nothing_.or_else_with">or_else_with</a></code></li>
 <li><code><a title="expression.core.Nothing_.to_list" href="#expression.core.Nothing_.to_list">to_list</a></code></li>
 <li><code><a title="expression.core.Nothing_.to_seq" href="#expression.core.Nothing_.to_seq">to_seq</a></code></li>
 </ul>
@@ -3667,6 +3760,7 @@ function will be called again with the new arguments provided.</p></div>
 <ul class="two-column">
 <li><code><a title="expression.core.Option.bind" href="#expression.core.Option.bind">bind</a></code></li>
 <li><code><a title="expression.core.Option.default_value" href="#expression.core.Option.default_value">default_value</a></code></li>
+<li><code><a title="expression.core.Option.filter" href="#expression.core.Option.filter">filter</a></code></li>
 <li><code><a title="expression.core.Option.is_none" href="#expression.core.Option.is_none">is_none</a></code></li>
 <li><code><a title="expression.core.Option.is_some" href="#expression.core.Option.is_some">is_some</a></code></li>
 <li><code><a title="expression.core.Option.map" href="#expression.core.Option.map">map</a></code></li>
@@ -3674,6 +3768,7 @@ function will be called again with the new arguments provided.</p></div>
 <li><code><a title="expression.core.Option.of_obj" href="#expression.core.Option.of_obj">of_obj</a></code></li>
 <li><code><a title="expression.core.Option.of_optional" href="#expression.core.Option.of_optional">of_optional</a></code></li>
 <li><code><a title="expression.core.Option.or_else" href="#expression.core.Option.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.Option.or_else_with" href="#expression.core.Option.or_else_with">or_else_with</a></code></li>
 <li><code><a title="expression.core.Option.pipe" href="#expression.core.Option.pipe">pipe</a></code></li>
 <li><code><a title="expression.core.Option.to_list" href="#expression.core.Option.to_list">to_list</a></code></li>
 <li><code><a title="expression.core.Option.to_seq" href="#expression.core.Option.to_seq">to_seq</a></code></li>
@@ -3708,6 +3803,7 @@ function will be called again with the new arguments provided.</p></div>
 <li><code><a title="expression.core.Some.map" href="#expression.core.Some.map">map</a></code></li>
 <li><code><a title="expression.core.Some.map2" href="#expression.core.Some.map2">map2</a></code></li>
 <li><code><a title="expression.core.Some.or_else" href="#expression.core.Some.or_else">or_else</a></code></li>
+<li><code><a title="expression.core.Some.or_else_with" href="#expression.core.Some.or_else_with">or_else_with</a></code></li>
 <li><code><a title="expression.core.Some.to_list" href="#expression.core.Some.to_list">to_list</a></code></li>
 <li><code><a title="expression.core.Some.to_seq" href="#expression.core.Some.to_seq">to_seq</a></code></li>
 </ul>

@@ -91,21 +91,21 @@ async def repeat(value: TSource, times: Optional[int] = None) -&gt; AsyncIterabl
 
 
 @overload
-async def range(stop: int) -&gt; AsyncIterable[int]:
+def range(stop: int) -&gt; AsyncIterable[int]:
     ...
 
 
 @overload
-async def range(start: int, stop: int) -&gt; AsyncIterable[int]:
+def range(start: int, stop: int) -&gt; AsyncIterable[int]:
     ...
 
 
 @overload
-async def range(start: int, stop: int, step: int) -&gt; AsyncIterable[int]:
+def range(start: int, stop: int, step: int) -&gt; AsyncIterable[int]:
     ...
 
 
-async def range(*args: Any, **kw: Any) -&gt; Any:
+async def range(*args: int, **kw: int) -&gt; AsyncIterable[int]:
     for value in builtins.range(*args, **kw):
         yield value
 
@@ -179,7 +179,7 @@ __all__ = [
 </details>
 </dd>
 <dt id="expression.collections.asyncseq.range"><code class="name flex">
-<span>async def <span class="ident">range</span></span>(<span>*args: Any, **kw: Any) ‑> Any</span>
+<span>async def <span class="ident">range</span></span>(<span>*args: int, **kw: int) ‑> AsyncIterable[int]</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -187,7 +187,7 @@ __all__ = [
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">async def range(*args: Any, **kw: Any) -&gt; Any:
+<pre><code class="python">async def range(*args: int, **kw: int) -&gt; AsyncIterable[int]:
     for value in builtins.range(*args, **kw):
         yield value</code></pre>
 </details>

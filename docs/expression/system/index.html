@@ -87,7 +87,7 @@ __all__ = [
 </code></dt>
 <dd>
 <div class="desc"><p>A disposable class with a context manager. Must implement the
-dispose method. Will dispoose on exit.</p></div>
+dispose method. Will dispose on exit.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -513,7 +513,7 @@ def is_cancellation_requested(self) -&gt; bool:
 </code></dt>
 <dd>
 <div class="desc"><p>A disposable class with a context manager. Must implement the
-dispose method. Will dispoose on exit.</p></div>
+dispose method. Will dispose on exit.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -704,14 +704,14 @@ def token(self) -&gt; CancellationToken:
 </code></dt>
 <dd>
 <div class="desc"><p>A disposable class with a context manager. Must implement the
-dispose method. Will dispoose on exit.</p></div>
+dispose method. Will dispose on exit.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Disposable(ABC):
     &#34;&#34;&#34;A disposable class with a context manager. Must implement the
-    dispose method. Will dispoose on exit.&#34;&#34;&#34;
+    dispose method. Will dispose on exit.&#34;&#34;&#34;
 
     @abstractmethod
     def dispose(self) -&gt; None:
@@ -793,7 +793,7 @@ def dispose(self) -&gt; None:
 </summary>
 <pre><code class="python">class ObjectDisposedException(Exception):
     def __init__(self):
-        super().__init__(&#34;The operation was canceled&#34;)</code></pre>
+        super().__init__(&#34;Cannot access a disposed object&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">

@@ -28,7 +28,7 @@
 </summary>
 <pre><code class="python">class ObjectDisposedException(Exception):
     def __init__(self):
-        super().__init__(&#34;The operation was canceled&#34;)
+        super().__init__(&#34;Cannot access a disposed object&#34;)
 
 
 class OperationCanceledError(Exception):
@@ -55,7 +55,7 @@ class OperationCanceledError(Exception):
 </summary>
 <pre><code class="python">class ObjectDisposedException(Exception):
     def __init__(self):
-        super().__init__(&#34;The operation was canceled&#34;)</code></pre>
+        super().__init__(&#34;Cannot access a disposed object&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">

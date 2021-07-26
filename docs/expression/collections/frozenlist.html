@@ -74,7 +74,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Protocol,
     Tuple,
     TypeVar,
     cast,
@@ -87,7 +86,9 @@ from expression.core import Case, Nothing, Option, Some, pipe
 from . import seq
 
 TSource = TypeVar(&#34;TSource&#34;)
+TSourceIn = TypeVar(&#34;TSourceIn&#34;, contravariant=True)
 TResult = TypeVar(&#34;TResult&#34;)
+TResultOut = TypeVar(&#34;TResultOut&#34;, covariant=True)
 TState = TypeVar(&#34;TState&#34;)
 T1 = TypeVar(&#34;T1&#34;)
 T2 = TypeVar(&#34;T2&#34;)
@@ -251,6 +252,18 @@ class FrozenList(Generic[TSource]):
             and returns the final state value.
         &#34;&#34;&#34;
         return functools.reduce(folder, self, state)
+
+    def forall(self, predicate: Callable[[TSource], bool]) -&gt; bool:
+        &#34;&#34;&#34;Tests if all elements of the collection satisfy the given
+        predicate.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            True if all of the elements satisfy the predicate.
+        &#34;&#34;&#34;
+        return all(predicate(x) for x in self)
 
     def head(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the first element of the list.
@@ -468,8 +481,8 @@ class FrozenList(Generic[TSource]):
     def __iter__(self) -&gt; Iterator[TSource]:
         return iter(self.value)
 
-    def __eq__(self, other: Any) -&gt; bool:
-        return self.value == other
+    def __eq__(self, o: Any) -&gt; bool:
+        return self.value == o
 
     def __len__(self) -&gt; int:
         return len(self.value)
@@ -492,20 +505,6 @@ class FrozenList(Generic[TSource]):
 
     def __repr__(self) -&gt; str:
         return str(self)
-
-
-class Cata(Protocol[TSource, TResult]):
-    &#34;&#34;&#34;A partially applied exit function.&#34;&#34;&#34;
-
-    def __call__(self, source: FrozenList[TSource]) -&gt; TResult:
-        ...
-
-
-class Projection(Protocol[TSource, TResult]):
-    &#34;&#34;&#34;A partially applied filter function.&#34;&#34;&#34;
-
-    def __call__(self, __source: FrozenList[TSource]) -&gt; FrozenList[TResult]:
-        ...
 
 
 def append(source: FrozenList[TSource]) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
@@ -621,6 +620,23 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -&gt; Calla
     return _fold
 
 
+def forall(predicate: Callable[[TSource], bool]) -&gt; Callable[[FrozenList[TSource]], bool]:
+    &#34;&#34;&#34;Tests if all elements of the collection satisfy the given
+    predicate.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        True if all of the elements satisfy the predicate.
+    &#34;&#34;&#34;
+
+    def _forall(source: FrozenList[TSource]) -&gt; bool:
+        return source.forall(predicate)
+
+    return _forall
+
+
 def head(source: FrozenList[TSource]) -&gt; TSource:
     &#34;&#34;&#34;Returns the first element of the list.
 
@@ -647,7 +663,7 @@ def indexed(source: FrozenList[TSource]) -&gt; FrozenList[Tuple[int, TSource]]:
     return source.indexed()
 
 
-def item(index: int) -&gt; Cata[TSource, TSource]:
+def item(index: int) -&gt; Callable[[FrozenList[TSource]], TSource]:
     &#34;&#34;&#34;Indexes into the list. The first element has index 0.
 
     Args:
@@ -668,7 +684,7 @@ def is_empty(source: FrozenList[Any]) -&gt; bool:
     return source.is_empty()
 
 
-def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[FrozenList[TSource]], FrozenList[TResult]]:
     &#34;&#34;&#34;Map list.
 
     Builds a new collection whose elements are the results of applying
@@ -687,7 +703,7 @@ def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]
     return _map
 
 
-def mapi(mapper: Callable[[int, TSource], TResult]) -&gt; Projection[TSource, TResult]:
+def mapi(mapper: Callable[[int, TSource], TResult]) -&gt; Callable[[FrozenList[TSource]], FrozenList[TResult]]:
     &#34;&#34;&#34;Map list with index.
 
     Builds a new collection whose elements are the results of
@@ -748,7 +764,7 @@ def singleton(value: TSource) -&gt; FrozenList[TSource]:
     return FrozenList((value,))
 
 
-def skip(count: int) -&gt; Projection[TSource, TSource]:
+def skip(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     &#34;&#34;&#34;Returns the list after removing the first N elements.
 
     Args:
@@ -764,7 +780,7 @@ def skip(count: int) -&gt; Projection[TSource, TSource]:
     return _skip
 
 
-def skip_last(count: int) -&gt; Projection[TSource, TSource]:
+def skip_last(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     &#34;&#34;&#34;Returns the list after removing the last N elements.
 
     Args:
@@ -784,7 +800,7 @@ def tail(source: FrozenList[TSource]) -&gt; FrozenList[TSource]:
     return source.tail()
 
 
-def take(count: int) -&gt; Projection[TSource, TSource]:
+def take(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     &#34;&#34;&#34;Returns the first N elements of the list.
 
     Args:
@@ -800,7 +816,7 @@ def take(count: int) -&gt; Projection[TSource, TSource]:
     return _take
 
 
-def take_last(count: int) -&gt; Projection[TSource, TSource]:
+def take_last(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     &#34;&#34;&#34;Returns a specified number of contiguous elements from the end of
     the list.
 
@@ -1193,7 +1209,7 @@ of each element.</p>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.item"><code class="name flex">
-<span>def <span class="ident">item</span></span>(<span>index: int) ‑> expression.collections.frozenlist.Cata[~TSource, ~TSource]</span>
+<span>def <span class="ident">item</span></span>(<span>index: int) ‑> Callable[[<a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]], ~TSource]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Indexes into the list. The first element has index 0.</p>
@@ -1208,7 +1224,7 @@ of each element.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def item(index: int) -&gt; Cata[TSource, TSource]:
+<pre><code class="python">def item(index: int) -&gt; Callable[[FrozenList[TSource]], TSource]:
     &#34;&#34;&#34;Indexes into the list. The first element has index 0.
 
     Args:
@@ -1225,7 +1241,7 @@ of each element.</p>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.map"><code class="name flex">
-<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[TSource], TResult]) ‑> expression.collections.frozenlist.Projection[~TSource, ~TResult]</span>
+<span>def <span class="ident">map</span></span>(<span>mapper: Callable[[TSource], TResult]) ‑> Callable[[<a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]], <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TResult]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Map list.</p>
@@ -1242,7 +1258,7 @@ the given function to each of the elements of the collection.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Projection[TSource, TResult]:
+<pre><code class="python">def map(mapper: Callable[[TSource], TResult]) -&gt; Callable[[FrozenList[TSource]], FrozenList[TResult]]:
     &#34;&#34;&#34;Map list.
 
     Builds a new collection whose elements are the results of applying
@@ -1262,7 +1278,7 @@ the given function to each of the elements of the collection.</p>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.mapi"><code class="name flex">
-<span>def <span class="ident">mapi</span></span>(<span>mapper: Callable[[int, TSource], TResult]) ‑> expression.collections.frozenlist.Projection[~TSource, ~TResult]</span>
+<span>def <span class="ident">mapi</span></span>(<span>mapper: Callable[[int, TSource], TResult]) ‑> Callable[[<a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]], <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TResult]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Map list with index.</p>
@@ -1282,7 +1298,7 @@ indices.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def mapi(mapper: Callable[[int, TSource], TResult]) -&gt; Projection[TSource, TResult]:
+<pre><code class="python">def mapi(mapper: Callable[[int, TSource], TResult]) -&gt; Callable[[FrozenList[TSource]], FrozenList[TResult]]:
     &#34;&#34;&#34;Map list with index.
 
     Builds a new collection whose elements are the results of
@@ -1347,7 +1363,7 @@ indices.</dd>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.skip"><code class="name flex">
-<span>def <span class="ident">skip</span></span>(<span>count: int) ‑> expression.collections.frozenlist.Projection[~TSource, ~TSource]</span>
+<span>def <span class="ident">skip</span></span>(<span>count: int) ‑> Callable[[<a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]], <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the list after removing the first N elements.</p>
@@ -1362,7 +1378,7 @@ indices.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def skip(count: int) -&gt; Projection[TSource, TSource]:
+<pre><code class="python">def skip(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     &#34;&#34;&#34;Returns the list after removing the first N elements.
 
     Args:
@@ -1379,7 +1395,7 @@ indices.</dd>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.skip_last"><code class="name flex">
-<span>def <span class="ident">skip_last</span></span>(<span>count: int) ‑> expression.collections.frozenlist.Projection[~TSource, ~TSource]</span>
+<span>def <span class="ident">skip_last</span></span>(<span>count: int) ‑> Callable[[<a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]], <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the list after removing the last N elements.</p>
@@ -1394,7 +1410,7 @@ indices.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def skip_last(count: int) -&gt; Projection[TSource, TSource]:
+<pre><code class="python">def skip_last(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     &#34;&#34;&#34;Returns the list after removing the last N elements.
 
     Args:
@@ -1424,7 +1440,7 @@ indices.</dd>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.take"><code class="name flex">
-<span>def <span class="ident">take</span></span>(<span>count: int) ‑> expression.collections.frozenlist.Projection[~TSource, ~TSource]</span>
+<span>def <span class="ident">take</span></span>(<span>count: int) ‑> Callable[[<a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]], <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the first N elements of the list.</p>
@@ -1439,7 +1455,7 @@ indices.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def take(count: int) -&gt; Projection[TSource, TSource]:
+<pre><code class="python">def take(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     &#34;&#34;&#34;Returns the first N elements of the list.
 
     Args:
@@ -1456,7 +1472,7 @@ indices.</dd>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.take_last"><code class="name flex">
-<span>def <span class="ident">take_last</span></span>(<span>count: int) ‑> expression.collections.frozenlist.Projection[~TSource, ~TSource]</span>
+<span>def <span class="ident">take_last</span></span>(<span>count: int) ‑> Callable[[<a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]], <a title="expression.collections.frozenlist.FrozenList" href="#expression.collections.frozenlist.FrozenList">FrozenList</a>[~TSource]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a specified number of contiguous elements from the end of
@@ -1472,7 +1488,7 @@ the list.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def take_last(count: int) -&gt; Projection[TSource, TSource]:
+<pre><code class="python">def take_last(count: int) -&gt; Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     &#34;&#34;&#34;Returns a specified number of contiguous elements from the end of
     the list.
 
@@ -1810,6 +1826,18 @@ appending.</p>
         &#34;&#34;&#34;
         return functools.reduce(folder, self, state)
 
+    def forall(self, predicate: Callable[[TSource], bool]) -&gt; bool:
+        &#34;&#34;&#34;Tests if all elements of the collection satisfy the given
+        predicate.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            True if all of the elements satisfy the predicate.
+        &#34;&#34;&#34;
+        return all(predicate(x) for x in self)
+
     def head(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the first element of the list.
 
@@ -2026,8 +2054,8 @@ appending.</p>
     def __iter__(self) -&gt; Iterator[TSource]:
         return iter(self.value)
 
-    def __eq__(self, other: Any) -&gt; bool:
-        return self.value == other
+    def __eq__(self, o: Any) -&gt; bool:
+        return self.value == o
 
     def __len__(self) -&gt; int:
         return len(self.value)
@@ -2356,6 +2384,36 @@ and returns the final state value.</p></div>
         and returns the final state value.
     &#34;&#34;&#34;
     return functools.reduce(folder, self, state)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.frozenlist.FrozenList.forall"><code class="name flex">
+<span>def <span class="ident">forall</span></span>(<span>self, predicate: Callable[[TSource], bool]) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Tests if all elements of the collection satisfy the given
+predicate.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>predicate</code></strong></dt>
+<dd>The function to test the input elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>True if all of the elements satisfy the predicate.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forall(self, predicate: Callable[[TSource], bool]) -&gt; bool:
+    &#34;&#34;&#34;Tests if all elements of the collection satisfy the given
+    predicate.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        True if all of the elements satisfy the predicate.
+    &#34;&#34;&#34;
+    return all(predicate(x) for x in self)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.frozenlist.FrozenList.head"><code class="name flex">
@@ -2803,6 +2861,7 @@ input lists.</p></div>
 <li><code><a title="expression.collections.frozenlist.FrozenList.empty" href="#expression.collections.frozenlist.FrozenList.empty">empty</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.filter" href="#expression.collections.frozenlist.FrozenList.filter">filter</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.fold" href="#expression.collections.frozenlist.FrozenList.fold">fold</a></code></li>
+<li><code><a title="expression.collections.frozenlist.FrozenList.forall" href="#expression.collections.frozenlist.FrozenList.forall">forall</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.head" href="#expression.collections.frozenlist.FrozenList.head">head</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.indexed" href="#expression.collections.frozenlist.FrozenList.indexed">indexed</a></code></li>
 <li><code><a title="expression.collections.frozenlist.FrozenList.is_empty" href="#expression.collections.frozenlist.FrozenList.is_empty">is_empty</a></code></li>

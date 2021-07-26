@@ -28,7 +28,7 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;Data structures that can be traversed from left to right, performing an action on each element.&#34;&#34;&#34;
-from typing import Callable, Generator, List, TypeVar, Union, cast, overload
+from typing import Callable, Generator, List, TypeVar, Union, cast
 
 from expression import effect
 from expression.collections import seq
@@ -37,13 +37,6 @@ from expression.core import Ok, Result, identity, pipe
 TSource = TypeVar(&#34;TSource&#34;)
 TResult = TypeVar(&#34;TResult&#34;)
 TError = TypeVar(&#34;TError&#34;)
-
-
-@overload
-def traverse(
-    fn: Callable[[Result[TResult, TError]], Result[TResult, TError]], lst: List[Result[TResult, TError]]
-) -&gt; Result[List[TResult], TError]:
-    ...
 
 
 def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -&gt; Result[List[TResult], TError]:
@@ -59,11 +52,11 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
         &#34;&#34;&#34;Same as:
         &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
         &#34;&#34;&#34;
+        h: TResult
+        t: List[TResult]
         h = yield from fn(head)
         t = yield from tail
 
-        h = cast(&#34;TResult&#34;, h)
-        t = cast(List[TResult], t)
         return [h] + t
 
     state: Result[List[TSource], TError] = Ok([])
@@ -74,7 +67,8 @@ def sequence(lst: List[Result[TSource, TError]]) -&gt; Result[List[TSource], TEr
     &#34;&#34;&#34;Execute a sequence of result returning commands and collect the
     sequence of their response.&#34;&#34;&#34;
 
-    return traverse(identity, lst)</code></pre>
+    fn = cast(Callable[[Result[TSource, TError]], Result[TSource, TError]], identity)
+    return traverse(fn, lst)</code></pre>
 </details>
 </section>
 <section>
@@ -98,7 +92,8 @@ sequence of their response.</p></div>
     &#34;&#34;&#34;Execute a sequence of result returning commands and collect the
     sequence of their response.&#34;&#34;&#34;
 
-    return traverse(identity, lst)</code></pre>
+    fn = cast(Callable[[Result[TSource, TError]], Result[TSource, TError]], identity)
+    return traverse(fn, lst)</code></pre>
 </details>
 </dd>
 <dt id="expression.extra.result.traversable.traverse"><code class="name flex">
@@ -124,11 +119,11 @@ sequence of their response.</p></div>
         &#34;&#34;&#34;Same as:
         &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
         &#34;&#34;&#34;
+        h: TResult
+        t: List[TResult]
         h = yield from fn(head)
         t = yield from tail
 
-        h = cast(&#34;TResult&#34;, h)
-        t = cast(List[TResult], t)
         return [h] + t
 
     state: Result[List[TSource], TError] = Ok([])
