@@ -58,7 +58,7 @@ composition of zero functions gives back the identity function.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipeline(*fns: Callable[[Any], Option[Any]]) -&gt; Callable[[Any], Option[Any]]:
+<pre><code class="python">def pipeline(*fns: Callable[[Any], Option[Any]]) -&gt; Callable[[Any], Option[Any]]:  # type: ignore
     &#34;&#34;&#34;pipeline multiple option returning functions left to right.
 
     A pipeline kleisli (&gt;=&gt;) composes zero or more functions into a

@@ -271,6 +271,18 @@ appending.</p>
         &#34;&#34;&#34;
         return functools.reduce(folder, self, state)
 
+    def forall(self, predicate: Callable[[TSource], bool]) -&gt; bool:
+        &#34;&#34;&#34;Tests if all elements of the collection satisfy the given
+        predicate.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            True if all of the elements satisfy the predicate.
+        &#34;&#34;&#34;
+        return all(predicate(x) for x in self)
+
     def head(self) -&gt; TSource:
         &#34;&#34;&#34;Returns the first element of the list.
 
@@ -487,8 +499,8 @@ appending.</p>
     def __iter__(self) -&gt; Iterator[TSource]:
         return iter(self.value)
 
-    def __eq__(self, other: Any) -&gt; bool:
-        return self.value == other
+    def __eq__(self, o: Any) -&gt; bool:
+        return self.value == o
 
     def __len__(self) -&gt; int:
         return len(self.value)
@@ -817,6 +829,36 @@ and returns the final state value.</p></div>
         and returns the final state value.
     &#34;&#34;&#34;
     return functools.reduce(folder, self, state)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.FrozenList.forall"><code class="name flex">
+<span>def <span class="ident">forall</span></span>(<span>self, predicate: Callable[[TSource], bool]) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Tests if all elements of the collection satisfy the given
+predicate.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>predicate</code></strong></dt>
+<dd>The function to test the input elements.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>True if all of the elements satisfy the predicate.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forall(self, predicate: Callable[[TSource], bool]) -&gt; bool:
+    &#34;&#34;&#34;Tests if all elements of the collection satisfy the given
+    predicate.
+
+    Args:
+        predicate: The function to test the input elements.
+
+    Returns:
+        True if all of the elements satisfy the predicate.
+    &#34;&#34;&#34;
+    return all(predicate(x) for x in self)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.FrozenList.head"><code class="name flex">
@@ -1427,8 +1469,8 @@ input lists.</p></div>
             res = combine_hash(res, hash(y))
         return res
 
-    def __getitem__(self, key: Key) -&gt; Value:
-        return maptree.find(key, self._tree)
+    def __getitem__(self, k: Key) -&gt; Value:
+        return maptree.find(k, self._tree)
 
     def __iter__(self) -&gt; Iterator[Key]:
         xs = maptree.mk_iterator(self._tree)
@@ -1438,14 +1480,14 @@ input lists.</p></div>
         &#34;&#34;&#34;Return the number of bindings in the map.&#34;&#34;&#34;
         return maptree.size(self._tree)
 
-    def __contains__(self, key: Any) -&gt; bool:
-        return self.contains_key(key)
+    def __contains__(self, o: Any) -&gt; bool:
+        return self.contains_key(o)
 
-    def __eq__(self, other: Any) -&gt; bool:
-        if not isinstance(other, Map):
+    def __eq__(self, o: Any) -&gt; bool:
+        if not isinstance(o, Map):
             return False
 
-        other = cast(Map[Any, Any], other)
+        other = cast(Map[Any, Any], o)
         iterator: Iterator[Tuple[Any, Any]] = iter(other.to_seq())
 
         for kv in self.to_seq():
@@ -1954,7 +1996,7 @@ sequences.</p>
     def append(self, *others: Iterable[TSource]) -&gt; Seq[TSource]:
         &#34;&#34;&#34;Wraps the two given enumerations as a single concatenated
         enumeration.&#34;&#34;&#34;
-        return Seq(concat(self, *others))
+        return Seq(concat(self._value, *others))
 
     def filter(self, predicate: Callable[[TSource], bool]) -&gt; Seq[TSource]:
         return Seq(filter(predicate)(self))
@@ -2021,6 +2063,10 @@ sequences.</p>
 
         return head(self)
 
+    def length(self) -&gt; int:
+        &#34;&#34;&#34;Returns the length of the sequence.&#34;&#34;&#34;
+        return length(self)
+
     def map(self, mapper: Callable[[TSource], TResult]) -&gt; Seq[TResult]:
         &#34;&#34;&#34;Map sequence.
 
@@ -2035,7 +2081,7 @@ sequences.</p>
             The result sequence.
         &#34;&#34;&#34;
 
-        return Seq(map(mapper)(self))
+        return Seq(pipe(self, map(mapper)))
 
     def mapi(self, mapping: Callable[[int, TSource], TResult]) -&gt; Seq[TResult]:
         &#34;&#34;&#34;Map list with index.
@@ -2123,7 +2169,7 @@ sequences.</p>
         Returns:
             The resulting sequence of computed states.
         &#34;&#34;&#34;
-        return Seq(itertools.accumulate(self, scanner, initial=state))  # type: ignore
+        return Seq(itertools.accumulate(self._value, scanner, initial=state))
 
     def skip(self, count: int) -&gt; Seq[TSource]:
         &#34;&#34;&#34;Returns a sequence that skips N elements of the underlying
@@ -2134,6 +2180,21 @@ sequences.</p>
         &#34;&#34;&#34;
         return Seq(pipe(self, skip(count)))
 
+    def sum(self) -&gt; TSource:
+        &#34;&#34;&#34;Returns the sum of the elements in the sequence.&#34;&#34;&#34;
+        return sum(self)
+
+    def sum_by(self, projection: Callable[[TSource], TResult]) -&gt; TResult:
+        &#34;&#34;&#34;Returns the sum of the results generated by applying the
+        function to each element of the sequence.&#34;&#34;&#34;
+        return pipe(self, sum_by(projection))
+
+    def tail(self) -&gt; Seq[TSource]:
+        &#34;&#34;&#34;Returns a sequence that skips 1 element of the underlying
+        sequence and then yields the remaining elements of the
+        sequence.&#34;&#34;&#34;
+        return self.skip(1)
+
     def take(self, count: int) -&gt; Seq[TSource]:
         &#34;&#34;&#34;Returns the first N elements of the sequence.
 
@@ -2141,6 +2202,9 @@ sequences.</p>
             count: The number of items to take.
         &#34;&#34;&#34;
         return Seq(pipe(self, take(count)))
+
+    def to_list(self) -&gt; &#34;FrozenList[TSource]&#34;:
+        return to_list(self)
 
     @classmethod
     def unfold(cls, generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -&gt; Iterable[TSource]:
@@ -2176,7 +2240,26 @@ sequences.</p>
 
     def __iter__(self) -&gt; Iterator[TSource]:
         &#34;&#34;&#34;Return iterator for sequence.&#34;&#34;&#34;
-        return builtins.iter(self._value)</code></pre>
+        return builtins.iter(self._value)
+
+    def __repr__(self) -&gt; str:
+        result = &#34;[&#34;
+
+        for count, x in enumerate(self):
+            if count == 0:
+                result += str(x)
+
+            elif count == 100:
+                result += &#34;; ...&#34;
+                break
+
+            else:
+                result += &#34;; &#34; + str(x)
+
+        return result + &#34;]&#34;
+
+    def __str__(self) -&gt; str:
+        return repr(self)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -2331,7 +2414,7 @@ enumeration.</p></div>
 <pre><code class="python">def append(self, *others: Iterable[TSource]) -&gt; Seq[TSource]:
     &#34;&#34;&#34;Wraps the two given enumerations as a single concatenated
     enumeration.&#34;&#34;&#34;
-    return Seq(concat(self, *others))</code></pre>
+    return Seq(concat(self._value, *others))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.Seq.choose"><code class="name flex">
@@ -2455,6 +2538,20 @@ each element of the sequence.</p></div>
     return head(self)</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.Seq.length"><code class="name flex">
+<span>def <span class="ident">length</span></span>(<span>self) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the length of the sequence.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def length(self) -&gt; int:
+    &#34;&#34;&#34;Returns the length of the sequence.&#34;&#34;&#34;
+    return length(self)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.Seq.map"><code class="name flex">
 <span>def <span class="ident">map</span></span>(<span>self, mapper: Callable[[TSource], TResult]) ‑> <a title="expression.collections.seq.Seq" href="seq.html#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
@@ -2488,7 +2585,7 @@ collection.</p>
         The result sequence.
     &#34;&#34;&#34;
 
-    return Seq(map(mapper)(self))</code></pre>
+    return Seq(pipe(self, map(mapper)))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.Seq.mapi"><code class="name flex">
@@ -2590,7 +2687,7 @@ from the sequence.</dd>
     Returns:
         The resulting sequence of computed states.
     &#34;&#34;&#34;
-    return Seq(itertools.accumulate(self, scanner, initial=state))  # type: ignore</code></pre>
+    return Seq(itertools.accumulate(self._value, scanner, initial=state))</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.Seq.skip"><code class="name flex">
@@ -2618,6 +2715,54 @@ sequence and then yields the remaining elements of the sequence.</p>
     return Seq(pipe(self, skip(count)))</code></pre>
 </details>
 </dd>
+<dt id="expression.collections.Seq.sum"><code class="name flex">
+<span>def <span class="ident">sum</span></span>(<span>self) ‑> ~TSource</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the sum of the elements in the sequence.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sum(self) -&gt; TSource:
+    &#34;&#34;&#34;Returns the sum of the elements in the sequence.&#34;&#34;&#34;
+    return sum(self)</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.Seq.sum_by"><code class="name flex">
+<span>def <span class="ident">sum_by</span></span>(<span>self, projection: Callable[[TSource], TResult]) ‑> ~TResult</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the sum of the results generated by applying the
+function to each element of the sequence.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sum_by(self, projection: Callable[[TSource], TResult]) -&gt; TResult:
+    &#34;&#34;&#34;Returns the sum of the results generated by applying the
+    function to each element of the sequence.&#34;&#34;&#34;
+    return pipe(self, sum_by(projection))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.Seq.tail"><code class="name flex">
+<span>def <span class="ident">tail</span></span>(<span>self) ‑> <a title="expression.collections.seq.Seq" href="seq.html#expression.collections.seq.Seq">Seq</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a sequence that skips 1 element of the underlying
+sequence and then yields the remaining elements of the
+sequence.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tail(self) -&gt; Seq[TSource]:
+    &#34;&#34;&#34;Returns a sequence that skips 1 element of the underlying
+    sequence and then yields the remaining elements of the
+    sequence.&#34;&#34;&#34;
+    return self.skip(1)</code></pre>
+</details>
+</dd>
 <dt id="expression.collections.Seq.take"><code class="name flex">
 <span>def <span class="ident">take</span></span>(<span>self, count: int) ‑> <a title="expression.collections.seq.Seq" href="seq.html#expression.collections.seq.Seq">Seq</a></span>
 </code></dt>
@@ -2639,6 +2784,19 @@ sequence and then yields the remaining elements of the sequence.</p>
         count: The number of items to take.
     &#34;&#34;&#34;
     return Seq(pipe(self, take(count)))</code></pre>
+</details>
+</dd>
+<dt id="expression.collections.Seq.to_list"><code class="name flex">
+<span>def <span class="ident">to_list</span></span>(<span>self) ‑> '<a title="expression.collections.FrozenList" href="#expression.collections.FrozenList">FrozenList</a>[TSource]'</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_list(self) -&gt; &#34;FrozenList[TSource]&#34;:
+    return to_list(self)</code></pre>
 </details>
 </dd>
 <dt id="expression.collections.Seq.zip"><code class="name flex">
@@ -2712,6 +2870,7 @@ ignored.</p>
 <li><code><a title="expression.collections.FrozenList.empty" href="#expression.collections.FrozenList.empty">empty</a></code></li>
 <li><code><a title="expression.collections.FrozenList.filter" href="#expression.collections.FrozenList.filter">filter</a></code></li>
 <li><code><a title="expression.collections.FrozenList.fold" href="#expression.collections.FrozenList.fold">fold</a></code></li>
+<li><code><a title="expression.collections.FrozenList.forall" href="#expression.collections.FrozenList.forall">forall</a></code></li>
 <li><code><a title="expression.collections.FrozenList.head" href="#expression.collections.FrozenList.head">head</a></code></li>
 <li><code><a title="expression.collections.FrozenList.indexed" href="#expression.collections.FrozenList.indexed">indexed</a></code></li>
 <li><code><a title="expression.collections.FrozenList.is_empty" href="#expression.collections.FrozenList.is_empty">is_empty</a></code></li>
@@ -2777,6 +2936,7 @@ ignored.</p>
 <li><code><a title="expression.collections.Seq.filter" href="#expression.collections.Seq.filter">filter</a></code></li>
 <li><code><a title="expression.collections.Seq.fold" href="#expression.collections.Seq.fold">fold</a></code></li>
 <li><code><a title="expression.collections.Seq.head" href="#expression.collections.Seq.head">head</a></code></li>
+<li><code><a title="expression.collections.Seq.length" href="#expression.collections.Seq.length">length</a></code></li>
 <li><code><a title="expression.collections.Seq.map" href="#expression.collections.Seq.map">map</a></code></li>
 <li><code><a title="expression.collections.Seq.mapi" href="#expression.collections.Seq.mapi">mapi</a></code></li>
 <li><code><a title="expression.collections.Seq.match" href="#expression.collections.Seq.match">match</a></code></li>
@@ -2786,7 +2946,11 @@ ignored.</p>
 <li><code><a title="expression.collections.Seq.range" href="#expression.collections.Seq.range">range</a></code></li>
 <li><code><a title="expression.collections.Seq.scan" href="#expression.collections.Seq.scan">scan</a></code></li>
 <li><code><a title="expression.collections.Seq.skip" href="#expression.collections.Seq.skip">skip</a></code></li>
+<li><code><a title="expression.collections.Seq.sum" href="#expression.collections.Seq.sum">sum</a></code></li>
+<li><code><a title="expression.collections.Seq.sum_by" href="#expression.collections.Seq.sum_by">sum_by</a></code></li>
+<li><code><a title="expression.collections.Seq.tail" href="#expression.collections.Seq.tail">tail</a></code></li>
 <li><code><a title="expression.collections.Seq.take" href="#expression.collections.Seq.take">take</a></code></li>
+<li><code><a title="expression.collections.Seq.to_list" href="#expression.collections.Seq.to_list">to_list</a></code></li>
 <li><code><a title="expression.collections.Seq.unfold" href="#expression.collections.Seq.unfold">unfold</a></code></li>
 <li><code><a title="expression.collections.Seq.zip" href="#expression.collections.Seq.zip">zip</a></code></li>
 </ul>

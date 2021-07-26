@@ -56,7 +56,7 @@ __all__ = [&#34;catch&#34;, &#34;sequence&#34;, &#34;traverse&#34;, &#34;pipelin
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def catch(
+<pre><code class="python">def catch(  # type: ignore
     f: Optional[Callable[..., TSource]] = None, *, exception: Type[TError]
 ) -&gt; Callable[[Callable[..., TSource]], Union[Callable[..., Result[TSource, TError]], Result[TSource, TError]]]:
     def decorator(fn: Callable[..., TSource]) -&gt; Callable[..., Result[TSource, TError]]:
@@ -100,7 +100,7 @@ composition of zero functions gives back the identity function.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipeline(*fns: Callable[[Any], Result[Any, Any]]) -&gt; Callable[[Any], Result[Any, Any]]:
+<pre><code class="python">def pipeline(*fns: Callable[[Any], Result[Any, Any]]) -&gt; Callable[[Any], Result[Any, Any]]:  # type: ignore
     &#34;&#34;&#34;pipeline multiple result returning functions left to right.
 
     A pipeline kleisli (&gt;=&gt;) composes zero or more functions into a
@@ -142,7 +142,8 @@ sequence of their response.</p></div>
     &#34;&#34;&#34;Execute a sequence of result returning commands and collect the
     sequence of their response.&#34;&#34;&#34;
 
-    return traverse(identity, lst)</code></pre>
+    fn = cast(Callable[[Result[TSource, TError]], Result[TSource, TError]], identity)
+    return traverse(fn, lst)</code></pre>
 </details>
 </dd>
 <dt id="expression.extra.result.traverse"><code class="name flex">
@@ -168,11 +169,11 @@ sequence of their response.</p></div>
         &#34;&#34;&#34;Same as:
         &gt;&gt;&gt; fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
         &#34;&#34;&#34;
+        h: TResult
+        t: List[TResult]
         h = yield from fn(head)
         t = yield from tail
 
-        h = cast(&#34;TResult&#34;, h)
-        t = cast(List[TResult], t)
         return [h] + t
 
     state: Result[List[TSource], TError] = Ok([])
