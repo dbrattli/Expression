@@ -30,7 +30,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Protocol,
     Tuple,
     TypeVar,
     cast,
@@ -438,8 +437,8 @@ class FrozenList(Generic[TSource]):
     def __iter__(self) -> Iterator[TSource]:
         return iter(self.value)
 
-    def __eq__(self, other: Any) -> bool:
-        return self.value == other
+    def __eq__(self, o: Any) -> bool:
+        return self.value == o
 
     def __len__(self) -> int:
         return len(self.value)
@@ -462,20 +461,6 @@ class FrozenList(Generic[TSource]):
 
     def __repr__(self) -> str:
         return str(self)
-
-
-class Cata(Protocol[TSourceIn, TResultOut]):
-    """A partially applied exit function."""
-
-    def __call__(self, source: FrozenList[TSourceIn]) -> TResultOut:
-        ...
-
-
-class Projection(Protocol[TSourceIn, TResultOut]):
-    """A partially applied filter function."""
-
-    def __call__(self, __source: FrozenList[TSourceIn]) -> FrozenList[TResultOut]:
-        ...
 
 
 def append(source: FrozenList[TSource]) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
@@ -634,7 +619,7 @@ def indexed(source: FrozenList[TSource]) -> FrozenList[Tuple[int, TSource]]:
     return source.indexed()
 
 
-def item(index: int) -> Cata[TSource, TSource]:
+def item(index: int) -> Callable[[FrozenList[TSource]], TSource]:
     """Indexes into the list. The first element has index 0.
 
     Args:
@@ -655,7 +640,7 @@ def is_empty(source: FrozenList[Any]) -> bool:
     return source.is_empty()
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[FrozenList[TSource]], FrozenList[TResult]]:
     """Map list.
 
     Builds a new collection whose elements are the results of applying
@@ -674,7 +659,7 @@ def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     return _map
 
 
-def mapi(mapper: Callable[[int, TSource], TResult]) -> Projection[TSource, TResult]:
+def mapi(mapper: Callable[[int, TSource], TResult]) -> Callable[[FrozenList[TSource]], FrozenList[TResult]]:
     """Map list with index.
 
     Builds a new collection whose elements are the results of
@@ -735,7 +720,7 @@ def singleton(value: TSource) -> FrozenList[TSource]:
     return FrozenList((value,))
 
 
-def skip(count: int) -> Projection[TSource, TSource]:
+def skip(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     """Returns the list after removing the first N elements.
 
     Args:
@@ -751,7 +736,7 @@ def skip(count: int) -> Projection[TSource, TSource]:
     return _skip
 
 
-def skip_last(count: int) -> Projection[TSource, TSource]:
+def skip_last(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     """Returns the list after removing the last N elements.
 
     Args:
@@ -771,7 +756,7 @@ def tail(source: FrozenList[TSource]) -> FrozenList[TSource]:
     return source.tail()
 
 
-def take(count: int) -> Projection[TSource, TSource]:
+def take(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     """Returns the first N elements of the list.
 
     Args:
@@ -787,7 +772,7 @@ def take(count: int) -> Projection[TSource, TSource]:
     return _take
 
 
-def take_last(count: int) -> Projection[TSource, TSource]:
+def take_last(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     """Returns a specified number of contiguous elements from the end of
     the list.
 

@@ -44,7 +44,7 @@ def from_continuations(callback: Callbacks[TSource]) -> Awaitable[TSource]:
         future.cancel()
 
     callback(done, error, cancel)
-    return asyncio.ensure_future(future)
+    return future
 
 
 def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -> None:
@@ -66,6 +66,8 @@ def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None
 
 
 def start_immediate(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -> None:
+    """Runs an asynchronous computation, starting immediately on the
+    current operating system thread."""
     task = asyncio.create_task(computation)
 
     def cb() -> None:
@@ -99,6 +101,9 @@ async def empty() -> None:
 
 
 def from_result(result: TSource) -> Awaitable[TSource]:
+    """Creates a async operation that's completed successfully with the
+    specified result."""
+
     async def from_result(result: TSource) -> TSource:
         """Async return value"""
         return result

@@ -273,7 +273,7 @@ def test_list_monad_law_left_identity(value: int):
 
 @given(st.integers())
 def test_list_monad_law_right_identity(value: int):
-    r"""Monad law right identit.
+    r"""Monad law right identity.
 
     m >>= return is no different than just m.
     """

@@ -127,7 +127,8 @@ def test_seq_scan_pipe(xs: List[int], s: int):
     func: Callable[[int, int], int] = lambda s, v: s + v
     value = pipe(seq.of_iterable(xs), seq.scan(func, s))
 
-    assert list(value) == list(accumulate(xs, func, initial=s))
+    expected: Iterable[int] = accumulate(xs, func, initial=s)
+    assert list(value) == list(expected)
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())
@@ -135,7 +136,8 @@ def test_seq_scan_fluent(xs: List[int], s: int):
     func: Callable[[int, int], int] = lambda s, v: s + v
     value = seq.of_iterable(xs).scan(func, s)
 
-    assert list(value) == list(accumulate(xs, func, initial=s))
+    expected: Iterable[int] = accumulate(xs, func, initial=s)
+    assert list(value) == list(expected)
 
 
 @given(st.lists(st.integers()))
@@ -182,7 +184,7 @@ def test_seq_append_fluent(xs: List[int], ys: List[int]):
 
 @given(st.lists(st.integers()))
 def test_seq_collect(xs: List[int]):
-    collector: seq.Projection[int, int] = seq.collect(seq.singleton)
+    collector = seq.collect(seq.singleton)
     ys = pipe(xs, collector)
 
     assert list(xs) == list(ys)
@@ -255,7 +257,7 @@ def test_seq_delay(xs: List[int]):
 def test_seq_choose_option():
     xs: Iterable[Optional[int]] = seq.of(None, 42)
 
-    chooser: seq.Projection[Optional[int], int] = seq.choose(option.of_optional)
+    chooser = seq.choose(option.of_optional)
     ys = pipe(xs, chooser)
 
     assert list(ys) == [42]

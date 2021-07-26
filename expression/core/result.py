@@ -11,7 +11,7 @@ the Result type to Exception.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, Protocol, Type, TypeVar, Union, get_origin, overload
+from typing import Any, Callable, Generator, Iterable, Iterator, Type, TypeVar, Union, get_origin, overload
 
 from .error import EffectError
 from .match import Case, SupportsMatch
@@ -116,7 +116,7 @@ class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
 
         raise NotImplementedError
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, o: Any) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -171,9 +171,9 @@ class Ok(Result[TSource, TError], SupportsMatch[TSource]):
 
         return []
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Ok):
-            return self.value == other.value  # type: ignore
+    def __eq__(self, o: Any) -> bool:
+        if isinstance(o, Ok):
+            return self.value == o.value  # type: ignore
         return False
 
     def __iter__(self) -> Generator[TSource, TSource, TSource]:
@@ -235,9 +235,9 @@ class Error(Result[TSource, TError], ResultException):
 
         return []
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Error):
-            return self.error == other.error  # type: ignore
+    def __eq__(self, o: Any) -> bool:
+        if isinstance(o, Error):
+            return self.error == o.error  # type: ignore
         return False
 
     def __iter__(self) -> Iterator[TSource]:
@@ -254,19 +254,16 @@ class Error(Result[TSource, TError], ResultException):
         return f"Error {self._error}"
 
 
-class Projection(Protocol[TSourceIn, TResultOut]):
-    def __call__(self, __source: Result[TSourceIn, TError]) -> Result[TResultOut, TError]:
-        ...
-
-
-def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.map(mapper)
 
     return _map
 
 
-def bind(mapper: Callable[[TSource], Result[TResult, Any]]) -> Projection[TSource, TResult]:
+def bind(
+    mapper: Callable[[TSource], Result[TResult, Any]]
+) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:
     def _bind(result: Result[TSource, TError]) -> Result[TResult, TError]:
         return result.bind(mapper)
 
@@ -279,5 +276,4 @@ __all__ = [
     "Error",
     "map",
     "bind",
-    "Projection",
 ]

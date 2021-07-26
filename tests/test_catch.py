@@ -3,13 +3,13 @@ from typing import Any, Generator
 import pytest
 
 from expression import effect
-from expression.core import Error, Ok
+from expression.core import Error, Ok, Result
 from expression.extra.result import catch
 
 
 def test_catch_wraps_ok():
     @catch(exception=ValueError)
-    def add(a: int, b: int) -> int:
+    def add(a: int, b: int) -> Any:
         return a + b
 
     assert add(3, 4) == Ok(7)
@@ -17,7 +17,7 @@ def test_catch_wraps_ok():
 
 def test_catch_wraps_error():
     @catch(exception=ValueError)
-    def fn() -> None:
+    def fn() -> Any:
         raise ValueError("error")
 
     result = fn()
@@ -31,7 +31,7 @@ def test_catch_wraps_error():
 
 def test_catch_ignores_other_exceptions():
     @catch(exception=KeyError)
-    def fn(ex: Exception) -> None:
+    def fn(ex: Exception) -> Result[int, Exception]:
         raise ex
 
     with pytest.raises(ValueError):
@@ -44,7 +44,7 @@ def test_catch_ignores_other_exceptions():
 def test_catch_chained():
     @catch(exception=KeyError)
     @catch(exception=ValueError)
-    def fn(ex: Exception) -> None:
+    def fn(ex: Exception) -> Any:
         raise ex
 
     result = fn(ValueError("error"))

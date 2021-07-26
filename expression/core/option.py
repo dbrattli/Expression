@@ -17,7 +17,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Protocol,
     TypeVar,
     Union,
     cast,
@@ -106,7 +105,7 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
 
     @abstractmethod
     def or_else(self, if_none: Option[TSource]) -> Option[TSource]:
-        """Returns option if it is Some, otherwise returns `if_one`. """
+        """Returns option if it is Some, otherwise returns `if_one`."""
         raise NotImplementedError
 
     @abstractmethod
@@ -159,7 +158,7 @@ class Option(Iterable[TSource], MatchMixin[TSource], SupportsMatch[Union[TSource
         raise NotImplementedError
 
     @abstractmethod
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, o: Any) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -261,9 +260,9 @@ class Some(Option[TSource]):
             return self._value < other._value  # type: ignore
         return False
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, Some):
-            return self._value == other._value  # type: ignore
+    def __eq__(self, o: Any) -> bool:
+        if isinstance(o, Some):
+            return self._value == o._value  # type: ignore
         return False
 
     def __iter__(self) -> Generator[TSource, TSource, TSource]:
@@ -366,23 +365,13 @@ class Nothing_(Option[TSource], EffectError):
     def __lt__(self, other: Any) -> bool:
         return True
 
-    def __eq__(self, other: Any) -> bool:
-        if other is Nothing:
+    def __eq__(self, o: Any) -> bool:
+        if o is Nothing:
             return True
         return False
 
     def __str__(self):
         return "Nothing"
-
-
-class Projection(Protocol[TSourceIn, TResultOut]):
-    """Option transforming protocol function.
-
-    `Option[TSource]) -> Option[TResult]`
-    """
-
-    def __call__(self, __source: Option[TSourceIn]) -> Option[TResultOut]:
-        raise NotImplementedError
 
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
@@ -397,7 +386,7 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 """
 
 
-def bind(mapper: Callable[[TSource], Option[TResult]]) -> Projection[TSource, TResult]:
+def bind(mapper: Callable[[TSource], Option[TResult]]) -> Callable[[Option[TSource]], Option[TResult]]:
     """Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -438,7 +427,7 @@ def is_some(option: Option[Any]) -> bool:
     return option.is_some()
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[Option[TSource]], Option[TResult]]:
     def _map(option: Option[TSource]) -> Option[TResult]:
         return option.map(mapper)
 
@@ -528,5 +517,4 @@ __all__ = [
     "to_seq",
     "of_optional",
     "of_obj",
-    "Projection",
 ]

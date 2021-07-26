@@ -248,8 +248,8 @@ class Map(Mapping[Key, Value]):
             res = combine_hash(res, hash(y))
         return res
 
-    def __getitem__(self, key: Key) -> Value:
-        return maptree.find(key, self._tree)
+    def __getitem__(self, k: Key) -> Value:
+        return maptree.find(k, self._tree)
 
     def __iter__(self) -> Iterator[Key]:
         xs = maptree.mk_iterator(self._tree)
@@ -259,14 +259,14 @@ class Map(Mapping[Key, Value]):
         """Return the number of bindings in the map."""
         return maptree.size(self._tree)
 
-    def __contains__(self, key: Any) -> bool:
-        return self.contains_key(key)
+    def __contains__(self, o: Any) -> bool:
+        return self.contains_key(o)
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Map):
+    def __eq__(self, o: Any) -> bool:
+        if not isinstance(o, Map):
             return False
 
-        other = cast(Map[Any, Any], other)
+        other = cast(Map[Any, Any], o)
         iterator: Iterator[Tuple[Any, Any]] = iter(other.to_seq())
 
         for kv in self.to_seq():

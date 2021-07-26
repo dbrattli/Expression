@@ -26,7 +26,7 @@ from __future__ import annotations
 import builtins
 import functools
 import itertools
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional, Protocol, Tuple, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, cast, overload
 
 from expression.core import Case, Option, SupportsLessThan, identity, pipe
 
@@ -350,18 +350,7 @@ class SeqGen(Iterable[TSource]):
         return builtins.iter(xs)
 
 
-class Projection(Protocol[TSourceIn, TResultOut]):
-    """Sequence transformation protocol.
-
-    A sequence transformation protocol that encapsulates a function of
-    type `Iterable[TSource]) -> Iterable[TResult]`
-    """
-
-    def __call__(self, __source: Iterable[TSourceIn]) -> Iterable[TResultOut]:
-        raise NotImplementedError
-
-
-def append(*others: Iterable[TSource]) -> Projection[TSource, TSource]:
+def append(*others: Iterable[TSource]) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
     """Wraps the given enumerations as a single concatenated
     enumeration."""
 
@@ -371,7 +360,7 @@ def append(*others: Iterable[TSource]) -> Projection[TSource, TSource]:
     return _
 
 
-def choose(chooser: Callable[[TSource], Option[TResult]]) -> Projection[TSource, TResult]:
+def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
     """Choose items from the sequence.
 
     Applies the given function to each element of the list. Returns
@@ -395,7 +384,7 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> Projection[TSource,
     return _choose
 
 
-def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Projection[TSource, TResult]:
+def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
     def _collect(source: Iterable[TSource]) -> Iterable[TResult]:
         def gen():
             for xs in source:
@@ -444,7 +433,7 @@ empty: Seq[Any] = Seq()
 """The empty sequence."""
 
 
-def filter(predicate: Callable[[TSource], bool]) -> Projection[TSource, TSource]:
+def filter(predicate: Callable[[TSource], bool]) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
     """Filter sequence.
 
     Filters the sequence to a new sequence containing only the
@@ -609,7 +598,7 @@ def length(source: Seq[Any]) -> int:
     return builtins.sum(1 for _ in source)
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
     """Map source sequence.
 
     Builds a new collection whose elements are the results of
@@ -641,7 +630,7 @@ def map(mapper: Callable[[TSource], TResult]) -> Projection[TSource, TResult]:
     return _map
 
 
-def mapi(mapping: Callable[[int, TSource], TResult]) -> Projection[TSource, TResult]:
+def mapi(mapping: Callable[[int, TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
     """Map list with index.
 
     Builds a new collection whose elements are the results of
@@ -766,7 +755,7 @@ def singleton(item: TSource) -> Seq[TSource]:
     return Seq([item])
 
 
-def skip(count: int) -> Projection[Any, Any]:
+def skip(count: int) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
     """Returns a sequence that skips N elements of the underlying
     sequence and then yields the remaining elements of the sequence.
 
@@ -809,7 +798,7 @@ def tail(source: Iterable[TSource]) -> Iterable[TSource]:
     return proj(source)
 
 
-def take(count: int) -> Projection[Any, Any]:
+def take(count: int) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
     """Returns the first N elements of the sequence.
 
     Args:
@@ -932,7 +921,6 @@ __all__ = [
     "sum_by",
     "tail",
     "take",
-    "Projection",
     "unfold",
     "zip",
 ]
