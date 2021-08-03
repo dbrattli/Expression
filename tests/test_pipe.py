@@ -3,7 +3,7 @@ from typing import Callable
 from hypothesis import given
 from hypothesis import strategies as st
 
-from expression.core import pipe, pipe2
+from expression import pipe, pipe2
 
 
 @given(st.integers())

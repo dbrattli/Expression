@@ -1,6 +1,6 @@
 import pytest
 
-from expression.core import Failure, Success, Try, match
+from expression import Failure, Success, Try, match
 
 from .utils import CustomException
 

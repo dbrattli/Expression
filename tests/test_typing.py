@@ -2,7 +2,7 @@ from typing import Any, List, cast
 
 import pytest
 
-from expression.core.typing import downcast, try_downcast, upcast
+from expression import downcast, try_downcast, upcast
 
 
 class Base:

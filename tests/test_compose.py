@@ -3,7 +3,7 @@ from typing import Callable
 from hypothesis import given
 from hypothesis import strategies as st
 
-from expression.core import compose, identity
+from expression import compose, identity
 
 Func = Callable[[int], int]
 

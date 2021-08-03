@@ -1,4 +1,4 @@
-from expression.core import Choice, Choice1of2, Choice2, Choice2of2, match
+from expression import Choice, Choice1of2, Choice2, Choice2of2, match
 
 
 def test_choice_choice1of2():

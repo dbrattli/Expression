@@ -5,8 +5,8 @@ from typing import Any, Callable, List, Tuple
 from hypothesis import given
 from hypothesis import strategies as st
 
+from expression import Nothing, Option, Some, pipe
 from expression.collections import FrozenList, frozenlist
-from expression.core import Nothing, Option, Some, pipe
 
 Func = Callable[[int], int]
 

@@ -1,5 +1,5 @@
 # flake8: noqa
-from expression.core import TailCall, TailCallResult, tailrec
+from expression import TailCall, TailCallResult, tailrec
 
 
 def test_factorial():

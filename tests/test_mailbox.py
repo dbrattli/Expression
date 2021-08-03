@@ -5,7 +5,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from expression.core import AsyncReplyChannel, MailboxProcessor
+from expression import AsyncReplyChannel, MailboxProcessor
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

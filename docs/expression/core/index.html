@@ -45,7 +45,7 @@ from .option import Nothing, Nothing_, Option, Some, default_arg
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
 from .try_ import Failure, Success, Try
-from .typing import SupportsLessThan, SupportsMatch
+from .typing import SupportsLessThan, SupportsMatch, downcast, try_downcast, upcast
 
 __all__ = [
     &#34;aiotools&#34;,
@@ -63,6 +63,7 @@ __all__ = [
     &#34;compose&#34;,
     &#34;curried&#34;,
     &#34;default_arg&#34;,
+    &#34;downcast&#34;,
     &#34;MatchMixin&#34;,
     &#34;EffectError&#34;,
     &#34;Error&#34;,
@@ -93,6 +94,8 @@ __all__ = [
     &#34;tailrec&#34;,
     &#34;tailrec_async&#34;,
     &#34;Try&#34;,
+    &#34;try_downcast&#34;,
+    &#34;upcast&#34;,
 ]</code></pre>
 </details>
 </section>
@@ -289,6 +292,32 @@ implementation of a function. Same as <code>default_value</code>, but
     &#34;uncurried&#34; and with the arguments swapped.
     &#34;&#34;&#34;
     return value.default_value(default_value)</code></pre>
+</details>
+</dd>
+<dt id="expression.core.downcast"><code class="name flex">
+<span>def <span class="ident">downcast</span></span>(<span>type: Type[~Derived], expr: Any) ‑> ~Derived</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Downcast expression <code>Derived</code> to <code>Base</code></p>
+<p>Checks at compile time that the type of expression Base is a
+supertype of Derived, and checks at runtime that Base is in fact an
+instance of Derived.</p>
+<p>Note: F# <code>:?&gt;</code> or <code><a title="expression.core.downcast" href="#expression.core.downcast">downcast()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def downcast(type: Type[Derived], expr: Any) -&gt; Derived:
+    &#34;&#34;&#34;Downcast expression `Derived` to `Base`
+
+    Checks at compile time that the type of expression Base is a
+    supertype of Derived, and checks at runtime that Base is in fact an
+    instance of Derived.
+
+    Note: F# `:?&gt;` or `downcast`.
+    &#34;&#34;&#34;
+    assert isinstance(expr, type), f&#34;The type of expression {expr} is not a supertype of {type}&#34;
+    return cast(&#34;Derived&#34;, expr)</code></pre>
 </details>
 </dd>
 <dt id="expression.core.failwith"><code class="name flex">
@@ -512,6 +541,55 @@ of <code><a title="expression.core.TailCall" href="#expression.core.TailCall">Ta
         return await trampoline(result)
 
     return wrapper</code></pre>
+</details>
+</dd>
+<dt id="expression.core.try_downcast"><code class="name flex">
+<span>def <span class="ident">try_downcast</span></span>(<span>type_: Type[~Derived], expr: Any) ‑> Optional[~Derived]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Downcast expression <code>Base</code> to <code>Derived</code>.</p>
+<p>Check that the <code>Derived</code> type is a supertype of <code>Base</code>.</p>
+<p>NOTE: Supports generic types.</p>
+<h2 id="returns">Returns</h2>
+<p>None if <code>Derived</code> is not a supertype of <code>Base</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def try_downcast(type_: Type[Derived], expr: Any) -&gt; Optional[Derived]:
+    &#34;&#34;&#34;Downcast expression `Base` to `Derived`.
+
+    Check that the `Derived` type is a supertype of `Base`.
+
+    NOTE: Supports generic types.
+
+    Returns:
+        None if `Derived` is not a supertype of `Base`.
+    &#34;&#34;&#34;
+    origin: Optional[Type[Derived]] = get_origin(type_) or type_
+    if origin is not None and isinstance(expr, origin):
+        derived = cast(&#34;Derived&#34;, expr)
+        return derived
+
+    return None</code></pre>
+</details>
+</dd>
+<dt id="expression.core.upcast"><code class="name flex">
+<span>def <span class="ident">upcast</span></span>(<span>type: Type[~Base], expr: ~Base) ‑> ~Base</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Upcast expression from a <code>Derived</code> to <code>Base</code>.</p>
+<p>Note: F# <code>:&gt;</code> or <code><a title="expression.core.upcast" href="#expression.core.upcast">upcast()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def upcast(type: Type[Base], expr: Base) -&gt; Base:
+    &#34;&#34;&#34;Upcast expression from a `Derived` to `Base`.
+
+    Note: F# `:&gt;` or `upcast`.
+    &#34;&#34;&#34;
+    return expr</code></pre>
 </details>
 </dd>
 </dl>
@@ -3626,6 +3704,7 @@ function will be called again with the new arguments provided.</p></div>
 <li><code><a title="expression.core.compose" href="#expression.core.compose">compose</a></code></li>
 <li><code><a title="expression.core.curried" href="#expression.core.curried">curried</a></code></li>
 <li><code><a title="expression.core.default_arg" href="#expression.core.default_arg">default_arg</a></code></li>
+<li><code><a title="expression.core.downcast" href="#expression.core.downcast">downcast</a></code></li>
 <li><code><a title="expression.core.failwith" href="#expression.core.failwith">failwith</a></code></li>
 <li><code><a title="expression.core.flip" href="#expression.core.flip">flip</a></code></li>
 <li><code><a title="expression.core.fst" href="#expression.core.fst">fst</a></code></li>
@@ -3637,6 +3716,8 @@ function will be called again with the new arguments provided.</p></div>
 <li><code><a title="expression.core.snd" href="#expression.core.snd">snd</a></code></li>
 <li><code><a title="expression.core.tailrec" href="#expression.core.tailrec">tailrec</a></code></li>
 <li><code><a title="expression.core.tailrec_async" href="#expression.core.tailrec_async">tailrec_async</a></code></li>
+<li><code><a title="expression.core.try_downcast" href="#expression.core.try_downcast">try_downcast</a></code></li>
+<li><code><a title="expression.core.upcast" href="#expression.core.upcast">upcast</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

@@ -16,7 +16,7 @@ from .option import Nothing, Nothing_, Option, Some, default_arg
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
 from .try_ import Failure, Success, Try
-from .typing import SupportsLessThan, SupportsMatch
+from .typing import SupportsLessThan, SupportsMatch, downcast, try_downcast, upcast
 
 __all__ = [
     "aiotools",
@@ -34,6 +34,7 @@ __all__ = [
     "compose",
     "curried",
     "default_arg",
+    "downcast",
     "MatchMixin",
     "EffectError",
     "Error",
@@ -64,4 +65,6 @@ __all__ = [
     "tailrec",
     "tailrec_async",
     "Try",
+    "try_downcast",
+    "upcast",
 ]

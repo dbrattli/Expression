@@ -3,8 +3,8 @@ from typing import Callable, Dict, ItemsView, Iterable, List, Tuple
 from hypothesis import given
 from hypothesis import strategies as st
 
+from expression import pipe
 from expression.collections import FrozenList, Map, map
-from expression.core import pipe
 
 
 def test_map_empty():
