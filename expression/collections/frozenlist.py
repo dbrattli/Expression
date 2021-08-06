@@ -356,6 +356,33 @@ class FrozenList(Generic[TSource]):
         _, *tail = self.value
         return FrozenList(tail)
 
+    def sort(self, reverse: bool = False) -> FrozenList[TSource]:
+        """Sort list directly.
+
+        Returns a new sorted collection.
+
+        Args:
+            reverse: Sort in reversed order.
+
+        Returns:
+            A sorted list.
+        """
+        return FrozenList(builtins.sorted(self.value, reverse=reverse))
+
+    def sort_with(self, func: Callable[[TSource], Any], reverse: bool = False) -> FrozenList[TSource]:
+        """Sort list with supplied function.
+
+        Returns a new sorted collection.
+
+        Args:
+            func: The function to extract a comparison key from each element in list.
+            reverse: Sort in reversed order.
+
+        Returns:
+            A sorted list.
+        """
+        return FrozenList(builtins.sorted(self.value, key=func, reverse=reverse))
+
     def take(self, count: int) -> FrozenList[TSource]:
         """Returns the first N elements of the list.
 
@@ -752,6 +779,55 @@ def skip_last(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]
     return _skip_last
 
 
+def sort(reverse=False) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
+    """Returns a new sorted collection
+
+    Args:
+        reverse: Sort in reversed order.
+
+    Returns:
+        Partially applied sort function.
+    """
+
+    def _sort(source: FrozenList[TSource]) -> FrozenList[TSource]:
+        """Returns a new sorted collection
+
+        Args:
+            source: The input list.
+
+        Returns:
+            A sorted list.
+        """
+        return source.sort(reverse)
+
+    return _sort
+
+
+def sort_with(func: Callable[[TSource], Any], reverse=False) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
+    """Returns a new collection sorted using "func" key function.
+
+    Args:
+        func: The function to extract a comparison key from each element in list.
+        reverse: Sort in reversed order.
+
+    Returns:
+        Partially applied sort function.
+    """
+
+    def _sort_with(source: FrozenList[TSource]) -> FrozenList[TSource]:
+        """Returns a new collection sorted using "func" key function.
+
+        Args:
+            source: The input list.
+
+        Returns:
+            A sorted list.
+        """
+        return source.sort_with(func, reverse)
+
+    return _sort_with
+
+
 def tail(source: FrozenList[TSource]) -> FrozenList[TSource]:
     return source.tail()
 
@@ -874,6 +950,8 @@ __all__ = [
     "singleton",
     "skip",
     "skip_last",
+    "sort",
+    "sort_with",
     "tail",
     "take",
     "take_last",
