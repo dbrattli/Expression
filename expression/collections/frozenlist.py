@@ -37,15 +37,17 @@ from typing import (
     overload,
 )
 
-from expression.core import Case, Nothing, Option, Some, pipe
+from expression.core import Case, Nothing, Option, Some, SupportsLessThan, pipe
 
 from . import seq
 
 TSource = TypeVar("TSource")
+TSourceSortable = TypeVar("TSourceSortable", bound=SupportsLessThan)
 TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
 TResultOut = TypeVar("TResultOut", covariant=True)
 TState = TypeVar("TState")
+
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
 T3 = TypeVar("T3")
@@ -356,7 +358,7 @@ class FrozenList(Generic[TSource]):
         _, *tail = self.value
         return FrozenList(tail)
 
-    def sort(self, reverse: bool = False) -> FrozenList[TSource]:
+    def sort(self: FrozenList[TSourceSortable], reverse: bool = False) -> FrozenList[TSourceSortable]:
         """Sort list directly.
 
         Returns a new sorted collection.
@@ -779,7 +781,7 @@ def skip_last(count: int) -> Callable[[FrozenList[TSource]], FrozenList[TSource]
     return _skip_last
 
 
-def sort(reverse=False) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
+def sort(reverse: bool = False) -> Callable[[FrozenList[TSourceSortable]], FrozenList[TSourceSortable]]:
     """Returns a new sorted collection
 
     Args:
@@ -789,7 +791,7 @@ def sort(reverse=False) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
         Partially applied sort function.
     """
 
-    def _sort(source: FrozenList[TSource]) -> FrozenList[TSource]:
+    def _sort(source: FrozenList[TSourceSortable]) -> FrozenList[TSourceSortable]:
         """Returns a new sorted collection
 
         Args:
@@ -803,7 +805,9 @@ def sort(reverse=False) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     return _sort
 
 
-def sort_with(func: Callable[[TSource], Any], reverse=False) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
+def sort_with(
+    func: Callable[[TSource], Any], reverse: bool = False
+) -> Callable[[FrozenList[TSource]], FrozenList[TSource]]:
     """Returns a new collection sorted using "func" key function.
 
     Args:
