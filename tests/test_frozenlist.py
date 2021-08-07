@@ -239,25 +239,6 @@ def test_list_filter(xs: List[int], limit: int):
     assert list(result) == list(expected)
 
 
-@given(st.lists(st.integers()))
-def test_list_sort(xs: List[int]):
-    expected = sorted(xs)
-    ys: FrozenList[int] = frozenlist.of_seq(xs)
-    result = pipe(ys, frozenlist.sort())
-
-    assert list(result) == list(expected)
-
-
-@given(st.lists(st.text(min_size=2)))
-def test_list_sort_with(xs: List[str]):
-    expected = sorted(xs, key=lambda x: x[1])
-    ys: FrozenList[str] = frozenlist.of_seq(xs)
-    func: Callable[[str], str] = lambda x: x[1]
-    result = pipe(ys, frozenlist.sort_with(func))
-
-    assert list(result) == list(expected)
-
-
 rtn: Callable[[int], FrozenList[int]] = frozenlist.singleton
 empty: FrozenList[Any] = frozenlist.empty
 
