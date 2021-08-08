@@ -671,7 +671,13 @@ def bind(mapper: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
         Returns:
             The result sequence.
         """
-        return Seq.of(source).bind(mapper)
+        def gen():
+            for element in source:
+                computed_iterable = mapper(element)
+                for inner_element in computed_iterable:
+                    yield inner_element
+
+        return SeqGen(gen)
 
     return _bind
 
