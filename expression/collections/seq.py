@@ -174,6 +174,24 @@ class Seq(Iterable[TSource]):
         """
         return Seq(mapi(mapping)(self))
 
+    def bind(self, mapper: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
+        """Bind sequences.
+
+        Applies and returns the result of the mapper for each of the element
+        of the collection and returns a flattened sequence with all of them.
+
+        Args:
+            mapper: A function that takes the value of type TSource from
+                an a sequence and transforms it into an iterable containing
+                values of type TResult.
+
+        Returns:
+            A sequence of the output type of the mapper.
+        """
+        def _bind_concat(sequence_left: Seq[TResult], current_element: TResult) -> Seq[TResult]:
+            return concat(sequence_left, mapper(current_element))
+        return functools.reduce(_bind_concat, self, Seq.of())
+
     @overload
     def match(self) -> Case[Iterable[TSource]]:
         ...
