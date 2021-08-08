@@ -350,3 +350,12 @@ def test_seq_bind():
     computed_sequence = input_sequence.bind(lambda element: range(element))
     expected_sequence = seq.of(0, 0, 1, 0, 1, 2)
     assert list(expected_sequence) == list(computed_sequence)
+
+
+def test_seq_bind_static():
+    input_sequence = seq.of(1, 2, 3)
+    computed_sequence = input_sequence.pipe(
+            seq.bind(lambda element: range(element))
+        )
+    expected_sequence = seq.of(0, 0, 1, 0, 1, 2)
+    assert list(expected_sequence) == list(computed_sequence)
