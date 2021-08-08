@@ -664,7 +664,7 @@ def bind(mapper: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
     """
 
     def _bind(source: Iterable[TSource]) -> Iterable[TResult]:
-        """Partially applied map function.
+        """Partially applied bind function.
 
         Args:
             source: The input sequence.
