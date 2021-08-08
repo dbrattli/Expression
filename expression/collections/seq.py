@@ -177,12 +177,12 @@ class Seq(Iterable[TSource]):
     def bind(self, mapper: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
         """Bind sequences.
 
-        Applies and returns the result of the mapper for each of the element
-        of the collection and returns a flattened sequence with all of them.
+        Applies and returns the result of the mapper for each of the elements
+        of the collection, and returns a flattened sequence with all of them.
 
         Args:
             mapper: A function that takes the value of type TSource from
-                an a sequence and transforms it into an iterable containing
+                a sequence and transforms it into an iterable containing
                 values of type TResult.
 
         Returns:
