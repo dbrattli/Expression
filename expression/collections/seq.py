@@ -648,6 +648,33 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
     return _map
 
 
+def bind(mapper: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
+    """Bind sequences.
+
+    Applies and returns the result of the mapper for each of the elements
+    of the collection, and returns a flattened sequence with all of them.
+
+    Args:
+        mapper: A function that takes the value of type TSource from
+            a sequence and transforms it into an iterable containing
+            values of type TResult.
+
+    Returns:
+        A sequence of the output type of the mapper.
+    """
+
+    def _bind(source: Iterable[TSource]) -> Iterable[TResult]:
+        """Partially applied map function.
+
+        Args:
+            source: The input sequence.
+        Returns:
+            The result sequence.
+        """
+        return Seq.of(source).bind(mapper)
+
+    return _bind
+
 def mapi(mapping: Callable[[int, TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
     """Map list with index.
 
