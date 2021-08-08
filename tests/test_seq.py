@@ -346,7 +346,7 @@ def test_seq_monad_law_associativity_empty(value: int):
 
 
 def test_seq_bind():
-    main_sequence = seq.of(1, 2, 3)
-    computed_sequence_books = main_sequence.bind(lambda element: range(element))
+    input_sequence = seq.of(1, 2, 3)
+    computed_sequence = input_sequence.bind(lambda element: range(element))
     expected_sequence = seq.of(0, 0, 1, 0, 1, 2)
-    assert list(expected_sequence) == list(computed_sequence_books)
+    assert list(expected_sequence) == list(computed_sequence)
