@@ -175,22 +175,9 @@ class Seq(Iterable[TSource]):
         return Seq(mapi(mapping)(self))
 
     def bind(self, mapper: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
-        """Bind sequences.
-
-        Applies and returns the result of the mapper for each of the elements
-        of the collection, and returns a flattened sequence with all of them.
-
-        Args:
-            mapper: A function that takes the value of type TSource from
-                a sequence and transforms it into an iterable containing
-                values of type TResult.
-
-        Returns:
-            A sequence of the output type of the mapper.
-        """
-        def _bind_concat(sequence_left: Seq[TResult], current_element: TResult) -> Seq[TResult]:
-            return concat(sequence_left, mapper(current_element))
-        return functools.reduce(_bind_concat, self, Seq.of())
+        """This method is an alias to :func:`~expression.seq.Seq.collect` to support
+        consistent Monad naming"""
+        return self.collect(mapper)
 
     @overload
     def match(self) -> Case[Iterable[TSource]]:
@@ -649,37 +636,9 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
 
 
 def bind(mapper: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
-    """Bind sequences.
-
-    Applies and returns the result of the mapper for each of the elements
-    of the collection, and returns a flattened sequence with all of them.
-
-    Args:
-        mapper: A function that takes the value of type TSource from
-            a sequence and transforms it into an iterable containing
-            values of type TResult.
-
-    Returns:
-        A sequence of the output type of the mapper.
-    """
-
-    def _bind(source: Iterable[TSource]) -> Iterable[TResult]:
-        """Partially applied bind function.
-
-        Args:
-            source: The input sequence.
-        Returns:
-            The result sequence.
-        """
-        def gen():
-            for element in source:
-                computed_iterable = mapper(element)
-                for inner_element in computed_iterable:
-                    yield inner_element
-
-        return SeqGen(gen)
-
-    return _bind
+    """This method is an alias to :func:`~expression.seq.collect` to support
+    consistent Monad naming"""
+    return collect(mapper)
 
 def mapi(mapping: Callable[[int, TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
     """Map list with index.
