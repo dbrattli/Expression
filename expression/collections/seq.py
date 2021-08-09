@@ -93,7 +93,7 @@ class Seq(Iterable[TSource]):
         xs = pipe(self, choose(chooser))
         return Seq(xs)
 
-    def collect(self, mapping: Callable[[TSource], "Seq[TResult]"]) -> Seq[TResult]:
+    def collect(self, mapping: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
         xs = pipe(self, collect(mapping))
         return Seq(xs)
 
@@ -389,8 +389,8 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[Iterable[
     return _choose
 
 
-def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
-    def _collect(source: Iterable[TSource]) -> Iterable[TResult]:
+def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterable[TSource]], Seq[TResult]]:
+    def _collect(source: Iterable[TSource]) -> Seq[TResult]:
         def gen():
             for xs in source:
                 for x in mapping(xs):
@@ -634,11 +634,10 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
 
     return _map
 
-
-def bind(mapper: Callable[[TSource], Iterable[TResult]]) -> Seq[TResult]:
+def bind(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterable[TSource]], Seq[TResult]]:
     """This method is an alias to :func:`~expression.seq.collect` to support
     consistent Monad naming"""
-    return collect(mapper)
+    return collect(mapping)
 
 def mapi(mapping: Callable[[int, TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
     """Map list with index.
