@@ -152,7 +152,7 @@ def add(k: Key, v: Value, m: MapTree[Key, Value]) -> MapTree[Key, Value]:
             if k < m2.key:
                 node = MapTreeNode(k, v, empty, m, 2)
                 return Some(node)
-            elif k == m2:
+            elif k == m2.key:
                 return Some(MapTreeLeaf(k, v))
             else:
                 return Some(MapTreeNode(k, v, m, empty, 2))
