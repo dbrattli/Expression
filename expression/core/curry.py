@@ -1,6 +1,12 @@
 import inspect
 from functools import partial, wraps
-from typing import Any, Callable
+from typing import Any, Callable, Tuple, TypeVar
+
+A = TypeVar("A")
+B = TypeVar("B")
+C = TypeVar("C")
+D = TypeVar("D")
+E = TypeVar("E")
 
 
 def curried(fn: Callable[..., Any]) -> Callable[..., Any]:
@@ -38,6 +44,53 @@ def curried(fn: Callable[..., Any]) -> Callable[..., Any]:
         return curried(partial(fn, *args, **kw))
 
     return wrapper
+
+
+def curry1of2(fn: Callable[[A, B], C]) -> Callable[[A], Callable[[B], C]]:
+    """Curry 1 of 2 arguments."""
+    return lambda a: lambda b: fn(a, b)
+
+
+def curry2of2(fn: Callable[[A, B], C]) -> Callable[[A], Callable[[B], Callable[[], C]]]:
+    """Curry 2 of 2 arguments."""
+    return lambda a: lambda b: lambda: fn(a, b)
+
+
+def curry1of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B, C], D]]:
+    """Curry 1 of 3 arguments."""
+    return lambda a: lambda b, c: fn(a, b, c)
+
+
+def curry2of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B], Callable[[C], D]]]:
+    """Curry 2 of 3 arguments."""
+    return lambda a: lambda b: lambda c: fn(a, b, c)
+
+
+def curry3of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B], Callable[[C], Callable[[], D]]]]:
+    """Curry 3 of 3 arguments."""
+    return lambda a: lambda b: lambda c: lambda: fn(a, b, c)
+
+
+def curry1of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B, C, C], E]]:
+    """Curry 1 of 4 arguments."""
+    return lambda a: lambda b, c, d: fn(a, b, c, d)
+
+
+def curry2of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B], Callable[[C, D], E]]]:
+    """Curry 2 of 4 arguments."""
+    return lambda a: lambda b: lambda c, d: fn(a, b, c, d)
+
+
+def curry3of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B], Callable[[C], Callable[[D], E]]]]:
+    """Curry 3 of 4 arguments."""
+    return lambda a: lambda b: lambda c: lambda d: fn(a, b, c, d)
+
+
+def curry4of4(
+    fn: Callable[[A, B, C, D], E]
+) -> Callable[[A], Callable[[B], Callable[[C], Callable[[D], Callable[[], D]]]]]:
+    """Curry 4 of 4 arguments."""
+    return lambda a: lambda b: lambda c: lambda d: lambda: fn(a, b, c, d)
 
 
 __all__ = ["curried"]
