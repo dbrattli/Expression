@@ -71,7 +71,7 @@ def curry3of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B], Callabl
     return lambda a: lambda b: lambda c: lambda: fn(a, b, c)
 
 
-def curry1of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B, C, C], E]]:
+def curry1of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B, C, D], E]]:
     """Curry 1 of 4 arguments."""
     return lambda a: lambda b, c, d: fn(a, b, c, d)
 
@@ -88,9 +88,20 @@ def curry3of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B], Call
 
 def curry4of4(
     fn: Callable[[A, B, C, D], E]
-) -> Callable[[A], Callable[[B], Callable[[C], Callable[[D], Callable[[], D]]]]]:
+) -> Callable[[A], Callable[[B], Callable[[C], Callable[[D], Callable[[], E]]]]]:
     """Curry 4 of 4 arguments."""
     return lambda a: lambda b: lambda c: lambda d: lambda: fn(a, b, c, d)
 
 
-__all__ = ["curried"]
+__all__ = [
+    "curried",
+    "curry1of2",
+    "curry2of2",
+    "curry1of3",
+    "curry2of3",
+    "curry3of3",
+    "curry1of4",
+    "curry2of4",
+    "curry3of4",
+    "curry4of4",
+]
