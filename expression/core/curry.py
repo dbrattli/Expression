@@ -51,14 +51,14 @@ def curry1of2(fn: Callable[[A, B], C]) -> Callable[[A], Callable[[B], C]]:
     return lambda a: lambda b: fn(a, b)
 
 
-def curry2of2(fn: Callable[[A, B], C]) -> Callable[[A], Callable[[B], Callable[[], C]]]:
+def curry2of2(fn: Callable[[A, B], C]) -> Callable[[], Callable[[A], Callable[[B], C]]]:
     """Curry 2 of 2 arguments."""
-    return lambda a: lambda b: lambda: fn(a, b)
+    return lambda: lambda a: lambda b: fn(a, b)
 
 
-def curry1of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B, C], D]]:
+def curry1of3(fn: Callable[[A, B, C], D]) -> Callable[[A, B], Callable[[C], D]]:
     """Curry 1 of 3 arguments."""
-    return lambda a: lambda b, c: fn(a, b, c)
+    return lambda a, b: lambda c: fn(a, b, c)
 
 
 def curry2of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B], Callable[[C], D]]]:
@@ -66,19 +66,19 @@ def curry2of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B], Callabl
     return lambda a: lambda b: lambda c: fn(a, b, c)
 
 
-def curry3of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B], Callable[[C], Callable[[], D]]]]:
+def curry3of3(fn: Callable[[A, B, C], D]) -> Callable[[], Callable[[A], Callable[[B], Callable[[C], D]]]]:
     """Curry 3 of 3 arguments."""
-    return lambda a: lambda b: lambda c: lambda: fn(a, b, c)
+    return lambda: lambda a: lambda b: lambda c: fn(a, b, c)
 
 
-def curry1of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B, C, D], E]]:
+def curry1of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A, B, C], Callable[[D], E]]:
     """Curry 1 of 4 arguments."""
-    return lambda a: lambda b, c, d: fn(a, b, c, d)
+    return lambda a, b, c: lambda d: fn(a, b, c, d)
 
 
-def curry2of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B], Callable[[C, D], E]]]:
+def curry2of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A, B], Callable[[C], Callable[[D], E]]]:
     """Curry 2 of 4 arguments."""
-    return lambda a: lambda b: lambda c, d: fn(a, b, c, d)
+    return lambda a, b: lambda c: lambda d: fn(a, b, c, d)
 
 
 def curry3of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B], Callable[[C], Callable[[D], E]]]]:
@@ -88,9 +88,9 @@ def curry3of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B], Call
 
 def curry4of4(
     fn: Callable[[A, B, C, D], E]
-) -> Callable[[A], Callable[[B], Callable[[C], Callable[[D], Callable[[], E]]]]]:
+) -> Callable[[], Callable[[A], Callable[[B], Callable[[C], Callable[[D], E]]]]]:
     """Curry 4 of 4 arguments."""
-    return lambda a: lambda b: lambda c: lambda d: lambda: fn(a, b, c, d)
+    return lambda: lambda a: lambda b: lambda c: lambda d: fn(a, b, c, d)
 
 
 __all__ = [
