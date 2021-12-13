@@ -1,9 +1,9 @@
 """Option module.
 
 Contains a collection of static methods (functions) for operating on
-options. All functions takes the source as the last curried
-argument, i.e all functions returns a function that takes the source
-sequence as the only argument.
+options. All functions takes the source as the last curried argument,
+i.e all functions returns a function that takes the source sequence as
+the only argument.
 """
 from __future__ import annotations
 
