@@ -39,7 +39,7 @@ oriented programming](https://fsharpforfunandprofit.com/rop/) (ROP) for better
 and predictable error handling. Pipelining for workflows, computational
 expressions, etc.
 
-> *Expressions evaluate to a value. Statements do something.*
+> _Expressions evaluate to a value. Statements do something._
 
 F# is a functional programming language for .NET that is succinct (concise,
 readable, and type-safe) and kind of
@@ -167,6 +167,8 @@ So for example with sequences you may create sequence transforming
 pipelines:
 
 ```py
+from expression.collections import seq
+
 ys = xs.pipe(
     seq.map(lambda x: x * 10),
     seq.filter(lambda x: x > 100),
@@ -180,6 +182,7 @@ Functions may even be composed directly into custom operators:
 
 ```python
 from expression import compose
+from expression.collections import seq
 
 custom = compose(
     seq.map(lambda x: x * 10),
@@ -189,6 +192,7 @@ custom = compose(
 
 ys = custom(xs)
 ```
+
 ## Fluent and Functional
 
 Expression can be used both with a fluent or functional syntax (or both.)
@@ -206,6 +210,7 @@ ys = xs.map(lambda x: x * 100).filter(lambda x: x > 100).fold(lambda s, x: s + x
 Note that fluent syntax is probably the better choice if you use mypy
 for type checking since mypy may have problems inferring types through
 larger pipelines.
+
 ### Functional syntax
 
 The functional syntax is a bit more verbose but you can easily add new
@@ -213,6 +218,9 @@ operations on new lines. The functional syntax is great to use together
 with pylance/pyright.
 
 ```python
+from expression import pipe
+from expression.collections import seq, Seq
+
 xs = Seq.of(1, 2, 3)
 ys = pipe(xs,
     seq.map(lambda x: x * 100),
@@ -220,12 +228,13 @@ ys = pipe(xs,
     seq.fold(lambda s, x: s + x, 0),
 )
 ```
+
 Both fluent and functional syntax may be mixed and even pipe can be used
 fluently.
 
 ```python
 xs = Seq.of(1, 2, 3).pipe(seq.map(...))
-````
+```
 
 ### Options
 
@@ -560,11 +569,13 @@ Code, doc-strings, and comments should also follow the [Google Python Style
 Guide](https://google.github.io/styleguide/pyguide.html).
 
 Code checks are done using
+
 - [Black](https://github.com/psf/black)
 - [flake8](https://github.com/PyCQA/flake8)
 - [isort](https://github.com/PyCQA/isort)
 
 To run code checks on changed files every time you commit, install the pre-commit hooks by running:
+
 ```
 pre-commit install
 ```
