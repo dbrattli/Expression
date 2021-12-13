@@ -18,9 +18,7 @@ from .match import Case, SupportsMatch
 from .pipe import pipe
 
 TSource = TypeVar("TSource")
-TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
-TResultOut = TypeVar("TResultOut", covariant=True)
 TError = TypeVar("TError")
 
 # Underscore types are used for generic methods

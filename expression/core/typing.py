@@ -17,6 +17,12 @@ class SupportsLessThan(Protocol):
         raise NotImplementedError
 
 
+class SupportsGreaterThan(Protocol):
+    @abstractmethod
+    def __gt__(self, __other: Any) -> bool:
+        raise NotImplementedError
+
+
 class SupportsMatch(Protocol[T_co]):
     """Pattern matching protocol."""
 

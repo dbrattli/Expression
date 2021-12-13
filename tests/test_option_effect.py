@@ -1,13 +1,13 @@
-from typing import Generator, TypeVar
+from typing import TypeVar
 
-from expression import Some, effect
+from expression import Nothing, Some, effect
 
 T = TypeVar("T", float, int)
 
 
 def test_option_builder_projection_int_str():
     @effect.option
-    def fn() -> Generator[str, str, str]:
+    def fn():
         z: str = "Not found"
         for x in Some(42.0):
             for y in Some(int(x)):
@@ -20,3 +20,17 @@ def test_option_builder_projection_int_str():
         break
     else:
         assert False
+
+
+def test_option_builder_yield_from_nothing():
+    @effect.option
+    def fn():
+        x = yield from Nothing  # or a function returning Nothing
+
+        # -- The rest of the function will never be executed --
+        y = yield from Some(43)
+
+        return x + y
+
+    xs = fn()
+    assert xs is Nothing

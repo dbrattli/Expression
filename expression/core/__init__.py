@@ -16,7 +16,7 @@ from .option import Nothing, Nothing_, Option, Some, default_arg
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
 from .try_ import Failure, Success, Try
-from .typing import SupportsLessThan, SupportsMatch, downcast, try_downcast, upcast
+from .typing import SupportsGreaterThan, SupportsLessThan, SupportsMatch, downcast, try_downcast, upcast
 
 __all__ = [
     "aiotools",
@@ -59,6 +59,7 @@ __all__ = [
     "Some",
     "Success",
     "SupportsLessThan",
+    "SupportsGreaterThan",
     "SupportsMatch",
     "TailCall",
     "TailCallResult",
