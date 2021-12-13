@@ -28,7 +28,7 @@ import functools
 import itertools
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, cast, overload
 
-from expression.core import Case, Option, SupportsLessThan, identity, pipe
+from expression.core import Case, Option, SupportsGreaterThan, SupportsLessThan, identity, pipe
 
 if TYPE_CHECKING:
     from .frozenlist import FrozenList
@@ -38,6 +38,7 @@ TSourceIn = TypeVar("TSourceIn", contravariant=True)
 TResult = TypeVar("TResult")
 TResultOut = TypeVar("TResultOut", covariant=True)
 TState = TypeVar("TState")
+TSupportsGreaterThan = TypeVar("TSupportsGreaterThan", bound=SupportsGreaterThan)
 TSupportsLessThan = TypeVar("TSupportsLessThan", bound=SupportsLessThan)
 T1 = TypeVar("T1")
 T2 = TypeVar("T2")
@@ -652,16 +653,18 @@ def mapi(mapping: Callable[[int, TSource], TResult]) -> Callable[[Iterable[TSour
     return _mapi
 
 
-def max(source: Iterable[TSupportsLessThan]) -> TSupportsLessThan:
+def max(source: Iterable[TSupportsGreaterThan]) -> TSupportsGreaterThan:
     """Returns the greatest of all elements of the sequence,
     compared via `max()`."""
 
-    value: TSupportsLessThan = builtins.max(source)
+    value: TSupportsGreaterThan = builtins.max(source)
     return value
 
 
-def max_by(projection: Callable[[TSource], TSupportsLessThan]) -> Callable[[Iterable[TSource]], TSupportsLessThan]:
-    def _max_by(source: Iterable[TSource]) -> TSupportsLessThan:
+def max_by(
+    projection: Callable[[TSource], TSupportsGreaterThan]
+) -> Callable[[Iterable[TSource]], TSupportsGreaterThan]:
+    def _max_by(source: Iterable[TSource]) -> TSupportsGreaterThan:
         return builtins.max(projection(x) for x in source)
 
     return _max_by

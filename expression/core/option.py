@@ -14,7 +14,6 @@ from typing import (
     Callable,
     Generator,
     Iterable,
-    Iterator,
     List,
     Optional,
     TypeVar,
@@ -351,7 +350,7 @@ class Nothing_(Option[TSource], EffectError):
 
         return []
 
-    def __iter__(self) -> Iterator[TSource]:
+    def __iter__(self) -> Generator[TSource, TSource, TSource]:
         """Return iterator for the `Nothing` case.
 
         We basically want to return nothing, but we have to return
