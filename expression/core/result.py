@@ -190,7 +190,7 @@ class ResultException(EffectError):
         self.message = message
 
 
-class Error(Result[TSource, TError], ResultException):
+class Error(ResultException, Result[TSource, TError]):
     """The Error result case class."""
 
     def __init__(self, error: TError) -> None:
