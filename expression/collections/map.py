@@ -16,7 +16,7 @@
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Iterator, List, Mapping, Optional, Set, Tuple, TypeVar, cast, overload
+from typing import Any, Callable, ItemsView, Iterable, Iterator, List, Mapping, Optional, Tuple, TypeVar, cast, overload
 
 from expression.core import Option, SupportsLessThan, pipe
 
@@ -174,8 +174,8 @@ class Map(Mapping[Key, Value]):
 
     #   return default
 
-    def items(self) -> Set[Tuple[Key, Value]]:
-        return set(maptree.to_seq(self._tree))
+    def items(self) -> ItemsView[Key, Value]:
+        return ItemsView(dict(maptree.to_seq(self._tree)))
 
     def remove(self, key: Key) -> Map[Key, Value]:
         return Map(maptree.remove(key, self._tree))
