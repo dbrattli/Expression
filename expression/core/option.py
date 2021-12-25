@@ -18,7 +18,6 @@ from typing import (
     Optional,
     TypeVar,
     Union,
-    cast,
     get_origin,
     overload,
 )
@@ -193,7 +192,7 @@ class Some(Option[TSource]):
 
     def map2(self, mapper: Callable[[TSource, T2], TResult], other: Option[T2]) -> Option[TResult]:
         if isinstance(other, Some):
-            return Some(mapper(self._value, cast(Some[T2], other).value))
+            return Some(mapper(self._value, other.value))
         return Nothing
 
     def bind(self, mapper: Callable[[TSource], Option[TResult]]) -> Option[TResult]:

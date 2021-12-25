@@ -170,7 +170,7 @@ class FrozenList(Generic[TSource]):
         return FrozenList((element,) + self.value)  # NOTE: Faster than (element, *self)
 
     @staticmethod
-    def empty() -> FrozenList[TSource]:
+    def empty() -> FrozenList[Any]:
         """Returns empty list."""
 
         return FrozenList()
@@ -722,7 +722,7 @@ def of_seq(xs: Iterable[TSource]) -> FrozenList[TSource]:
 
 def of_option(option: Option[TSource]) -> FrozenList[TSource]:
     if isinstance(option, Some):
-        return singleton(cast(Some[TSource], option).value)
+        return singleton(option.value)
     return empty
 
 
