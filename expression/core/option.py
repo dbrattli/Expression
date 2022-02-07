@@ -345,9 +345,8 @@ class Nothing_(Option[_TSource], EffectError):
         return []
 
     def to_seq(self) -> Seq[_TSource]:
-        from expression.collections.seq import (  # deferred import to avoid circular dependencies
-            Seq,
-        )
+        # deferred import to avoid circular dependencies
+        from expression.collections.seq import Seq
 
         return Seq()
 

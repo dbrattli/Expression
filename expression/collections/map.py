@@ -470,7 +470,8 @@ def pick(
 def exists(
     predicate: Callable[[Key, Value], bool]
 ) -> Callable[[Map[Key, Value]], bool]:
-    """Returns true if the given predicate returns true for one of the bindings in the map.
+    """Returns true if the given predicate returns true for one of the
+    bindings in the map.
 
     Args:
         predicate: The function to test the input elements.
@@ -557,15 +558,6 @@ def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
         return table.remove(key)
 
     return _remove
-
-
-# // [<CompiledName("FindKey")>]
-# let findKey predicate (table : Map<_, _>) =
-#     table |> Seq.pick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
-
-# // [<CompiledName("TryFindKey")>]
-# let tryFindKey predicate (table : Map<_, _>) =
-#     table |> Seq.tryPick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
 
 
 def of(**args: Value) -> Map[str, Value]:

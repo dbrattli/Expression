@@ -40,7 +40,8 @@ class MailboxProcessor(Generic[Msg]):
         self.loop = asyncio.get_event_loop()
         self.lock = RLock()
 
-        # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
+        # Holds the continuation i.e the `done` callback of Async.from_continuations
+        # returned by `receive`.
         self.continuation: Optional[Continuation[Msg]] = None
         self.cancel: Optional[Continuation[OperationCanceledError]] = None
 
@@ -77,9 +78,8 @@ class MailboxProcessor(Generic[Msg]):
         """
 
         result: Optional[Reply] = None
-        continuation: Optional[
-            Continuation[Reply]
-        ] = None  # This is the continuation for the `done` callback of the awaiting poster.
+        # This is the continuation for the `done` callback of the awaiting poster.
+        continuation: Optional[Continuation[Reply]] = None
 
         def check_completion() -> None:
             if result is not None and continuation is not None:

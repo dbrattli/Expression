@@ -112,7 +112,8 @@ def test_option_some_default_arg():
 
 
 @given(
-    st.one_of(st.integers(), st.text(), st.floats()), st.one_of(st.integers(), st.text(), st.floats())  # type: ignore
+    st.one_of(st.integers(), st.text(), st.floats()),
+    st.one_of(st.integers(), st.text(), st.floats()),
 )
 def test_option_some_equals_some(a: Any, b: Any):
     xs = Some(a)

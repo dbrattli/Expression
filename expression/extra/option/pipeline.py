@@ -72,7 +72,7 @@ def pipeline(
     ...
 
 
-def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:  # type: ignore
+def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:
     """pipeline multiple option returning functions left to right.
 
     A pipeline kleisli (>=>) composes zero or more functions into a

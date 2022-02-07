@@ -13,10 +13,11 @@ from typing import (
     overload,
 )
 
-from expression.core.builder import _TResult
-
 from .error import MatchFailureError
 from .typing import SupportsMatch
+
+_TResult = TypeVar("_TResult")
+
 
 TSource = TypeVar("TSource")
 A = TypeVar("A")
@@ -192,17 +193,6 @@ def match(value: TSource) -> Case[TSource]:
     Same as `Case(value)`
     """
     return Case(value)
-
-
-# def matcher(value: TSource) -> Callable[[Callable[..., Any]], Callable[[TSource], Generator[TSource, None, None]]]:
-#     def wrap(fn: Callable[..., Any]) -> Callable[..., Generator[TSource, None, None]]:
-#         def inner(*args: Any, **kw: Any) -> Generator[TSource, None, None]:
-#             m = Matcher.of(value)
-#             return fn(m, *args, **kw)
-
-#         return inner
-
-#     return wrap
 
 
 __all__ = ["match", "Case", "MatchMixin", "SupportsMatch"]

@@ -561,7 +561,9 @@ def fold_back(
             The state object after the folding function is applied
             to each element of the sequence.
         """
-        return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+        return functools.reduce(
+            lambda x, y: folder(y, x), reversed(list(source)), state
+        )
 
     return _fold_back
 
