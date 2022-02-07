@@ -13,13 +13,13 @@ from typing import Any, Awaitable, Callable, Optional, TypeVar
 
 from expression.system import CancellationToken, OperationCanceledError
 
-TSource = TypeVar("TSource")
+_TSource = TypeVar("_TSource")
 
-Continuation = Callable[[TSource], None]
-Callbacks = Callable[[Continuation[TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
+Continuation = Callable[[_TSource], None]
+Callbacks = Callable[[Continuation[_TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
 
 
-def from_continuations(callback: Callbacks[TSource]) -> Awaitable[TSource]:
+def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
     """Creates an asynchronous computation that captures the current
     success, exception and cancellation continuations. The callback must
     eventually call exactly one of the given continuations.
@@ -32,9 +32,9 @@ def from_continuations(callback: Callbacks[TSource]) -> Awaitable[TSource]:
         An asynchronous computation that provides the callback with the
         current continuations.
     """
-    future: "Future[TSource]" = asyncio.Future()
+    future: "Future[_TSource]" = asyncio.Future()
 
-    def done(value: TSource) -> None:
+    def done(value: _TSource) -> None:
         future.set_result(value)
 
     def error(err: Exception) -> None:
@@ -55,7 +55,10 @@ def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None
     token is used.
     """
 
-    task = asyncio.create_task(computation)
+    async def runner() -> Any:
+        return await computation
+
+    task = asyncio.create_task(runner())
 
     def cb():
         task.cancel()
@@ -68,7 +71,11 @@ def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None
 def start_immediate(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -> None:
     """Runs an asynchronous computation, starting immediately on the
     current operating system thread."""
-    task = asyncio.create_task(computation)
+
+    async def runner() -> Any:
+        return await computation
+
+    task = asyncio.create_task(runner())
 
     def cb() -> None:
         task.cancel()
@@ -78,12 +85,12 @@ def start_immediate(computation: Awaitable[Any], token: Optional[CancellationTok
     return None
 
 
-def run_synchronously(computation: Awaitable[TSource]) -> TSource:
+def run_synchronously(computation: Awaitable[_TSource]) -> _TSource:
     """Runs the asynchronous computation and await its result."""
     return asyncio.run(computation)
 
 
-async def singleton(value: TSource) -> TSource:
+async def singleton(value: _TSource) -> _TSource:
     """Async function that returns a single value."""
     return value
 
@@ -100,11 +107,11 @@ async def empty() -> None:
     """Async no-op"""
 
 
-def from_result(result: TSource) -> Awaitable[TSource]:
+def from_result(result: _TSource) -> Awaitable[_TSource]:
     """Creates a async operation that's completed successfully with the
     specified result."""
 
-    async def from_result(result: TSource) -> TSource:
+    async def from_result(result: _TSource) -> _TSource:
         """Async return value"""
         return result
 

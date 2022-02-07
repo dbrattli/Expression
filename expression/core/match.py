@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Any, Generic, Iterable, Optional, Type, TypeVar, cast, get_origin, overload
 
-from expression.core.builder import TResult
+from expression.core.builder import _TResult
 
 from .error import MatchFailureError
 from .typing import SupportsMatch
@@ -145,7 +145,7 @@ class Case(Generic[TSource]):
         ...
 
     @overload
-    def default(self, ret: Optional[TResult]) -> TResult:
+    def default(self, ret: Optional[_TResult]) -> _TResult:
         ...
 
     def default(self, ret: Optional[Any] = None) -> Any:

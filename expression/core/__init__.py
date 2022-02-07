@@ -6,7 +6,18 @@ from . import aiotools, option, result
 from .builder import Builder
 from .choice import Choice, Choice1of2, Choice1of3, Choice2, Choice2of2, Choice2of3, Choice3, Choice3of3
 from .compose import compose
-from .curry import curried
+from .curry import (
+    curried,
+    curry1of2,
+    curry1of3,
+    curry1of4,
+    curry2of2,
+    curry2of3,
+    curry2of4,
+    curry3of3,
+    curry3of4,
+    curry4of4,
+)
 from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
@@ -33,6 +44,15 @@ __all__ = [
     "Choice3of3",
     "compose",
     "curried",
+    "curry1of2",
+    "curry2of2",
+    "curry1of3",
+    "curry2of3",
+    "curry3of3",
+    "curry1of4",
+    "curry2of4",
+    "curry3of4",
+    "curry4of4",
     "default_arg",
     "downcast",
     "MatchMixin",
