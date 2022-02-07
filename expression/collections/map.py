@@ -175,7 +175,8 @@ class Map(Mapping[Key, Value]):
     #   return default
 
     def items(self) -> ItemsView[Key, Value]:
-        return ItemsView(dict(maptree.to_seq(self._tree)))
+        items = maptree.to_seq(self._tree)
+        return ItemsView(dict(items))
 
     def remove(self, key: Key) -> Map[Key, Value]:
         return Map(maptree.remove(key, self._tree))
