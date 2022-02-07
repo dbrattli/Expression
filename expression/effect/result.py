@@ -9,7 +9,9 @@ TError = TypeVar("TError")
 
 class ResultBuilder(Builder[Result[TSource, TError], TSource]):
     def bind(
-        self, xs: Result[TSource, TError], fn: Callable[[TSource], Result[TResult, TError]]
+        self,
+        xs: Result[TSource, TError],
+        fn: Callable[[TSource], Result[TResult, TError]],
     ) -> Result[TResult, TError]:
         return pipe(xs, result.bind(fn))
 
@@ -19,7 +21,9 @@ class ResultBuilder(Builder[Result[TSource, TError], TSource]):
     def return_from(self, xs: Result[TSource, TError]) -> Result[TSource, TError]:
         return xs
 
-    def combine(self, xs: Result[TSource, TError], ys: Result[TSource, TError]) -> Result[TSource, TError]:
+    def combine(
+        self, xs: Result[TSource, TError], ys: Result[TSource, TError]
+    ) -> Result[TSource, TError]:
         return xs.bind(lambda _: ys)
 
     def zero(self) -> Result[TSource, TError]:

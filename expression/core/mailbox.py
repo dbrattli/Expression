@@ -60,7 +60,9 @@ class MailboxProcessor(Generic[Msg]):
         self.messages.put(msg)
         self.loop.call_soon_threadsafe(self.__process_events)
 
-    def post_and_async_reply(self, build_message: Callable[[AsyncReplyChannel[Reply]], Msg]) -> Awaitable[Reply]:
+    def post_and_async_reply(
+        self, build_message: Callable[[AsyncReplyChannel[Reply]], Msg]
+    ) -> Awaitable[Reply]:
         """Post a message asynchronously to the mailbox processor and
         wait for the reply.
 
@@ -92,7 +94,11 @@ class MailboxProcessor(Generic[Msg]):
         self.messages.put(build_message(reply_channel))
         self.__process_events()
 
-        def callback(done: Continuation[Reply], _: Continuation[Exception], __: Continuation[OperationCanceledError]):
+        def callback(
+            done: Continuation[Reply],
+            _: Continuation[Exception],
+            __: Continuation[OperationCanceledError],
+        ):
             nonlocal continuation
             continuation = done
             check_completion()
@@ -110,7 +116,9 @@ class MailboxProcessor(Generic[Msg]):
         """
 
         def callback(
-            done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
+            done: Continuation[Msg],
+            error: Continuation[Exception],
+            cancel: Continuation[OperationCanceledError],
         ):
             if self.continuation:
                 raise Exception("Receive can only be called once!")

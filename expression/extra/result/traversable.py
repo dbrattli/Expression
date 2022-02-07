@@ -10,7 +10,9 @@ TResult = TypeVar("TResult")
 TError = TypeVar("TError")
 
 
-def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]) -> Result[List[TResult], TError]:
+def traverse(
+    fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource]
+) -> Result[List[TResult], TError]:
     """Traverses a list of items.
 
     Threads an applicative computation though a list of items.
@@ -19,7 +21,9 @@ def traverse(fn: Callable[[TSource], Result[TResult, TError]], lst: List[TSource
     @effect.result
     def folder(
         head: TSource, tail: Result[List[TResult], TError]
-    ) -> Generator[Union[List[TResult], TResult], Union[List[TResult], TResult], List[TResult]]:
+    ) -> Generator[
+        Union[List[TResult], TResult], Union[List[TResult], TResult], List[TResult]
+    ]:
         """Same as:
         >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
         """

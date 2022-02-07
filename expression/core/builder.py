@@ -77,7 +77,9 @@ class Builder(Generic[_TOuter, _TInner], ABC):
             try:
                 result = self._send(gen, done)
                 while not done:
-                    binder: Callable[[Any], _TOuter] = lambda value: self._send(gen, done, value)
+                    binder: Callable[[Any], _TOuter] = lambda value: self._send(
+                        gen, done, value
+                    )
                     cont = self.bind(result, binder)
                     result = self.combine(result, cont)
             except StopIteration:

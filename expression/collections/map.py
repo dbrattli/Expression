@@ -16,7 +16,20 @@
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 from __future__ import annotations
 
-from typing import Any, Callable, ItemsView, Iterable, Iterator, List, Mapping, Optional, Tuple, TypeVar, cast, overload
+from typing import (
+    Any,
+    Callable,
+    ItemsView,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from expression.core import Option, SupportsLessThan, pipe
 
@@ -50,11 +63,18 @@ class Map(Mapping[Key, Value]):
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[Map[Key, Value]], T1], __fn2: Callable[[T1], T2]) -> T2:
+    def pipe(
+        self, __fn1: Callable[[Map[Key, Value]], T1], __fn2: Callable[[T1], T2]
+    ) -> T2:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[Map[Key, Value]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -> T3:
+    def pipe(
+        self,
+        __fn1: Callable[[Map[Key, Value]], T1],
+        __fn2: Callable[[T1], T2],
+        __fn3: Callable[[T2], T3],
+    ) -> T3:
         ...
 
     @overload
@@ -101,7 +121,9 @@ class Map(Mapping[Key, Value]):
     def contains_key(self, key: Key) -> bool:
         return maptree.mem(key, self._tree)
 
-    def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -> Map[Key, Value]:
+    def change(
+        self, key: Key, f: Callable[[Option[Value]], Option[Value]]
+    ) -> Map[Key, Value]:
         return Map(maptree.change(key, f, self._tree))
 
     @staticmethod
@@ -136,10 +158,14 @@ class Map(Mapping[Key, Value]):
     #     def MapRange (f:'Value->'Result) =
     #         return Map<'Key, 'Result>(comparer, maptree.map f tree)
 
-    def fold(self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -> Result:
+    def fold(
+        self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result
+    ) -> Result:
         return maptree.fold(folder, state, self._tree)
 
-    def fold_back(self, folder: Callable[[Tuple[Key, Value], Result], Result], state: Result) -> Result:
+    def fold_back(
+        self, folder: Callable[[Tuple[Key, Value], Result], Result], state: Result
+    ) -> Result:
         return maptree.fold_back(folder, self._tree, state)
 
     def map(self, mapping: Callable[[Key, Value], Result]) -> Map[Key, Result]:
@@ -156,7 +182,9 @@ class Map(Mapping[Key, Value]):
         """
         return Map(maptree.map(mapping, self._tree))
 
-    def partition(self, predicate: Callable[[Key, Value], bool]) -> Tuple[Map[Key, Value], Map[Key, Value]]:
+    def partition(
+        self, predicate: Callable[[Key, Value], bool]
+    ) -> Tuple[Map[Key, Value], Map[Key, Value]]:
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
 
@@ -202,7 +230,9 @@ class Map(Mapping[Key, Value]):
     def try_find(self, key: Key) -> Option[Value]:
         return maptree.try_find(key, self._tree)
 
-    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -> Option[Result]:
+    def try_pick(
+        self, chooser: Callable[[Key, Value], Option[Result]]
+    ) -> Option[Result]:
         return maptree.try_pick(chooser, self._tree)
 
     @staticmethod
@@ -333,7 +363,9 @@ def add(key: Key, value: Value) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
     return _add
 
 
-def change(key: Key, fn: Callable[[Option[Value]], Option[Value]]) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+def change(
+    key: Key, fn: Callable[[Option[Value]], Option[Value]]
+) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
     """Returns a new map with the value stored under key changed
     according to f.
 
@@ -403,7 +435,9 @@ def iterate(action: Callable[[Key, Value], None]) -> Callable[[Map[Key, Value]],
     return _iterate
 
 
-def try_pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[Key, Value]], Option[Result]]:
+def try_pick(
+    chooser: Callable[[Key, Value], Option[Result]]
+) -> Callable[[Map[Key, Value]], Option[Result]]:
     """Searches the map looking for the first element where the given
     function returns a Some value.
 
@@ -421,7 +455,9 @@ def try_pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[K
     return _try_pick
 
 
-def pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[Key, Value]], Result]:
+def pick(
+    chooser: Callable[[Key, Value], Option[Result]]
+) -> Callable[[Map[Key, Value]], Result]:
     def _try_pick(table: Map[Key, Value]) -> Result:
         for res in table.try_pick(chooser):
             return res
@@ -431,7 +467,9 @@ def pick(chooser: Callable[[Key, Value], Option[Result]]) -> Callable[[Map[Key, 
     return _try_pick
 
 
-def exists(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]], bool]:
+def exists(
+    predicate: Callable[[Key, Value], bool]
+) -> Callable[[Map[Key, Value]], bool]:
     """Returns true if the given predicate returns true for one of the bindings in the map.
 
     Args:
@@ -449,28 +487,36 @@ def exists(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]
     return _exists
 
 
-def filter(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+def filter(
+    predicate: Callable[[Key, Value], bool]
+) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
     def _filter(table: Map[Key, Value]) -> Map[Key, Value]:
         return table.filter(predicate)
 
     return _filter
 
 
-def for_all(predicate: Callable[[Key, Value], bool]) -> Callable[[Map[Key, Value]], bool]:
+def for_all(
+    predicate: Callable[[Key, Value], bool]
+) -> Callable[[Map[Key, Value]], bool]:
     def _for_all(table: Map[Key, Value]) -> bool:
         return table.for_all(predicate)
 
     return _for_all
 
 
-def map(mapping: Callable[[Key, Value], Result]) -> Callable[[Map[Key, Value]], Map[Key, Result]]:
+def map(
+    mapping: Callable[[Key, Value], Result]
+) -> Callable[[Map[Key, Value]], Map[Key, Result]]:
     def _map(table: Map[Key, Value]) -> Map[Key, Result]:
         return table.map(mapping)
 
     return _map
 
 
-def fold(folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result) -> Callable[[Map[Key, Value]], Result]:
+def fold(
+    folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result
+) -> Callable[[Map[Key, Value]], Result]:
     def _fold(table: Map[Key, Value]) -> Result:
         return table.fold(folder, state)
 

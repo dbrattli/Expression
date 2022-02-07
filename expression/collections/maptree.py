@@ -89,17 +89,23 @@ def height(m: MapTree[Any, Any]) -> int:
 TOLERANCE = 2
 
 
-def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def mk(
+    left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     hl = height(left)
     hr = height(right)
     m = hr if hl < hr else hl
     if m == 0:  # m=0 ~ is_empty(l) and is_empty(r)
         return Some(MapTreeLeaf(key, value))
     else:
-        return Some(MapTreeNode(key, value, left, right, m + 1))  # new map is higher by 1 than the highest
+        return Some(
+            MapTreeNode(key, value, left, right, m + 1)
+        )  # new map is higher by 1 than the highest
 
 
-def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def rebalance(
+    t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     t1h = height(t1)
     t2h = height(t2)
     if t2h > t1h + TOLERANCE:  # right is heavier than left
@@ -109,7 +115,12 @@ def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
             if height(t2_.left) > t1h + 1:  # balance left: combination
                 if isinstance(t2_.left.value, MapTreeNode):
                     t2l = t2_.left.value
-                    return mk(mk(t1, k, v, t2l.left), t2l.key, t2l.value, mk(t2l.right, t2_.key, t2_.value, t2_.right))
+                    return mk(
+                        mk(t1, k, v, t2l.left),
+                        t2l.key,
+                        t2l.value,
+                        mk(t2l.right, t2_.key, t2_.value, t2_.right),
+                    )
                 else:
                     failwith("internal error: Map.rebalance")
             else:  # Rotate left
@@ -125,7 +136,10 @@ def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
                     if isinstance(t1_.right.value, MapTreeNode):
                         t1r = t1_.right.value
                         return mk(
-                            mk(t1_.left, t1_.key, t1_.value, t1r.left), t1r.key, t1r.value, mk(t1r.right, k, v, t2)
+                            mk(t1_.left, t1_.key, t1_.value, t1r.left),
+                            t1r.key,
+                            t1r.value,
+                            mk(t1r.right, k, v, t2),
                         )
                     else:
                         failwith("internal error: Map.rebalance")
@@ -181,7 +195,10 @@ def find(k: Key, m: MapTree[Key, Value]) -> Value:
 
 
 def partition1(
-    predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]]
+    predicate: Callable[[Key, Value], bool],
+    k: Key,
+    v: Value,
+    acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]],
 ) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     acc1, acc2 = acc
     if predicate(k, v):
@@ -214,7 +231,9 @@ def partition(
     return partition_aux(predicate, m, (empty, empty))
 
 
-def filter1(predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def filter1(
+    predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     if predicate(k, v):
         return add(k, v, acc)
     else:
@@ -222,7 +241,9 @@ def filter1(predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapT
 
 
 def filter_aux(
-    predicate: Callable[[Key, Value], bool], m: MapTree[Key, Value], acc: MapTree[Key, Value]
+    predicate: Callable[[Key, Value], bool],
+    m: MapTree[Key, Value],
+    acc: MapTree[Key, Value],
 ) -> MapTree[Key, Value]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
@@ -236,11 +257,15 @@ def filter_aux(
         return acc
 
 
-def filter(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def filter(
+    f: Callable[[Key, Value], bool], m: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     return filter_aux(f, m, empty)
 
 
-def splice_out_successor(m: MapTree[Key, Value]) -> Tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
+def splice_out_successor(
+    m: MapTree[Key, Value]
+) -> Tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -280,7 +305,9 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
         return empty
 
 
-def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def change(
+    k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -349,7 +376,9 @@ def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
             fn(m2.key, m2.value)
 
 
-def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) -> Option[Result]:
+def try_pick(
+    f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]
+) -> Option[Result]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -390,7 +419,9 @@ def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
         return True
 
 
-def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
+def map(
+    f: Callable[[Key, Value], Result], m: MapTree[Key, Value]
+) -> MapTree[Key, Result]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -404,7 +435,9 @@ def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Ke
         return empty
 
 
-def fold_back(f: Callable[[Tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result) -> Result:
+def fold_back(
+    f: Callable[[Tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result
+) -> Result:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -417,7 +450,9 @@ def fold_back(f: Callable[[Tuple[Key, Value], Result], Result], m: MapTree[Key, 
         return x
 
 
-def fold(f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]) -> Result:
+def fold(
+    f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]
+) -> Result:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -431,7 +466,9 @@ def fold(f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree
 
 
 def to_list(m: MapTree[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
-    def loop(m: MapTree[Key, Value], acc: FrozenList[Tuple[Key, Value]]) -> FrozenList[Tuple[Key, Value]]:
+    def loop(
+        m: MapTree[Key, Value], acc: FrozenList[Tuple[Key, Value]]
+    ) -> FrozenList[Tuple[Key, Value]]:
         for m2 in m.to_list():
             if isinstance(m2, MapTreeNode):
                 mn = m2
@@ -452,7 +489,9 @@ def of_list(xs: FrozenList[Tuple[Key, Value]]) -> MapTree[Key, Value]:
     return xs.fold(folder, empty)
 
 
-def mk_from_iterator(acc: MapTree[Key, Value], e: Iterator[Tuple[Key, Value]]) -> MapTree[Key, Value]:
+def mk_from_iterator(
+    acc: MapTree[Key, Value], e: Iterator[Tuple[Key, Value]]
+) -> MapTree[Key, Value]:
     try:
         (x, y) = next(e)
     except StopIteration:
@@ -471,7 +510,9 @@ def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
 # collapseLHS:
 # a) Always returns either [] or a list starting with MapOne.
 # b) The "fringe" of the set stack is unchanged.
-def collapseLHS(stack: FrozenList[MapTree[Key, Value]]) -> FrozenList[MapTree[Key, Value]]:
+def collapseLHS(
+    stack: FrozenList[MapTree[Key, Value]]
+) -> FrozenList[MapTree[Key, Value]]:
     if stack.is_empty():
         return frozenlist.empty
     m, rest = stack.head(), stack.tail()
@@ -497,7 +538,9 @@ class MkIterator(Iterator[Tuple[Key, Value]]):
         rest = self.stack.tail()
         for m in self.stack.head():
             if isinstance(m, MapTreeNode):
-                failwith("Please report error: Map iterator, unexpected stack for next()")
+                failwith(
+                    "Please report error: Map iterator, unexpected stack for next()"
+                )
             else:
                 self.stack = collapseLHS(rest)
                 return m.key, m.value

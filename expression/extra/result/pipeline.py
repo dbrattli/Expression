@@ -19,7 +19,9 @@ def pipeline() -> Callable[[Any], Result[Any, Any]]:
 
 
 @overload
-def pipeline(__fn: Callable[[A], Result[B, TError]]) -> Callable[[A], Result[B, TError]]:
+def pipeline(
+    __fn: Callable[[A], Result[B, TError]]
+) -> Callable[[A], Result[B, TError]]:
     ...
 
 

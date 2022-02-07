@@ -11,7 +11,18 @@ the Result type to Exception.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, Type, TypeVar, Union, get_origin, overload
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Type,
+    TypeVar,
+    Union,
+    get_origin,
+    overload,
+)
 
 from .error import EffectError
 from .match import Case, SupportsMatch
@@ -36,12 +47,17 @@ class Result(Iterable[_TSource], SupportsMatch[Union[_TSource, _TError]], ABC):
 
     @overload
     def pipe(
-        self: Result[_T1, _TError], __fn1: Callable[[Result[_T1, _TError]], Result[_T2, _TError]]
+        self: Result[_T1, _TError],
+        __fn1: Callable[[Result[_T1, _TError]], Result[_T2, _TError]],
     ) -> Result[_T2, _TError]:
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[Result[_TSource, _TError]], _T1], __fn2: Callable[[_T1], _T2]) -> _T2:
+    def pipe(
+        self,
+        __fn1: Callable[[Result[_TSource, _TError]], _T1],
+        __fn2: Callable[[_T1], _T2],
+    ) -> _T2:
         ...
 
     @overload
@@ -72,13 +88,17 @@ class Result(Iterable[_TSource], SupportsMatch[Union[_TSource, _TError]], ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
+    def map_error(
+        self, mapper: Callable[[_TError], _TResult]
+    ) -> Result[_TSource, _TResult]:
         """Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok."""
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
+    def bind(
+        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
+    ) -> Result[_TResult, _TError]:
         raise NotImplementedError
 
     @overload
@@ -143,10 +163,14 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
         return Ok(mapper(self._value))
 
-    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
+    def bind(
+        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
+    ) -> Result[_TResult, _TError]:
         return mapper(self._value)
 
-    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
+    def map_error(
+        self, mapper: Callable[[_TError], _TResult]
+    ) -> Result[_TSource, _TResult]:
         """Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok."""
         return Ok(self._value)
@@ -209,10 +233,14 @@ class Error(ResultException, Result[_TSource, _TError]):
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
         return Error(self._error)
 
-    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
+    def bind(
+        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
+    ) -> Result[_TResult, _TError]:
         return Error(self._error)
 
-    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
+    def map_error(
+        self, mapper: Callable[[_TError], _TResult]
+    ) -> Result[_TSource, _TResult]:
         """Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok."""
         return Error(mapper(self._error))
@@ -257,7 +285,9 @@ class Error(ResultException, Result[_TSource, _TError]):
         return f"Error {self._error}"
 
 
-def map(mapper: Callable[[_TSource], _TResult]) -> Callable[[Result[_TSource, _TError]], Result[_TResult, _TError]]:
+def map(
+    mapper: Callable[[_TSource], _TResult]
+) -> Callable[[Result[_TSource, _TError]], Result[_TResult, _TError]]:
     def _map(result: Result[_TSource, _TError]) -> Result[_TResult, _TError]:
         return result.map(mapper)
 

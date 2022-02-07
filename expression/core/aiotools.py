@@ -16,7 +16,14 @@ from expression.system import CancellationToken, OperationCanceledError
 _TSource = TypeVar("_TSource")
 
 Continuation = Callable[[_TSource], None]
-Callbacks = Callable[[Continuation[_TSource], Continuation[Exception], Continuation[OperationCanceledError]], None]
+Callbacks = Callable[
+    [
+        Continuation[_TSource],
+        Continuation[Exception],
+        Continuation[OperationCanceledError],
+    ],
+    None,
+]
 
 
 def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
@@ -47,7 +54,9 @@ def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
     return future
 
 
-def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -> None:
+def start(
+    computation: Awaitable[Any], token: Optional[CancellationToken] = None
+) -> None:
     """Starts the asynchronous computation in the event loop. Do not
     await its result.
 
@@ -68,7 +77,9 @@ def start(computation: Awaitable[Any], token: Optional[CancellationToken] = None
     return None
 
 
-def start_immediate(computation: Awaitable[Any], token: Optional[CancellationToken] = None) -> None:
+def start_immediate(
+    computation: Awaitable[Any], token: Optional[CancellationToken] = None
+) -> None:
     """Runs an asynchronous computation, starting immediately on the
     current operating system thread."""
 

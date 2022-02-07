@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from types import TracebackType
-from typing import Any, Generic, Iterable, Optional, Type, TypeVar, cast, get_origin, overload
+from typing import (
+    Any,
+    Generic,
+    Iterable,
+    Optional,
+    Type,
+    TypeVar,
+    cast,
+    get_origin,
+    overload,
+)
 
 from expression.core.builder import _TResult
 
@@ -162,7 +172,10 @@ class Case(Generic[TSource]):
         return self
 
     def __exit__(
-        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+        self,
+        exctype: Optional[Type[BaseException]],
+        excinst: Optional[BaseException],
+        exctb: Optional[TracebackType],
     ) -> None:
         """Exit context management."""
 

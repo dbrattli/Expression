@@ -234,7 +234,9 @@ def test_seq_pipeline(xs: List[int]):
         seq.filter(predicate),
         seq.fold(folder, 0),
     )
-    assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
+    assert ys == functools.reduce(
+        lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0
+    )
 
 
 @given(st.lists(st.integers()))

@@ -7,7 +7,9 @@ TResult = TypeVar("TResult")
 
 
 class OptionBuilder(Builder[Option[TSource], TSource]):
-    def bind(self, xs: Option[TSource], fn: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
+    def bind(
+        self, xs: Option[TSource], fn: Callable[[TSource], Option[TResult]]
+    ) -> Option[TResult]:
         return option.bind(fn)(xs)
 
     def return_(self, x: TSource) -> Option[TSource]:

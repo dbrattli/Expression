@@ -38,7 +38,9 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
-class Option(Iterable[_TSource], MatchMixin[_TSource], SupportsMatch[Union[_TSource, bool]], ABC):
+class Option(
+    Iterable[_TSource], MatchMixin[_TSource], SupportsMatch[Union[_TSource, bool]], ABC
+):
     """Option abstract base class."""
 
     @overload
@@ -46,12 +48,17 @@ class Option(Iterable[_TSource], MatchMixin[_TSource], SupportsMatch[Union[_TSou
         ...
 
     @overload
-    def pipe(self, __fn1: Callable[[Option[_TSource]], _T1], __fn2: Callable[[_T1], _T2]) -> _T2:
+    def pipe(
+        self, __fn1: Callable[[Option[_TSource]], _T1], __fn2: Callable[[_T1], _T2]
+    ) -> _T2:
         ...
 
     @overload
     def pipe(
-        self, __fn1: Callable[[Option[_TSource]], _T1], __fn2: Callable[[_T1], _T2], __fn3: Callable[[_T2], _T3]
+        self,
+        __fn1: Callable[[Option[_TSource]], _T1],
+        __fn2: Callable[[_T1], _T2],
+        __fn3: Callable[[_T2], _T3],
     ) -> _T3:
         ...
 
@@ -82,7 +89,9 @@ class Option(Iterable[_TSource], MatchMixin[_TSource], SupportsMatch[Union[_TSou
         raise NotImplementedError
 
     @abstractmethod
-    def map2(self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
+    def map2(
+        self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]
+    ) -> Option[_TResult]:
         raise NotImplementedError
 
     @abstractmethod
@@ -191,7 +200,9 @@ class Some(Option[_TSource]):
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Option[_TResult]:
         return Some(mapper(self._value))
 
-    def map2(self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
+    def map2(
+        self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]
+    ) -> Option[_TResult]:
         if isinstance(other, Some):
             return Some(mapper(self._value, other.value))
         return Nothing
@@ -229,7 +240,8 @@ class Some(Option[_TSource]):
         return [self._value]
 
     def to_seq(self) -> Seq[_TSource]:
-        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+        # deferred import to avoid circular dependencies
+        from expression.collections.seq import Seq
 
         return Seq.of(self._value)
 
@@ -297,7 +309,9 @@ class Nothing_(Option[_TSource], EffectError):
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Option[_TResult]:
         return Nothing
 
-    def map2(self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
+    def map2(
+        self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]
+    ) -> Option[_TResult]:
         return Nothing
 
     def bind(self, mapper: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
@@ -331,7 +345,9 @@ class Nothing_(Option[_TSource], EffectError):
         return []
 
     def to_seq(self) -> Seq[_TSource]:
-        from expression.collections.seq import Seq  # deferred import to avoid circular dependencies
+        from expression.collections.seq import (  # deferred import to avoid circular dependencies
+            Seq,
+        )
 
         return Seq()
 
@@ -385,7 +401,9 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 """
 
 
-def bind(mapper: Callable[[_TSource], Option[_TResult]]) -> Callable[[Option[_TSource]], Option[_TResult]]:
+def bind(
+    mapper: Callable[[_TSource], Option[_TResult]]
+) -> Callable[[Option[_TSource]], Option[_TResult]]:
     """Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -426,21 +444,27 @@ def is_some(option: Option[Any]) -> bool:
     return option.is_some()
 
 
-def map(mapper: Callable[[_TSource], _TResult]) -> Callable[[Option[_TSource]], Option[_TResult]]:
+def map(
+    mapper: Callable[[_TSource], _TResult]
+) -> Callable[[Option[_TSource]], Option[_TResult]]:
     def _map(option: Option[_TSource]) -> Option[_TResult]:
         return option.map(mapper)
 
     return _map
 
 
-def map2(mapper: Callable[[_T1, _T2], _TResult]) -> Callable[[Option[_T1], Option[_T2]], Option[_TResult]]:
+def map2(
+    mapper: Callable[[_T1, _T2], _TResult]
+) -> Callable[[Option[_T1], Option[_T2]], Option[_TResult]]:
     def _map2(opt1: Option[_T1], opt2: Option[_T2]) -> Option[_TResult]:
         return opt1.map2(mapper, opt2)
 
     return _map2
 
 
-def or_else(if_none: Option[_TSource]) -> Callable[[Option[_TSource]], Option[_TSource]]:
+def or_else(
+    if_none: Option[_TSource],
+) -> Callable[[Option[_TSource]], Option[_TSource]]:
     """Returns option if it is Some, otherwise returns ifNone."""
 
     def _or_else(option: Option[_TSource]) -> Option[_TSource]:
