@@ -208,7 +208,9 @@ def test_result_traverse_ok(xs: List[int]):
 @given(st.lists(st.integers(), min_size=5))
 def test_result_traverse_error(xs: List[int]):
     error = "Do'h"
-    ys: List[Result[int, str]] = [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
+    ys: List[Result[int, str]] = [
+        Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)
+    ]
 
     zs = sequence(ys)
     for err in zs.match(Error[int, str]):

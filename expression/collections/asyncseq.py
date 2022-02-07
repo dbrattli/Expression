@@ -1,6 +1,14 @@
 import builtins
 import itertools
-from typing import Any, AsyncIterable, AsyncIterator, Callable, Optional, TypeVar, overload
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Optional,
+    TypeVar,
+    overload,
+)
 
 from expression.core import pipe
 
@@ -42,7 +50,9 @@ class AsyncSeq(AsyncIterable[TSource]):
         return self._ai.__aiter__()
 
 
-def append(other: AsyncIterable[TSource]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+def append(
+    other: AsyncIterable[TSource],
+) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
     async def _append(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
         async for value in source:
             yield value
@@ -82,7 +92,9 @@ async def range(*args: int, **kw: int) -> AsyncIterable[int]:
         yield value
 
 
-def filter(predicate: Callable[[TSource], bool]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+def filter(
+    predicate: Callable[[TSource], bool]
+) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
     async def _filter(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
         async for value in source:
             if predicate(value):
@@ -91,7 +103,9 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[AsyncIterable[TSou
     return _filter
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
+def map(
+    mapper: Callable[[TSource], TResult]
+) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     async def _map(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
         async for value in source:
             yield mapper(value)

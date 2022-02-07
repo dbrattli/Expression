@@ -19,7 +19,9 @@ def pipeline() -> Callable[[Any], Result[Any, Any]]:
 
 
 @overload
-def pipeline(__fn: Callable[[A], Result[B, TError]]) -> Callable[[A], Result[B, TError]]:
+def pipeline(
+    __fn: Callable[[A], Result[B, TError]]
+) -> Callable[[A], Result[B, TError]]:
     ...
 
 
@@ -72,7 +74,9 @@ def pipeline(
     ...
 
 
-def pipeline(*fns: Callable[[Any], Result[Any, Any]]) -> Callable[[Any], Result[Any, Any]]:  # type: ignore
+def pipeline(
+    *fns: Callable[[Any], Result[Any, Any]]
+) -> Callable[[Any], Result[Any, Any]]:
     """pipeline multiple result returning functions left to right.
 
     A pipeline kleisli (>=>) composes zero or more functions into a

@@ -2,7 +2,11 @@ from typing import List
 
 import pytest
 
-from expression.system import CancellationToken, CancellationTokenSource, ObjectDisposedException
+from expression.system import (
+    CancellationToken,
+    CancellationTokenSource,
+    ObjectDisposedException,
+)
 
 
 def test_token_none_works():

@@ -48,8 +48,12 @@ async def test_mailbox_post_and_async_reply(x: int):
         # start the loop
         return await message_loop()
 
-    agent: MailboxProcessor[Tuple[int, AsyncReplyChannel[str]]] = MailboxProcessor.start(process)
-    build_message: Callable[[AsyncReplyChannel[str]], Tuple[int, AsyncReplyChannel[str]]] = lambda r: (x, r)
+    agent: MailboxProcessor[
+        Tuple[int, AsyncReplyChannel[str]]
+    ] = MailboxProcessor.start(process)
+    build_message: Callable[
+        [AsyncReplyChannel[str]], Tuple[int, AsyncReplyChannel[str]]
+    ] = lambda r: (x, r)
     reply = await agent.post_and_async_reply(build_message)
 
     assert reply == f"Got {x}"

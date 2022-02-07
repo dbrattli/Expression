@@ -31,7 +31,12 @@ def pipe(value: _A, __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> _C:
 
 
 @overload
-def pipe(value: _A, __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C], __fn3: Callable[[_C], _D]) -> _D:
+def pipe(
+    value: _A,
+    __fn1: Callable[[_A], _B],
+    __fn2: Callable[[_B], _C],
+    __fn3: Callable[[_C], _D],
+) -> _D:
     ...
 
 
@@ -119,7 +124,8 @@ def pipe(
 def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:  # type: ignore
     """Functional pipe (`|>`)
 
-    Allows the use of function argument on the left side of the function.
+    Allows the use of function argument on the left side of the
+    function.
 
     Example:
         >>> pipe(x, fn) == __fn(x)  # Same as x |> fn
@@ -141,13 +147,18 @@ def pipe2(values: Tuple[_A, _B], __fn1: Callable[[_A, _B], _C]) -> _C:
 
 
 @overload
-def pipe2(values: Tuple[_A, _B], __fn1: Callable[[_A, _B], _C], __fn2: Callable[[_C], _D]) -> _D:
+def pipe2(
+    values: Tuple[_A, _B], __fn1: Callable[[_A, _B], _C], __fn2: Callable[[_C], _D]
+) -> _D:
     ...
 
 
 @overload
 def pipe2(
-    values: Tuple[_A, _B], __fn1: Callable[[_A, _B], _C], __fn2: Callable[[_C], _D], __fn3: Callable[[_D], _E]
+    values: Tuple[_A, _B],
+    __fn1: Callable[[_A, _B], _C],
+    __fn2: Callable[[_C], _D],
+    __fn3: Callable[[_D], _E],
 ) -> _E:
     ...
 
