@@ -112,8 +112,8 @@ def test_option_some_default_arg():
 
 
 @given(
-    st.one_of(st.integers(), st.text(), st.floats()),
-    st.one_of(st.integers(), st.text(), st.floats()),
+    st.one_of(st.integers(), st.text(), st.floats()),  # type: ignore
+    st.one_of(st.integers(), st.text(), st.floats()),  # type: ignore
 )
 def test_option_some_equals_some(a: Any, b: Any):
     xs = Some(a)
@@ -161,7 +161,7 @@ def test_option_none_map():
     assert ys is Nothing
 
 
-@given(st.integers(), st.integers())
+@given(st.integers(), st.integers())  # type: ignore
 def test_option_some_map2_piped(x: int, y: int):
     xs = Some(x)
     ys = Some(y)

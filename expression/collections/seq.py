@@ -151,7 +151,7 @@ class Seq(Iterable[_TSource]):
             The state object after the folding function is applied to
             each element of the sequence.
         """
-        return functools.reduce(folder, self, state)  # type: ignore
+        return functools.reduce(folder, self, state)
 
     def head(self) -> _TSource:
         """Returns the first element of the sequence."""
@@ -199,19 +199,19 @@ class Seq(Iterable[_TSource]):
         ...
 
     def starmap(self: Seq[Tuple[Any, ...]], mapping: Callable[..., Any]) -> Seq[Any]:
-        """Map list.
+        """Starmap source sequence.
 
-        Builds a new collection whose elements are the results of
-        applying the given function to each of the elements of the
-        collection.
+        Unpack arguments grouped as tuple elements. Builds a new collection
+        whose elements are the results of applying the given function to the
+        unpacked arguments to each of the elements of the collection.
 
         Args:
-            mapping: The function to transform elements from the input
-                list.
+            mapping: A function to transform items from the input sequence.
 
         Returns:
-            The list of transformed elements.
+            Partially applied map function.
         """
+
         return Seq(starmap(mapping)(self))
 
     def mapi(self, mapping: Callable[[int, _TSource], _TResult]) -> Seq[_TResult]:
@@ -570,7 +570,7 @@ def fold(
             The state object after the folding function is applied
             to each element of the sequence.
         """
-        return functools.reduce(folder, source, state)  # type: ignore
+        return functools.reduce(folder, source, state)
 
     return _fold
 
@@ -742,10 +742,35 @@ def starmap(
 def starmap(
     mapper: Callable[..., Any]
 ) -> Callable[[Iterable[Tuple[Any, ...]]], Iterable[Any]]:
+    """Starmap source sequence.
+
+    Unpack arguments grouped as tuple elements. Builds a new collection
+    whose elements are the results of applying the given function to the
+    unpacked arguments to each of the elements of the collection.
+
+    Args:
+        mapping: A function to transform items from the input sequence.
+
+    Returns:
+        Partially applied map function.
+    """
+
     def mapper_(args: Tuple[Any, ...]) -> Any:
         return mapper(*args)
 
     return map(mapper_)
+
+
+def map2(
+    mapper: Callable[[_T1, _T2], _TResult]
+) -> Callable[[Iterable[Tuple[_T1, _T2]]], Iterable[_TResult]]:
+    return starmap(mapper)
+
+
+def map3(
+    mapper: Callable[[_T1, _T2, _T3], _TResult]
+) -> Callable[[Iterable[Tuple[_T1, _T2, _T3]]], Iterable[_TResult]]:
+    return starmap(mapper)
 
 
 def mapi(
@@ -862,7 +887,7 @@ def scan(
         Returns:
             The resulting sequence of computed states.
         """
-        return itertools.accumulate(source, scanner, initial=state)  # type: ignore
+        return itertools.accumulate(source, scanner, initial=state)
 
     return _scan
 

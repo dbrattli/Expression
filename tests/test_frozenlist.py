@@ -11,7 +11,7 @@ from expression.collections import FrozenList, frozenlist
 Func = Callable[[int], int]
 
 
-@given(st.integers(min_value=0, max_value=10000))
+@given(st.integers(min_value=0, max_value=10000))  # type: ignore
 def test_list_large_list(x: int):
     xs = frozenlist.of_seq(range(x))
     assert len(xs) == x
@@ -38,7 +38,7 @@ def test_list_head_match():
         assert head == 42
 
 
-@given(st.text(), st.text())
+@given(st.text(), st.text())  # type: ignore
 def test_list_tail_head_fluent(a: str, b: str):
     xs = frozenlist.empty.cons(b).cons(a)
     assert a == xs.head()
@@ -68,19 +68,19 @@ def test_list_non_empty():
     assert not pipe(xs, frozenlist.is_empty)
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.integers()))  # type: ignore
 def test_list_length(xs: List[int]):
     ys = frozenlist.of_seq(xs)
     assert len(xs) == len(ys)
 
 
-@given(st.one_of(st.integers(), st.text()))
+@given(st.one_of(st.integers(), st.text()))  # type: ignore
 def test_list_cons_head(value: Any):
     x = pipe(frozenlist.empty.cons(value), frozenlist.head)
     assert x == value
 
 
-@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))
+@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
 def test_list_item(xs: List[int], index: int):
     ys = frozenlist.of_seq(xs)
     while index and index >= len(xs):
@@ -88,7 +88,7 @@ def test_list_item(xs: List[int], index: int):
     assert xs[index] == ys[index]
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.integers()))  # type: ignore
 def test_list_pipe_map(xs: List[int]):
     def mapper(x: int):
         return x + 1
@@ -100,7 +100,43 @@ def test_list_pipe_map(xs: List[int]):
     assert [y for y in zs] == [mapper(x) for x in xs]
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
+def test_seq_pipe_starmap(xs: List[Tuple[int, int]]):
+    mapper: Callable[[int, int], int] = lambda x, y: x + y
+    ys = pipe(
+        frozenlist.of_seq(xs),
+        frozenlist.starmap(mapper),
+    )
+
+    assert isinstance(ys, FrozenList)
+    assert [y for y in ys] == [x + y for (x, y) in xs]
+
+
+@given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
+def test_seq_pipe_map2(xs: List[Tuple[int, int]]):
+    mapper: Callable[[int, int], int] = lambda x, y: x + y
+    ys = pipe(
+        frozenlist.of_seq(xs),
+        frozenlist.map2(mapper),
+    )
+
+    assert isinstance(ys, FrozenList)
+    assert [y for y in ys] == [x + y for (x, y) in xs]
+
+
+@given(st.lists(st.tuples(st.integers(), st.integers(), st.integers())))  # type: ignore
+def test_seq_pipe_map3(xs: List[Tuple[int, int, int]]):
+    mapper: Callable[[int, int, int], int] = lambda x, y, z: x + y + z
+    ys = pipe(
+        frozenlist.of_seq(xs),
+        frozenlist.map3(mapper),
+    )
+
+    assert isinstance(ys, FrozenList)
+    assert [y for y in ys] == [x + y + z for (x, y, z) in xs]
+
+
+@given(st.lists(st.integers()))  # type: ignore
 def test_list_pipe_mapi(xs: List[int]):
     def mapper(i: int, x: int):
         return x + i
@@ -157,7 +193,7 @@ def test_list_skip(xs: List[int], x: int):
         assert x > len(xs)
 
 
-@given(st.lists(st.integers()), st.integers(min_value=0))
+@given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
 def test_list_skip_last(xs: List[int], x: int):
     expected = xs[:-x]
     ys: FrozenList[int]
@@ -165,7 +201,7 @@ def test_list_skip_last(xs: List[int], x: int):
     assert list(ys) == expected
 
 
-@given(st.lists(st.integers()), st.integers(), st.integers())
+@given(st.lists(st.integers()), st.integers(), st.integers())  # type: ignore
 def test_list_slice(xs: List[int], x: int, y: int):
     expected = xs[x:y]
 
@@ -175,7 +211,7 @@ def test_list_slice(xs: List[int], x: int, y: int):
     assert list(zs) == expected
 
 
-@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))
+@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
 def test_list_index(xs: List[int], x: int):
 
     x = x % len(xs) if x > 0 else x
@@ -192,7 +228,7 @@ def test_list_index(xs: List[int], x: int):
     assert y == h == i == expected
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.integers()))  # type: ignore
 def test_list_indexed(xs: List[int]):
 
     expected = list(enumerate(xs))
@@ -203,7 +239,7 @@ def test_list_indexed(xs: List[int]):
     assert list(zs) == expected
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.integers()))  # type: ignore
 def test_list_fold(xs: List[int]):
     def folder(x: int, y: int) -> int:
         return x + y
@@ -216,7 +252,7 @@ def test_list_fold(xs: List[int]):
     assert result == expected
 
 
-@given(st.integers(max_value=100))
+@given(st.integers(max_value=100))  # type: ignore
 def test_list_unfold(x: int):
     def unfolder(state: int) -> Option[Tuple[int, int]]:
         if state < x:
@@ -228,7 +264,7 @@ def test_list_unfold(x: int):
     assert list(result) == list(range(x))
 
 
-@given(st.lists(st.integers()), st.integers())
+@given(st.lists(st.integers()), st.integers())  # type: ignore
 def test_list_filter(xs: List[int], limit: int):
     expected = filter(lambda x: x < limit, xs)
 
@@ -239,7 +275,7 @@ def test_list_filter(xs: List[int], limit: int):
     assert list(result) == list(expected)
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.integers()))  # type: ignore
 def test_list_sort(xs: List[int]):
     expected = sorted(xs)
     ys: FrozenList[int] = frozenlist.of_seq(xs)
@@ -248,7 +284,7 @@ def test_list_sort(xs: List[int]):
     assert list(result) == list(expected)
 
 
-@given(st.lists(st.text(min_size=2)))
+@given(st.lists(st.text(min_size=2)))  # type: ignore
 def test_list_sort_with(xs: List[str]):
     expected = sorted(xs, key=lambda x: x[1])
     ys: FrozenList[str] = frozenlist.of_seq(xs)
@@ -262,7 +298,7 @@ rtn: Callable[[int], FrozenList[int]] = frozenlist.singleton
 empty: FrozenList[Any] = frozenlist.empty
 
 
-@given(st.integers(), st.integers())
+@given(st.integers(), st.integers())  # type: ignore
 def test_list_monad_bind(x: int, y: int):
     m = rtn(x)
     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + y)
@@ -270,7 +306,7 @@ def test_list_monad_bind(x: int, y: int):
     assert m.collect(f) == rtn(x + y)
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_list_monad_empty_bind(value: int):
     m = empty
     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + value)
@@ -278,7 +314,7 @@ def test_list_monad_empty_bind(value: int):
     assert m.collect(f) == m
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_list_monad_law_left_identity(value: int):
     """Monad law left identity.
 
@@ -290,7 +326,7 @@ def test_list_monad_law_left_identity(value: int):
     assert rtn(value).collect(f) == f(value)
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_list_monad_law_right_identity(value: int):
     r"""Monad law right identity.
 
@@ -301,7 +337,7 @@ def test_list_monad_law_right_identity(value: int):
     assert m.collect(rtn) == m
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_list_monad_law_associativity(value: int):
     r"""Monad law associativity.
 
@@ -314,7 +350,7 @@ def test_list_monad_law_associativity(value: int):
     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_list_monad_law_associativity_empty(value: int):
     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + 1000)
@@ -325,7 +361,7 @@ def test_list_monad_law_associativity_empty(value: int):
     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.integers()))  # type: ignore
 def test_list_monad_law_associativity_iterable(xs: List[int]):
     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + 10)

@@ -297,7 +297,7 @@ class FrozenList(Generic[_TSource]):
 
     @overload
     def starmap(
-        self: FrozenList[Tuple[_T1, _T1]], mapping: Callable[[_T1, _T2], _TResult]
+        self: FrozenList[Tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]
     ) -> FrozenList[_TResult]:
         ...
 
@@ -318,18 +318,17 @@ class FrozenList(Generic[_TSource]):
     def starmap(
         self: FrozenList[Tuple[Any, ...]], mapping: Callable[..., Any]
     ) -> FrozenList[Any]:
-        """Map list.
+        """Starmap source sequence.
 
-        Builds a new collection whose elements are the results of
-        applying the given function to each of the elements of the
-        collection.
+        Unpack arguments grouped as tuple elements. Builds a new collection
+        whose elements are the results of applying the given function to the
+        unpacked arguments to each of the elements of the collection.
 
         Args:
-            mapping: The function to transform elements from the input
-                list.
+            mapping: A function to transform items from the input sequence.
 
         Returns:
-            The list of transformed elements.
+            Partially applied map function.
         """
         return FrozenList(starmap(mapping)(self))
 
@@ -785,10 +784,35 @@ def starmap(
 def starmap(
     mapper: Callable[..., Any]
 ) -> Callable[[FrozenList[Tuple[Any, ...]]], FrozenList[Any]]:
+    """Starmap source sequence.
+
+    Unpack arguments grouped as tuple elements. Builds a new collection
+    whose elements are the results of applying the given function to the
+    unpacked arguments to each of the elements of the collection.
+
+    Args:
+        mapping: A function to transform items from the input sequence.
+
+    Returns:
+        Partially applied map function.
+    """
+
     def mapper_(args: Tuple[Any, ...]) -> Any:
         return mapper(*args)
 
     return map(mapper_)
+
+
+def map2(
+    mapper: Callable[[_T1, _T2], _TResult]
+) -> Callable[[FrozenList[Tuple[_T1, _T2]]], FrozenList[_TResult]]:
+    return starmap(mapper)
+
+
+def map3(
+    mapper: Callable[[_T1, _T2, _T3], _TResult]
+) -> Callable[[FrozenList[Tuple[_T1, _T2, _T3]]], FrozenList[_TResult]]:
+    return starmap(mapper)
 
 
 def mapi(
