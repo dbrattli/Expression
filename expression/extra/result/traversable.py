@@ -27,10 +27,8 @@ def traverse(
         """Same as:
         >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
         """
-        h: TResult
-        t: List[TResult]
-        h = yield from fn(head)
-        t = yield from tail
+        h: TResult = yield from fn(head)
+        t: List[TResult] = yield from tail
 
         return [h] + t
 

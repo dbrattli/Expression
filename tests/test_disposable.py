@@ -21,7 +21,7 @@ def test_disposable_disposed():
     disp.dispose()
     assert called
 
-    with pytest.raises(ObjectDisposedException):  # type: ignore
+    with pytest.raises(ObjectDisposedException):
         with disp:
             assert not called
 
@@ -63,7 +63,7 @@ async def test_async_disposable_disposed():
     await disp.dispose_async()
     assert called
 
-    with pytest.raises(ObjectDisposedException):  # type: ignore
+    with pytest.raises(ObjectDisposedException):
         async with disp:
             assert not called
 

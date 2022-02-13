@@ -98,10 +98,10 @@ class CancellationTokenSource(Disposable):
 
         return Disposable.create(dispose)
 
-    def __enter__(self) -> CancellationToken:
+    def __enter__(self) -> Disposable:
         if self._is_disposed:
             raise ObjectDisposedException()
-        return self.token
+        return self
 
     @staticmethod
     def cancelled_source() -> CancellationTokenSource:

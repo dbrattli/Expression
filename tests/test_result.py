@@ -77,7 +77,7 @@ def test_result_error_iterate():
     assert excinfo.value.error == "err"  # type: ignore
 
 
-@given(st.integers(), st.integers())
+@given(st.integers(), st.integers())  # type: ignore
 def test_result_ok_equals_ok(x: int, y: int):
     xs: Result[int, Exception] = Ok(x)
     ys: Result[int, Exception] = Ok(y)
@@ -85,13 +85,13 @@ def test_result_ok_equals_ok(x: int, y: int):
     assert xs == ys if x == y else xs != ys
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_result_ok_not_equals_error(x: int):
     assert not Ok(x) == Error(x)
     assert not Error(x) == Ok(x)
 
 
-@given(st.text(), st.text())
+@given(st.text(), st.text())  # type: ignore
 def test_result_error_equals_error(x: int, y: int):
     xs: Result[int, int] = Error(x)
     ys: Result[int, int] = Error(y)
@@ -99,7 +99,7 @@ def test_result_error_equals_error(x: int, y: int):
     assert xs == ys if x == y else xs != ys
 
 
-@given(st.integers(), st.integers())
+@given(st.integers(), st.integers())  # type: ignore
 def test_result_map_piped(x: int, y: int):
     xs: Result[int, Exception] = Ok(x)
     mapper: Callable[[int], int] = lambda x: x + y
@@ -112,7 +112,7 @@ def test_result_map_piped(x: int, y: int):
         assert False
 
 
-@given(st.integers(), st.integers())
+@given(st.integers(), st.integers())  # type: ignore
 def test_result_map_ok_fluent(x: int, y: int):
     xs: Result[int, Exception] = Ok(x)
     mapper: Callable[[int], int] = lambda x: x + y
@@ -125,7 +125,7 @@ def test_result_map_ok_fluent(x: int, y: int):
         assert False
 
 
-@given(st.integers(), st.integers())
+@given(st.integers(), st.integers())  # type: ignore
 def test_result_ok_chained_map(x: int, y: int):
     xs: Result[int, Exception] = Ok(x)
     mapper1: Callable[[int], int] = lambda x: x + y
@@ -140,7 +140,7 @@ def test_result_ok_chained_map(x: int, y: int):
         assert False
 
 
-@given(st.text(), st.integers())
+@given(st.text(), st.integers())  # type: ignore
 def test_result_map_error_piped(msg: str, y: int):
     xs: Result[int, str] = Error(msg)
     mapper: Callable[[int], int] = lambda x: x + y
@@ -154,7 +154,7 @@ def test_result_map_error_piped(msg: str, y: int):
         assert False
 
 
-@given(st.text(), st.integers())
+@given(st.text(), st.integers())  # type: ignore
 def test_result_map_error_fluent(msg: str, y: int):
     xs: Result[int, str] = Error(msg)
     mapper: Callable[[int], int] = lambda x: x + y
@@ -167,7 +167,7 @@ def test_result_map_error_fluent(msg: str, y: int):
         assert False
 
 
-@given(st.text(), st.integers())
+@given(st.text(), st.integers())  # type: ignore
 def test_result_error_chained_map(msg: str, y: int):
     xs: Result[int, str] = Error(msg)
     mapper1: Callable[[int], int] = lambda x: x + y
@@ -181,7 +181,7 @@ def test_result_error_chained_map(msg: str, y: int):
         assert False
 
 
-@given(st.integers(), st.integers())
+@given(st.integers(), st.integers())  # type: ignore
 def test_result_bind_piped(x: int, y: int):
     xs: Result[int, str] = Ok(x)
     mapper: Callable[[int], Result[int, str]] = lambda x: Ok(x + y)
@@ -194,7 +194,7 @@ def test_result_bind_piped(x: int, y: int):
         assert False
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.integers()))  # type: ignore
 def test_result_traverse_ok(xs: List[int]):
     ys: List[Result[int, str]] = [Ok(x) for x in xs]
     zs = sequence(ys)
@@ -205,7 +205,7 @@ def test_result_traverse_ok(xs: List[int]):
         assert False
 
 
-@given(st.lists(st.integers(), min_size=5))
+@given(st.lists(st.integers(), min_size=5))  # type: ignore
 def test_result_traverse_error(xs: List[int]):
     error = "Do'h"
     ys: List[Result[int, str]] = [
@@ -275,7 +275,7 @@ def test_result_effect_yield_from_error():
     @effect.result
     def fn() -> Generator[int, int, int]:
         xs = mayfail()
-        x = yield from xs
+        x: int = yield from xs
         return x + 1
 
     xs = fn()
