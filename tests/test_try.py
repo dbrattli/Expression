@@ -5,6 +5,14 @@ from expression import Failure, Success, Try, match
 from .utils import CustomException
 
 
+def test_can_create_success():
+    Success(10)
+
+
+def test_can_create_failure():
+    Failure(ValueError())
+
+
 def test_try_success():
     xs: Try[int] = Success(10)
 

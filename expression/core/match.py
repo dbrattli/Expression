@@ -1,12 +1,23 @@
 from __future__ import annotations
 
 from types import TracebackType
-from typing import Any, Generic, Iterable, Optional, Type, TypeVar, cast, get_origin, overload
-
-from expression.core.builder import TResult
+from typing import (
+    Any,
+    Generic,
+    Iterable,
+    Optional,
+    Type,
+    TypeVar,
+    cast,
+    get_origin,
+    overload,
+)
 
 from .error import MatchFailureError
 from .typing import SupportsMatch
+
+_TResult = TypeVar("_TResult")
+
 
 TSource = TypeVar("TSource")
 A = TypeVar("A")
@@ -145,7 +156,7 @@ class Case(Generic[TSource]):
         ...
 
     @overload
-    def default(self, ret: Optional[TResult]) -> TResult:
+    def default(self, ret: Optional[_TResult]) -> _TResult:
         ...
 
     def default(self, ret: Optional[Any] = None) -> Any:
@@ -162,7 +173,10 @@ class Case(Generic[TSource]):
         return self
 
     def __exit__(
-        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+        self,
+        exctype: Optional[Type[BaseException]],
+        excinst: Optional[BaseException],
+        exctb: Optional[TracebackType],
     ) -> None:
         """Exit context management."""
 
@@ -179,17 +193,6 @@ def match(value: TSource) -> Case[TSource]:
     Same as `Case(value)`
     """
     return Case(value)
-
-
-# def matcher(value: TSource) -> Callable[[Callable[..., Any]], Callable[[TSource], Generator[TSource, None, None]]]:
-#     def wrap(fn: Callable[..., Any]) -> Callable[..., Generator[TSource, None, None]]:
-#         def inner(*args: Any, **kw: Any) -> Generator[TSource, None, None]:
-#             m = Matcher.of(value)
-#             return fn(m, *args, **kw)
-
-#         return inner
-
-#     return wrap
 
 
 __all__ = ["match", "Case", "MatchMixin", "SupportsMatch"]

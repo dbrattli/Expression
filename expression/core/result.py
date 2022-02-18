@@ -11,53 +11,72 @@ the Result type to Exception.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Generator, Iterable, Iterator, Type, TypeVar, Union, get_origin, overload
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Type,
+    TypeVar,
+    Union,
+    get_origin,
+    overload,
+)
 
 from .error import EffectError
 from .match import Case, SupportsMatch
 from .pipe import pipe
 
-TSource = TypeVar("TSource")
-TSourceIn = TypeVar("TSourceIn", contravariant=True)
-TResult = TypeVar("TResult")
-TResultOut = TypeVar("TResultOut", covariant=True)
-TError = TypeVar("TError")
-
-# Underscore types are used for generic methods
 _TSource = TypeVar("_TSource")
+_TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
 
-T1 = TypeVar("T1")
-T2 = TypeVar("T2")
-T3 = TypeVar("T3")
-T4 = TypeVar("T4")
+# Used for generic methods
+_TSourceM = TypeVar("_TSourceM")
+_TErrorM = TypeVar("_TErrorM")
+
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
 
 
-class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
+class Result(Iterable[_TSource], SupportsMatch[Union[_TSource, _TError]], ABC):
     """The result abstract base class."""
 
     @overload
-    def pipe(self: Result[T1, TError], __fn1: Callable[[Result[T1, TError]], Result[T2, TError]]) -> Result[T2, TError]:
-        ...
-
-    @overload
-    def pipe(self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2]) -> T2:
-        ...
-
-    @overload
     def pipe(
-        self, __fn1: Callable[[Result[TSource, TError]], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]
-    ) -> T3:
+        self: Result[_T1, _TError],
+        __fn1: Callable[[Result[_T1, _TError]], Result[_T2, _TError]],
+    ) -> Result[_T2, _TError]:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[[Result[TSource, TError]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-    ) -> T4:
+        __fn1: Callable[[Result[_TSource, _TError]], _T1],
+        __fn2: Callable[[_T1], _T2],
+    ) -> _T2:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[Result[_TSource, _TError]], _T1],
+        __fn2: Callable[[_T1], _T2],
+        __fn3: Callable[[_T2], _T3],
+    ) -> _T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[[Result[_TSource, _TError]], _T1],
+        __fn2: Callable[[_T1], _T2],
+        __fn3: Callable[[_T2], _T3],
+        __fn4: Callable[[_T3], _T4],
+    ) -> _T4:
         ...
 
     def pipe(self, *args: Any) -> Any:
@@ -65,43 +84,47 @@ class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
         return pipe(self, *args)
 
     @abstractmethod
-    def map(self, mapper: Callable[[TSource], TResult]) -> Result[TResult, TError]:
+    def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(self, mapper: Callable[[TError], TResult]) -> Result[TSource, TResult]:
+    def map_error(
+        self, mapper: Callable[[_TError], _TResult]
+    ) -> Result[_TSource, _TResult]:
         """Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok."""
         raise NotImplementedError
 
     @abstractmethod
-    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -> Result[TResult, TError]:
+    def bind(
+        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
+    ) -> Result[_TResult, _TError]:
         raise NotImplementedError
 
     @overload
-    def match(self, pattern: "Ok[_TSource, Any]") -> Iterable[_TSource]:
+    def match(self, pattern: "Ok[_TSourceM, Any]") -> Iterable[_TSourceM]:
         ...
 
     @overload
-    def match(self, pattern: "Error[Any, _TError]") -> Iterable[_TError]:
+    def match(self, pattern: "Error[Any, _TErrorM]") -> Iterable[_TErrorM]:
         ...
 
     @overload
-    def match(self, pattern: "Case[Ok[_TSource, Any]]") -> Iterable[_TSource]:
+    def match(self, pattern: "Case[Ok[_TSourceM, Any]]") -> Iterable[_TSourceM]:
         ...
 
     @overload
-    def match(self, pattern: "Case[Error[Any, _TError]]") -> Iterable[_TError]:
+    def match(self, pattern: "Case[Error[Any, _TErrorM]]") -> Iterable[_TErrorM]:
         ...
 
     @overload
-    def match(self, pattern: "Type[Result[_TSource, Any]]") -> Iterable[_TSource]:
+    def match(self, pattern: "Type[Result[_TSourceM, Any]]") -> Iterable[_TSourceM]:
         ...
 
     def match(self, pattern: Any) -> Any:
         """Match result with pattern."""
 
-        case: Case[Iterable[Union[TSource, TError]]] = Case(self)
+        case: Case[Iterable[Union[_TSource, _TError]]] = Case(self)
         return case(pattern) if pattern else case
 
     @abstractmethod
@@ -120,30 +143,34 @@ class Result(Iterable[TSource], SupportsMatch[Union[TSource, TError]], ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def __iter__(self) -> Iterator[TSource]:
+    def __iter__(self) -> Iterator[_TSource]:
         raise NotImplementedError
 
     def __repr__(self) -> str:
         return str(self)
 
 
-class Ok(Result[TSource, TError], SupportsMatch[TSource]):
+class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
     """The Ok result case class."""
 
-    def __init__(self, value: TSource) -> None:
+    def __init__(self, value: _TSource) -> None:
         self._value = value
 
     @property
-    def value(self) -> TSource:
+    def value(self) -> _TSource:
         return self._value
 
-    def map(self, mapper: Callable[[TSource], TResult]) -> Result[TResult, TError]:
+    def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
         return Ok(mapper(self._value))
 
-    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -> Result[TResult, TError]:
+    def bind(
+        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
+    ) -> Result[_TResult, _TError]:
         return mapper(self._value)
 
-    def map_error(self, mapper: Callable[[TError], TResult]) -> Result[TSource, TResult]:
+    def map_error(
+        self, mapper: Callable[[_TError], _TResult]
+    ) -> Result[_TSource, _TResult]:
         """Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok."""
         return Ok(self._value)
@@ -158,7 +185,7 @@ class Ok(Result[TSource, TError], SupportsMatch[TSource]):
 
         return True
 
-    def __match__(self, pattern: Any) -> Iterable[TSource]:
+    def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
             return [self.value]
 
@@ -176,7 +203,7 @@ class Ok(Result[TSource, TError], SupportsMatch[TSource]):
             return self.value == o.value  # type: ignore
         return False
 
-    def __iter__(self) -> Generator[TSource, TSource, TSource]:
+    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         """Return iterator for Ok case."""
         return (yield self._value)
 
@@ -192,24 +219,28 @@ class ResultException(EffectError):
         self.message = message
 
 
-class Error(Result[TSource, TError], ResultException):
+class Error(ResultException, Result[_TSource, _TError]):
     """The Error result case class."""
 
-    def __init__(self, error: TError) -> None:
+    def __init__(self, error: _TError) -> None:
         super().__init__(str(error))
         self._error = error
 
     @property
-    def error(self) -> TError:
+    def error(self) -> _TError:
         return self._error
 
-    def map(self, mapper: Callable[[TSource], TResult]) -> Result[TResult, TError]:
+    def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
         return Error(self._error)
 
-    def bind(self, mapper: Callable[[TSource], Result[TResult, TError]]) -> Result[TResult, TError]:
+    def bind(
+        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
+    ) -> Result[_TResult, _TError]:
         return Error(self._error)
 
-    def map_error(self, mapper: Callable[[TError], TResult]) -> Result[TSource, TResult]:
+    def map_error(
+        self, mapper: Callable[[_TError], _TResult]
+    ) -> Result[_TSource, _TResult]:
         """Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok."""
         return Error(mapper(self._error))
@@ -222,7 +253,7 @@ class Error(Result[TSource, TError], ResultException):
         """Returns `True` if the result is an `Ok` value."""
         return False
 
-    def __match__(self, pattern: Any) -> Iterable[TError]:
+    def __match__(self, pattern: Any) -> Iterable[_TError]:
         if self is pattern or self == pattern:
             return [self.error]
 
@@ -240,7 +271,7 @@ class Error(Result[TSource, TError], ResultException):
             return self.error == o.error  # type: ignore
         return False
 
-    def __iter__(self) -> Iterator[TSource]:
+    def __iter__(self) -> Iterator[_TSource]:
         """Return iterator for Error case."""
 
         # Raise class here so sub-classes like Failure works as well.
@@ -254,17 +285,19 @@ class Error(Result[TSource, TError], ResultException):
         return f"Error {self._error}"
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:
-    def _map(result: Result[TSource, TError]) -> Result[TResult, TError]:
+def map(
+    mapper: Callable[[_TSource], _TResult]
+) -> Callable[[Result[_TSource, _TError]], Result[_TResult, _TError]]:
+    def _map(result: Result[_TSource, _TError]) -> Result[_TResult, _TError]:
         return result.map(mapper)
 
     return _map
 
 
 def bind(
-    mapper: Callable[[TSource], Result[TResult, Any]]
-) -> Callable[[Result[TSource, TError]], Result[TResult, TError]]:
-    def _bind(result: Result[TSource, TError]) -> Result[TResult, TError]:
+    mapper: Callable[[_TSource], Result[_TResult, Any]]
+) -> Callable[[Result[_TSource, _TError]], Result[_TResult, _TError]]:
+    def _bind(result: Result[_TSource, _TError]) -> Result[_TResult, _TError]:
         return result.bind(mapper)
 
     return _bind

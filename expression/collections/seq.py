@@ -26,26 +26,45 @@ from __future__ import annotations
 import builtins
 import functools
 import itertools
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional, Tuple, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    Optional,
+    Tuple,
+    TypeVar,
+    cast,
+    overload,
+)
 
-from expression.core import Case, Option, SupportsLessThan, identity, pipe
+from expression.core import (
+    Case,
+    Option,
+    SupportsGreaterThan,
+    SupportsLessThan,
+    identity,
+    pipe,
+)
 
 if TYPE_CHECKING:
     from .frozenlist import FrozenList
 
-TSource = TypeVar("TSource")
-TSourceIn = TypeVar("TSourceIn", contravariant=True)
-TResult = TypeVar("TResult")
-TResultOut = TypeVar("TResultOut", covariant=True)
-TState = TypeVar("TState")
-TSupportsLessThan = TypeVar("TSupportsLessThan", bound=SupportsLessThan)
-T1 = TypeVar("T1")
-T2 = TypeVar("T2")
-T3 = TypeVar("T3")
-T4 = TypeVar("T4")
+_TSource = TypeVar("_TSource")
+_TSourceIn = TypeVar("_TSourceIn", contravariant=True)
+_TResult = TypeVar("_TResult")
+_TResultOut = TypeVar("_TResultOut", covariant=True)
+_TState = TypeVar("_TState")
+_TSupportsGreaterThan = TypeVar("_TSupportsGreaterThan", bound=SupportsGreaterThan)
+_TSupportsLessThan = TypeVar("_TSupportsLessThan", bound=SupportsLessThan)
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
 
 
-class Seq(Iterable[TSource]):
+class Seq(Iterable[_TSource]):
     """Sequence type.
 
     Contains instance methods for dot-chaining operators methods on
@@ -56,26 +75,26 @@ class Seq(Iterable[TSource]):
         >>> ys = xs.map(lambda x: x + 1).filter(lambda x: x < 3)
     """
 
-    def __init__(self, iterable: Iterable[TSource] = []) -> None:
+    def __init__(self, iterable: Iterable[_TSource] = []) -> None:
         self._value = iterable
 
     @classmethod
-    def of(cls, *args: TSource) -> Seq[TSource]:
+    def of(cls, *args: _TSource) -> Seq[_TSource]:
         return cls(args)
 
     @classmethod
-    def of_iterable(cls, source: Iterable[TSource]) -> Seq[TSource]:
+    def of_iterable(cls, source: Iterable[_TSource]) -> Seq[_TSource]:
         return cls(source)
 
-    def append(self, *others: Iterable[TSource]) -> Seq[TSource]:
+    def append(self, *others: Iterable[_TSource]) -> Seq[_TSource]:
         """Wraps the two given enumerations as a single concatenated
         enumeration."""
         return Seq(concat(self._value, *others))
 
-    def filter(self, predicate: Callable[[TSource], bool]) -> Seq[TSource]:
+    def filter(self, predicate: Callable[[_TSource], bool]) -> Seq[_TSource]:
         return Seq(filter(predicate)(self))
 
-    def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> Seq[TResult]:
+    def choose(self, chooser: Callable[[_TSource], Option[_TResult]]) -> Seq[_TResult]:
         """Choose items from the sequence.
 
         Applies the given function to each element of the list. Returns
@@ -93,12 +112,12 @@ class Seq(Iterable[TSource]):
         xs = pipe(self, choose(chooser))
         return Seq(xs)
 
-    def collect(self, mapping: Callable[[TSource], "Seq[TResult]"]) -> Seq[TResult]:
+    def collect(self, mapping: Callable[[_TSource], "Seq[_TResult]"]) -> Seq[_TResult]:
         xs = pipe(self, collect(mapping))
         return Seq(xs)
 
     @staticmethod
-    def delay(generator: Callable[[], Iterable[TSource]]) -> Iterable[TSource]:
+    def delay(generator: Callable[[], Iterable[_TSource]]) -> Iterable[_TSource]:
         """Returns a sequence that is built from the given delayed specification of a
         sequence.
 
@@ -112,11 +131,13 @@ class Seq(Iterable[TSource]):
         return delay(generator)
 
     @staticmethod
-    def empty() -> Seq[TSource]:
+    def empty() -> Seq[_TSource]:
         """Returns empty sequence."""
         return Seq()
 
-    def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
+    def fold(
+        self, folder: Callable[[_TState, _TSource], _TState], state: _TState
+    ) -> _TState:
         """Applies a function to each element of the collection,
         threading an accumulator argument through the computation. If
         the input function is f and the elements are i0...iN then
@@ -130,9 +151,9 @@ class Seq(Iterable[TSource]):
             The state object after the folding function is applied to
             each element of the sequence.
         """
-        return functools.reduce(folder, self, state)  # type: ignore
+        return functools.reduce(folder, self, state)
 
-    def head(self) -> TSource:
+    def head(self) -> _TSource:
         """Returns the first element of the sequence."""
 
         return head(self)
@@ -141,7 +162,7 @@ class Seq(Iterable[TSource]):
         """Returns the length of the sequence."""
         return length(self)
 
-    def map(self, mapper: Callable[[TSource], TResult]) -> Seq[TResult]:
+    def map(self, mapper: Callable[[_TSource], _TResult]) -> Seq[_TResult]:
         """Map sequence.
 
         Builds a new collection whose elements are the results of
@@ -157,7 +178,43 @@ class Seq(Iterable[TSource]):
 
         return Seq(pipe(self, map(mapper)))
 
-    def mapi(self, mapping: Callable[[int, TSource], TResult]) -> Seq[TResult]:
+    @overload
+    def starmap(
+        self: Seq[Tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]
+    ) -> Seq[_TResult]:
+        ...
+
+    @overload
+    def starmap(
+        self: Seq[Tuple[_T1, _T2, _T3]],
+        mapping: Callable[[_T1, _T2, _T3], _TResult],
+    ) -> Seq[_TResult]:
+        ...
+
+    @overload
+    def starmap(
+        self: Seq[Tuple[_T1, _T2, _T3, _T4]],
+        mapping: Callable[[_T1, _T2, _T3, _T4], _TResult],
+    ) -> Seq[_TResult]:
+        ...
+
+    def starmap(self: Seq[Tuple[Any, ...]], mapping: Callable[..., Any]) -> Seq[Any]:
+        """Starmap source sequence.
+
+        Unpack arguments grouped as tuple elements. Builds a new collection
+        whose elements are the results of applying the given function to the
+        unpacked arguments to each of the elements of the collection.
+
+        Args:
+            mapping: A function to transform items from the input sequence.
+
+        Returns:
+            Partially applied map function.
+        """
+
+        return Seq(starmap(mapping)(self))
+
+    def mapi(self, mapping: Callable[[int, _TSource], _TResult]) -> Seq[_TResult]:
         """Map list with index.
 
         Builds a new collection whose elements are the results of
@@ -175,37 +232,46 @@ class Seq(Iterable[TSource]):
         return Seq(mapi(mapping)(self))
 
     @overload
-    def match(self) -> Case[Iterable[TSource]]:
+    def match(self) -> Case[Iterable[_TSource]]:
         ...
 
     @overload
-    def match(self, pattern: Any) -> Iterable[Iterable[TSource]]:
+    def match(self, pattern: Any) -> Iterable[Iterable[_TSource]]:
         ...
 
     def match(self, pattern: Optional[Any] = None) -> Any:
-        case: Case[Iterable[TSource]] = Case(self)
+        case: Case[Iterable[_TSource]] = Case(self)
         return case(pattern) if pattern else case
 
     @overload
-    def pipe(self, __fn1: Callable[["Seq[TSource]"], TResult]) -> TResult:
-        ...
-
-    @overload
-    def pipe(self, __fn1: Callable[["Seq[TSource]"], T1], __fn2: Callable[[T1], T2]) -> T2:
-        ...
-
-    @overload
-    def pipe(self, __fn1: Callable[["Seq[TSource]"], T1], __fn2: Callable[[T1], T2], __fn3: Callable[[T2], T3]) -> T3:
+    def pipe(self, __fn1: Callable[["Seq[_TSource]"], _TResult]) -> _TResult:
         ...
 
     @overload
     def pipe(
         self,
-        __fn1: Callable[["Seq[TSource]"], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-    ) -> T4:
+        __fn1: Callable[["Seq[_TSource]"], _T1],
+        __fn2: Callable[[_T1], _T2],
+    ) -> _T2:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["Seq[_TSource]"], _T1],
+        __fn2: Callable[[_T1], _T2],
+        __fn3: Callable[[_T2], _T3],
+    ) -> _T3:
+        ...
+
+    @overload
+    def pipe(
+        self,
+        __fn1: Callable[["Seq[_TSource]"], _T1],
+        __fn2: Callable[[_T1], _T2],
+        __fn3: Callable[[_T2], _T3],
+        __fn4: Callable[[_T3], _T4],
+    ) -> _T4:
         ...
 
     def pipe(self, *args: Any) -> Any:
@@ -231,7 +297,9 @@ class Seq(Iterable[TSource]):
     def range(*args: int, **kw: int) -> Iterable[int]:
         return range(*args, **kw)
 
-    def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -> Iterable[TState]:
+    def scan(
+        self, scanner: Callable[[_TState, _TSource], _TState], state: _TState
+    ) -> Iterable[_TState]:
         """Like fold, but computes on-demand and returns the sequence of
         intermediary and final results.
 
@@ -245,7 +313,7 @@ class Seq(Iterable[TSource]):
         """
         return Seq(itertools.accumulate(self._value, scanner, initial=state))
 
-    def skip(self, count: int) -> Seq[TSource]:
+    def skip(self, count: int) -> Seq[_TSource]:
         """Returns a sequence that skips N elements of the underlying
         sequence and then yields the remaining elements of the sequence.
 
@@ -254,22 +322,22 @@ class Seq(Iterable[TSource]):
         """
         return Seq(pipe(self, skip(count)))
 
-    def sum(self) -> TSource:
+    def sum(self) -> _TSource:
         """Returns the sum of the elements in the sequence."""
         return sum(self)
 
-    def sum_by(self, projection: Callable[[TSource], TResult]) -> TResult:
+    def sum_by(self, projection: Callable[[_TSource], _TResult]) -> _TResult:
         """Returns the sum of the results generated by applying the
         function to each element of the sequence."""
         return pipe(self, sum_by(projection))
 
-    def tail(self) -> Seq[TSource]:
+    def tail(self) -> Seq[_TSource]:
         """Returns a sequence that skips 1 element of the underlying
         sequence and then yields the remaining elements of the
         sequence."""
         return self.skip(1)
 
-    def take(self, count: int) -> Seq[TSource]:
+    def take(self, count: int) -> Seq[_TSource]:
         """Returns the first N elements of the sequence.
 
         Args:
@@ -277,11 +345,15 @@ class Seq(Iterable[TSource]):
         """
         return Seq(pipe(self, take(count)))
 
-    def to_list(self) -> "FrozenList[TSource]":
+    def to_list(self) -> "FrozenList[_TSource]":
         return to_list(self)
 
     @classmethod
-    def unfold(cls, generator: Callable[[TState], Option[Tuple[TSource, TState]]], state: TState) -> Iterable[TSource]:
+    def unfold(
+        cls,
+        generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]],
+        state: _TState,
+    ) -> Iterable[_TSource]:
         """Returns a list that contains the elements generated by the
         given computation. The given initial state argument is passed to
         the element generator.
@@ -298,7 +370,7 @@ class Seq(Iterable[TSource]):
 
         return pipe(state, unfold(generator))
 
-    def zip(self, other: Iterable[TResult]) -> Iterable[Tuple[TSource, TResult]]:
+    def zip(self, other: Iterable[_TResult]) -> Iterable[Tuple[_TSource, _TResult]]:
         """Combines the two sequences into a list of pairs. The two
         sequences need not have equal lengths: when one sequence is
         exhausted any remaining elements in the other sequence are
@@ -312,7 +384,7 @@ class Seq(Iterable[TSource]):
         """
         return builtins.zip(self, other)
 
-    def __iter__(self) -> Iterator[TSource]:
+    def __iter__(self) -> Iterator[_TSource]:
         """Return iterator for sequence."""
         return builtins.iter(self._value)
 
@@ -336,31 +408,35 @@ class Seq(Iterable[TSource]):
         return repr(self)
 
 
-class SeqGen(Iterable[TSource]):
+class SeqGen(Iterable[_TSource]):
     """Sequence from a generator function.
 
     We use this to allow multiple iterations over the same sequence
     generated by a generator function."""
 
-    def __init__(self, gen: Callable[[], Iterable[TSource]]) -> None:
+    def __init__(self, gen: Callable[[], Iterable[_TSource]]) -> None:
         self.gen = gen
 
-    def __iter__(self) -> Iterator[TSource]:
+    def __iter__(self) -> Iterator[_TSource]:
         xs = self.gen()
         return builtins.iter(xs)
 
 
-def append(*others: Iterable[TSource]) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
+def append(
+    *others: Iterable[_TSource],
+) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
     """Wraps the given enumerations as a single concatenated
     enumeration."""
 
-    def _(source: Iterable[TSource]) -> Iterable[TSource]:
+    def _(source: Iterable[_TSource]) -> Iterable[_TSource]:
         return concat(source, *others)
 
     return _
 
 
-def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
+def choose(
+    chooser: Callable[[_TSource], Option[_TResult]]
+) -> Callable[[Iterable[_TSource]], Iterable[_TResult]]:
     """Choose items from the sequence.
 
     Applies the given function to each element of the list. Returns
@@ -375,8 +451,8 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[Iterable[
         function.
     """
 
-    def _choose(source: Iterable[TSource]) -> Iterable[TResult]:
-        def mapper(x: TSource) -> Iterable[TResult]:
+    def _choose(source: Iterable[_TSource]) -> Iterable[_TResult]:
+        def mapper(x: _TSource) -> Iterable[_TResult]:
             return chooser(x).to_seq()
 
         return pipe(source, collect(mapper))
@@ -384,8 +460,10 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[Iterable[
     return _choose
 
 
-def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
-    def _collect(source: Iterable[TSource]) -> Iterable[TResult]:
+def collect(
+    mapping: Callable[[_TSource], Iterable[_TResult]]
+) -> Callable[[Iterable[_TSource]], Iterable[_TResult]]:
+    def _collect(source: Iterable[_TSource]) -> Iterable[_TResult]:
         def gen():
             for xs in source:
                 for x in mapping(xs):
@@ -396,7 +474,7 @@ def collect(mapping: Callable[[TSource], Iterable[TResult]]) -> Callable[[Iterab
     return _collect
 
 
-def concat(*iterables: Iterable[TSource]) -> Iterable[TSource]:
+def concat(*iterables: Iterable[_TSource]) -> Iterable[_TSource]:
     """Combines the given variable number of enumerations and/or
     enumeration-of-enumerations as a single concatenated
     enumeration.
@@ -416,7 +494,7 @@ def concat(*iterables: Iterable[TSource]) -> Iterable[TSource]:
     return SeqGen(gen)
 
 
-def delay(generator: Callable[[], Iterable[TSource]]) -> Iterable[TSource]:
+def delay(generator: Callable[[], Iterable[_TSource]]) -> Iterable[_TSource]:
     """Returns a sequence that is built from the given delayed
     specification of a sequence.
 
@@ -433,7 +511,9 @@ empty: Seq[Any] = Seq()
 """The empty sequence."""
 
 
-def filter(predicate: Callable[[TSource], bool]) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
+def filter(
+    predicate: Callable[[_TSource], bool]
+) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
     """Filter sequence.
 
     Filters the sequence to a new sequence containing only the
@@ -449,7 +529,7 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[Iterable[TSource]]
         A partially applied filter function.
     """
 
-    def _filter(source: Iterable[TSource]) -> Iterable[TSource]:
+    def _filter(source: Iterable[_TSource]) -> Iterable[_TSource]:
         """Filter sequence (partially applied).
 
         Args:
@@ -465,7 +545,9 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[Iterable[TSource]]
     return _filter
 
 
-def fold(folder: Callable[[TState, TSource], TState], state: TState) -> Callable[[Iterable[TSource]], TState]:
+def fold(
+    folder: Callable[[_TState, _TSource], _TState], state: _TState
+) -> Callable[[Iterable[_TSource]], _TState]:
     """Applies a function to each element of the collection,
     threading an accumulator argument through the computation. If
     the input function is f and the elements are i0...iN then
@@ -482,18 +564,20 @@ def fold(folder: Callable[[TState, TSource], TState], state: TState) -> Callable
         to each element of the sequence.
     """
 
-    def _fold(source: Iterable[TSource]) -> TState:
+    def _fold(source: Iterable[_TSource]) -> _TState:
         """Partially applied fold function.
         Returns:
             The state object after the folding function is applied
             to each element of the sequence.
         """
-        return functools.reduce(folder, source, state)  # type: ignore
+        return functools.reduce(folder, source, state)
 
     return _fold
 
 
-def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSource]) -> Callable[[TState], TState]:
+def fold_back(
+    folder: Callable[[_TSource, _TState], _TState], source: Iterable[_TSource]
+) -> Callable[[_TState], _TState]:
     """Applies a function to each element of the collection,
     starting from the end, threading an accumulator argument through
     the computation. If the input function is f and the elements are
@@ -508,19 +592,21 @@ def fold_back(folder: Callable[[TSource, TState], TState], source: Iterable[TSou
         Partially applied fold_back function.
     """
 
-    def _fold_back(state: TState) -> TState:
+    def _fold_back(state: _TState) -> _TState:
         """Partially applied fold_back function.
 
         Returns:
             The state object after the folding function is applied
             to each element of the sequence.
         """
-        return functools.reduce(lambda x, y: folder(y, x), reversed(source), state)  # type: ignore
+        return functools.reduce(
+            lambda x, y: folder(y, x), reversed(list(source)), state
+        )
 
     return _fold_back
 
 
-def head(source: Iterable[TSource]) -> TSource:
+def head(source: Iterable[_TSource]) -> _TSource:
     """Return the first element of the sequence.
 
     Args:
@@ -539,7 +625,7 @@ def head(source: Iterable[TSource]) -> TSource:
     raise ValueError("Sequence contains no elements")
 
 
-def init_infinite(initializer: Callable[[int], TSource]) -> Iterable[TSource]:
+def init_infinite(initializer: Callable[[int], _TSource]) -> Iterable[_TSource]:
     """Generates a new sequence which, when iterated, will return
     successive elements by calling the given function. The results of
     calling the function will not be saved, that is the function will be
@@ -549,14 +635,14 @@ def init_infinite(initializer: Callable[[int], TSource]) -> Iterable[TSource]:
     Iteration can continue up to `sys.maxsize`.
     """
 
-    class Infinite(Iterable[TResult]):
+    class Infinite(Iterable[_TResult]):
         """An infinite iterable where each iterator starts counting at
         0."""
 
-        def __init__(self, initializer: Callable[[int], TResult]) -> None:
+        def __init__(self, initializer: Callable[[int], _TResult]) -> None:
             self.initializer = initializer
 
-        def __iter__(self) -> Iterator[TResult]:
+        def __iter__(self) -> Iterator[_TResult]:
             return builtins.map(self.initializer, itertools.count(0, 1))
 
     return Infinite(initializer)
@@ -566,7 +652,7 @@ infinite: Iterable[int] = init_infinite(identity)
 """An infinite iterable."""
 
 
-def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], None]:
+def iter(action: Callable[[_TSource], None]) -> Callable[[Iterable[_TSource]], None]:
     """Applies the given function to each element of the collection.
 
     Args:
@@ -576,7 +662,7 @@ def iter(action: Callable[[TSource], None]) -> Callable[[Iterable[TSource]], Non
         A partially applied iter function.
     """
 
-    def _iter(source: Iterable[TSource]) -> None:
+    def _iter(source: Iterable[_TSource]) -> None:
         """A partially applied iter function.
 
         Note that this function is a pure side effect and returns nothing.
@@ -598,7 +684,9 @@ def length(source: Seq[Any]) -> int:
     return builtins.sum(1 for _ in source)
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
+def map(
+    mapper: Callable[[_TSource], _TResult]
+) -> Callable[[Iterable[_TSource]], Iterable[_TResult]]:
     """Map source sequence.
 
     Builds a new collection whose elements are the results of
@@ -612,7 +700,7 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
         Partially applied map function.
     """
 
-    def _map(source: Iterable[TSource]) -> Iterable[TResult]:
+    def _map(source: Iterable[_TSource]) -> Iterable[_TResult]:
         """Partially applied map function.
 
         Args:
@@ -630,7 +718,64 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], I
     return _map
 
 
-def mapi(mapping: Callable[[int, TSource], TResult]) -> Callable[[Iterable[TSource]], Iterable[TResult]]:
+@overload
+def starmap(
+    mapper: Callable[[_T1, _T2], _TResult]
+) -> Callable[[Iterable[Tuple[_T1, _T2]]], Iterable[_TResult]]:
+    ...
+
+
+@overload
+def starmap(
+    mapper: Callable[[_T1, _T2, _T3], _TResult]
+) -> Callable[[Iterable[Tuple[_T1, _T2, _T3]]], Iterable[_TResult]]:
+    ...
+
+
+@overload
+def starmap(
+    mapper: Callable[[_T1, _T2, _T3, _T4], _TResult]
+) -> Callable[[Iterable[Tuple[_T1, _T2, _T3, _T4]]], Iterable[_TResult]]:
+    ...
+
+
+def starmap(
+    mapper: Callable[..., Any]
+) -> Callable[[Iterable[Tuple[Any, ...]]], Iterable[Any]]:
+    """Starmap source sequence.
+
+    Unpack arguments grouped as tuple elements. Builds a new collection
+    whose elements are the results of applying the given function to the
+    unpacked arguments to each of the elements of the collection.
+
+    Args:
+        mapping: A function to transform items from the input sequence.
+
+    Returns:
+        Partially applied map function.
+    """
+
+    def mapper_(args: Tuple[Any, ...]) -> Any:
+        return mapper(*args)
+
+    return map(mapper_)
+
+
+def map2(
+    mapper: Callable[[_T1, _T2], _TResult]
+) -> Callable[[Iterable[Tuple[_T1, _T2]]], Iterable[_TResult]]:
+    return starmap(mapper)
+
+
+def map3(
+    mapper: Callable[[_T1, _T2, _T3], _TResult]
+) -> Callable[[Iterable[Tuple[_T1, _T2, _T3]]], Iterable[_TResult]]:
+    return starmap(mapper)
+
+
+def mapi(
+    mapping: Callable[[int, _TSource], _TResult]
+) -> Callable[[Iterable[_TSource]], Iterable[_TResult]]:
     """Map list with index.
 
     Builds a new collection whose elements are the results of
@@ -646,42 +791,46 @@ def mapi(mapping: Callable[[int, TSource], TResult]) -> Callable[[Iterable[TSour
         The list of transformed elements.
     """
 
-    def _mapi(source: Iterable[TSource]) -> Iterable[TResult]:
+    def _mapi(source: Iterable[_TSource]) -> Iterable[_TResult]:
         return (*itertools.starmap(mapping, builtins.enumerate(source)),)
 
     return _mapi
 
 
-def max(source: Iterable[TSupportsLessThan]) -> TSupportsLessThan:
+def max(source: Iterable[_TSupportsGreaterThan]) -> _TSupportsGreaterThan:
     """Returns the greatest of all elements of the sequence,
     compared via `max()`."""
 
-    value: TSupportsLessThan = builtins.max(source)
+    value: _TSupportsGreaterThan = builtins.max(source)
     return value
 
 
-def max_by(projection: Callable[[TSource], TSupportsLessThan]) -> Callable[[Iterable[TSource]], TSupportsLessThan]:
-    def _max_by(source: Iterable[TSource]) -> TSupportsLessThan:
+def max_by(
+    projection: Callable[[_TSource], _TSupportsGreaterThan]
+) -> Callable[[Iterable[_TSource]], _TSupportsGreaterThan]:
+    def _max_by(source: Iterable[_TSource]) -> _TSupportsGreaterThan:
         return builtins.max(projection(x) for x in source)
 
     return _max_by
 
 
-def min(source: Iterable[TSupportsLessThan]) -> TSupportsLessThan:
+def min(source: Iterable[_TSupportsLessThan]) -> _TSupportsLessThan:
     """Returns the smallest of all elements of the sequence,
     compared via `max()`."""
 
     return builtins.min(source)
 
 
-def min_by(projection: Callable[[TSource], TSupportsLessThan]) -> Callable[[Iterable[TSource]], TSupportsLessThan]:
-    def _min_by(source: Iterable[TSource]) -> TSupportsLessThan:
+def min_by(
+    projection: Callable[[_TSource], _TSupportsLessThan]
+) -> Callable[[Iterable[_TSource]], _TSupportsLessThan]:
+    def _min_by(source: Iterable[_TSource]) -> _TSupportsLessThan:
         return builtins.min(projection(x) for x in source)
 
     return _min_by
 
 
-def of(*args: TSource) -> Seq[TSource]:
+def of(*args: _TSource) -> Seq[_TSource]:
     """Create sequence from iterable.
 
     Enables fluent dot chaining on the created sequence object.
@@ -689,7 +838,7 @@ def of(*args: TSource) -> Seq[TSource]:
     return Seq(args)
 
 
-def of_iterable(source: Iterable[TSource]) -> Seq[TSource]:
+def of_iterable(source: Iterable[_TSource]) -> Seq[_TSource]:
     """Alias to `Seq.of`."""
     return Seq(source)
 
@@ -721,8 +870,8 @@ def range(*args: int, **kw: int) -> Iterable[int]:
 
 
 def scan(
-    scanner: Callable[[TState, TSource], TState], state: TState
-) -> Callable[[Iterable[TSource]], Iterable[TState]]:
+    scanner: Callable[[_TState, _TSource], _TState], state: _TState
+) -> Callable[[Iterable[_TSource]], Iterable[_TState]]:
     """Like fold, but computes on-demand and returns the sequence of
     intermediary and final results.
 
@@ -731,19 +880,19 @@ def scan(
         state: The initial state.
     """
 
-    def _scan(source: Iterable[TSource]) -> Iterable[TState]:
+    def _scan(source: Iterable[_TSource]) -> Iterable[_TState]:
         """Partially applied scan function.
         Args:
             source: The input sequence.
         Returns:
             The resulting sequence of computed states.
         """
-        return itertools.accumulate(source, scanner, initial=state)  # type: ignore
+        return itertools.accumulate(source, scanner, initial=state)
 
     return _scan
 
 
-def singleton(item: TSource) -> Seq[TSource]:
+def singleton(item: _TSource) -> Seq[_TSource]:
     """Returns a sequence that yields one item only.
 
     Args:
@@ -755,7 +904,7 @@ def singleton(item: TSource) -> Seq[TSource]:
     return Seq([item])
 
 
-def skip(count: int) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
+def skip(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
     """Returns a sequence that skips N elements of the underlying
     sequence and then yields the remaining elements of the sequence.
 
@@ -763,7 +912,7 @@ def skip(count: int) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
         count: The number of items to skip.
     """
 
-    def _skip(source: Iterable[TSource]) -> Iterable[TSource]:
+    def _skip(source: Iterable[_TSource]) -> Iterable[_TSource]:
         def gen():
             for i, n in enumerate(source):
                 if i >= count:
@@ -774,31 +923,33 @@ def skip(count: int) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
     return _skip
 
 
-def sum(source: Iterable[TSource]) -> TSource:
+def sum(source: Iterable[_TSource]) -> _TSource:
     """Returns the sum of the elements in the sequence."""
     ret = builtins.sum(source)
-    return cast(TSource, ret)
+    return cast(_TSource, ret)
 
 
-def sum_by(projection: Callable[[TSource], TResult]) -> Callable[[Iterable[TSource]], TResult]:
+def sum_by(
+    projection: Callable[[_TSource], _TResult]
+) -> Callable[[Iterable[_TSource]], _TResult]:
     """Returns the sum of the results generated by applying the
     function to each element of the sequence."""
 
-    def _(source: Iterable[TSource]) -> TResult:
+    def _(source: Iterable[_TSource]) -> _TResult:
         return sum(projection(x) for x in source)
 
     return _
 
 
-def tail(source: Iterable[TSource]) -> Iterable[TSource]:
+def tail(source: Iterable[_TSource]) -> Iterable[_TSource]:
     """Returns a sequence that skips 1 element of the underlying
     sequence and then yields the remaining elements of the
     sequence."""
-    proj = cast(Callable[[Iterable[TSource]], Iterable[TSource]], skip(1))
+    proj = cast(Callable[[Iterable[_TSource]], Iterable[_TSource]], skip(1))
     return proj(source)
 
 
-def take(count: int) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
+def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
     """Returns the first N elements of the sequence.
 
     Args:
@@ -808,7 +959,7 @@ def take(count: int) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
         The result sequence.
     """
 
-    def _take(source: Iterable[TSource]) -> Iterable[TSource]:
+    def _take(source: Iterable[_TSource]) -> Iterable[_TSource]:
         def gen():
             for i, n in enumerate(source):
                 if i < count:
@@ -819,13 +970,15 @@ def take(count: int) -> Callable[[Iterable[TSource]], Iterable[TSource]]:
     return _take
 
 
-def to_list(source: Iterable[TSource]) -> "FrozenList[TSource]":
+def to_list(source: Iterable[_TSource]) -> "FrozenList[_TSource]":
     from .frozenlist import FrozenList
 
     return FrozenList.of_seq(source)
 
 
-def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]]) -> Callable[[TState], Iterable[TSource]]:
+def unfold(
+    generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]]
+) -> Callable[[_TState], Iterable[_TSource]]:
     """Generates a list that contains the elements generated by the
     given computation. The given initial state argument is passed to
     the element generator.
@@ -840,7 +993,7 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]]) -> Cal
         returns the result list.
     """
 
-    def _unfold(state: TState) -> Iterable[TSource]:
+    def _unfold(state: _TState) -> Iterable[_TSource]:
         """Returns a list that contains the elements generated by the
         given computation. The given initial state argument is passed to
         the element generator.
@@ -862,7 +1015,9 @@ def unfold(generator: Callable[[TState], Option[Tuple[TSource, TState]]]) -> Cal
     return _unfold
 
 
-def zip(source1: Iterable[TSource]) -> Callable[[Iterable[TResult]], Iterable[Tuple[TSource, TResult]]]:
+def zip(
+    source1: Iterable[_TSource],
+) -> Callable[[Iterable[_TResult]], Iterable[Tuple[_TSource, _TResult]]]:
     """Combines the two sequences into a list of pairs. The two
     sequences need not have equal lengths: when one sequence is
     exhausted any remaining elements in the other sequence are
@@ -875,7 +1030,7 @@ def zip(source1: Iterable[TSource]) -> Callable[[Iterable[TResult]], Iterable[Tu
         Partially applied zip function.
     """
 
-    def _zip(source2: Iterable[TResult]) -> Iterable[Tuple[TSource, TResult]]:
+    def _zip(source2: Iterable[_TResult]) -> Iterable[Tuple[_TSource, _TResult]]:
         """Combines the two sequences into a list of pairs. The two
         sequences need not have equal lengths: when one sequence is
         exhausted any remaining elements in the other sequence are

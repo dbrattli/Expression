@@ -78,8 +78,7 @@ def test_catch_with_effect_error():
     @catch(exception=TypeError)
     @effect.result
     def fn(a: int) -> Generator[int, Any, int]:
-        b: int
-        b = yield from Error(ValueError("failure"))
+        b: int = yield from Error(ValueError("failure"))
         return a + b
 
     result = fn(1)
@@ -96,7 +95,7 @@ def test_catch_with_effect_exception():
     @effect.result
     def fn(a: int) -> Generator[str, str, int]:
         b = yield from Ok("hello")
-        return a + b  # type: ignore
+        return a + b  # type: ignore (by design)
 
     result = fn(1)
     for ex in result.match(Error[Any, TypeError]):

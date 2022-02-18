@@ -40,7 +40,8 @@ class MailboxProcessor(Generic[Msg]):
         self.loop = asyncio.get_event_loop()
         self.lock = RLock()
 
-        # Holds the continuation i.e the `done` callback of Async.from_continuations returned by `receive`.
+        # Holds the continuation i.e the `done` callback of Async.from_continuations
+        # returned by `receive`.
         self.continuation: Optional[Continuation[Msg]] = None
         self.cancel: Optional[Continuation[OperationCanceledError]] = None
 
@@ -60,7 +61,9 @@ class MailboxProcessor(Generic[Msg]):
         self.messages.put(msg)
         self.loop.call_soon_threadsafe(self.__process_events)
 
-    def post_and_async_reply(self, build_message: Callable[[AsyncReplyChannel[Reply]], Msg]) -> Awaitable[Reply]:
+    def post_and_async_reply(
+        self, build_message: Callable[[AsyncReplyChannel[Reply]], Msg]
+    ) -> Awaitable[Reply]:
         """Post a message asynchronously to the mailbox processor and
         wait for the reply.
 
@@ -75,9 +78,8 @@ class MailboxProcessor(Generic[Msg]):
         """
 
         result: Optional[Reply] = None
-        continuation: Optional[
-            Continuation[Reply]
-        ] = None  # This is the continuation for the `done` callback of the awaiting poster.
+        # This is the continuation for the `done` callback of the awaiting poster.
+        continuation: Optional[Continuation[Reply]] = None
 
         def check_completion() -> None:
             if result is not None and continuation is not None:
@@ -92,7 +94,11 @@ class MailboxProcessor(Generic[Msg]):
         self.messages.put(build_message(reply_channel))
         self.__process_events()
 
-        def callback(done: Continuation[Reply], _: Continuation[Exception], __: Continuation[OperationCanceledError]):
+        def callback(
+            done: Continuation[Reply],
+            _: Continuation[Exception],
+            __: Continuation[OperationCanceledError],
+        ):
             nonlocal continuation
             continuation = done
             check_completion()
@@ -110,7 +116,9 @@ class MailboxProcessor(Generic[Msg]):
         """
 
         def callback(
-            done: Continuation[Msg], error: Continuation[Exception], cancel: Continuation[OperationCanceledError]
+            done: Continuation[Msg],
+            error: Continuation[Exception],
+            cancel: Continuation[OperationCanceledError],
         ):
             if self.continuation:
                 raise Exception("Receive can only be called once!")

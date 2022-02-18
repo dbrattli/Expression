@@ -45,10 +45,11 @@ def test_seq_yield_for_in(xs: List[int]):
 
 
 # @given(st.lists(st.integers(), min_size=1, max_size=10))
-# def test_seq_yield_from(xs):
-#     @seq
-#     def fn():
-#         x = yield from xs
+# def test_seq_yield_from(xs: List[int]):
+#     @effect.seq
+#     def fn() -> Generator[int, None, int]:
+#         print(xs)
+#         x: int = yield from xs
 #         print(x)
 #         return x + 1
 
@@ -64,6 +65,33 @@ def test_seq_pipe_map(xs: List[int]):
 
     assert isinstance(ys, Iterable)
     assert [y for y in ys] == [x + 1 for x in xs]
+
+
+@given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
+def test_seq_pipe_starmap(xs: List[Tuple[int, int]]):
+    mapper: Callable[[int, int], int] = lambda x, y: x + y
+    ys = pipe(xs, seq.starmap(mapper))
+
+    assert isinstance(ys, Iterable)
+    assert [y for y in ys] == [x + y for (x, y) in xs]
+
+
+@given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
+def test_seq_pipe_map2(xs: List[Tuple[int, int]]):
+    mapper: Callable[[int, int], int] = lambda x, y: x + y
+    ys = pipe(xs, seq.map2(mapper))
+
+    assert isinstance(ys, Iterable)
+    assert [y for y in ys] == [x + y for (x, y) in xs]
+
+
+@given(st.lists(st.tuples(st.integers(), st.integers(), st.integers())))  # type: ignore
+def test_seq_pipe_map3(xs: List[Tuple[int, int, int]]):
+    mapper: Callable[[int, int, int], int] = lambda x, y, z: x + y + z
+    ys = pipe(xs, seq.map3(mapper))
+
+    assert isinstance(ys, Iterable)
+    assert [y for y in ys] == [x + y + z for (x, y, z) in xs]
 
 
 @given(st.lists(st.integers()))
@@ -234,7 +262,9 @@ def test_seq_pipeline(xs: List[int]):
         seq.filter(predicate),
         seq.fold(folder, 0),
     )
-    assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
+    assert ys == functools.reduce(
+        lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0
+    )
 
 
 @given(st.lists(st.integers()))

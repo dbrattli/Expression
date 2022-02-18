@@ -22,7 +22,10 @@ class Disposable(ABC):
         return self
 
     def __exit__(
-        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+        self,
+        exctype: Optional[Type[BaseException]],
+        excinst: Optional[BaseException],
+        exctb: Optional[TracebackType],
     ):
         """Exit context management."""
 
@@ -73,7 +76,10 @@ class AsyncDisposable(ABC):
         return self
 
     async def __aexit__(
-        self, exctype: Optional[Type[BaseException]], excinst: Optional[BaseException], exctb: Optional[TracebackType]
+        self,
+        exctype: Optional[Type[BaseException]],
+        excinst: Optional[BaseException],
+        exctb: Optional[TracebackType],
     ) -> None:
         """Exit context management."""
         await self.dispose_async()

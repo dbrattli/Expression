@@ -4,7 +4,16 @@ Core abstractions such as pipes, options and results.
 
 from . import aiotools, option, result
 from .builder import Builder
-from .choice import Choice, Choice1of2, Choice1of3, Choice2, Choice2of2, Choice2of3, Choice3, Choice3of3
+from .choice import (
+    Choice,
+    Choice1of2,
+    Choice1of3,
+    Choice2,
+    Choice2of2,
+    Choice2of3,
+    Choice3,
+    Choice3of3,
+)
 from .compose import compose
 from .curry import (
     curried,
@@ -27,7 +36,14 @@ from .option import Nothing, Nothing_, Option, Some, default_arg
 from .pipe import pipe, pipe2, pipe3
 from .result import Error, Ok, Result
 from .try_ import Failure, Success, Try
-from .typing import SupportsLessThan, SupportsMatch, downcast, try_downcast, upcast
+from .typing import (
+    SupportsGreaterThan,
+    SupportsLessThan,
+    SupportsMatch,
+    downcast,
+    try_downcast,
+    upcast,
+)
 
 __all__ = [
     "aiotools",
@@ -79,6 +95,7 @@ __all__ = [
     "Some",
     "Success",
     "SupportsLessThan",
+    "SupportsGreaterThan",
     "SupportsMatch",
     "TailCall",
     "TailCallResult",

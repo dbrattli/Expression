@@ -130,10 +130,10 @@ def test_generator_with_yield_from_gen():
 
 
 def test_generator_with_yield_from_gen_empty():
-    def gn():
+    def gn() -> Generator[int, None, None]:
         yield from []
 
-    def fn():
+    def fn() -> Generator[int, None, None]:
         yield from gn()
         yield 42
 

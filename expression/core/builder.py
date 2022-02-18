@@ -4,38 +4,38 @@ from typing import Any, Callable, Coroutine, Generic, List, Optional, TypeVar, c
 
 from .error import EffectError
 
-TInner = TypeVar("TInner")
-TOuter = TypeVar("TOuter")
-TResult = TypeVar("TResult")
+_TInner = TypeVar("_TInner")
+_TOuter = TypeVar("_TOuter")
+_TResult = TypeVar("_TResult")
 
 
-class Builder(Generic[TOuter, TInner], ABC):
+class Builder(Generic[_TOuter, _TInner], ABC):
     """Effect builder."""
 
-    def bind(self, xs: TOuter, fn: Callable[[TInner], TOuter]) -> TOuter:
+    def bind(self, xs: _TOuter, fn: Callable[[_TInner], _TOuter]) -> _TOuter:
         raise NotImplementedError("Builder does not implement a bind method")
 
-    def return_(self, x: TInner) -> TOuter:
+    def return_(self, x: _TInner) -> _TOuter:
         raise NotImplementedError("Builder does not implement a return method")
 
-    def return_from(self, xs: TOuter) -> TOuter:
+    def return_from(self, xs: _TOuter) -> _TOuter:
         raise NotImplementedError("Builder does not implement a return from method")
 
-    def combine(self, xs: TOuter, ys: TOuter) -> TOuter:
+    def combine(self, xs: _TOuter, ys: _TOuter) -> _TOuter:
         """Used for combining multiple statements in the effect."""
         raise NotImplementedError("Builder does not implement a combine method")
 
-    def zero(self) -> TOuter:
+    def zero(self) -> _TOuter:
         """Called if the effect raises StopIteration without a value,
         i.e returns None"""
         raise NotImplementedError("Builder does not implement a zero method")
 
     def _send(
         self,
-        gen: Coroutine[TInner, Optional[TInner], Optional[TOuter]],
+        gen: Coroutine[_TInner, Optional[_TInner], Optional[_TOuter]],
         done: List[bool],
-        value: Optional[TInner] = None,
-    ) -> TOuter:
+        value: Optional[_TInner] = None,
+    ) -> _TOuter:
         try:
             yielded = gen.send(value)
             return self.return_(yielded)
@@ -43,7 +43,7 @@ class Builder(Generic[TOuter, TInner], ABC):
             # Effect errors (Nothing, Error, etc) short circuits the
             # processing so we set `done` to `True` here.
             done.append(True)
-            return self.return_from(cast("TOuter", error))
+            return self.return_from(cast("_TOuter", error))
         except StopIteration as ex:
             done.append(True)
             if ex.value is not None:
@@ -53,7 +53,7 @@ class Builder(Generic[TOuter, TInner], ABC):
     def __call__(
         self,  # Ignored self parameter
         fn: Callable[..., Any],
-    ) -> Callable[..., TOuter]:
+    ) -> Callable[..., _TOuter]:
         """Option builder.
 
         Enables the use of computational expressions using coroutines.
@@ -69,15 +69,17 @@ class Builder(Generic[TOuter, TInner], ABC):
         """
 
         @wraps(fn)
-        def wrapper(*args: Any, **kw: Any) -> TOuter:
+        def wrapper(*args: Any, **kw: Any) -> _TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
 
-            result: Optional[TOuter] = None
+            result: Optional[_TOuter] = None
             try:
                 result = self._send(gen, done)
                 while not done:
-                    binder: Callable[[Any], TOuter] = lambda value: self._send(gen, done, value)
+                    binder: Callable[[Any], _TOuter] = lambda value: self._send(
+                        gen, done, value
+                    )
                     cont = self.bind(result, binder)
                     result = self.combine(result, cont)
             except StopIteration:

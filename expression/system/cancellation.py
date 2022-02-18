@@ -21,12 +21,16 @@ class CancellationToken:
     objects that receive the notification can respond in whatever manner
     is appropriate."""
 
-    def __init__(self, cancelled: bool = True, source: Optional[CancellationTokenSource] = None) -> None:
+    def __init__(
+        self, cancelled: bool = True, source: Optional[CancellationTokenSource] = None
+    ) -> None:
         """Should not be used directly. Create cancellation tokens using
         the `CancellationTokenSource` instead."""
 
         self._cancelled = cancelled
-        self._source = CancellationTokenSource.cancelled_source() if source is None else source
+        self._source = (
+            CancellationTokenSource.cancelled_source() if source is None else source
+        )
 
     @property
     def is_cancellation_requested(self) -> bool:
@@ -94,10 +98,10 @@ class CancellationTokenSource(Disposable):
 
         return Disposable.create(dispose)
 
-    def __enter__(self) -> CancellationToken:
+    def __enter__(self) -> Disposable:
         if self._is_disposed:
             raise ObjectDisposedException()
-        return self.token
+        return self
 
     @staticmethod
     def cancelled_source() -> CancellationTokenSource:

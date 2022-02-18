@@ -3,123 +3,129 @@ from typing import Any, Callable, Tuple, TypeVar, overload
 from .compose import compose
 from .misc import starid
 
-A = TypeVar("A")
-B = TypeVar("B")
-C = TypeVar("C")
-D = TypeVar("D")
-E = TypeVar("E")
-F = TypeVar("F")
-G = TypeVar("G")
-H = TypeVar("H")
-T = TypeVar("T")
-J = TypeVar("J")
+_A = TypeVar("_A")
+_B = TypeVar("_B")
+_C = TypeVar("_C")
+_D = TypeVar("_D")
+_E = TypeVar("_E")
+_F = TypeVar("_F")
+_G = TypeVar("_G")
+_H = TypeVar("_H")
+_T = TypeVar("_T")
+_J = TypeVar("_J")
 
 
 @overload
-def pipe(value: A) -> A:
+def pipe(value: _A) -> _A:
     ...
 
 
 @overload
-def pipe(value: A, __fn1: Callable[[A], B]) -> B:
+def pipe(value: _A, __fn1: Callable[[_A], _B]) -> _B:
     ...
 
 
 @overload
-def pipe(value: A, __fn1: Callable[[A], B], __fn2: Callable[[B], C]) -> C:
-    ...
-
-
-@overload
-def pipe(value: A, __fn1: Callable[[A], B], __fn2: Callable[[B], C], __fn3: Callable[[C], D]) -> D:
+def pipe(value: _A, __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> _C:
     ...
 
 
 @overload
 def pipe(
-    value: A,
-    __fn1: Callable[[A], B],
-    __fn2: Callable[[B], C],
-    __fn3: Callable[[C], D],
-    __fn4: Callable[[D], E],
-) -> E:
+    value: _A,
+    __fn1: Callable[[_A], _B],
+    __fn2: Callable[[_B], _C],
+    __fn3: Callable[[_C], _D],
+) -> _D:
     ...
 
 
 @overload
 def pipe(
-    value: A,
-    __fn1: Callable[[A], B],
-    __fn2: Callable[[B], C],
-    __fn3: Callable[[C], D],
-    __fn4: Callable[[D], E],
-    __fn5: Callable[[E], F],
-) -> F:
+    value: _A,
+    __fn1: Callable[[_A], _B],
+    __fn2: Callable[[_B], _C],
+    __fn3: Callable[[_C], _D],
+    __fn4: Callable[[_D], _E],
+) -> _E:
     ...
 
 
 @overload
 def pipe(
-    value: A,
-    __fn1: Callable[[A], B],
-    __fn2: Callable[[B], C],
-    __fn3: Callable[[C], D],
-    __fn4: Callable[[D], E],
-    __fn5: Callable[[E], F],
-    __fn6: Callable[[F], G],
-) -> G:
+    value: _A,
+    __fn1: Callable[[_A], _B],
+    __fn2: Callable[[_B], _C],
+    __fn3: Callable[[_C], _D],
+    __fn4: Callable[[_D], _E],
+    __fn5: Callable[[_E], _F],
+) -> _F:
     ...
 
 
 @overload
 def pipe(
-    value: A,
-    __fn1: Callable[[A], B],
-    __fn2: Callable[[B], C],
-    __fn3: Callable[[C], D],
-    __fn4: Callable[[D], E],
-    __fn5: Callable[[E], F],
-    __fn6: Callable[[F], G],
-    __fn7: Callable[[G], H],
-) -> H:
+    value: _A,
+    __fn1: Callable[[_A], _B],
+    __fn2: Callable[[_B], _C],
+    __fn3: Callable[[_C], _D],
+    __fn4: Callable[[_D], _E],
+    __fn5: Callable[[_E], _F],
+    __fn6: Callable[[_F], _G],
+) -> _G:
     ...
 
 
 @overload
 def pipe(
-    value: A,
-    __fn1: Callable[[A], B],
-    __fn2: Callable[[B], C],
-    __fn3: Callable[[C], D],
-    __fn4: Callable[[D], E],
-    __fn5: Callable[[E], F],
-    __fn6: Callable[[F], G],
-    __fn7: Callable[[G], H],
-    __fn8: Callable[[H], T],
-) -> T:
+    value: _A,
+    __fn1: Callable[[_A], _B],
+    __fn2: Callable[[_B], _C],
+    __fn3: Callable[[_C], _D],
+    __fn4: Callable[[_D], _E],
+    __fn5: Callable[[_E], _F],
+    __fn6: Callable[[_F], _G],
+    __fn7: Callable[[_G], _H],
+) -> _H:
     ...
 
 
 @overload
 def pipe(
-    value: A,
-    __fn1: Callable[[A], B],
-    __fn2: Callable[[B], C],
-    __fn3: Callable[[C], D],
-    __fn4: Callable[[D], E],
-    __fn5: Callable[[E], F],
-    __fn6: Callable[[F], G],
-    __fn7: Callable[[G], H],
-    __fn8: Callable[[H], T],
-    __fn9: Callable[[T], J],
-) -> J:
+    value: _A,
+    __fn1: Callable[[_A], _B],
+    __fn2: Callable[[_B], _C],
+    __fn3: Callable[[_C], _D],
+    __fn4: Callable[[_D], _E],
+    __fn5: Callable[[_E], _F],
+    __fn6: Callable[[_F], _G],
+    __fn7: Callable[[_G], _H],
+    __fn8: Callable[[_H], _T],
+) -> _T:
+    ...
+
+
+@overload
+def pipe(
+    value: _A,
+    __fn1: Callable[[_A], _B],
+    __fn2: Callable[[_B], _C],
+    __fn3: Callable[[_C], _D],
+    __fn4: Callable[[_D], _E],
+    __fn5: Callable[[_E], _F],
+    __fn6: Callable[[_F], _G],
+    __fn7: Callable[[_G], _H],
+    __fn8: Callable[[_H], _T],
+    __fn9: Callable[[_T], _J],
+) -> _J:
     ...
 
 
 def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:  # type: ignore
     """Functional pipe (`|>`)
 
-    Allows the use of function argument on the left side of the function.
+    Allows the use of function argument on the left side of the
+    function.
 
     Example:
         >>> pipe(x, fn) == __fn(x)  # Same as x |> fn
@@ -131,22 +137,29 @@ def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:  # type: ignore
 
 
 @overload
-def pipe2(values: Tuple[A, B]) -> Tuple[A, B]:
+def pipe2(values: Tuple[_A, _B]) -> Tuple[_A, _B]:
     ...
 
 
 @overload
-def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C]) -> C:
+def pipe2(values: Tuple[_A, _B], __fn1: Callable[[_A, _B], _C]) -> _C:
     ...
 
 
 @overload
-def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D]) -> D:
+def pipe2(
+    values: Tuple[_A, _B], __fn1: Callable[[_A, _B], _C], __fn2: Callable[[_C], _D]
+) -> _D:
     ...
 
 
 @overload
-def pipe2(values: Tuple[A, B], __fn1: Callable[[A, B], C], __fn2: Callable[[C], D], __fn3: Callable[[D], E]) -> E:
+def pipe2(
+    values: Tuple[_A, _B],
+    __fn1: Callable[[_A, _B], _C],
+    __fn2: Callable[[_C], _D],
+    __fn3: Callable[[_D], _E],
+) -> _E:
     ...
 
 

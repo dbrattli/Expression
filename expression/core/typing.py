@@ -17,6 +17,12 @@ class SupportsLessThan(Protocol):
         raise NotImplementedError
 
 
+class SupportsGreaterThan(Protocol):
+    @abstractmethod
+    def __gt__(self, __other: Any) -> bool:
+        raise NotImplementedError
+
+
 class SupportsMatch(Protocol[T_co]):
     """Pattern matching protocol."""
 
@@ -47,7 +53,9 @@ def downcast(type: Type[Derived], expr: Any) -> Derived:
 
     Note: F# `:?>` or `downcast`.
     """
-    assert isinstance(expr, type), f"The type of expression {expr} is not a supertype of {type}"
+    assert isinstance(
+        expr, type
+    ), f"The type of expression {expr} is not a supertype of {type}"
     return cast("Derived", expr)
 
 

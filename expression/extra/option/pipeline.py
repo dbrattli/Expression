@@ -24,13 +24,17 @@ def pipeline(__fn: Callable[[A], Option[B]]) -> Callable[[A], Option[B]]:
 
 
 @overload
-def pipeline(__fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]]) -> Callable[[A], Option[C]]:
+def pipeline(
+    __fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]]
+) -> Callable[[A], Option[C]]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]], __fn3: Callable[[C], Option[D]]
+    __fn1: Callable[[A], Option[B]],
+    __fn2: Callable[[B], Option[C]],
+    __fn3: Callable[[C], Option[D]],
 ) -> Callable[[A], Option[D]]:
     ...
 
@@ -68,7 +72,7 @@ def pipeline(
     ...
 
 
-def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:  # type: ignore
+def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:
     """pipeline multiple option returning functions left to right.
 
     A pipeline kleisli (>=>) composes zero or more functions into a
@@ -85,7 +89,9 @@ def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]
         The composed functions.
     """
 
-    def reducer(acc: Callable[[Any], Option[Any]], fn: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:
+    def reducer(
+        acc: Callable[[Any], Option[Any]], fn: Callable[[Any], Option[Any]]
+    ) -> Callable[[Any], Option[Any]]:
         def gn(x: Any) -> Option[Any]:
             return acc(x).bind(fn)
 
