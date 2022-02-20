@@ -9,22 +9,35 @@ _C = TypeVar("_C")
 _D = TypeVar("_D")
 _E = TypeVar("_E")
 
+_Arity = Literal[0, 1, 2, 3, 4]
+
+
+def _curry(
+    args: Tuple[Any, ...], arity: int, fun: Callable[..., Any]
+) -> Callable[..., Any]:
+    def wrapper(*arg: Any, **kw: Any) -> Any:
+        if arity == 1:
+            return fun(*args, *arg, **kw)
+        return _curry(args + arg, arity - 1, fun)
+
+    return wrapper
+
 
 @overload
-def curried(args: Literal[0]) -> Callable[[Callable[_P, _B]], Callable[_P, _B]]:
+def curry(num_args: Literal[0]) -> Callable[[Callable[_P, _B]], Callable[_P, _B]]:
     ...
 
 
 @overload
-def curried(
-    args: Literal[1],
+def curry(
+    num_args: Literal[1],
 ) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[[_A], Callable[_P, _B]]]:
     ...
 
 
 @overload
-def curried(
-    args: Literal[2],
+def curry(
+    num_args: Literal[2],
 ) -> Callable[
     [Callable[Concatenate[_A, _B, _P], _C]],
     Callable[[_A], Callable[[_B], Callable[_P, _C]]],
@@ -33,8 +46,8 @@ def curried(
 
 
 @overload
-def curried(
-    args: Literal[3],
+def curry(
+    num_args: Literal[3],
 ) -> Callable[
     [Callable[Concatenate[_A, _B, _C, _P], _D]],
     Callable[[_A], Callable[[_B], Callable[[_C], Callable[_P, _D]]]],
@@ -43,8 +56,8 @@ def curried(
 
 
 @overload
-def curried(
-    args: Literal[4],
+def curry(
+    num_args: Literal[4],
 ) -> Callable[
     [Callable[Concatenate[_A, _B, _C, _D, _P], _E]],
     Callable[[_A], Callable[[_B], Callable[[_C], Callable[[_D], Callable[_P, _E]]]]],
@@ -52,13 +65,13 @@ def curried(
     ...
 
 
-def curried(args: int) -> Callable[..., Any]:
+def curry(num_args: _Arity) -> Callable[..., Any]:
     """A curry decorator.
 
     Makes a function curried.
 
     Args:
-        args: The number of args to curry from the start of the function
+        num_args: The number of args to curry from the start of the function
 
     Example:
         @curried(1)
@@ -68,20 +81,58 @@ def curried(args: int) -> Callable[..., Any]:
         assert add(3)(4) == 7
     """
 
-    def _curry(
-        args: Tuple[Any, ...], arity: int, fn: Callable[..., Any]
-    ) -> Callable[..., Any]:
-        def wrapper(*arg: Any, **kw: Any) -> Any:
-            if arity == 1:
-                return fn(*args, *arg, **kw)
-            return _curry(args + arg, arity - 1, fn)
-
-        return wrapper
-
-    def wrapper(fn: Callable[..., Any]) -> Callable[..., Any]:
-        return _curry((), args + 1, fn)
+    def wrapper(fun: Callable[..., Any]) -> Callable[..., Any]:
+        return _curry((), num_args + 1, fun)
 
     return wrapper
 
 
-__all__ = ["curried"]
+@overload
+def curry_flipped(
+    num_args: Literal[0],
+) -> Callable[[Callable[_P, _B]], Callable[_P, _B]]:
+    ...
+
+
+@overload
+def curry_flipped(
+    num_args: Literal[1],
+) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[_P, Callable[[_A], _B]]]:
+    ...
+
+
+@overload
+def curry_flipped(
+    num_args: Literal[2],
+) -> Callable[
+    [Callable[Concatenate[_A, _B, _P], _C]], Callable[_P, Callable[[_A, _B], _C]]
+]:
+    ...
+
+
+@overload
+def curry_flipped(
+    num_args: Literal[3],
+) -> Callable[
+    [Callable[Concatenate[_A, _B, _C, _P], _D]],
+    Callable[_P, Callable[[_A, _B, _C], _D]],
+]:
+    ...
+
+
+def curry_flipped(
+    num_args: _Arity,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def _wrap_fun(fun: Callable[..., Any]) -> Callable[..., Any]:
+        def _wrap_args(*args: Any, **kwargs: Any) -> Callable[..., Any]:
+            def _wrap_curried(*curry_args: Any) -> Any:
+                return fun(*curry_args, *args, **kwargs)
+
+            return _curry((), num_args, _wrap_curried)
+
+        return _wrap_args
+
+    return _wrap_fun
+
+
+__all__ = ["curry", "curry_flipped"]

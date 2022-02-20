@@ -1,10 +1,12 @@
+from typing import Callable, List
+
 import pytest
 
-from expression import curried
+from expression import curry, curry_flipped, pipe
 
 
 def test_curried_simple():
-    @curried(1)
+    @curry(1)
     def add(a: int, b: int) -> int:
         """Add a + b"""
         return a + b
@@ -13,7 +15,7 @@ def test_curried_simple():
 
 
 def test_curried_named():
-    @curried(1)
+    @curry(1)
     def add(a: int, b: int) -> int:
         """Add a + b"""
         return a + b
@@ -22,7 +24,7 @@ def test_curried_named():
 
 
 def test_curried_none():
-    @curried(0)
+    @curry(0)
     def magic() -> int:
         return 42
 
@@ -32,7 +34,7 @@ def test_curried_none():
 
 
 def test_curried_three():
-    @curried(2)
+    @curry(2)
     def add(a: int, b: int, c: int) -> int:
         """Add a + b + c"""
         return a + b + c
@@ -41,7 +43,7 @@ def test_curried_three():
 
 
 def test_curry1of3_with_optional():
-    @curried(1)
+    @curry(1)
     def add(a: int, b: int, c: int = 10) -> int:
         """Add a + b + c"""
         return a + b + c
@@ -50,7 +52,7 @@ def test_curry1of3_with_optional():
 
 
 def test_curry2of3_with_optional():
-    @curried(2)
+    @curry(2)
     def add(a: int, b: int, c: int = 10) -> int:
         """Add a + b + c"""
         return a + b + c
@@ -59,9 +61,22 @@ def test_curry2of3_with_optional():
 
 
 def test_curry1of3_with_optional2():
-    @curried(1)
+    @curry(1)
     def add(a: int, b: int, c: int = 10) -> int:
         """Add a + b + c"""
         return a + b + c
 
     assert add(3)(4, c=9) == 16
+
+
+def test_rev_curried():
+    xs = [1, 2, 3]
+
+    @curry_flipped(1)
+    def map(source: List[int], mapper: Callable[[int], int]):
+        return [mapper(x) for x in source]
+
+    ys = pipe(xs, map(lambda x: x * 10))
+
+    print(ys)
+    assert ys == [10, 20, 30]
