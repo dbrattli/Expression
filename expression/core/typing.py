@@ -56,7 +56,7 @@ def downcast(type: Type[Derived], expr: Any) -> Derived:
     assert isinstance(
         expr, type
     ), f"The type of expression {expr} is not a supertype of {type}"
-    return cast("Derived", expr)
+    return cast(Derived, expr)
 
 
 def try_downcast(type_: Type[Derived], expr: Any) -> Optional[Derived]:

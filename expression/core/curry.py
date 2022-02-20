@@ -1,107 +1,87 @@
-import inspect
-from functools import partial, wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Literal, Tuple, TypeVar, overload
 
-A = TypeVar("A")
-B = TypeVar("B")
-C = TypeVar("C")
-D = TypeVar("D")
-E = TypeVar("E")
+from typing_extensions import Concatenate, ParamSpec
+
+_P = ParamSpec("_P")
+_A = TypeVar("_A")
+_B = TypeVar("_B")
+_C = TypeVar("_C")
+_D = TypeVar("_D")
+_E = TypeVar("_E")
 
 
-def curried(fn: Callable[..., Any]) -> Callable[..., Any]:
+@overload
+def curried(args: Literal[0]) -> Callable[[Callable[_P, _B]], Callable[_P, _B]]:
+    ...
+
+
+@overload
+def curried(
+    args: Literal[1],
+) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[[_A], Callable[_P, _B]]]:
+    ...
+
+
+@overload
+def curried(
+    args: Literal[2],
+) -> Callable[
+    [Callable[Concatenate[_A, _B, _P], _C]],
+    Callable[[_A], Callable[[_B], Callable[_P, _C]]],
+]:
+    ...
+
+
+@overload
+def curried(
+    args: Literal[3],
+) -> Callable[
+    [Callable[Concatenate[_A, _B, _C, _P], _D]],
+    Callable[[_A], Callable[[_B], Callable[[_C], Callable[_P, _D]]]],
+]:
+    ...
+
+
+@overload
+def curried(
+    args: Literal[4],
+) -> Callable[
+    [Callable[Concatenate[_A, _B, _C, _D, _P], _E]],
+    Callable[[_A], Callable[[_B], Callable[[_C], Callable[[_D], Callable[_P, _E]]]]],
+]:
+    ...
+
+
+def curried(args: int) -> Callable[..., Any]:
     """A curry decorator.
 
-    Makes a function curryable. Note that the function will loose it's
-    typing hints so you will need to provide typed overloads for the
-    intended uses of the function you are decorating.
+    Makes a function curried.
+
+    Args:
+        args: The number of args to curry from the start of the function
 
     Example:
-        @overload
-        def add(a: int, b: int) -> int:
-            ...
-
-        @overload
-        def add(a: int) -> Callable[[int], int]:
-            ...
-
-        @curried
+        @curried(1)
         def add(a: int, b: int) -> int:
             return a + b
 
-        assert add(3, 4) == 7
         assert add(3)(4) == 7
-
     """
-    spec = inspect.getfullargspec(fn)
-    # Number of arguments needed is length of args and kwargs - default args
-    count = len(spec.args) + len(spec.kwonlyargs) - len(spec.kwonlydefaults or [])
 
-    @wraps(fn)
-    def wrapper(*args: Any, **kw: Any) -> Any:
-        if len(args) + len(kw) >= count:
-            return fn(*args, **kw)
-        return curried(partial(fn, *args, **kw))
+    def _curry(
+        args: Tuple[Any, ...], arity: int, fn: Callable[..., Any]
+    ) -> Callable[..., Any]:
+        def wrapper(*arg: Any, **kw: Any) -> Any:
+            if arity == 1:
+                return fn(*args, *arg, **kw)
+            return _curry(args + arg, arity - 1, fn)
+
+        return wrapper
+
+    def wrapper(fn: Callable[..., Any]) -> Callable[..., Any]:
+        return _curry((), args + 1, fn)
 
     return wrapper
 
 
-def curry1of2(fn: Callable[[A, B], C]) -> Callable[[A], Callable[[B], C]]:
-    """Curry 1 of 2 arguments."""
-    return lambda a: lambda b: fn(a, b)
-
-
-def curry2of2(fn: Callable[[A, B], C]) -> Callable[[], Callable[[A], Callable[[B], C]]]:
-    """Curry 2 of 2 arguments."""
-    return lambda: lambda a: lambda b: fn(a, b)
-
-
-def curry1of3(fn: Callable[[A, B, C], D]) -> Callable[[A, B], Callable[[C], D]]:
-    """Curry 1 of 3 arguments."""
-    return lambda a, b: lambda c: fn(a, b, c)
-
-
-def curry2of3(fn: Callable[[A, B, C], D]) -> Callable[[A], Callable[[B], Callable[[C], D]]]:
-    """Curry 2 of 3 arguments."""
-    return lambda a: lambda b: lambda c: fn(a, b, c)
-
-
-def curry3of3(fn: Callable[[A, B, C], D]) -> Callable[[], Callable[[A], Callable[[B], Callable[[C], D]]]]:
-    """Curry 3 of 3 arguments."""
-    return lambda: lambda a: lambda b: lambda c: fn(a, b, c)
-
-
-def curry1of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A, B, C], Callable[[D], E]]:
-    """Curry 1 of 4 arguments."""
-    return lambda a, b, c: lambda d: fn(a, b, c, d)
-
-
-def curry2of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A, B], Callable[[C], Callable[[D], E]]]:
-    """Curry 2 of 4 arguments."""
-    return lambda a, b: lambda c: lambda d: fn(a, b, c, d)
-
-
-def curry3of4(fn: Callable[[A, B, C, D], E]) -> Callable[[A], Callable[[B], Callable[[C], Callable[[D], E]]]]:
-    """Curry 3 of 4 arguments."""
-    return lambda a: lambda b: lambda c: lambda d: fn(a, b, c, d)
-
-
-def curry4of4(
-    fn: Callable[[A, B, C, D], E]
-) -> Callable[[], Callable[[A], Callable[[B], Callable[[C], Callable[[D], E]]]]]:
-    """Curry 4 of 4 arguments."""
-    return lambda: lambda a: lambda b: lambda c: lambda d: fn(a, b, c, d)
-
-
-__all__ = [
-    "curried",
-    "curry1of2",
-    "curry2of2",
-    "curry1of3",
-    "curry2of3",
-    "curry3of3",
-    "curry1of4",
-    "curry2of4",
-    "curry3of4",
-    "curry4of4",
-]
+__all__ = ["curried"]
