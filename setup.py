@@ -36,7 +36,7 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     python_requires=">=3.8",
-    install_requires=[],
+    install_requires=["typing_extensions"],
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pytest-cov", "pytest-asyncio", "hypothesis"],
     package_data={"expression": ["py.typed"]},
