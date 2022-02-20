@@ -15,10 +15,10 @@ _Arity = Literal[0, 1, 2, 3, 4]
 def _curry(
     args: Tuple[Any, ...], arity: int, fun: Callable[..., Any]
 ) -> Callable[..., Any]:
-    def wrapper(*arg: Any, **kw: Any) -> Any:
+    def wrapper(*args_: Any, **kw: Any) -> Any:
         if arity == 1:
-            return fun(*args, *arg, **kw)
-        return _curry(args + arg, arity - 1, fun)
+            return fun(*args, *args_, **kw)
+        return _curry(args + args_, arity - 1, fun)
 
     return wrapper
 
@@ -91,7 +91,7 @@ def curry(num_args: _Arity) -> Callable[..., Any]:
 @overload
 def curry_flipped(
     num_args: Literal[0],
-) -> Callable[[Callable[_P, _B]], Callable[_P, _B]]:
+) -> Callable[[Callable[_P, _A]], Callable[_P, _A]]:
     ...
 
 
@@ -160,7 +160,7 @@ def curry_flipped(
 
             return _curry((), num_args, _wrap_curried)
 
-        return _wrap_args
+        return _wrap_args if num_args else fun
 
     return _wrap_fun
 
