@@ -71,10 +71,11 @@ def curry(num_args: _Arity) -> Callable[..., Any]:
     Makes a function curried.
 
     Args:
-        num_args: The number of args to curry from the start of the function
+        num_args: The number of args to curry from the start of the
+        function
 
     Example:
-        @curried(1)
+        @curry(1)
         def add(a: int, b: int) -> int:
             return a + b
 
@@ -134,6 +135,24 @@ def curry_flipped(
 def curry_flipped(
     num_args: _Arity,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    """A flipped curry decorator.
+
+    Makes a function curried, but flips curried the arguments to become
+    the last arguments. This is very nice when having e.g optional
+    arguments after a source argument that will be piped.
+
+    Args:
+        num_args: The number of args to curry from the start of the
+        function
+
+    Example:
+        @curry_flipped(1)
+        def map(source: List[int], mapper: Callable[[int], int]):
+            return [mapper(x) for x in source]
+
+        ys = pipe(xs, map(lambda x: x * 10))
+    """
+
     def _wrap_fun(fun: Callable[..., Any]) -> Callable[..., Any]:
         def _wrap_args(*args: Any, **kwargs: Any) -> Callable[..., Any]:
             def _wrap_curried(*curry_args: Any) -> Any:
