@@ -105,7 +105,8 @@ def curry_flipped(
 def curry_flipped(
     num_args: Literal[2],
 ) -> Callable[
-    [Callable[Concatenate[_A, _B, _P], _C]], Callable[_P, Callable[[_A, _B], _C]]
+    [Callable[Concatenate[_A, _B, _P], _C]],
+    Callable[_P, Callable[[_A], Callable[[_B], _C]]],
 ]:
     ...
 
@@ -115,7 +116,17 @@ def curry_flipped(
     num_args: Literal[3],
 ) -> Callable[
     [Callable[Concatenate[_A, _B, _C, _P], _D]],
-    Callable[_P, Callable[[_A, _B, _C], _D]],
+    Callable[_P, Callable[[_A], Callable[[_B], Callable[[_C], _D]]]],
+]:
+    ...
+
+
+@overload
+def curry_flipped(
+    num_args: Literal[4],
+) -> Callable[
+    [Callable[Concatenate[_A, _B, _C, _D, _P], _E]],
+    Callable[_P, Callable[[_A], Callable[[_B], Callable[[_C], Callable[[_D], _E]]]]],
 ]:
     ...
 
