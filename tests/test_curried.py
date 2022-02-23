@@ -1,91 +1,113 @@
-from typing import Callable, overload
+from typing import Callable, List
 
 import pytest
 
-from expression import curried
+from expression import curry, curry_flipped, pipe
 
 
-def test_curried_simple():
-    @curried
+def test_curry_identity():
+    @curry(0)
     def add(a: int, b: int) -> int:
         """Add a + b"""
         return a + b
 
     assert add(3, 4) == 7
-    assert add()(3, 4) == 7
+
+
+def test_curry_simple():
+    @curry(1)
+    def add(a: int, b: int) -> int:
+        """Add a + b"""
+        return a + b
+
     assert add(3)(4) == 7
-    assert add()(3)(4) == 7
-    assert add()(3)()(4) == 7
-    assert add()()(3)()()(4) == 7
 
 
-def test_curried_named():
-    @curried
+def test_curry_named():
+    @curry(1)
     def add(a: int, b: int) -> int:
         """Add a + b"""
         return a + b
 
-    assert add(3, b=4) == 7
-    assert add(a=3, b=4) == 7
     assert add(3)(b=4) == 7
-    assert add(a=3)(b=4) == 7
-    assert add(3)(b=4) == 7
-    assert add()(3)(b=4) == 7
-    assert add()(3)()(b=4) == 7
 
 
-def test_curried_starred_args():
-    @curried
-    def add(a: int, b: int) -> int:
-        """Add a + b"""
-        return a + b
-
-    assert add(*[3, 4]) == 7
-    assert add(**dict(a=3, b=4)) == 7
-
-
-def test_curried_none():
-    @curried
+def test_curry_none():
+    @curry(0)
     def magic() -> int:
         return 42
 
     assert magic() == 42
-    with pytest.raises(TypeError):  # type:ignore
-        magic(42)
+    with pytest.raises(TypeError):
+        magic(42)  # type:ignore
 
 
-def test_curried_three():
-    @curried
+def test_curry_three():
+    @curry(2)
     def add(a: int, b: int, c: int) -> int:
         """Add a + b + c"""
         return a + b + c
 
-    assert add(3, 4, 2) == 9
-    assert add(3)(4, 2) == 9
-    assert add(3, 4)(2) == 9
     assert add(3)(4)(2) == 9
-    assert add()(3)()(4)()(2) == 9
-
-    with pytest.raises(TypeError):  # type:ignore
-        add(3, 4, 5, 6)
-
-    with pytest.raises(TypeError):  # type:ignore
-        add(3, 4, 5)(6, 7)
 
 
-def test_curried_typed():
-    @overload
-    def add(a: int, b: int) -> int:
-        ...
+def test_curry1of3_with_optional():
+    @curry(1)
+    def add(a: int, b: int, c: int = 10) -> int:
+        """Add a + b + c"""
+        return a + b + c
 
-    @overload
-    def add(a: int) -> Callable[[int], int]:
-        ...
+    assert add(3)(4) == 17
 
-    @curried
+
+def test_curry2of3_with_optional():
+    @curry(2)
+    def add(a: int, b: int, c: int = 10) -> int:
+        """Add a + b + c"""
+        return a + b + c
+
+    assert add(3)(4)() == 17
+
+
+def test_curry1of3_with_optional2():
+    @curry(1)
+    def add(a: int, b: int, c: int = 10) -> int:
+        """Add a + b + c"""
+        return a + b + c
+
+    assert add(3)(4, c=9) == 16
+
+
+def test_curry_flipped_identity():
+    @curry_flipped(0)
     def add(a: int, b: int) -> int:
         """Add a + b"""
         return a + b
 
     assert add(3, 4) == 7
-    assert add(3)(4) == 7
+
+
+def test_curry_flipped_1():
+    xs = [1, 2, 3]
+
+    @curry_flipped(1)
+    def map(source: List[int], mapper: Callable[[int], int]):
+        return [mapper(x) for x in source]
+
+    ys = pipe(xs, map(lambda x: x * 10))
+
+    print(ys)
+    assert ys == [10, 20, 30]
+
+
+def test_curry_flipped_2():
+    xs = [1, 2, 3]
+
+    @curry_flipped(2)
+    def map(a: int, source: List[int], mapper: Callable[[int], int]):
+        return [mapper(x) + a for x in source]
+
+    ys = pipe(xs, map(lambda x: x * 10)(10))
+
+    print(ys)
+    assert ys == [20, 30, 40]
