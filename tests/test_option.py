@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generator
+from typing import Any, Callable
 
 import pytest
 from hypothesis import given
@@ -293,7 +293,7 @@ def test_option_of_object_value():
 
 
 def test_option_builder_zero():
-    @effect.option
+    @effect.option[int]()
     def fn():
         while False:
             yield
@@ -303,7 +303,7 @@ def test_option_builder_zero():
 
 
 def test_option_builder_yield_value():
-    @effect.option
+    @effect.option[int]()
     def fn():
         yield 42
 
@@ -316,7 +316,7 @@ def test_option_builder_yield_value():
 
 
 def test_option_builder_yield_value_async():
-    @effect.option
+    @effect.option[int]()
     def fn():
         yield 42
 
@@ -329,9 +329,9 @@ def test_option_builder_yield_value_async():
 
 
 def test_option_builder_yield_some_wrapped():
-    @effect.option
-    def fn() -> Generator[Option[int], Option[int], Option[int]]:
-        x = yield Some(42)
+    @effect.option[Option[int]]()
+    def fn():
+        x: Option[int] = yield Some(42)
         return x
 
     xs = fn()
@@ -343,9 +343,9 @@ def test_option_builder_yield_some_wrapped():
 
 
 def test_option_builder_return_some():
-    @effect.option
-    def fn() -> Generator[int, int, int]:
-        x = yield 42
+    @effect.option[int]()
+    def fn():
+        x: int = yield 42
         return x
 
     xs = fn()
@@ -357,7 +357,7 @@ def test_option_builder_return_some():
 
 
 def test_option_builder_return_nothing_wrapped():
-    @effect.option
+    @effect.option[Option[int]]()
     def fn():
         return Nothing
         yield
@@ -371,8 +371,8 @@ def test_option_builder_return_nothing_wrapped():
 
 
 def test_option_builder_yield_from_some():
-    @effect.option
-    def fn() -> Generator[int, int, int]:
+    @effect.option[int]()
+    def fn():
         x = yield from Some(42)
         return x + 1
 
@@ -385,8 +385,8 @@ def test_option_builder_yield_from_some():
 
 
 def test_option_builder_yield_from_none():
-    @effect.option
-    def fn() -> Generator[int, int, int]:
+    @effect.option[int]()
+    def fn():
         x: int
         x = yield from Nothing
         return x
@@ -396,9 +396,9 @@ def test_option_builder_yield_from_none():
 
 
 def test_option_builder_multiple_some():
-    @effect.option
-    def fn() -> Generator[int, int, int]:
-        x = yield 42
+    @effect.option[int]()
+    def fn():
+        x: int = yield 42
         y = yield from Some(43)
 
         return x + y
@@ -412,8 +412,8 @@ def test_option_builder_multiple_some():
 
 
 def test_option_builder_none_short_circuits():
-    @effect.option
-    def fn() -> Generator[int, int, int]:
+    @effect.option[int]()
+    def fn():
         x: int
         x = yield from Nothing
         y = yield from Some(43)
@@ -427,7 +427,7 @@ def test_option_builder_none_short_circuits():
 def test_option_builder_throws():
     error = "do'h"
 
-    @effect.option
+    @effect.option()
     def fn():
         raise CustomException(error)
         yield

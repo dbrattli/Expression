@@ -1,11 +1,14 @@
 from abc import ABC
 from functools import wraps
-from typing import Any, Callable, Coroutine, Generic, List, Optional, TypeVar, cast
+from typing import Any, Callable, Generator, Generic, List, Optional, TypeVar, cast
+
+from typing_extensions import ParamSpec
 
 from .error import EffectError
 
 _TInner = TypeVar("_TInner")
 _TOuter = TypeVar("_TOuter")
+_P = ParamSpec("_P")
 
 
 class Builder(Generic[_TOuter, _TInner], ABC):
@@ -31,7 +34,7 @@ class Builder(Generic[_TOuter, _TInner], ABC):
 
     def _send(
         self,
-        gen: Coroutine[_TInner, Optional[_TInner], Optional[_TOuter]],
+        gen: Generator[_TInner, Optional[_TInner], Optional[_TOuter]],
         done: List[bool],
         value: Optional[_TInner] = None,
     ) -> _TOuter:
@@ -51,8 +54,8 @@ class Builder(Generic[_TOuter, _TInner], ABC):
 
     def __call__(
         self,  # Ignored self parameter
-        fn: Callable[..., Any],
-    ) -> Callable[..., _TOuter]:
+        fn: Callable[_P, Generator[_TInner, Any, Any]],
+    ) -> Callable[_P, _TOuter]:
         """Option builder.
 
         Enables the use of computational expressions using coroutines.
@@ -68,7 +71,7 @@ class Builder(Generic[_TOuter, _TInner], ABC):
         """
 
         @wraps(fn)
-        def wrapper(*args: Any, **kw: Any) -> _TOuter:
+        def wrapper(*args: _P.args, **kw: _P.kwargs) -> _TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
 

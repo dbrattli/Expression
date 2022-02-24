@@ -271,7 +271,7 @@ Effects in Expression is implemented as specially decorated coroutines
 ```py
 from expression import effect, Some
 
-@effect.option
+@effect.option[int]()
 def fn():
     x = yield 42
     y = yield from Some(43)
@@ -291,7 +291,7 @@ decorated function can either be `Ok(value)` or `Error(error_value)`.
 ```py
 from expression import effect, Some, Nothing
 
-@effect.option
+@effect.option[int]()
 def fn():
     x = yield from Nothing # or a function returning Nothing
 
@@ -319,7 +319,7 @@ know why some operation failed (not just `Nothing`).
 ```py
 from expression import effect, Result, Ok, Error, pipe
 
-@effect.result
+@effect.result[int, Exception]()
 def fn():
     x = yield from Ok(42)
     y = yield from OK(10)
