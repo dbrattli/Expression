@@ -3,72 +3,72 @@ from typing import Any, Callable, TypeVar, overload
 
 from expression.core import Option, Some
 
-A = TypeVar("A")
-B = TypeVar("B")
-C = TypeVar("C")
-D = TypeVar("D")
-E = TypeVar("E")
-F = TypeVar("F")
-G = TypeVar("G")
-TError = TypeVar("TError")
+_A = TypeVar("_A")
+_B = TypeVar("_B")
+_C = TypeVar("_C")
+_D = TypeVar("_D")
+_E = TypeVar("_E")
+_F = TypeVar("_F")
+_G = TypeVar("_G")
+_TError = TypeVar("_TError")
 
 
 @overload
-def pipeline() -> Callable[[A], Option[A]]:
+def pipeline() -> Callable[[_A], Option[_A]]:
     ...
 
 
 @overload
-def pipeline(__fn: Callable[[A], Option[B]]) -> Callable[[A], Option[B]]:
-    ...
-
-
-@overload
-def pipeline(
-    __fn1: Callable[[A], Option[B]], __fn2: Callable[[B], Option[C]]
-) -> Callable[[A], Option[C]]:
+def pipeline(__fn: Callable[[_A], Option[_B]]) -> Callable[[_A], Option[_B]]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: Callable[[A], Option[B]],
-    __fn2: Callable[[B], Option[C]],
-    __fn3: Callable[[C], Option[D]],
-) -> Callable[[A], Option[D]]:
+    __fn1: Callable[[_A], Option[_B]], __fn2: Callable[[_B], Option[_C]]
+) -> Callable[[_A], Option[_C]]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: Callable[[A], Option[B]],
-    __fn2: Callable[[B], Option[C]],
-    __fn3: Callable[[C], Option[D]],
-    __fn4: Callable[[D], Option[E]],
-) -> Callable[[A], Option[E]]:
+    __fn1: Callable[[_A], Option[_B]],
+    __fn2: Callable[[_B], Option[_C]],
+    __fn3: Callable[[_C], Option[_D]],
+) -> Callable[[_A], Option[_D]]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: Callable[[A], Option[B]],
-    __fn2: Callable[[B], Option[C]],
-    __fn3: Callable[[C], Option[D]],
-    __fn4: Callable[[D], Option[E]],
-    __fn5: Callable[[E], Option[F]],
-) -> Callable[[A], Option[F]]:
+    __fn1: Callable[[_A], Option[_B]],
+    __fn2: Callable[[_B], Option[_C]],
+    __fn3: Callable[[_C], Option[_D]],
+    __fn4: Callable[[_D], Option[_E]],
+) -> Callable[[_A], Option[_E]]:
     ...
 
 
 @overload
 def pipeline(
-    __fn1: Callable[[A], Option[B]],
-    __fn2: Callable[[B], Option[C]],
-    __fn3: Callable[[C], Option[D]],
-    __fn4: Callable[[D], Option[E]],
-    __fn5: Callable[[E], Option[F]],
-    __fn6: Callable[[F], Option[G]],
-) -> Callable[[A], Option[G]]:
+    __fn1: Callable[[_A], Option[_B]],
+    __fn2: Callable[[_B], Option[_C]],
+    __fn3: Callable[[_C], Option[_D]],
+    __fn4: Callable[[_D], Option[_E]],
+    __fn5: Callable[[_E], Option[_F]],
+) -> Callable[[_A], Option[_F]]:
+    ...
+
+
+@overload
+def pipeline(
+    __fn1: Callable[[_A], Option[_B]],
+    __fn2: Callable[[_B], Option[_C]],
+    __fn3: Callable[[_C], Option[_D]],
+    __fn4: Callable[[_D], Option[_E]],
+    __fn5: Callable[[_E], Option[_F]],
+    __fn6: Callable[[_F], Option[_G]],
+) -> Callable[[_A], Option[_G]]:
     ...
 
 

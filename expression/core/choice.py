@@ -10,15 +10,15 @@ from typing import Any, Generic, Iterable, TypeVar, get_origin, overload
 from .match import Case
 from .typing import SupportsMatch
 
-TSource = TypeVar("TSource")
-A = TypeVar("A")
-A_ = TypeVar("A_")
-B = TypeVar("B")
-B_ = TypeVar("B_")
-C = TypeVar("C")
+_TSource = TypeVar("_TSource")
+_A = TypeVar("_A")
+_A_ = TypeVar("_A_")
+_B = TypeVar("_B")
+_B_ = TypeVar("_B_")
+_C = TypeVar("_C")
 
 
-class Choice(ABC, SupportsMatch[TSource]):
+class Choice(ABC, SupportsMatch[_TSource]):
     def __init__(self, value: Any) -> None:
         self.value = value
 
@@ -39,30 +39,30 @@ class Choice(ABC, SupportsMatch[TSource]):
         return str(self)
 
 
-class Choice2(Generic[A, B]):
+class Choice2(Generic[_A, _B]):
     def __repr__(self) -> str:
         return str(self)
 
 
-class Choice1of2(Choice2[A, B], Choice[A]):
-    def __init__(self, value: A) -> None:
+class Choice1of2(Choice2[_A, _B], Choice[_A]):
+    def __init__(self, value: _A) -> None:
         super().__init__(value)
 
     @overload
     @classmethod
-    def match(cls, case: Case[Choice2[A_, Any]]) -> Iterable[A_]:
+    def match(cls, case: Case[Choice2[_A_, Any]]) -> Iterable[_A_]:
         """Helper to cast the match result to correct type."""
         ...
 
     @overload
     @classmethod
-    def match(cls, case: "Case[Choice1of2[A_, Any]]") -> Iterable[A_]:
+    def match(cls, case: "Case[Choice1of2[_A_, Any]]") -> Iterable[_A_]:
         """Helper to cast the match result to correct type."""
         ...
 
     @overload
     @classmethod
-    def match(cls, case: Case[A_]) -> Iterable[A_]:
+    def match(cls, case: Case[_A_]) -> Iterable[_A_]:
         ...
 
     @classmethod
@@ -78,25 +78,25 @@ class Choice1of2(Choice2[A, B], Choice[A]):
         return f"Choice1of2 {self.value}"
 
 
-class Choice2of2(Choice2[A, B], Choice[B]):
-    def __init__(self, value: B) -> None:
+class Choice2of2(Choice2[_A, _B], Choice[_B]):
+    def __init__(self, value: _B) -> None:
         super().__init__(value)
 
     @overload
     @classmethod
-    def match(cls, case: Case[Choice2[Any, B_]]) -> Iterable[B_]:
+    def match(cls, case: Case[Choice2[Any, _B_]]) -> Iterable[_B_]:
         """Helper to cast the match result to correct type."""
         ...
 
     @overload
     @classmethod
-    def match(cls, case: "Case[Choice1of2[Any, B_]]") -> Iterable[B_]:
+    def match(cls, case: "Case[Choice1of2[Any, _B_]]") -> Iterable[_B_]:
         """Helper to cast the match result to correct type."""
         ...
 
     @overload
     @classmethod
-    def match(cls, case: Case[B_]) -> Iterable[B_]:
+    def match(cls, case: Case[_B_]) -> Iterable[_B_]:
         ...
 
     @classmethod
@@ -112,36 +112,36 @@ class Choice2of2(Choice2[A, B], Choice[B]):
         return f"Choice2of2 {self.value}"
 
 
-class Choice3(Generic[A, B, C]):
+class Choice3(Generic[_A, _B, _C]):
     ...
 
 
-class Choice1of3(Choice3[A, B, C], Choice[A]):
-    def __init__(self, value: A) -> None:
+class Choice1of3(Choice3[_A, _B, _C], Choice[_A]):
+    def __init__(self, value: _A) -> None:
         super().__init__(value)
 
     @classmethod
-    def match(cls, case: Case[A]) -> Iterable[A]:
+    def match(cls, case: Case[_A]) -> Iterable[_A]:
         """Helper to cast the match result to correct type."""
         return case(cls)
 
 
-class Choice2of3(Choice3[A, B, C], Choice[B]):
-    def __init__(self, value: B) -> None:
+class Choice2of3(Choice3[_A, _B, _C], Choice[_B]):
+    def __init__(self, value: _B) -> None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, case: Case[B]) -> Iterable[B]:
+    def case(cls, case: Case[_B]) -> Iterable[_B]:
         """Helper to cast the match result to correct type."""
         return case(cls)
 
 
-class Choice3of3(Choice3[A, B, C], Choice[C]):
-    def __init__(self, value: C) -> None:
+class Choice3of3(Choice3[_A, _B, _C], Choice[_C]):
+    def __init__(self, value: _C) -> None:
         super().__init__(value)
 
     @classmethod
-    def case(cls, case: Case[C]) -> Iterable[C]:
+    def case(cls, case: Case[_C]) -> Iterable[_C]:
         """Helper to cast the match result to correct type."""
         return case(cls)
 

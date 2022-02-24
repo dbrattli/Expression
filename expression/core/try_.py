@@ -8,12 +8,12 @@ from typing import TypeVar
 
 from .result import Error, Ok, Result
 
-TSource = TypeVar("TSource")
+_TSource = TypeVar("_TSource")
 
-Try = Result[TSource, Exception]
+Try = Result[_TSource, Exception]
 
 
-class Success(Ok[TSource, Exception]):
+class Success(Ok[_TSource, Exception]):
     """The successful Try case.
 
     Same as result `Ok` but with error type pinned to an exception, i.e:
@@ -23,7 +23,7 @@ class Success(Ok[TSource, Exception]):
     ...
 
 
-class Failure(Error[TSource, Exception]):
+class Failure(Error[_TSource, Exception]):
     """The failure Try case.
 
     Same as result `Error` but with error type pinned to an exception,
