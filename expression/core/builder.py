@@ -1,6 +1,16 @@
 from abc import ABC
 from functools import wraps
-from typing import Any, Callable, Generator, Generic, List, Optional, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from typing_extensions import ParamSpec
 
@@ -34,7 +44,7 @@ class Builder(Generic[_TOuter, _TInner], ABC):
 
     def _send(
         self,
-        gen: Generator[_TInner, Optional[_TInner], Optional[_TOuter]],
+        gen: Generator[Any, Any, Any],
         done: List[bool],
         value: Optional[_TInner] = None,
     ) -> _TOuter:
@@ -54,7 +64,13 @@ class Builder(Generic[_TOuter, _TInner], ABC):
 
     def __call__(
         self,  # Ignored self parameter
-        fn: Callable[_P, Generator[_TInner, Any, Any]],
+        fn: Callable[
+            _P,
+            Union[
+                Generator[Optional[_TInner], _TInner, Optional[_TInner]],
+                Generator[Optional[_TInner], None, Optional[_TInner]],
+            ],
+        ],
     ) -> Callable[_P, _TOuter]:
         """Option builder.
 

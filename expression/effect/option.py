@@ -37,7 +37,7 @@ class OptionBuilder(Builder[Option[_TSource], _TSource]):
             ],
         ],
     ) -> Callable[_P, Option[_TSource]]:
-        return super.__call__(fn)
+        return super().__call__(fn)
 
 
 __all__ = ["OptionBuilder"]

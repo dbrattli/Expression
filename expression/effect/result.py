@@ -42,7 +42,7 @@ class ResultBuilder(Builder[Result[_TSource, _TError], _TSource]):
             ],
         ],
     ) -> Callable[_P, Result[_TSource, _TError]]:
-        return super.__call__(fn)
+        return super().__call__(fn)
 
 
 class TryBuilder(ResultBuilder[_TSource, Exception]):
