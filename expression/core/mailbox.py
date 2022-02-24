@@ -21,31 +21,31 @@ from expression.system import CancellationToken, OperationCanceledError
 
 from .aiotools import Continuation, from_continuations, start_immediate
 
-Msg = TypeVar("Msg")
-Reply = TypeVar("Reply")
+_Msg = TypeVar("_Msg")
+_Reply = TypeVar("_Reply")
 
 
-class AsyncReplyChannel(Generic[Reply]):
-    def __init__(self, fn: Callable[[Reply], None]) -> None:
+class AsyncReplyChannel(Generic[_Reply]):
+    def __init__(self, fn: Callable[[_Reply], None]) -> None:
         self.fn = fn
 
-    def reply(self, r: Reply) -> None:
+    def reply(self, r: _Reply) -> None:
         self.fn(r)
 
 
-class MailboxProcessor(Generic[Msg]):
+class MailboxProcessor(Generic[_Msg]):
     def __init__(self, cancellation_token: Optional[CancellationToken]) -> None:
-        self.messages: SimpleQueue[Msg] = SimpleQueue()
+        self.messages: SimpleQueue[_Msg] = SimpleQueue()
         self.token = cancellation_token or CancellationToken.none()
         self.loop = asyncio.get_event_loop()
         self.lock = RLock()
 
         # Holds the continuation i.e the `done` callback of Async.from_continuations
         # returned by `receive`.
-        self.continuation: Optional[Continuation[Msg]] = None
+        self.continuation: Optional[Continuation[_Msg]] = None
         self.cancel: Optional[Continuation[OperationCanceledError]] = None
 
-    def post(self, msg: Msg) -> None:
+    def post(self, msg: _Msg) -> None:
         """Post a message synchronously to the mailbox processor.
 
         This method is not asynchronous since it's very fast to execute.
@@ -62,8 +62,8 @@ class MailboxProcessor(Generic[Msg]):
         self.loop.call_soon_threadsafe(self.__process_events)
 
     def post_and_async_reply(
-        self, build_message: Callable[[AsyncReplyChannel[Reply]], Msg]
-    ) -> Awaitable[Reply]:
+        self, build_message: Callable[[AsyncReplyChannel[_Reply]], _Msg]
+    ) -> Awaitable[_Reply]:
         """Post a message asynchronously to the mailbox processor and
         wait for the reply.
 
@@ -77,15 +77,15 @@ class MailboxProcessor(Generic[Msg]):
             The reply from mailbox processor.
         """
 
-        result: Optional[Reply] = None
+        result: Optional[_Reply] = None
         # This is the continuation for the `done` callback of the awaiting poster.
-        continuation: Optional[Continuation[Reply]] = None
+        continuation: Optional[Continuation[_Reply]] = None
 
         def check_completion() -> None:
             if result is not None and continuation is not None:
                 continuation(result)
 
-        def reply_callback(res: Reply):
+        def reply_callback(res: _Reply):
             nonlocal result
             result = res
             check_completion()
@@ -95,7 +95,7 @@ class MailboxProcessor(Generic[Msg]):
         self.__process_events()
 
         def callback(
-            done: Continuation[Reply],
+            done: Continuation[_Reply],
             _: Continuation[Exception],
             __: Continuation[OperationCanceledError],
         ):
@@ -105,7 +105,7 @@ class MailboxProcessor(Generic[Msg]):
 
         return from_continuations(callback)
 
-    async def receive(self) -> Msg:
+    async def receive(self) -> _Msg:
         """Receive message from mailbox.
 
         Returns:
@@ -116,7 +116,7 @@ class MailboxProcessor(Generic[Msg]):
         """
 
         def callback(
-            done: Continuation[Msg],
+            done: Continuation[_Msg],
             error: Continuation[Exception],
             cancel: Continuation[OperationCanceledError],
         ):

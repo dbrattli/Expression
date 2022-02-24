@@ -19,12 +19,12 @@ from .typing import SupportsMatch
 _TResult = TypeVar("_TResult")
 
 
-TSource = TypeVar("TSource")
-A = TypeVar("A")
-B = TypeVar("B")
+_TSource = TypeVar("_TSource")
+_A = TypeVar("_A")
+_B = TypeVar("_B")
 
 
-class MatchMixin(SupportsMatch[TSource]):
+class MatchMixin(SupportsMatch[_TSource]):
     def match(self, pattern: Any) -> Iterable[Any]:
         """Match with pattern.
 
@@ -38,11 +38,11 @@ class MatchMixin(SupportsMatch[TSource]):
         ...     print(x)
         """
 
-        case: Case[TSource] = Case(self)
+        case: Case[_TSource] = Case(self)
         return case(pattern)
 
 
-class Case(Generic[TSource]):
+class Case(Generic[_TSource]):
     """Case matcher for patterns.
 
     Matches its value with the given pattern. The pattern can be any of
@@ -57,7 +57,7 @@ class Case(Generic[TSource]):
         self.value = value
 
     @overload
-    def __call__(self, pattern: Type[SupportsMatch[A]]) -> Iterable[A]:
+    def __call__(self, pattern: Type[SupportsMatch[_A]]) -> Iterable[_A]:
         """Match with active type pattern.
 
         Handle the case where pattern is an active pattern type e.g
@@ -66,7 +66,7 @@ class Case(Generic[TSource]):
         ...
 
     @overload
-    def __call__(self, pattern: SupportsMatch[A]) -> Iterable[A]:
+    def __call__(self, pattern: SupportsMatch[_A]) -> Iterable[_A]:
         """Match with intance of `SupportsMatch` pattern.
 
         Handle the case where pattern is instance of a type that
@@ -91,7 +91,7 @@ class Case(Generic[TSource]):
     #     ...
 
     @overload
-    def __call__(self, pattern: Type[A]) -> Iterable[A]:
+    def __call__(self, pattern: Type[_A]) -> Iterable[_A]:
         """Match with type pattern.
 
         Handle the case where pattern is a type e.g `int`, `str`,
@@ -99,7 +99,7 @@ class Case(Generic[TSource]):
         """
 
     @overload
-    def __call__(self, pattern: A) -> Iterable[A]:
+    def __call__(self, pattern: _A) -> Iterable[_A]:
         """Match with intance pattern.
 
         Handle the case where pattern is instance of a type e.g `42`,
@@ -152,7 +152,7 @@ class Case(Generic[TSource]):
         return self.default()
 
     @overload
-    def default(self) -> Iterable[TSource]:
+    def default(self) -> Iterable[_TSource]:
         ...
 
     @overload
@@ -168,7 +168,7 @@ class Case(Generic[TSource]):
         self.is_matched = True
         return [ret or self.value]
 
-    def __enter__(self) -> Case[TSource]:
+    def __enter__(self) -> Case[_TSource]:
         """Enter context management."""
         return self
 
@@ -187,7 +187,7 @@ class Case(Generic[TSource]):
         return self.is_matched
 
 
-def match(value: TSource) -> Case[TSource]:
+def match(value: _TSource) -> Case[_TSource]:
     """Convenience case matcher create method to get typing right
 
     Same as `Case(value)`

@@ -1,14 +1,12 @@
 from typing import Any, Callable, Tuple, TypeVar
 
-A = TypeVar("A")
-B = TypeVar("B")
-TSource = TypeVar("TSource")
-TResult = TypeVar("TResult")
-Base = TypeVar("Base")
-Derived = TypeVar("Derived")
+_A = TypeVar("_A")
+_B = TypeVar("_B")
+_TSource = TypeVar("_TSource")
+_TResult = TypeVar("_TResult")
 
 
-def identity(value: A) -> A:
+def identity(value: _A) -> _A:
     """Identity function.
 
     Returns value given as argument.
@@ -20,27 +18,27 @@ def starid(*value: Any) -> Tuple[Any, ...]:
     return value
 
 
-def flip(fn: Callable[[A, B], TResult]) -> Callable[[B, A], TResult]:
+def flip(fn: Callable[[_A, _B], _TResult]) -> Callable[[_B, _A], _TResult]:
     """Flips the arguments for a function taking two arguments.
 
     Example:
         >>> fn(a, b) == flip(fn)(b, a)
     """
 
-    def _flip(b: B, a: A) -> Any:
+    def _flip(b: _B, a: _A) -> Any:
         return fn(a, b)
 
     return _flip
 
 
-def snd(value: Tuple[Any, TSource]) -> TSource:
+def snd(value: Tuple[Any, _TSource]) -> _TSource:
     """Return second argument of the tuple."""
 
     _, b = value
     return b
 
 
-def fst(value: Tuple[TSource, Any]) -> TSource:
+def fst(value: Tuple[_TSource, Any]) -> _TSource:
     """Return first argument of the tuple."""
 
     a, _ = value

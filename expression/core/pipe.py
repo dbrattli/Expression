@@ -171,7 +171,7 @@ def pipe3(args: Any, *fns: Any) -> Any:
     return starpipe(args, *fns)
 
 
-def starpipe(args: Any, *fns: Any):
+def starpipe(args: Any, *fns: Callable[..., Any]):
     """Functional pipe_n (`||>`, `||>`, `|||>`, etc)
 
     Allows the use of function arguments on the left side of the

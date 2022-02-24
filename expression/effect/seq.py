@@ -3,29 +3,28 @@ from typing import Callable, Iterable, TypeVar
 from expression.collections import seq
 from expression.core import Builder, identity
 
-TSource = TypeVar("TSource")
-TResult = TypeVar("TResult")
-TState = TypeVar("TState")
+_TSource = TypeVar("_TSource")
+_TResult = TypeVar("_TResult")
 
 
-class SeqBuilder(Builder[Iterable[TSource], TSource]):
+class SeqBuilder(Builder[Iterable[_TSource], _TSource]):
     def bind(
-        self, xs: Iterable[TSource], fn: Callable[[TSource], Iterable[TResult]]
-    ) -> Iterable[TResult]:
+        self, xs: Iterable[_TSource], fn: Callable[[_TSource], Iterable[_TResult]]
+    ) -> Iterable[_TResult]:
         return list(seq.collect(fn)(xs))
 
-    def return_(self, x: TSource) -> Iterable[TSource]:
+    def return_(self, x: _TSource) -> Iterable[_TSource]:
         return seq.singleton(x)
 
-    def return_from(self, xs: Iterable[TSource]) -> Iterable[TSource]:
+    def return_from(self, xs: Iterable[_TSource]) -> Iterable[_TSource]:
         return xs
 
     def combine(
-        self, xs: Iterable[TSource], ys: Iterable[TSource]
-    ) -> Iterable[TSource]:
+        self, xs: Iterable[_TSource], ys: Iterable[_TSource]
+    ) -> Iterable[_TSource]:
         return list(seq.concat(xs, ys))
 
-    def zero(self) -> Iterable[TSource]:
+    def zero(self) -> Iterable[_TSource]:
         return seq.empty
 
 

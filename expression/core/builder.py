@@ -6,7 +6,6 @@ from .error import EffectError
 
 _TInner = TypeVar("_TInner")
 _TOuter = TypeVar("_TOuter")
-_TResult = TypeVar("_TResult")
 
 
 class Builder(Generic[_TOuter, _TInner], ABC):
