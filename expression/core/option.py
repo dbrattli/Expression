@@ -359,7 +359,7 @@ class Nothing_(Option[_TSource], EffectError):
 
         raise ValueError("There is no value.")
 
-    def __match__(self, pattern: Any) -> Iterable[bool]:
+    def __match__(self, pattern: Any) -> Iterable[Any]:
         if self is pattern:
             return [True]
 

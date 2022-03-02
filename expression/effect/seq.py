@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, TypeVar
+from typing import Any, Callable, Iterable, TypeVar
 
 from expression.collections import seq
 from expression.core import Builder, identity
@@ -7,7 +7,7 @@ _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
 
 
-class SeqBuilder(Builder[Iterable[_TSource], _TSource]):
+class SeqBuilder(Builder[_TSource, Iterable[Any]]):
     def bind(
         self, xs: Iterable[_TSource], fn: Callable[[_TSource], Iterable[_TResult]]
     ) -> Iterable[_TResult]:

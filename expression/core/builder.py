@@ -21,10 +21,10 @@ _TOuter = TypeVar("_TOuter")
 _P = ParamSpec("_P")
 
 
-class Builder(Generic[_TOuter, _TInner], ABC):
+class Builder(Generic[_TInner, _TOuter], ABC):
     """Effect builder."""
 
-    def bind(self, xs: _TOuter, fn: Callable[[_TInner], _TOuter]) -> _TOuter:
+    def bind(self, xs: _TOuter, fn: Callable[[Any], _TOuter]) -> _TOuter:
         raise NotImplementedError("Builder does not implement a bind method")
 
     def return_(self, x: _TInner) -> _TOuter:

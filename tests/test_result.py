@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generator, List
+from typing import Any, Callable, List
 
 import pytest
 from hypothesis import given
@@ -305,8 +305,8 @@ def test_result_effect_multiple_ok():
 def test_result_effect_throws():
     error = CustomException("this happend!")
 
-    @effect.result()
-    def fn() -> Generator[int, int, int]:
+    @effect.result[int, Exception]()
+    def fn():
         _ = yield from Ok(42)
         raise error
 

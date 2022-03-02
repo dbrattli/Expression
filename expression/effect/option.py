@@ -1,4 +1,4 @@
-from typing import Callable, Generator, Optional, TypeVar, Union
+from typing import Any, Callable, Generator, Optional, TypeVar, Union
 
 from typing_extensions import ParamSpec
 
@@ -9,7 +9,7 @@ _TResult = TypeVar("_TResult")
 _P = ParamSpec("_P")
 
 
-class OptionBuilder(Builder[Option[_TSource], _TSource]):
+class OptionBuilder(Builder[_TSource, Option[Any]]):
     def bind(
         self, xs: Option[_TSource], fn: Callable[[_TSource], Option[_TResult]]
     ) -> Option[_TResult]:

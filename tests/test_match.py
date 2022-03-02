@@ -115,7 +115,7 @@ def test_match_multiple_cases() -> None:
         for value in case(str):
             assert value == "expression"
 
-        for value in case(float):
+        for _ in case(float):
             assert False
 
         if case._:

@@ -1,4 +1,4 @@
-from typing import Callable, Generator, Optional, TypeVar, Union
+from typing import Any, Callable, Generator, Optional, TypeVar, Union
 
 from typing_extensions import ParamSpec
 
@@ -10,7 +10,7 @@ _TError = TypeVar("_TError")
 _P = ParamSpec("_P")
 
 
-class ResultBuilder(Builder[Result[_TSource, _TError], _TSource]):
+class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
     def bind(
         self,
         xs: Result[_TSource, _TError],
