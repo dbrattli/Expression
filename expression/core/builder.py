@@ -1,17 +1,30 @@
 from abc import ABC
 from functools import wraps
-from typing import Any, Callable, Coroutine, Generic, List, Optional, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
+
+from typing_extensions import ParamSpec
 
 from .error import EffectError
 
 _TInner = TypeVar("_TInner")
 _TOuter = TypeVar("_TOuter")
+_P = ParamSpec("_P")
 
 
-class Builder(Generic[_TOuter, _TInner], ABC):
+class Builder(Generic[_TInner, _TOuter], ABC):
     """Effect builder."""
 
-    def bind(self, xs: _TOuter, fn: Callable[[_TInner], _TOuter]) -> _TOuter:
+    def bind(self, xs: _TOuter, fn: Callable[[Any], _TOuter]) -> _TOuter:
         raise NotImplementedError("Builder does not implement a bind method")
 
     def return_(self, x: _TInner) -> _TOuter:
@@ -31,7 +44,7 @@ class Builder(Generic[_TOuter, _TInner], ABC):
 
     def _send(
         self,
-        gen: Coroutine[_TInner, Optional[_TInner], Optional[_TOuter]],
+        gen: Generator[Any, Any, Any],
         done: List[bool],
         value: Optional[_TInner] = None,
     ) -> _TOuter:
@@ -51,8 +64,14 @@ class Builder(Generic[_TOuter, _TInner], ABC):
 
     def __call__(
         self,  # Ignored self parameter
-        fn: Callable[..., Any],
-    ) -> Callable[..., _TOuter]:
+        fn: Callable[
+            _P,
+            Union[
+                Generator[Optional[_TInner], _TInner, Optional[_TInner]],
+                Generator[Optional[_TInner], None, Optional[_TInner]],
+            ],
+        ],
+    ) -> Callable[_P, _TOuter]:
         """Option builder.
 
         Enables the use of computational expressions using coroutines.
@@ -68,7 +87,7 @@ class Builder(Generic[_TOuter, _TInner], ABC):
         """
 
         @wraps(fn)
-        def wrapper(*args: Any, **kw: Any) -> _TOuter:
+        def wrapper(*args: _P.args, **kw: _P.kwargs) -> _TOuter:
             gen = fn(*args, **kw)
             done: List[bool] = []
 

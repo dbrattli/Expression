@@ -6,7 +6,7 @@ T = TypeVar("T", float, int)
 
 
 def test_option_builder_projection_int_str():
-    @effect.option
+    @effect.option[str]()
     def fn():
         z: str = "Not found"
         for x in Some(42.0):
@@ -23,7 +23,7 @@ def test_option_builder_projection_int_str():
 
 
 def test_option_builder_yield_from_nothing():
-    @effect.option
+    @effect.option[int]()
     def fn():
         x = yield from Nothing  # or a function returning Nothing
 

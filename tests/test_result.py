@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generator, List, Optional
+from typing import Any, Callable, List
 
 import pytest
 from hypothesis import given
@@ -218,7 +218,7 @@ def test_result_traverse_error(xs: List[int]):
 
 
 def test_result_effect_zero():
-    @effect.result
+    @effect.result()
     def fn():
         while False:
             yield
@@ -228,8 +228,8 @@ def test_result_effect_zero():
 
 
 def test_result_effect_yield_ok():
-    @effect.result
-    def fn() -> Generator[int, int, Optional[int]]:
+    @effect.result[int, Exception]()
+    def fn():
         yield 42
         return None
 
@@ -239,9 +239,9 @@ def test_result_effect_yield_ok():
 
 
 def test_result_effect_return_ok():
-    @effect.result
-    def fn() -> Generator[int, int, int]:
-        x = yield 42
+    @effect.result[int, Exception]()
+    def fn():
+        x: int = yield 42
         return x
 
     xs = fn()
@@ -253,8 +253,8 @@ def test_result_effect_return_ok():
 
 
 def test_result_effect_yield_from_ok():
-    @effect.result
-    def fn() -> Generator[int, int, int]:
+    @effect.result[int, Exception]()
+    def fn():
         x = yield from Ok(42)
         return x + 1
 
@@ -272,8 +272,8 @@ def test_result_effect_yield_from_error():
     def mayfail() -> Result[int, str]:
         return Error(error)
 
-    @effect.result
-    def fn() -> Generator[int, int, int]:
+    @effect.result[int, Exception]()
+    def fn():
         xs = mayfail()
         x: int = yield from xs
         return x + 1
@@ -287,9 +287,9 @@ def test_result_effect_yield_from_error():
 
 
 def test_result_effect_multiple_ok():
-    @effect.result
-    def fn() -> Generator[int, int, int]:
-        x = yield 42
+    @effect.result[int, Exception]()
+    def fn():
+        x: int = yield 42
         y = yield from Ok(43)
 
         return x + y
@@ -305,8 +305,8 @@ def test_result_effect_multiple_ok():
 def test_result_effect_throws():
     error = CustomException("this happend!")
 
-    @effect.result
-    def fn() -> Generator[int, int, int]:
+    @effect.result[int, Exception]()
+    def fn():
         _ = yield from Ok(42)
         raise error
 

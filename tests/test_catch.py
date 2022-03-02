@@ -65,8 +65,8 @@ def test_catch_chained():
 
 def test_catch_with_effect_ok():
     @catch(exception=TypeError)
-    @effect.result
-    def fn(a: int) -> Generator[int, int, int]:
+    @effect.try_[int]()
+    def fn(a: int):
         b = yield from Ok(42)
         return a + b
 
@@ -76,7 +76,7 @@ def test_catch_with_effect_ok():
 
 def test_catch_with_effect_error():
     @catch(exception=TypeError)
-    @effect.result
+    @effect.try_[int]()
     def fn(a: int) -> Generator[int, Any, int]:
         b: int = yield from Error(ValueError("failure"))
         return a + b
@@ -92,9 +92,9 @@ def test_catch_with_effect_error():
 
 def test_catch_with_effect_exception():
     @catch(exception=TypeError)
-    @effect.result
-    def fn(a: int) -> Generator[str, str, int]:
-        b = yield from Ok("hello")
+    @effect.result[str, Exception]()
+    def fn(a: int) -> Generator[str, None, str]:
+        b: str = yield from Ok("hello")
         return a + b  # type: ignore (by design)
 
     result = fn(1)

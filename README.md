@@ -8,7 +8,7 @@
 > Pragmatic functional programming
 
 Expression aims to be a solid, type-safe, pragmatic, and high performance
-library for frictionless and practical functional programming in Python 3.8+.
+library for frictionless and practical functional programming in Python 3.9+.
 
 By pragmatic we mean that the goal of the library is to use simple abstractions
 to enable you to do practical and productive functional programming in Python
@@ -56,7 +56,7 @@ similar to Python, but F# can also do a lot of things better than Python:
 ## Getting Started
 
 You can install the latest `expression` from PyPI by running `pip` (or
-`pip3`). Note that `expression` only works for Python 3.8+.
+`pip3`). Note that `expression` only works for Python 3.9+.
 
 ```sh
 $ pip3 install expression
@@ -271,7 +271,7 @@ Effects in Expression is implemented as specially decorated coroutines
 ```py
 from expression import effect, Some
 
-@effect.option
+@effect.option[int]()
 def fn():
     x = yield 42
     y = yield from Some(43)
@@ -291,7 +291,7 @@ decorated function can either be `Ok(value)` or `Error(error_value)`.
 ```py
 from expression import effect, Some, Nothing
 
-@effect.option
+@effect.option[int]()
 def fn():
     x = yield from Nothing # or a function returning Nothing
 
@@ -319,7 +319,7 @@ know why some operation failed (not just `Nothing`).
 ```py
 from expression import effect, Result, Ok, Error, pipe
 
-@effect.result
+@effect.result[int, Exception]()
 def fn():
     x = yield from Ok(42)
     y = yield from OK(10)

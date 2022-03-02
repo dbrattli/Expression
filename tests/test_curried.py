@@ -94,7 +94,10 @@ def test_curry_flipped_1():
     def map(source: List[int], mapper: Callable[[int], int]):
         return [mapper(x) for x in source]
 
-    ys = pipe(xs, map(lambda x: x * 10))
+    ys = pipe(
+        xs,
+        map(mapper=lambda x: x * 10),
+    )
 
     print(ys)
     assert ys == [10, 20, 30]

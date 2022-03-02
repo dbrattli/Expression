@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, "3.10"]
+        python-version: [3.9, "3.10"]
 
     steps:
       - uses: actions/checkout@v2
@@ -32,10 +32,3 @@ jobs:
       - name: Test with pytest
         run: |
           pytest --cov --cov-report xml
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
