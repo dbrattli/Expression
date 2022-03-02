@@ -1,13 +1,13 @@
+import asyncio
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
 from expression.collections.asyncseq import AsyncSeq
 
-# All test coroutines will be treated as marked.
-pytestmark = pytest.mark.asyncio
 
-
+@pytest.mark.asyncio
 async def test_asyncseq_empty():
     xs = AsyncSeq.empty()
     async for _ in xs:
@@ -15,20 +15,29 @@ async def test_asyncseq_empty():
 
 
 @given(st.integers(min_value=0, max_value=100))  # type: ignore
-async def test_asyncseq_range(count: int):
-    xs = AsyncSeq.range(count)
+def test_asyncseq_range(count: int):
     acc = 0
-    async for x in xs:
-        acc += x
 
+    async def runner():
+        nonlocal acc
+
+        xs = AsyncSeq.range(count)
+        async for x in xs:
+            acc += x
+
+    asyncio.run(runner())
     assert acc == sum(range(count))
 
 
 @given(st.integers(min_value=0, max_value=100))  # type: ignore
-async def test_asyncseq_map(count: int):
-    xs = AsyncSeq.range(count)
+def test_asyncseq_map(count: int):
     acc = 0
-    async for x in xs:
-        acc += x
 
+    async def runner():
+        nonlocal acc
+        xs = AsyncSeq.range(count)
+        async for x in xs:
+            acc += x
+
+    asyncio.run(runner())
     assert acc == sum(range(count))
