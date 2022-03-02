@@ -21,7 +21,6 @@ _TResult = TypeVar("_TResult")
 
 _TSource = TypeVar("_TSource")
 _A = TypeVar("_A")
-_B = TypeVar("_B")
 
 
 class MatchMixin(SupportsMatch[_TSource]):
@@ -57,7 +56,9 @@ class Case(Generic[_TSource]):
         self.value = value
 
     @overload
-    def __call__(self, pattern: Type[SupportsMatch[_A]]) -> Iterable[_A]:  # type:ignore
+    def __call__(
+        self, pattern: Type[SupportsMatch[_A]]
+    ) -> Iterable[_A]:  # pyright: reportOverlappingOverload=false
         """Match with active type pattern.
 
         Handle the case where pattern is an active pattern type e.g
