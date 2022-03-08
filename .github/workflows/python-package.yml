@@ -35,4 +35,4 @@ jobs:
 
       - name: Test with pytest
         run: |
-          poetry run pytest --cov --cov-report xml
+          poetry run pytest
