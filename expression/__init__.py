@@ -5,11 +5,11 @@ By pragmatic we mean that the goal of the library is to use simple
 abstractions to enable you to do practical and productive functional
 programming in Python.
 
-GitHub: https://github.com/dbrattli/Expression
+GitHub: https://github.com/cognitedata/Expression
 """
 
 from . import collections, core, effect
-from ._version import get_versions
+from ._version import __version__
 from .core import (
     AsyncReplyChannel,
     Builder,
@@ -109,8 +109,5 @@ __all__ = [
     "Try",
     "try_downcast",
     "upcast",
+    "__version__",
 ]
-
-
-__version__ = get_versions()["version"]  # type: ignore
-del get_versions

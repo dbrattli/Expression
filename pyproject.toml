@@ -3,9 +3,9 @@ name = "Expression"
 version = "0.0.0" # NOTE: will be updated by publish script
 description = "Practical functional programming for Python 3.9+"
 readme = "README.md"
-authors = ["Dag Brattli <dag@brattli.net>"]
+authors = ["Dag Brattli <dag.brattli@cognite.com>"]
 license = "MIT License"
-homepage = "http://reactivex.io"
+homepage = "https://github.com/cognitedata/Expression"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Other Environment",
