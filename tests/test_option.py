@@ -161,7 +161,7 @@ def test_option_none_map():
     assert ys is Nothing
 
 
-@given(st.integers(), st.integers())  # type: ignore
+@given(st.integers(), st.integers())
 def test_option_some_map2_piped(x: int, y: int):
     xs = Some(x)
     ys = Some(y)
@@ -414,8 +414,7 @@ def test_option_builder_multiple_some():
 def test_option_builder_none_short_circuits():
     @effect.option[int]()
     def fn():
-        x: int
-        x = yield from Nothing
+        x: int = yield from Nothing
         y = yield from Some(43)
 
         return x + y

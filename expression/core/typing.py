@@ -27,7 +27,7 @@ class SupportsMatch(Protocol[_T_co]):
         """Match pattern with value.
 
         Return a singleton iterable item (e.g `[ value ]`) if pattern
-        matches value , else an empty iterable (e.g. `[]`)."""
+        matches value, else an empty iterable (e.g. `[]`)."""
 
         raise NotImplementedError
 

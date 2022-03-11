@@ -5,8 +5,6 @@ from typing import Generator
 
 import pytest
 
-# from hypothesis import given, strategies as st
-
 
 def test_generator_with_single_empty_yield():
     def fn():
@@ -24,7 +22,7 @@ def test_generator_with_single_empty_yield_double_next():
     gen = fn()
     value = next(gen)
     assert value is None
-    with pytest.raises(StopIteration) as ex:  # type: ignore
+    with pytest.raises(StopIteration) as ex:
         next(gen)
     assert ex.value.value is None
 
@@ -58,7 +56,7 @@ def test_generator_with_single_return_value():
     gen = fn()
 
     # Return in a generator is just syntactic sugar for raise StopIteration
-    with pytest.raises(StopIteration) as ex:  # type: ignore
+    with pytest.raises(StopIteration) as ex:
         next(gen)  # type: ignore
     assert ex.value.value == 42
 
@@ -72,11 +70,11 @@ def test_generator_with_multiple_return_value():
     gen = fn()
 
     # Return in a generator is just syntactic sugar for raise StopIteration
-    with pytest.raises(StopIteration) as ex:  # type: ignore
+    with pytest.raises(StopIteration) as ex:
         next(gen)  # type: ignore
     assert ex.value.value == 2
 
-    with pytest.raises(StopIteration) as ex:  # type: ignore
+    with pytest.raises(StopIteration) as ex:
         next(gen)  # type: ignore
 
     # Cannot get value from second return
@@ -91,7 +89,7 @@ def test_generator_with_yield_assignment_and_yield():
     gen = fn()
     value = next(gen)
     assert value == 42
-    value = gen.send(10)  # type: ignore
+    value = gen.send(10)
     assert value == 10
 
 
@@ -103,7 +101,7 @@ def test_generator_with_yield_assignment_and_return():
     gen = fn()
     value = next(gen)
     assert value == 42
-    with pytest.raises(StopIteration) as ex:  # type: ignore
+    with pytest.raises(StopIteration) as ex:
         gen.send(10)  # type: ignore
     assert ex.value.value == 10
 
