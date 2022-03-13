@@ -1,6 +1,6 @@
 import functools
 from itertools import accumulate
-from typing import Callable, Generator, Iterable, List, Optional, Tuple
+from typing import Callable, Iterable, List, Optional, Tuple
 
 import pytest
 from hypothesis import given
@@ -11,8 +11,8 @@ from expression.collections import Seq, seq
 
 
 def test_seq_empty():
-    @effect.seq
-    def fn() -> Generator[None, None, None]:
+    @effect.seq[int]()
+    def fn():
         while False:
             yield
 
@@ -23,7 +23,7 @@ def test_seq_empty():
 
 
 def test_seq_yield():
-    @effect.seq
+    @effect.seq[int]()
     def fn():
         yield 42
 
@@ -34,7 +34,7 @@ def test_seq_yield():
 
 @given(st.lists(st.integers(), max_size=10))
 def test_seq_yield_for_in(xs: List[int]):
-    @effect.seq
+    @effect.seq[int]()
     def fn():
         for x in xs:
             yield x
@@ -46,8 +46,8 @@ def test_seq_yield_for_in(xs: List[int]):
 
 # @given(st.lists(st.integers(), min_size=1, max_size=10))
 # def test_seq_yield_from(xs: List[int]):
-#     @effect.seq
-#     def fn() -> Generator[int, None, int]:
+#     @effect.seq[int]()
+#     def fn():
 #         print(xs)
 #         x: int = yield from xs
 #         print(x)

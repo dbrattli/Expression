@@ -42,6 +42,14 @@ class Builder(Generic[_TInner, _TOuter], ABC):
         i.e returns None"""
         raise NotImplementedError("Builder does not implement a zero method")
 
+    def delay(self, fn: Callable[[], _TOuter]) -> _TOuter:
+        """Default implementation evaluates the given function."""
+        return fn()
+
+    def run(self, xs: _TOuter) -> _TOuter:
+        """Default implementation assumes the result is already evalutated."""
+        return xs
+
     def _send(
         self,
         gen: Generator[Any, Any, Any],
@@ -52,18 +60,22 @@ class Builder(Generic[_TInner, _TOuter], ABC):
             yielded = gen.send(value)
             return self.return_(yielded)
         except EffectError as error:
-            # Effect errors (Nothing, Error, etc) short circuits the
-            # processing so we set `done` to `True` here.
+            # Effect errors (Nothing, Error, etc) short circuits the processing so we
+            # set `done` to `True` here.
             done.append(True)
             return self.return_from(cast("_TOuter", error))
         except StopIteration as ex:
             done.append(True)
+            # Return of a value in the generator produces StopIteration with a value
             if ex.value is not None:
                 return self.return_(ex.value)
             raise
+        except RuntimeError:
+            done.append(True)
+            raise StopIteration
 
     def __call__(
-        self,  # Ignored self parameter
+        self,
         fn: Callable[
             _P,
             Union[
@@ -92,24 +104,35 @@ class Builder(Generic[_TInner, _TOuter], ABC):
             done: List[bool] = []
 
             result: Optional[_TOuter] = None
+
+            def binder(value: Any) -> _TOuter:
+                ret = self._send(gen, done, value)
+
+                # Delay every result except the first
+                if result is not None:
+                    return self.delay(lambda: ret)
+                return ret
+
             try:
                 result = self._send(gen, done)
+
                 while not done:
-                    binder: Callable[[Any], _TOuter] = lambda value: self._send(
-                        gen, done, value
-                    )
                     cont = self.bind(result, binder)
-                    result = self.combine(result, cont)
+
+                    # Combine every result except the first
+                    if result is None:
+                        result = cont
+                    else:
+                        result = self.combine(result, cont)
             except StopIteration:
                 pass
 
-            # If anything returns `None` (i.e raises StopIteration
-            # without a value) then we expect the effect to have a zero
-            # method implemented.
+            # If anything returns `None` (i.e raises StopIteration without a value) then
+            # we expect the effect to have a zero method implemented.
             if result is None:
                 result = self.zero()
 
-            return result
+            return self.run(result)
 
         return wrapper
 

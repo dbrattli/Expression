@@ -12,7 +12,7 @@ def test_mailbox(xs: List[int]) -> None:
     result: List[int] = []
 
     async def runner():
-        async def process(inbox: MailboxProcessor[int]):
+        async def process(inbox: MailboxProcessor[int]) -> None:
             """the message processing function."""
 
             async def message_loop() -> None:
@@ -36,7 +36,9 @@ def test_mailbox(xs: List[int]) -> None:
 @given(st.integers())
 def test_mailbox_post_and_async_reply(x: int):
     async def runner():
-        async def process(inbox: MailboxProcessor[Tuple[int, AsyncReplyChannel[str]]]):
+        async def process(
+            inbox: MailboxProcessor[Tuple[int, AsyncReplyChannel[str]]]
+        ) -> None:
             """the message processing function."""
 
             async def message_loop() -> None:

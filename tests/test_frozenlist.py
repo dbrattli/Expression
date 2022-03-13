@@ -11,7 +11,7 @@ from expression.collections import FrozenList, frozenlist
 Func = Callable[[int], int]
 
 
-@given(st.integers(min_value=0, max_value=10000))  # type: ignore
+@given(st.integers(min_value=0, max_value=10000))
 def test_list_large_list(x: int):
     xs = frozenlist.of_seq(range(x))
     assert len(xs) == x
@@ -68,7 +68,7 @@ def test_list_non_empty():
     assert not pipe(xs, frozenlist.is_empty)
 
 
-@given(st.lists(st.integers()))  # type: ignore
+@given(st.lists(st.integers()))
 def test_list_length(xs: List[int]):
     ys = frozenlist.of_seq(xs)
     assert len(xs) == len(ys)
@@ -80,7 +80,7 @@ def test_list_cons_head(value: Any):
     assert x == value
 
 
-@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
+@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))
 def test_list_item(xs: List[int], index: int):
     ys = frozenlist.of_seq(xs)
     while index and index >= len(xs):
@@ -88,7 +88,7 @@ def test_list_item(xs: List[int], index: int):
     assert xs[index] == ys[index]
 
 
-@given(st.lists(st.integers()))  # type: ignore
+@given(st.lists(st.integers()))
 def test_list_pipe_map(xs: List[int]):
     def mapper(x: int):
         return x + 1
@@ -136,7 +136,7 @@ def test_seq_pipe_map3(xs: List[Tuple[int, int, int]]):
     assert [y for y in ys] == [x + y + z for (x, y, z) in xs]
 
 
-@given(st.lists(st.integers()))  # type: ignore
+@given(st.lists(st.integers()))
 def test_list_pipe_mapi(xs: List[int]):
     def mapper(i: int, x: int):
         return x + i
@@ -298,7 +298,7 @@ rtn: Callable[[int], FrozenList[int]] = frozenlist.singleton
 empty: FrozenList[Any] = frozenlist.empty
 
 
-@given(st.integers(), st.integers())  # type: ignore
+@given(st.integers(), st.integers())
 def test_list_monad_bind(x: int, y: int):
     m = rtn(x)
     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + y)
@@ -306,7 +306,7 @@ def test_list_monad_bind(x: int, y: int):
     assert m.collect(f) == rtn(x + y)
 
 
-@given(st.integers())  # type: ignore
+@given(st.integers())
 def test_list_monad_empty_bind(value: int):
     m = empty
     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + value)
@@ -326,7 +326,7 @@ def test_list_monad_law_left_identity(value: int):
     assert rtn(value).collect(f) == f(value)
 
 
-@given(st.integers())  # type: ignore
+@given(st.integers())
 def test_list_monad_law_right_identity(value: int):
     r"""Monad law right identity.
 
@@ -337,7 +337,7 @@ def test_list_monad_law_right_identity(value: int):
     assert m.collect(rtn) == m
 
 
-@given(st.integers())  # type: ignore
+@given(st.integers())
 def test_list_monad_law_associativity(value: int):
     r"""Monad law associativity.
 
