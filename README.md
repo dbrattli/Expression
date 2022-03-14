@@ -10,7 +10,7 @@
 Expression aims to be a solid, type-safe, pragmatic, and high performance
 library for frictionless and practical functional programming in Python 3.9+.
 
-By pragmatic we mean that the goal of the library is to use simple abstractions
+By pragmatic, we mean that the goal of the library is to use simple abstractions
 to enable you to do practical and productive functional programming in Python
 (instead of being a [Monad tutorial](https://github.com/dbrattli/OSlash)).
 
@@ -21,12 +21,12 @@ in many ways favors composition over inheritance.
 > Better Python with F#
 
 Expression tries to make a better Python by providing several functional
-features inspired by [F#](https://fsharp.org) into Python. This serves several
+features inspired by [F#](https://fsharp.org). This serves several
 purposes:
 
-- Enable functional programming in a Pythonic way. I.e make sure we are not
-  over-abstracting things. Expressions will not be anywhere close to e.g
-  Haskell.
+- Enable functional programming in a Pythonic way, i.e., make sure we are not
+  over-abstracting things. Expression will not require purely functional
+  programming as would a language like Haskell.
 - Everything you learn with Expression can also be used with F#. Learn F# by
   starting in a programming language they already know. Perhaps get inspired to
   also [try out F#](https://aka.ms/fsharphome) by itself.
@@ -58,7 +58,7 @@ similar to Python, but F# can also do a lot of things better than Python:
 You can install the latest `expression` from PyPI by running `pip` (or
 `pip3`). Note that `expression` only works for Python 3.9+.
 
-```sh
+```console
 $ pip3 install expression
 ```
 
@@ -99,11 +99,10 @@ providing a few of the features we think are useful, and will add more
 on-demand as we go along.
 
 - **Pipelining** - for creating workflows.
-- **Composition** - for composing and creating new operators
-- **Fluent or Functional** syntax, i.e dot chain or pipeline operators.
-- **Pattern Matching** - an alternative flow control to
-  `if-elif-else`.
-- **Error Handling** - Several error handling types
+- **Composition** - for composing and creating new operators.
+- **Fluent or Functional** syntax, i.e., dot chain or pipeline operators.
+- **Pattern Matching** - an alternative flow control to `if-elif-else`.
+- **Error Handling** - Several error handling types.
   - **Option** - for optional stuff and better `None` handling.
   - **Result** - for better error handling and enables railway-oriented
     programming in Python.
@@ -130,50 +129,46 @@ on-demand as we go along.
 ### Pipelining
 
 Expression provides a `pipe` function similar to `|>` in F#. We don't want to
-overload any Python operators e.g `|` so `pipe` is a plain old function taking
+overload any Python operators, e.g., `|` so `pipe` is a plain old function taking
 N-arguments, and will let you pipe a value through any number of functions.
 
-```py
+```python
 from expression import pipe
 
-gn = lambda g: g * y
-fn = lambda x: x + z
-value = pipe(
-    x,
-    fn,
-    gn
-)
+v = 1
+fn = lambda x: x + 1
+gn = lambda x: x * 2
 
-assert value == gn(fn(x))
+assert pipe(v, fn, gn) == gn(fn(v))
 ```
 
-Expression objects also have a pipe method so you can dot chain pipelines
+Expression objects (e.g., `Some`, `Seq`, `Result`) also have a `pipe` method, so you can dot chain pipelines
 directly on the object:
 
-```py
-from expression import pipe
+```python
+from expression import Some
 
-gn = lambda g: g * y
-fn = lambda x: x + z
-value = x.pipe(
-    fn,
-    gn
-)
+v = Some(1)
+fn = lambda x: x.map(lambda y: y + 1)
+gn = lambda x: x.map(lambda y: y * 2)
 
-assert value == gn(fn(x))
+assert v.pipe(fn, gn) == gn(fn(v))
 ```
 
 So for example with sequences you may create sequence transforming
 pipelines:
 
-```py
-from expression.collections import seq
+```python
+from expression.collections import seq, Seq
 
+xs = Seq.of(9, 10, 11)
 ys = xs.pipe(
     seq.map(lambda x: x * 10),
     seq.filter(lambda x: x > 100),
     seq.fold(lambda s, x: s + x, 0)
 )
+
+assert ys == 110
 ```
 
 ### Composition
@@ -182,27 +177,31 @@ Functions may even be composed directly into custom operators:
 
 ```python
 from expression import compose
-from expression.collections import seq
+from expression.collections import seq, Seq
 
+xs = Seq.of(9, 10, 11)
 custom = compose(
     seq.map(lambda x: x * 10),
     seq.filter(lambda x: x > 100),
     seq.fold(lambda s, x: s + x, 0)
 )
-
 ys = custom(xs)
+
+assert ys == 110
 ```
 
-## Fluent and Functional
+### Fluent and Functional
 
 Expression can be used both with a fluent or functional syntax (or both.)
 
-### Fluent syntax
+#### Fluent syntax
 
 The fluent syntax uses methods and is very compact. But it might get you into
 trouble for large pipelines since it's not a natural way of adding line breaks.
 
 ```python
+from expression.collections import Seq
+
 xs = Seq.of(1, 2, 3)
 ys = xs.map(lambda x: x * 100).filter(lambda x: x > 100).fold(lambda s, x: s + x, 0)
 ```
@@ -211,7 +210,7 @@ Note that fluent syntax is probably the better choice if you use mypy
 for type checking since mypy may have problems inferring types through
 larger pipelines.
 
-### Functional syntax
+#### Functional syntax
 
 The functional syntax is a bit more verbose but you can easily add new
 operations on new lines. The functional syntax is great to use together
@@ -233,18 +232,19 @@ Both fluent and functional syntax may be mixed and even pipe can be used
 fluently.
 
 ```python
+from expression.collections import seq, Seq
 xs = Seq.of(1, 2, 3).pipe(seq.map(...))
 ```
 
-### Options
+### Option
 
-The option type is used when a function or method cannot produce a meaningful
+The `Option` type is used when a function or method cannot produce a meaningful
 output for a given input.
 
-An option value may have a value of a given type i.e `Some(value)`, or it might
-not have any meaningful value, i.e `Nothing`.
+An option value may have a value of a given type, i.e., `Some(value)`, or it might
+not have any meaningful value, i.e., `Nothing`.
 
-```py
+```python
 from expression import Some, Nothing, Option
 
 def keep_positive(a: int) -> Option[int]:
@@ -254,7 +254,8 @@ def keep_positive(a: int) -> Option[int]:
     return Nothing
 ```
 
-```py
+```python
+from expression import Option, Ok
 def exists(x : Option[int]) -> bool:
     for value in x.match(Ok):
         return True
@@ -262,13 +263,13 @@ def exists(x : Option[int]) -> bool:
     return False
 ```
 
-## Options as effects
+### Option as an effect
 
 Effects in Expression is implemented as specially decorated coroutines
 ([enhanced generators](https://www.python.org/dev/peps/pep-0342/)) using
 `yield`, `yield from` and `return` to consume or generate optional values:
 
-```py
+```python
 from expression import effect, Some
 
 @effect.option[int]()
@@ -282,13 +283,13 @@ xs = fn()
 ```
 
 This enables ["railway oriented
-programming"](https://fsharpforfunandprofit.com/rop/) e.g if one part of the
+programming"](https://fsharpforfunandprofit.com/rop/), e.g., if one part of the
 function yields from `Nothing` then the function is side-tracked
 (short-circuit) and the following statements will never be executed. The end
 result of the expression will be `Nothing`. Thus results from such an option
 decorated function can either be `Ok(value)` or `Error(error_value)`.
 
-```py
+```python
 from expression import effect, Some, Nothing
 
 @effect.option[int]()
@@ -309,43 +310,49 @@ For more information about options:
 - [Tutorial](https://github.com/cognitedata/Expression/blob/main/notebooks/04%20-%20Optional%20Values.ipynb)
 - [API reference](https://cognitedata.github.io/Expression/expression/core/option.html)
 
-### Results
+### Result
 
 The `Result[T, TError]` type lets you write error-tolerant code that can be
-composed. A Result works similar to `Option` but lets you define the value used
-for errors, e.g an exception type or similar. This is great when you want to
-know why some operation failed (not just `Nothing`).
+composed. A Result works similar to `Option`, but lets you define the value used
+for errors, e.g., an exception type or similar. This is great when you want to
+know why some operation failed (not just `Nothing`). This type serves the same
+purpose of an `Either` type where `Left` is used for the error condition and `Right`
+for a success value.
 
-```py
-from expression import effect, Result, Ok, Error, pipe
+```python
+from expression import effect, Ok, Result
 
 @effect.result[int, Exception]()
 def fn():
     x = yield from Ok(42)
-    y = yield from OK(10)
+    y = yield from Ok(10)
     return x + y
 
 xs = fn()
-assert isinstance(xs, Some)
+assert isinstance(xs, Result)
 ```
 
 A simplified type called `Try` is also available. It's a result type that is
-pinned to `Exception` i.e `Result[TSource, Exception]`.
+pinned to `Exception` i.e., `Result[TSource, Exception]`.
 
-### Sequences
+### Sequence
 
 Contains operations for working with iterables so all the functions in the
 sequence module will work with Python iterables. Iterables are immutable by
 design, and perfectly suited for functional programming.
 
-```py
+```python
+import functools
+from expression import pipe
+from expression.collections import seq
+
 # Normal python way. Nested functions are hard to read since you need to
 # start reading from the end of the expression.
 xs = range(100)
 ys = functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
-# With Expression you pipe the result so it flows from one operator to the next:
-ys = pipe(
+# With Expression, you pipe the result, so it flows from one operator to the next:
+zs = pipe(
     xs,
     seq.map(lambda x: x * 10),
     seq.filter(lambda x: x > 100),
@@ -367,16 +374,16 @@ What we want to achieve with pattern matching:
 - Only one case will ever match. This reduces the cognitive load on the
   programmer.
 - Type safety. We need the code to pass static type checkers.
-- Decomposing of wrapped values, e.g options, and results.
-- Case handling must be inline, i.e we want to avoid lambdas which would make
-  things difficult for e.g async code.
+- Decomposing of wrapped values, e.g., options, and results.
+- Case handling must be inline, i.e., we want to avoid lambdas which would make
+  things difficult, e.g., async code.
 - Pythonic. Is it possible to use something that still looks like Python code?
 
 The solution we propose is based on loops, singleton iterables and resource
 management. This lets us write our code inline, decompose, and unwrap inner
 values, and also effectively skip the cases that do not match.
 
-```py
+```python
 from expression import match
 
 with match("expression") as case:
@@ -399,7 +406,7 @@ found. You might need to have a default handler to avoid `MatchFailureError`.
 Test cases may be additionally be wrapped in a function to have a match
 expression that returns a value:
 
-```py
+```python
 def matcher(value) -> Option[int]:
     with match(value) as case:
         for value in case(Some[int]):
@@ -417,7 +424,7 @@ Classes may also support `match` fluently, i.e:
 `xs.match(pattern)`. If you add generic types to the pattern then
 unwrapped values will get the right type without having to cast.
 
-```py
+```python
     xs = Some(42)
     ys = xs.map(lambda x: x + 1)
 
@@ -428,9 +435,9 @@ unwrapped values will get the right type without having to cast.
         assert False
 ```
 
-Pattern matching can also be used with destructuring of e.g iterables:
+Pattern matching can also be used with destructuring of iterables:
 
-```py
+```python
 xs: FrozenList[int] = empty.cons(42)
 for (head, *tail) in xs.match(FrozenList):
     assert head == 42
@@ -439,13 +446,13 @@ for (head, *tail) in xs.match(FrozenList):
 Classes can support more advanced pattern matching and decompose inner values
 by subclassing or implementing the matching protocol.
 
-```py
+```python
 class SupportsMatch(Protocol[TSource]):
     """Pattern matching protocol."""
 
     @abstractmethod
     def __match__(self, pattern: Any) -> Iterable[TSource]:
-        """Return a singleton iterable item (e.g `[value]`) if pattern
+        """Return a singleton iterable item (e.g., `[value]`) if pattern
         matches, else an empty iterable (e.g. `[]`)."""
         raise NotImplementedError
 ```
@@ -454,7 +461,7 @@ This significantly simplifies the decomposition and type handling
 compared to using `isinstance` directly. E.g code from
 [aioreactive](https://github.com/dbrattli/aioreactive/blob/master/aioreactive/combine.py#L64):
 
-```py
+```python
 if isinstance(msg, InnerObservableMsg):
     msg = cast(InnerObservableMsg[TSource], msg)
     xs: AsyncObservable[TSource] = msg.inner_observable
@@ -463,7 +470,7 @@ if isinstance(msg, InnerObservableMsg):
 
 Now becomes:
 
-```py
+```python
 with match(msg) as case:
     for xs in case(InnerObservableMsg[TSource]):
         ...
@@ -498,7 +505,7 @@ with match(text) as case:
         assert False
 ```
 
-## Notable Differences
+## Notable differences between Expression and F#
 
 In F# modules are capitalized, in Python they are lowercase
 ([PEP-8](https://www.python.org/dev/peps/pep-0008/#package-and-module-names)).
@@ -509,7 +516,7 @@ type. In Python the module is `option` and the type is capitalized i.e
 Thus in Expression you use `option` as the module to access module functions
 such as `option.map` and the name `Option` for the type itself.
 
-```py
+```pycon
 >>> from expression import Option, option
 >>> Option
 <class 'expression.core.option.Option'>
