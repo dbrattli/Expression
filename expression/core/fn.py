@@ -1,7 +1,10 @@
 import functools
 from typing import Any, Awaitable, Callable, TypeVar, Union
 
+from typing_extensions import ParamSpec
+
 _TResult = TypeVar("_TResult")
+_P = ParamSpec("_P")
 
 
 class TailCall:
@@ -19,7 +22,7 @@ class TailCall:
 TailCallResult = Union[_TResult, TailCall]
 
 
-def tailrec(fn: Callable[..., TailCallResult[_TResult]]) -> Callable[..., _TResult]:
+def tailrec(fn: Callable[_P, TailCallResult[_TResult]]) -> Callable[_P, _TResult]:
     """Tail call recursive function decorator.
 
     Can be used to create tail call recursive functions that will not
@@ -35,15 +38,15 @@ def tailrec(fn: Callable[..., TailCallResult[_TResult]]) -> Callable[..., _TResu
         return bouncer
 
     @functools.wraps(fn)
-    def wrapper(*args: Any, **kw: Any) -> _TResult:
+    def wrapper(*args: _P.args, **kw: _P.kwargs) -> _TResult:
         return trampoline(fn(*args, **kw))
 
     return wrapper
 
 
 def tailrec_async(
-    fn: Callable[..., Awaitable[TailCallResult[_TResult]]]
-) -> Callable[..., Awaitable[_TResult]]:
+    fn: Callable[_P, Awaitable[TailCallResult[_TResult]]]
+) -> Callable[_P, Awaitable[_TResult]]:
     """Tail call recursive async function decorator."""
 
     async def trampoline(bouncer: TailCallResult[_TResult]) -> _TResult:
@@ -54,8 +57,8 @@ def tailrec_async(
         return bouncer
 
     @functools.wraps(fn)
-    async def wrapper(*args: Any) -> _TResult:
-        result = await fn(*args)
+    async def wrapper(*args: _P.args, **kw: _P.kwargs) -> _TResult:
+        result = await fn(*args, **kw)
         return await trampoline(result)
 
     return wrapper
