@@ -14,11 +14,11 @@ repos:
   - hooks:
       - id: black
     repo: https://github.com/psf/black
-    rev: 22.1.0
+    rev: 22.3.0
   - hooks:
       - id: flake8
     repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.4
+    rev: 3.9.2
   - hooks:
       - id: pyright
         name: pyright
