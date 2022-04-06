@@ -1,6 +1,0 @@
-typing_extensions
-hypothesis
-pytest
-pytest-cov
-pytest-asyncio
-pre-commit
