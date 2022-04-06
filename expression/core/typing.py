@@ -13,6 +13,12 @@ class SupportsLessThan(Protocol):
         raise NotImplementedError
 
 
+class SupportsSum(Protocol):
+    @abstractmethod
+    def __add__(self, __other: Any) -> Any:
+        raise NotImplementedError
+
+
 class SupportsGreaterThan(Protocol):
     @abstractmethod
     def __gt__(self, __other: Any) -> bool:
@@ -73,4 +79,4 @@ def try_downcast(type_: Type[_Derived], expr: Any) -> Optional[_Derived]:
     return None
 
 
-__all__ = ["SupportsLessThan", "downcast", "upcast", "try_downcast"]
+__all__ = ["SupportsLessThan", "SupportsSum", "downcast", "upcast", "try_downcast"]
