@@ -25,7 +25,6 @@ import itertools
 from typing import (
     Any,
     Callable,
-    Generic,
     Iterable,
     Iterator,
     List,
@@ -37,15 +36,21 @@ from typing import (
     overload,
 )
 
-from expression.core import Case, Nothing, Option, Some, SupportsLessThan, pipe
+from expression.core import (
+    Case,
+    MatchMixin,
+    Nothing,
+    Option,
+    Some,
+    SupportsLessThan,
+    pipe,
+)
 
 from . import seq
 
 _TSource = TypeVar("_TSource")
 _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
-_TSourceIn = TypeVar("_TSourceIn", contravariant=True)
 _TResult = TypeVar("_TResult")
-_TResultOut = TypeVar("_TResultOut", covariant=True)
 _TState = TypeVar("_TState")
 
 _T1 = TypeVar("_T1")
@@ -56,7 +61,7 @@ _T5 = TypeVar("_T5")
 _T6 = TypeVar("_T6")
 
 
-class FrozenList(Generic[_TSource]):
+class FrozenList(Iterable[_TSource], MatchMixin[Iterable[_TSource]]):
     """Immutable list type.
 
     Is faster than `List` for prepending, but slower for
@@ -79,7 +84,15 @@ class FrozenList(Generic[_TSource]):
         # are not suppored by mypy.
         self.value: Tuple[_TSource, ...] = tuple(value) if value else tuple()
 
-    def match(self, pattern: Any) -> Any:
+    @overload
+    def match(self) -> Case[Iterable[_TSource]]:
+        ...
+
+    @overload
+    def match(self, pattern: Any) -> Iterable[Iterable[_TSource]]:
+        ...
+
+    def match(self, pattern: Any = None) -> Any:
         case: Case[_TSource] = Case(self)
         return case(pattern) if pattern else case
 

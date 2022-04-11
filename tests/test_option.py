@@ -28,6 +28,17 @@ def test_option_some_match():
             assert False
 
 
+def test_option_some_match_fluent():
+    xs = Some(42)
+    ys = xs.map(lambda x: x + 1)
+
+    for value in ys.match(Some[int]):
+        assert value == 43
+        break
+    else:
+        assert False
+
+
 def test_option_some_iterate():
     xs = Some(42)
 

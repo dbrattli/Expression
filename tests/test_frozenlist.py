@@ -1,11 +1,11 @@
 import functools
 from builtins import list as list
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable, Iterable, List, Tuple
 
 from hypothesis import given
 from hypothesis import strategies as st
 
-from expression import Nothing, Option, Some, pipe
+from expression import Nothing, Option, Some, match, pipe
 from expression.collections import FrozenList, frozenlist
 
 Func = Callable[[int], int]
@@ -34,11 +34,27 @@ def test_list_head_fluent():
 
 def test_list_head_match():
     xs: FrozenList[int] = empty.cons(42)
-    for (head, *_) in xs.match(FrozenList):
+    with match(xs) as case:
+        for (head, *_) in case(Iterable[int]):
+            assert head == 42
+            return
+        else:
+            assert False
+
+
+def test_list_head_match_fluent():
+    xs: FrozenList[int] = empty.cons(42)
+
+    for (head, *_) in [
+        (head, *tail) for (head, *tail) in xs.match(FrozenList) if head > 10
+    ]:
         assert head == 42
+        return
+    else:
+        assert False
 
 
-@given(st.text(), st.text())  # type: ignore
+@given(st.text(), st.text())
 def test_list_tail_head_fluent(a: str, b: str):
     xs = frozenlist.empty.cons(b).cons(a)
     assert a == xs.head()
@@ -193,7 +209,7 @@ def test_list_skip(xs: List[int], x: int):
         assert x > len(xs)
 
 
-@given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
+@given(st.lists(st.integers()), st.integers(min_value=0))
 def test_list_skip_last(xs: List[int], x: int):
     expected = xs[:-x]
     ys: FrozenList[int]
@@ -201,7 +217,7 @@ def test_list_skip_last(xs: List[int], x: int):
     assert list(ys) == expected
 
 
-@given(st.lists(st.integers()), st.integers(), st.integers())  # type: ignore
+@given(st.lists(st.integers()), st.integers(), st.integers())
 def test_list_slice(xs: List[int], x: int, y: int):
     expected = xs[x:y]
 
@@ -211,7 +227,7 @@ def test_list_slice(xs: List[int], x: int, y: int):
     assert list(zs) == expected
 
 
-@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
+@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))
 def test_list_index(xs: List[int], x: int):
 
     x = x % len(xs) if x > 0 else x
@@ -239,7 +255,7 @@ def test_list_indexed(xs: List[int]):
     assert list(zs) == expected
 
 
-@given(st.lists(st.integers()))  # type: ignore
+@given(st.lists(st.integers()))
 def test_list_fold(xs: List[int]):
     def folder(x: int, y: int) -> int:
         return x + y
@@ -252,7 +268,7 @@ def test_list_fold(xs: List[int]):
     assert result == expected
 
 
-@given(st.integers(max_value=100))  # type: ignore
+@given(st.integers(max_value=100))
 def test_list_unfold(x: int):
     def unfolder(state: int) -> Option[Tuple[int, int]]:
         if state < x:
@@ -275,7 +291,7 @@ def test_list_filter(xs: List[int], limit: int):
     assert list(result) == list(expected)
 
 
-@given(st.lists(st.integers()))  # type: ignore
+@given(st.lists(st.integers()))
 def test_list_sort(xs: List[int]):
     expected = sorted(xs)
     ys: FrozenList[int] = frozenlist.of_seq(xs)
@@ -284,7 +300,7 @@ def test_list_sort(xs: List[int]):
     assert list(result) == list(expected)
 
 
-@given(st.lists(st.text(min_size=2)))  # type: ignore
+@given(st.lists(st.text(min_size=2)))
 def test_list_sort_with(xs: List[str]):
     expected = sorted(xs, key=lambda x: x[1])
     ys: FrozenList[str] = frozenlist.of_seq(xs)
