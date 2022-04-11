@@ -515,8 +515,8 @@ discriminated unions can be nested in a way union types might not.
 
 In Expression you make a discriminated union by defining your type as a sub-class of
 `DiscriminatedUnion` with the appropriate generic types that this union represent for
-each case. Then you define static or class-method constructors for creating each union
-case.
+each case. Then you define static or class-method constructors for creating each of the
+union cases.
 
 ```python
 @dataclass
