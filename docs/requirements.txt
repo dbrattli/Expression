@@ -1,0 +1,4 @@
+jupyter-book
+matplotlib
+numpy
+sphinx-autodoc-typehints>=1.17.0

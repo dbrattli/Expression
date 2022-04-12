@@ -1,0 +1,20 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: intro
+chapters:
+- file: markdown
+- file: notebooks
+- file: markdown-notebooks
+- file: reference/reference
+  sections:
+    - file: reference/option
+    - file: reference/result
+    - file: reference/try
+    - file: reference/pipe
+    - file: reference/curry
+    - file: reference/mailbox
+    - file: reference/frozenlist
+    - file: reference/seq
+    - file: reference/map

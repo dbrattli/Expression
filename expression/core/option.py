@@ -409,7 +409,7 @@ def bind(
     `Some`. If the value is `Nothing` then `Nothing` is returned.
 
     Args:
-        mapper: A function that takes the value of type TSource from
+        mapper: A function that takes the value of type _TSource from
             an option and transforms it into an option containing a
             value of type TResult.
 

@@ -13,10 +13,12 @@ repos:
     rev: 5.10.1
   - hooks:
       - id: black
+        exclude: ^docs/
     repo: https://github.com/psf/black
     rev: 22.3.0
   - hooks:
       - id: flake8
+        exclude: ^docs/
     repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
   - hooks:
@@ -28,3 +30,8 @@ repos:
         types: [python]
         additional_dependencies: ["pyright@1.1.235"]
     repo: local
+  - hooks:
+    - id: jb-to-sphinx
+      args: ["docs"]
+    repo: https://github.com/executablebooks/jupyter-book
+    rev: v0.12.1
