@@ -34,6 +34,7 @@ from .typing import (
     try_downcast,
     upcast,
 )
+from .union import DiscriminatedUnion
 
 __all__ = [
     "aiotools",
@@ -52,6 +53,7 @@ __all__ = [
     "curry",
     "curry_flipped",
     "default_arg",
+    "DiscriminatedUnion",
     "downcast",
     "MatchMixin",
     "EffectError",

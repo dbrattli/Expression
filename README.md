@@ -505,6 +505,52 @@ with match(text) as case:
         assert False
 ```
 
+## Discriminated Unions
+
+Discriminated Unions may looks similar to  normal Python Unions. But they are
+[different](https://stackoverflow.com/a/61646841) in that the operands in a type union
+`(A | B)` are both types, while the cases in a discriminated union type `U = A | B` are
+both constructors for the type U and are not types themselves. One consequence is that
+discriminated unions can be nested in a way union types might not.
+
+In Expression you make a discriminated union by defining your type as a sub-class of
+`DiscriminatedUnion` with the appropriate generic types that this union represent for
+each case. Then you define static or class-method constructors for creating each of the
+union cases.
+
+```python
+@dataclass
+class Rectangle:
+    width: float
+    length: float
+
+@dataclass
+class Circle:
+    radius: float
+
+class Shape(DiscriminatedUnion[Circle, Rectangle]):
+    @staticmethod
+    def Rectangle(width: float, length: float) -> Shape:
+        return Shape(Rectangle(width, length), tag=1)
+
+    @staticmethod
+    def Circle(radius: float) -> Shape:
+        return Shape(Circle(radius), tag=2)
+```
+
+Now you may pattern match the shape to get back the actual value:
+
+```python
+    shape = Shape.Rectangle(2.3, 3.3)
+
+    with match(shape) as case:
+        for rect in case(Rectangle):
+            assert rect.length == 3.3
+
+        if case.default():
+            assert False
+```
+
 ## Notable differences between Expression and F#
 
 In F# modules are capitalized, in Python they are lowercase
