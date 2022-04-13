@@ -38,11 +38,13 @@ autoflake = "^1.4"
 dunamai = "^1.9.0"
 hypothesis = "^6.39.3"
 jupyter-book = "^0.12.2"
+sphinx-autodoc-typehints = "^1.17.0"
 
 [tool.black]
 line-length = 88
-target_version = ['py38']
+target-version = ['py38']
 include = '\.py$'
+extend-exclude = '^/docs'
 
 [tool.isort]
 profile = "black"

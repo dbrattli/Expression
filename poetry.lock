@@ -1602,6 +1602,21 @@ lint = ["flake8 (>=3.5.0)", "isort", "mypy (>=0.931)", "docutils-stubs", "types-
 test = ["pytest", "pytest-cov", "html5lib", "cython", "typed-ast"]
 
 [[package]]
+name = "sphinx-autodoc-typehints"
+version = "1.17.0"
+description = "Type hints (PEP 484) support for the Sphinx autodoc extension"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+Sphinx = ">=4"
+
+[package.extras]
+testing = ["covdefaults (>=2)", "coverage (>=6)", "diff-cover (>=6.4)", "nptyping (>=1)", "pytest (>=6)", "pytest-cov (>=3)", "sphobjinv (>=2)", "typing-extensions (>=3.5)"]
+type_comments = ["typed-ast (>=1.4.0)"]
+
+[[package]]
 name = "sphinx-book-theme"
 version = "0.1.10"
 description = "A clean book theme for scientific explanations and documentation with Sphinx"
@@ -2053,7 +2068,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">= 3.9, < 3.11"
-content-hash = "a265890b86f03be455a9e14bd6d43fecf3142c4fa503fd4c0ad9d77a6614bd67"
+content-hash = "20a2b467ef8cfb0ac1febada83744e6f2f5f7008ffabe8358a3349417d8ae36c"
 
 [metadata.files]
 alabaster = [
@@ -2918,6 +2933,10 @@ soupsieve = [
 sphinx = [
     {file = "Sphinx-4.5.0-py3-none-any.whl", hash = "sha256:ebf612653238bcc8f4359627a9b7ce44ede6fdd75d9d30f68255c7383d3a6226"},
     {file = "Sphinx-4.5.0.tar.gz", hash = "sha256:7bf8ca9637a4ee15af412d1a1d9689fec70523a68ca9bb9127c2f3eeb344e2e6"},
+]
+sphinx-autodoc-typehints = [
+    {file = "sphinx_autodoc_typehints-1.17.0-py3-none-any.whl", hash = "sha256:081daf53077b4ae1c28347d6d858e13e63aefe3b4aacef79fd717dd60687b470"},
+    {file = "sphinx_autodoc_typehints-1.17.0.tar.gz", hash = "sha256:51c7b3f5cb9ccd15d0b52088c62df3094f1abd9612930340365c26def8629a14"},
 ]
 sphinx-book-theme = [
     {file = "sphinx-book-theme-0.1.10.tar.gz", hash = "sha256:c74d7deb36e6fea4bcb3a979d162d9fd80e93b7ea4da78ebf8286da4b898582a"},

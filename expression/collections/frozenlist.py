@@ -67,12 +67,12 @@ class FrozenList(Iterable[_TSource], MatchMixin[Iterable[_TSource]]):
     Is faster than `List` for prepending, but slower for
     appending.
 
-    Count: 200K
+    Count: 200K::
 
-    | Operation | FrozenList | List   |
-    |-----------|------------|--------|
-    | Append    | 3.29 s     | 0.02 s |
-    | Prepend   | 0.05 s     | 7.02 s |
+        | Operation | FrozenList | List   |
+        |-----------|------------|--------|
+        | Append    | 3.29 s     | 0.02 s |
+        | Prepend   | 0.05 s     | 7.02 s |
 
     Example:
         >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
