@@ -1,6 +1,23 @@
-# λ Calculus
+---
+jupytext:
+  cell_metadata_filter: -all
+  formats: md:myst
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.11.5
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
+---
+(tutorial_lambda_calculus)=
 
-Lambda calculus was introduced by mathematician Alonzo Church in the 1930s as part of an investigation into the foundations of mathematics
+# Lambda Calculus
+
+Lambda calculus was introduced by mathematician Alonzo Church in the 1930s as part of an
+investigation into the foundations of mathematics
 
 - Lambda calculus is a formal language
 - The expressions of the language are called lambda terms
@@ -8,7 +25,9 @@ Lambda calculus was introduced by mathematician Alonzo Church in the 1930s as pa
 
 In lambda calculus, we write `(f x)` instead of the more traditional `f(x)`.
 
-Many real-world programming languages can be regarded as extensions of the lambda calculus. This is true for all functional programming languages, a class that includes Lisp, Scheme, Haskell, and ML (OCaml, F#).
+Many real-world programming languages can be regarded as extensions of the lambda
+calculus. This is true for all functional programming languages, a class that includes
+Lisp, Scheme, Haskell, and ML (OCaml, F#).
 
 
 ## Lambda calculus in Python
@@ -50,7 +69,8 @@ Alpha-conversion is about renaming of bound variables
 
 ## Beta Reduction
 
-A beta reduction (also written β reduction) is the process of calculating a result from the application of a function to an expression.
+A beta reduction (also written β reduction) is the process of calculating a result from
+the application of a function to an expression.
 
 ((λn.n×2) 7) → 7×2.
 
@@ -61,7 +81,8 @@ A beta reduction (also written β reduction) is the process of calculating a res
 
 ## Eta-conversion
 
-An eta conversion (also written η-conversion) is adding, or dropping an abstraction over a function.
+An eta conversion (also written η-conversion) is adding, or dropping an abstraction over
+a function.
 
 ```python
 # Eta-conversion
@@ -85,8 +106,8 @@ xs = reduce(max, range(10))
 print(xs)
 ```
 
-
-
 ## Do we need to know about lambda calculus?
 
-You usually do not need to know about lambda calculus. But look out for point-free programming which may both simplify or over complicate your code. Lambda calculus is a must-have knowledge when dealing with compilers and expression trees (ASTs).
+You usually do not need to know about lambda calculus. But look out for point-free
+programming which may both simplify or over complicate your code. Lambda calculus is a
+must-have knowledge when dealing with compilers and expression trees (ASTs).

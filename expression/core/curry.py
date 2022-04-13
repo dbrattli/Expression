@@ -99,11 +99,11 @@ def curry(num_args: _Arity) -> Callable[..., Any]:
         function
 
     Example:
-        @curry(1)
-        def add(a: int, b: int) -> int:
-            return a + b
+        >>> @curry(1)
+        ... def add(a: int, b: int) -> int:
+        ...    return a + b
 
-        assert add(3)(4) == 7
+        >>> assert add(3)(4) == 7
     """
 
     def wrapper(fun: Callable[..., Any]) -> Callable[..., Any]:
@@ -194,11 +194,11 @@ def curry_flipped(
         function
 
     Example:
-        @curry_flipped(1)
-        def map(source: List[int], mapper: Callable[[int], int]):
-            return [mapper(x) for x in source]
+        >>> @curry_flipped(1)
+        ... def map(source: List[int], mapper: Callable[[int], int]):
+        ...    return [mapper(x) for x in source]
 
-        ys = pipe(xs, map(lambda x: x * 10))
+        >>> ys = pipe(xs, map(lambda x: x * 10))
     """
 
     def _wrap_fun(fun: Callable[..., Any]) -> Callable[..., Any]:

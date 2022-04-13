@@ -1,20 +1,41 @@
+---
+jupytext:
+  cell_metadata_filter: -all
+  formats: md:myst
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.11.5
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
+---
+(tutorial_containers)=
+
 # Containers
 
-In Python a container is something that contains something. Containers may be sequences, sets or mappings. Thus a collection is an **abstraction** of **"something"** that:
+In Python a container is something that contains something. Containers may be sequences,
+sets or mappings. Thus a collection is an **abstraction** of **"something"** that:
 
 - May contain **something**
 - Sequences are iterable
 - Collections have a size
 
-We usually talk about generic container types such as `List[T]`, `Set[T]`, `Tuple[T, ...]`. But we can also imagine taking the abstraction to a higher-order making the left side generic as well, e.g `Something[T]`. What do types of `Something` have in common?
+We usually talk about generic container types such as `List[T]`, `Set[T]`, `Tuple[T,
+...]`. But we can also imagine taking the abstraction to a higher-order making the left
+side generic as well, e.g `Something[T]`. What do types of `Something` have in common?
 
 > *A something within a something*
 
-A container is really just some kind of box that you can pull values out of. Can values be pushed out of a container?
+A container is really just some kind of box that you can pull values out of. Can values
+be pushed out of a container?
 
 ## Mapping
 
-A mapping object maps immutable values to arbitrary objects. There is both `Mapping` and `MutableMapping`. The most known mutable mapping is the `dict` type.
+A mapping object maps immutable values to arbitrary objects. There is both `Mapping` and
+`MutableMapping`. The most known mutable mapping is the `dict` type.
 
 ## Sequence
 
@@ -22,7 +43,10 @@ A sequence is an iterable container such as `List`, `Tuple`, `str`, ...
 
 ## Immutable data types
 
-Immutable data types are important in functional programming. Immutable means that it's not possible to make any changes after the type have been created. Most data structures in Python are mutable such as `List` and `Dict`, but Python also have a few immutable data types:
+Immutable data types are important in functional programming. Immutable means that it's
+not possible to make any changes after the type have been created. Most data structures
+in Python are mutable such as `List` and `Dict`, but Python also have a few immutable
+data types:
 
 * Strings
 * Tuples
@@ -39,9 +63,11 @@ Expression extends Python with a couple of more immutable data types:
 
 ## FrozenList
 
-A FrozenList is an immutable List type. The implementation is based on the already immutable tuple type but gives it a list feeling and lots of functions and methods to work with it.
+A FrozenList is an immutable List type. The implementation is based on the already
+immutable tuple type but gives it a list feeling and lots of functions and methods to
+work with it.
 
-```python
+```{code-cell} python
 from expression.collections import FrozenList
 
 xs = FrozenList.of_seq(range(10))
@@ -56,9 +82,10 @@ print(zs)
 
 ## Map
 
-The Expression Map module is an immutable Dict type. The implementation is based on map type from F# and uses a balanced binary tree implementation.
+The Expression Map module is an immutable Dict type. The implementation is based on map
+type from F# and uses a balanced binary tree implementation.
 
-```python
+```{code-cell} python
 from expression.collections import Map
 
 items = dict(a=10, b=20).items()
@@ -71,22 +98,23 @@ print(ys)
 
 ## Functions are Containers
 
-It might not be obvious at first, but functions can also be containers. This is because values might be stored in function closures. That means that a value might be visible in the scope of the function.
+It might not be obvious at first, but functions can also be containers. This is because
+values might be stored in function closures. That means that a value might be visible in
+the scope of the function.
 
 > A closure is a poor man's object. An object is a poor man's closure.
 
-In functional programming we often use function arguments to store values instead of objects
+In functional programming we often use function arguments to store values instead of
+objects
 
-```python
+```{code-cell} python
 def hat(item):
     def pull():
         return item
     return pull
 
 small_hat = lambda item: lambda pull: item
-```
 
-```python
 pull = hat("rabbit")
 pull()
 ```
@@ -149,7 +177,9 @@ print("all tests are green!")
 
 ## Pull vs Push
 
-List, iterables, mappings, strings etc are what we call "pull" collections. This is because we are actively pulling the values out of the collection by calling the `next()` function on the Iterator.
+List, iterables, mappings, strings etc are what we call "pull" collections. This is
+because we are actively pulling the values out of the collection by calling the `next()`
+function on the Iterator.
 
 ```python
 iterable = [1, 2, 3]
@@ -169,7 +199,9 @@ print(value)
 
 ## Push Collections
 
-A push collection is something that pushes values out of the collection. This can be seen as temporal (push) containers vs spatial (pull) collections. This collection is called an Observable and is the dual (or the opposite) of an Iterable.
+A push collection is something that pushes values out of the collection. This can be
+seen as temporal (push) containers vs spatial (pull) collections. This collection is
+called an Observable and is the dual (or the opposite) of an Iterable.
 
 An `Iterable` have getter for getting an `Iterator` (__iter__)
 An `Obserable` have a setter for setting an `Observer` (subscribe)
@@ -229,4 +261,6 @@ observable = pipe(
 observable(observer)
 ```
 
-[RxPY](https://github.com/ReactiveX/RxPY) is an implementation of `Observable` and [aioreactive](https://github.com/dbrattli/aioreactive) project is an implementation of `AsyncObservable`.
+[RxPY](https://github.com/ReactiveX/RxPY) is an implementation of `Observable` and
+[aioreactive](https://github.com/dbrattli/aioreactive) project is an implementation of
+`AsyncObservable`.

@@ -7,6 +7,15 @@ chapters:
 - file: markdown
 - file: notebooks
 - file: markdown-notebooks
+- file: tutorial/tutorial
+  sections:
+    - file: tutorial/introduction
+    - file: tutorial/containers
+    - file: tutorial/lambda_calculus
+    - file: tutorial/optional_values
+    - file: tutorial/railway
+    - file: tutorial/effects
+    - file: tutorial/continuations
 - file: reference/reference
   sections:
     - file: reference/option
