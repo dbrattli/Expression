@@ -51,8 +51,9 @@ expr(42), expr(42)
 
 We need to be very careful with non-pure functions. Always look out for code smell:
 
-* Functions or methods that takes no arguments, i.e `Callable[[None], Result]`
-* Functions or methods that retunrs nothing, i.e `Callable[..., None]`
+1. Functions or methods that takes no arguments, i.e `Callable[[None], Result]`
+2. Functions or methods that returns nothing, i.e `Callable[..., None]`
+3. Functions that takes nothing and returns nothing `Callable[[], None]`
 
 
 ## Side Effects
@@ -183,7 +184,7 @@ not want to work with:
 
 ## Summary
 
-- Effects are what we call *elevated* world
+- Effects are what we call *elevated* worlds
 - An elevated world is a strange place where basically anything is possible.
 - Two elevated worlds may e.g `Result`, `Option`, `Map` and `Io` may be completely
   different, but they still have the same basic structure.
