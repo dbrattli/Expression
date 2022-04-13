@@ -61,18 +61,6 @@ You can install the latest `expression` from PyPI by running `pip` (or
 ```console
 $ pip3 install expression
 ```
-
-## Tutorial
-
-> Functional Programming in Python:
-
-1. [Introduction](https://github.com/cognitedata/Expression/blob/main/notebooks/01%20-%20Introduction.md)
-2. [Collections](https://github.com/cognitedata/Expression/blob/main/notebooks/02%20-%20Containers.md)
-3. [Lambda Calculus](https://github.com/cognitedata/Expression/blob/main/notebooks/03%20-%20Lambda%20Calculus.md)
-4. [Optional Values](https://github.com/cognitedata/Expression/blob/main/notebooks/04%20-%20Optional%20Values.md)
-5. [Railway Oriented Programming](https://github.com/cognitedata/Expression/blob/main/notebooks/05%20-%20Railway%20Oriented%20Programming.md)
-6. [Effects and Side-effects](https://github.com/cognitedata/Expression/blob/main/notebooks/06%20-%20Effects%20and%20Side-Effects.md)
-
 ## Goals
 
 - Industrial strength library for functional programming in Python.
@@ -307,8 +295,8 @@ assert xs is Nothing
 
 For more information about options:
 
-- [Tutorial](https://github.com/cognitedata/Expression/blob/main/notebooks/04%20-%20Optional%20Values.ipynb)
-- [API reference](https://cognitedata.github.io/Expression/expression/core/option.html)
+- [Tutorial](https://expression.readthedocs.io/en/latest/tutorial/optional_values.html)
+- [API reference](https://expression.readthedocs.io/en/latest/reference/option.html)
 
 ### Result
 
@@ -337,9 +325,9 @@ pinned to `Exception` i.e., `Result[TSource, Exception]`.
 
 ### Sequence
 
-Contains operations for working with iterables so all the functions in the
-sequence module will work with Python iterables. Iterables are immutable by
-design, and perfectly suited for functional programming.
+Sequences is a thin wrapper on top of iterables and contains operations for working with
+Python iterables. Iterables are immutable by design, and perfectly suited for functional
+programming.
 
 ```python
 import functools
@@ -580,10 +568,10 @@ A list of common problems and how you may solve it:
 
 ### Expression is missing the function/operator I need
 
-Remember that everything is a function, so you can easily implement the
-function yourself and use it with Expression. If you think the function
-is also usable for others, then please open a PR to include it with
-Expression.
+Remember that everything is just a function, so you can easily implement
+a custom function yourself and use it with Expression. If you think the
+function is also usable for others, then please open a PR to include it
+with Expression.
 
 ## Resources and References
 
@@ -627,7 +615,8 @@ Code checks are done using
 - [flake8](https://github.com/PyCQA/flake8)
 - [isort](https://github.com/PyCQA/isort)
 
-To run code checks on changed files every time you commit, install the pre-commit hooks by running:
+To run code checks on changed files every time you commit, install the pre-commit hooks
+by running:
 
 ```
 pre-commit install
