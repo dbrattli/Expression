@@ -40,8 +40,28 @@ Liskovs substitution principle.
 Lets look at how some object oriented programming patterns maps to functional
 programming:
 
-<img src="images/fppatterns.png" alt="Fp Patterns" style="zoom: 67%;" />
+```{list-table}
+:header-rows: 1
 
+* - OO pattern / principle
+  - FP pattern / principle
+* - Single Responsibility Principle
+  - Functions
+* - Open/Closed Principle
+  - Functions
+* - Dependency Inversion Principle
+  - Functions, also
+* - Interface Segregation Principle
+  - Functions
+* - Factory pattern
+  - Yes, functions
+* - Strategy pattern
+  - Oh my, functions again
+* - Decorator pattern
+  - Functions
+* - Vistior pattern
+  - Functions
+```
 *(ref: https://fsharpforfunandprofit.com/fppatterns/)*
 
 If there is one takeaway from reading this, it is that functional programming is about
@@ -429,8 +449,6 @@ Cost of failure increases exponentially the further the bug
 - Test deployment (hours and days)
 - Production deployment (days and months)
 - Dedicated deployment on-prem at customer location (💸)
-
-<img src="images/art-of-bugfixing.png" alt="art of bugfixing" style="zoom:150%;" />
 
 ```{note}
 "A Heisenbug is a classification of an unusual software bug that disappears or alters its behavior when an attempt to

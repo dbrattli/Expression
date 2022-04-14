@@ -53,10 +53,10 @@ value will lead to a `NameError`:
 xs.run()
 ```
 
- With type hints we can say that this is supposed to be an integer, but we don't know
- that integer yet:
+With type hints we can say that this is supposed to be an integer, but the value is
+missing, so we currently don't know what integer just yet:
 
-```python
+```{code-cell} python
 from typing import Optional
 
 xs: Optional[int] = None
@@ -68,7 +68,7 @@ print(xs)
 
 We can test for optional values using `is None` or `is not None`:
 
-```python
+```{code-cell} python
 xs = None
 assert xs is None
 y = 42
@@ -77,7 +77,7 @@ assert y is not None
 
 In addition we have a number of *falsy* values:
 
-```python
+```{code-cell} python
 assert not None
 assert not 0
 assert not []
@@ -93,17 +93,17 @@ or static type checker can help us avoid using optional values before we have do
 proper testing first. The type `Optional[A]` is the same as `Union[A, None]` which means
 that there still a few more problems:
 
-* It's easy to forget to check for `None`, but a type checker will help
+* It's easy to forget to check for `None`, but a static type checker will help
 * Extensive `None` checking can create a lot of noise in the code, increasing the
   cognitive load
-* Optional types cannot be nested. How do we  differ between `None` and `None` i.e
-  `Union[None, None]`? There is no equivalent of e.g a list containing an empty list e.g
-  `[[]]`.
+* Optional types cannot be nested. How do we differ between `None` being a proper values
+  and `None` for telling that the value is missing i.e `Union[None, None]`? There is no
+  equivalent of e.g a list containing an empty list e.g `[[]]`.
 
-Example: for dictionaries, how do we know if the key is missing or if the value is
+**Example:** for dictionaries, how do we know if the key is missing or if the value is
 `None`?
 
-```python
+```{code-cell} python
 mapping = dict(a=None)
 mapping.get("a")
 ```
@@ -111,8 +111,8 @@ mapping.get("a")
 ## Options
 
 In functional programming we use the Option (or Maybe) type instead of `None` and
-`null`. The Option type is used when a value is missing, that is when an actual value
-might not exist for a named value or variable.
+`null`. The Option type is used when a value could be missing, that is when an actual
+value might not exist for a named value or variable.
 
 An Option has an underlying type and can hold a value of that type `Some(value)`, or it
 might not have the value and be `Nothing`.
@@ -137,7 +137,7 @@ xs
 
 You should not normally want to retrieve the value of an option since you do not know if
 it's successful or not. But if you are sure it's `Some` value then you retrieve the
-value again using the `value` property:
+value back using the `value` property:
 
 ```python
 from expression import Some
@@ -148,7 +148,7 @@ xs.value
 ```
 
 To create the `Nothing` case, you should use the `Nothing` singleton value. In the same
-way as with `None`, this value will never change, so it's safe to share it for all the
+way as with `None`, this value will never change, so it's safe to re-use it for all the
 code you write.
 
 ```{code-cell} python
@@ -204,7 +204,7 @@ divide(42, 2)
 divide(10, 0)
 ```
 
-## Transforming Option Values
+## Transforming option values
 
 The great thing with options is that we can transform them without looking into the box.
 This eliminates the need for error checking at every step.
@@ -220,6 +220,9 @@ ys = pipe(
 ys
 ```
 
+If we map a value that is `Nothing` then the result is also `Nothing`. Nothing in,
+nothing out:
+
 ```{code-cell} python
 xs = Nothing
 ys = pipe(
@@ -229,7 +232,46 @@ ys = pipe(
 ys
 ```
 
+## Option as an effect
+
+Effects in Expression is implemented as specially decorated coroutines ([enhanced
+generators](https://www.python.org/dev/peps/pep-0342/)) using `yield`, `yield from` and
+`return` to consume or generate optional values:
+
 ```{code-cell} python
-xs.map(lambda x: x*10)
+from expression import effect, Some
+
+@effect.option[int]()
+def fn():
+    x = yield 42
+    y = yield from Some(43)
+
+    return x + y
+
+fn()
 ```
 
+This enables ["railway oriented programming"](https://fsharpforfunandprofit.com/rop/),
+e.g., if one part of the function yields from `Nothing` then the function is
+side-tracked (short-circuit) and the following statements will never be executed. The
+end result of the expression will be `Nothing`. Thus results from such an option
+decorated function can either be `Ok(value)` or `Error(error_value)`.
+
+```{code-cell} python
+from expression import effect, Some, Nothing
+
+@effect.option[int]()
+def fn():
+    x = yield from Nothing # or a function returning Nothing
+
+    # -- The rest of the function will never be executed --
+    y = yield from Some(43)
+
+    return x + y
+
+fn()
+```
+
+For more information about options:
+
+- [API reference](https://expression.readthedocs.io/en/latest/reference/option.html)

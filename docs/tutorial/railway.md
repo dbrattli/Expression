@@ -18,16 +18,14 @@ kernelspec:
 
 - We don't really want to raise exceptions since it makes the code bloated with error
   checking
-- It's also easy to forget to handle exceptions
+- It's easy to forget to handle exceptions, or handle the wrong type of exception
 - Dependencies might even change the kind of exceptions they throw
 - Let's model errors using types instead
 
-```python
+```{code-cell} python
 class Result:
     pass
-```
 
-```python
 class Ok(Result):
     def __init__(self, value):
         self._value = value
@@ -81,12 +79,12 @@ result = parse("42")
 print(result)
 ```
 
-# Composition
+## Composition
 
 How should we compose Result returning functions? How can we make a `fetch_parse` from
 `fetch` and `parse`.
 
-Cannot use functional composition since signatures don't match.
+We cannot use functional composition here since signatures don't match.
 
 ```python
 def compose(fn: Callable[[A], Result[B, TError]], gn: Callable[[B], Result[C, TError]]) -> Callable[[A], Result[C, TError]]:
@@ -113,7 +111,7 @@ This works, but the code is not easy to read. We have also hard-coded the logic 
 not possible to easily reuse without copy/paste. Here is a nice example on how to solve
 this by mixing object-oriented code with functional thinking:
 
-```python
+```{code-cell} python
 class Ok(Result):
     def __init__(self, value):
         self._value = value
@@ -139,23 +137,21 @@ def bind(fn, result):
     return result.bind(fn)
 ```
 
-```python
+```{code-cell} python
 result = bind(parse, fetch("http://42"))
 print(result)
 ```
 
-```python
+```{code-cell} python
 def compose(f, g):
     return lambda x: f(x).bind(g)
-```
 
-```python
 fetch_parse = compose(fetch, parse)
 result = fetch_parse("http://123.0")
 print(result)
 ```
 
-```python
+```{code-cell} python
 result = fetch("http://invalid").bind(parse)
 print(result)
 ```
@@ -164,7 +160,7 @@ print(result)
 
 This is what's called the "Pyramide of Doom":
 
-```python
+```{code-cell} python
 from expression.core import result
 
 result = bind(parse,
@@ -189,7 +185,7 @@ print(result)
 
 Let's try to make a general compose function that composes two result returning functions:
 
-```python
+```{code-cell} python
 def compose(f, g):
     return lambda x: f(x).bind(g)
 
@@ -204,7 +200,7 @@ Functional compose of functions that returns wrapped values is called pipeling i
 Expression library. Other languages calls this "Kleisli composition". Using a reducer we
 can compose any number of functions:
 
-```python
+```{code-cell} python
 from functools import reduce
 
 def pipeline(*fns):
@@ -213,7 +209,7 @@ def pipeline(*fns):
 
 Now, make `fetch_and_parse` using kleisli:
 
-```python
+```{code-cell} python
 fetch_and_parse = pipeline(fetch, parse)
 result = fetch_and_parse("http://123")
 print(result)
@@ -221,7 +217,7 @@ print(result)
 
 ### What if we wanted to call fetch 10 times in a row?
 
-```python
+```{code-cell} python
 from expression.extra.result import pipeline
 
 fetch_with_value = lambda x: fetch("http://%s" % x)
@@ -240,3 +236,31 @@ request = pipeline(
 result = request("http://123")
 print(result)
 ```
+
+## Result in Expression
+
+The `Result[T, TError]` type in Expression lets you write error-tolerant code that can
+be composed. A Result works similar to `Option`, but lets you define the value used for
+errors, e.g., an exception type or similar. This is great when you want to know why some
+operation failed (not just `Nothing`). This type serves the same purpose of an `Either`
+type where `Left` is used for the error condition and `Right` for a success value.
+
+```python
+from expression import effect, Ok, Result
+
+@effect.result[int, Exception]()
+def fn():
+    x = yield from Ok(42)
+    y = yield from Ok(10)
+    return x + y
+
+xs = fn()
+assert isinstance(xs, Result)
+```
+
+A simplified type called
+[`Try`](file:///Users/dbrattli/Developer/Github/Expression/docs/_build/html/reference/try.html)
+is also available. It's a result type that is pinned to `Exception` i.e.,
+`Result[TSource, Exception]`. This makes the code simpler since you don't have specify
+the error type every time you declare the type of your result.
+
