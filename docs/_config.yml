@@ -28,6 +28,6 @@ html:
   use_repository_button: true
 
 sphinx:
-  extra_extensions: ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx_autodoc_typehints"]
+  extra_extensions: ["sphinx.ext.autodoc", "sphinx.ext.napoleon"]
   config:
     add_module_names: false
