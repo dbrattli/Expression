@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Awaitable, Callable, TypeVar, Union
+from typing import Awaitable, Callable, Generic, TypeVar, Union
 
 from typing_extensions import ParamSpec
 
@@ -7,19 +7,19 @@ _TResult = TypeVar("_TResult")
 _P = ParamSpec("_P")
 
 
-class TailCall:
+class TailCall(Generic[_P]):
     """Returns a tail call.
 
     If a `tailrec` decorated function return a `TailCall` then the
     function will be called again with the new arguments provided.
     """
 
-    def __init__(self, *args: Any, **kw: Any):
+    def __init__(self, *args: _P.args, **kw: _P.kwargs):
         self.args = args
         self.kw = kw
 
 
-TailCallResult = Union[_TResult, TailCall]
+TailCallResult = Union[_TResult, TailCall[...]]
 
 
 def tailrec(fn: Callable[_P, TailCallResult[_TResult]]) -> Callable[_P, _TResult]:

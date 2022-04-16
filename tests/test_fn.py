@@ -8,7 +8,7 @@ def test_factorial():
         if n == 0:
             return acc
 
-        return TailCall(n - 1, acc * n)
+        return TailCall[int, int](n - 1, acc * n)
 
     result = factorial(1000)
     assert (

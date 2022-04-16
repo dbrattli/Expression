@@ -1,7 +1,7 @@
 from typing import Any, Callable
 
 import pytest
-from hypothesis import given
+from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
 from expression import Nothing, Option, Some, effect, match, option, pipe, pipe2

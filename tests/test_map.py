@@ -1,6 +1,6 @@
 from typing import Callable, Dict, ItemsView, Iterable, List, Tuple
 
-from hypothesis import given
+from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
 from expression import pipe

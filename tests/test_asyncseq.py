@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from hypothesis import given
+from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
 from expression.collections.asyncseq import AsyncSeq
@@ -14,7 +14,7 @@ async def test_asyncseq_empty():
         assert False
 
 
-@given(st.integers(min_value=0, max_value=100))  # type: ignore
+@given(st.integers(min_value=0, max_value=100))
 def test_asyncseq_range(count: int):
     acc = 0
 
@@ -29,7 +29,7 @@ def test_asyncseq_range(count: int):
     assert acc == sum(range(count))
 
 
-@given(st.integers(min_value=0, max_value=100))  # type: ignore
+@given(st.integers(min_value=0, max_value=100))
 def test_asyncseq_map(count: int):
     acc = 0
 
