@@ -498,20 +498,20 @@ with match(text) as case:
 
 ## Tagged Unions
 
-Tagged Unions may looks similar to  normal Python Unions. But they are
-[different](https://stackoverflow.com/a/61646841) in that the operands in a type union
-`(A | B)` are both types, while the cases in a tagged union type `U = A | B` are
-both constructors for the type U and are not types themselves. One consequence is that
-discriminated unions can be nested in a way union types might not.
+Tagged Unions (aka discriminated unions) may looks similar to  normal Python Unions. But
+they are [different](https://stackoverflow.com/a/61646841) in that the operands in a
+type union `(A | B)` are both types, while the cases in a tagged union type `U = A | B`
+are both constructors for the type U and are not types themselves. One consequence is
+that tagged unions can be nested in a way union types might not.
 
 In Expression you make a tagged union by defining your type as a sub-class of
-`DiscriminatedUnion` with the appropriate generic types that this union represent for
+`TaggedUnion` with the appropriate generic types that this union represent for
 each case. Then you define static or class-method constructors for creating each of the
 tagged union cases.
 
 ```python
 from dataclasses import dataclass
-from expression import DiscriminatedUnion
+from expression import TaggedUnion, Tag
 
 @dataclass
 class Rectangle:
@@ -522,7 +522,7 @@ class Rectangle:
 class Circle:
     radius: float
 
-class Shape(DiscriminatedUnion):
+class Shape(TaggedUnion):
     RECTANGLE = Tag[Rectangle]()
     CIRCLE = Tag[Circle]()
 
@@ -543,7 +543,10 @@ Now you may pattern match the shape to get back the actual value:
     shape = Shape.Rectangle(2.3, 3.3)
 
     with match(shape) as case:
-        for rect in case(Rectangle):
+        if case(Circle):
+            assert False
+
+        for rect in case(Shape.RECTANGLE(width=2.3)):
             assert rect.length == 3.3
 
         if case.default():
