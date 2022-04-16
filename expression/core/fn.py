@@ -19,10 +19,10 @@ class TailCall(Generic[_P]):
         self.kw = kw
 
 
-TailCallResult = Union[_TResult, TailCall[...]]
+TailCallResult = Union[_TResult, TailCall[_P]]
 
 
-def tailrec(fn: Callable[_P, TailCallResult[_TResult]]) -> Callable[_P, _TResult]:
+def tailrec(fn: Callable[_P, TailCallResult[_TResult, _P]]) -> Callable[_P, _TResult]:
     """Tail call recursive function decorator.
 
     Can be used to create tail call recursive functions that will not
@@ -30,7 +30,7 @@ def tailrec(fn: Callable[_P, TailCallResult[_TResult]]) -> Callable[_P, _TResult
     of `TailCall` with the next arguments to be used for the next call.
     """
 
-    def trampoline(bouncer: TailCallResult[_TResult]) -> _TResult:
+    def trampoline(bouncer: TailCallResult[_TResult, _P]) -> _TResult:
         while isinstance(bouncer, TailCall):
             args, kw = bouncer.args, bouncer.kw
             bouncer = fn(*args, **kw)
@@ -45,11 +45,11 @@ def tailrec(fn: Callable[_P, TailCallResult[_TResult]]) -> Callable[_P, _TResult
 
 
 def tailrec_async(
-    fn: Callable[_P, Awaitable[TailCallResult[_TResult]]]
+    fn: Callable[_P, Awaitable[TailCallResult[_TResult, _P]]]
 ) -> Callable[_P, Awaitable[_TResult]]:
     """Tail call recursive async function decorator."""
 
-    async def trampoline(bouncer: TailCallResult[_TResult]) -> _TResult:
+    async def trampoline(bouncer: TailCallResult[_TResult, _P]) -> _TResult:
         while isinstance(bouncer, TailCall):
             args, kw = bouncer.args, bouncer.kw
             bouncer = await fn(*args, **kw)
