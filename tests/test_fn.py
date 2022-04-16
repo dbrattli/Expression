@@ -1,14 +1,18 @@
 # flake8: noqa
-from expression import TailCall, TailCallResult, tailrec
+from typing import Any
+
+from expression import TailCall, tailrec
 
 
 def test_factorial():
     @tailrec
-    def factorial(n: int, acc: int = 1) -> TailCallResult[int, [int, int]]:
+    def factorial(
+        n: int, acc: int = 1
+    ) -> Any:  # Python 3.10: TailCallResult[int, [int, int]]:
         if n == 0:
             return acc
 
-        return TailCall[int, int](n - 1, acc * n)
+        return TailCall(n - 1, acc * n)  # type: ignore , use [int, int] for Python 3.10
 
     result = factorial(1000)
     assert (
