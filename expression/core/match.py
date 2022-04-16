@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from inspect import isclass
 from types import TracebackType
 from typing import (
     Any,
@@ -108,7 +109,7 @@ class Case(Generic[_TSource]):
                 return matched
 
         # The pattern is matching value (aka active pattern matching)
-        elif hasattr(pattern, "__match__"):
+        if hasattr(pattern, "__match__") and not isclass(pattern):
             matched = pattern.__match__(value)
             if matched:
                 self.is_matched = True
@@ -132,7 +133,7 @@ class Case(Generic[_TSource]):
         return []
 
     @property
-    def _(self):
+    def _(self) -> Iterable[_TSource]:
         """Handle default case. Always matches."""
         return self.default()
 
