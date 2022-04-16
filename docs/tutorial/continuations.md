@@ -31,7 +31,7 @@ def long_running(callback):
 long_running(print)
 ```
 
-# Continuation Passing Style (CPS)
+## Continuation Passing Style (CPS)
 
 This is a functional programming style where you don’t return any values from your
 functions. Instead of returning the result, you pass a continuation function that will
@@ -128,7 +128,7 @@ result = pythagoras(2,3)
 result(print)
 ```
 
-# Now what? Looks slightly better, kind of ...
+## Now what? Looks slightly better, kind of ...
 
 > Could we perhaps use types to make better abstractions?
 
@@ -231,7 +231,7 @@ result = await pythagoras(2,3)
 print(result)
 ```
 
-# Conclusion
+## Conclusion
 
 Async / await is basically just syntactic sugar for working with effects such as
 callbacks and continuations
@@ -241,7 +241,7 @@ continuations under the hood? Maybe we have been programming with continuations 
 along?
 
 
-# The Mother of all Monads
+## The Mother of all Monads
 
 > https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/the-mother-of-all-monads
 

@@ -102,7 +102,7 @@ def curry(num_args: _Arity) -> Callable[..., Any]:
         >>> @curry(1)
         ... def add(a: int, b: int) -> int:
         ...    return a + b
-
+        >>>
         >>> assert add(3)(4) == 7
     """
 
@@ -197,7 +197,7 @@ def curry_flipped(
         >>> @curry_flipped(1)
         ... def map(source: List[int], mapper: Callable[[int], int]):
         ...    return [mapper(x) for x in source]
-
+        >>>
         >>> ys = pipe(xs, map(lambda x: x * 10))
     """
 

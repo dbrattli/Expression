@@ -1,3 +1,18 @@
+"""
+Pipe module.
+
+Contains pipe function including necessary overloads to get the type-hints right.
+
+Example:
+    >>> from expression import pipe
+    >>>
+    >>> v = 1
+    >>> fn = lambda x: x + 1
+    >>> gn = lambda x: x * 2
+    >>>
+    >>> assert pipe(v, fn, gn) == gn(fn(v))
+
+"""
 from typing import Any, Callable, Tuple, TypeVar, overload
 
 from .compose import compose

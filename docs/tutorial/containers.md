@@ -23,9 +23,10 @@ sets or mappings. Thus a collection is an **abstraction** of **"something"** tha
 - Sequences are iterable
 - Collections have a size
 
-We usually talk about generic container types such as `List[T]`, `Set[T]`, `Tuple[T,
-...]`. But we can also imagine taking the abstraction to a higher-order making the left
-side generic as well, e.g `Something[T]`. What do types of `Something` have in common?
+We usually talk about generic container types such as `List[T]`, `Set[T]`,
+`Tuple[T,...]`. But we can also imagine taking the abstraction to a higher-order making
+the left side generic as well, e.g `Something[T]`. What do types of `Something` have in
+common?
 
 > *A something within a something*
 

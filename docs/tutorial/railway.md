@@ -258,9 +258,8 @@ xs = fn()
 assert isinstance(xs, Result)
 ```
 
-A simplified type called
-[`Try`](file:///Users/dbrattli/Developer/Github/Expression/docs/_build/html/reference/try.html)
-is also available. It's a result type that is pinned to `Exception` i.e.,
-`Result[TSource, Exception]`. This makes the code simpler since you don't have specify
-the error type every time you declare the type of your result.
+A simplified type called [`Try`](reference_try) is also available. It's a result type
+that is pinned to `Exception` i.e., `Result[TSource, Exception]`. This makes the code
+simpler since you don't have specify the error type every time you declare the type of
+your result.
 
