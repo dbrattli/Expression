@@ -8,6 +8,7 @@ chapters:
 - file: tutorial/containers
 - file: tutorial/lambda_calculus
 - file: tutorial/optional_values
+- file: tutorial/data_modelling
 - file: tutorial/railway
 - file: tutorial/effects
 - file: tutorial/continuations
@@ -16,6 +17,7 @@ chapters:
     - file: reference/option
     - file: reference/result
     - file: reference/try
+    - file: reference/union
     - file: reference/pipe
     - file: reference/curry
     - file: reference/mailbox

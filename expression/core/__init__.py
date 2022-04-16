@@ -34,7 +34,7 @@ from .typing import (
     try_downcast,
     upcast,
 )
-from .union import DiscriminatedUnion
+from .union import Tag, TaggedUnion
 
 __all__ = [
     "aiotools",
@@ -53,7 +53,6 @@ __all__ = [
     "curry",
     "curry_flipped",
     "default_arg",
-    "DiscriminatedUnion",
     "downcast",
     "MatchMixin",
     "EffectError",
@@ -82,6 +81,8 @@ __all__ = [
     "SupportsGreaterThan",
     "SupportsMatch",
     "SupportsSum",
+    "Tag",
+    "TaggedUnion",
     "TailCall",
     "TailCallResult",
     "tailrec",

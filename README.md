@@ -105,6 +105,8 @@ on-demand as we go along.
   - **AsyncSeq** - Asynchronous iterables.
   - **AsyncObservable** - Asynchronous observables. Provided separately
     by [aioreactive](https://github.com/dbrattli/aioreactive).
+- **Data Modelling** - sum and product types
+  - **TaggedUnion** - A tagged (discriminated) union type.
 - **Effects**: - lightweight computational expressions for Python. This
   is amazing stuff.
   - **option** - an optional world for working with optional values.
@@ -494,20 +496,23 @@ with match(text) as case:
         assert False
 ```
 
-## Discriminated Unions
+## Tagged Unions
 
-Discriminated Unions may looks similar to  normal Python Unions. But they are
+Tagged Unions may looks similar to  normal Python Unions. But they are
 [different](https://stackoverflow.com/a/61646841) in that the operands in a type union
-`(A | B)` are both types, while the cases in a discriminated union type `U = A | B` are
+`(A | B)` are both types, while the cases in a tagged union type `U = A | B` are
 both constructors for the type U and are not types themselves. One consequence is that
 discriminated unions can be nested in a way union types might not.
 
-In Expression you make a discriminated union by defining your type as a sub-class of
+In Expression you make a tagged union by defining your type as a sub-class of
 `DiscriminatedUnion` with the appropriate generic types that this union represent for
 each case. Then you define static or class-method constructors for creating each of the
-union cases.
+tagged union cases.
 
 ```python
+from dataclasses import dataclass
+from expression import DiscriminatedUnion
+
 @dataclass
 class Rectangle:
     width: float
@@ -517,19 +522,24 @@ class Rectangle:
 class Circle:
     radius: float
 
-class Shape(DiscriminatedUnion[Circle, Rectangle]):
-    @staticmethod
-    def Rectangle(width: float, length: float) -> Shape:
-        return Shape(Rectangle(width, length), tag=1)
+class Shape(DiscriminatedUnion):
+    RECTANGLE = Tag[Rectangle]()
+    CIRCLE = Tag[Circle]()
 
     @staticmethod
-    def Circle(radius: float) -> Shape:
-        return Shape(Circle(radius), tag=2)
+    def rectangle(width: float, length: float) -> Shape:
+        return Shape(Shape.RECTANGLE, Rectangle(width, length))
+
+    @staticmethod
+    def circle(radius: float) -> Shape:
+        return Shape(Shape.CIRCLE, Circle(radius))
 ```
 
 Now you may pattern match the shape to get back the actual value:
 
 ```python
+    from expression import match
+
     shape = Shape.Rectangle(2.3, 3.3)
 
     with match(shape) as case:
