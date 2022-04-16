@@ -1,6 +1,6 @@
 from typing import Callable
 
-from hypothesis import given
+from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
 from expression import compose, identity
@@ -8,21 +8,21 @@ from expression import compose, identity
 Func = Callable[[int], int]
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_compose_identity_implicit(x: int):
     fn = compose()
 
     assert fn(x) == x
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_compose_identity(x: int):
     fn: Func = compose(identity)
 
     assert fn(x) == x
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_compose_1(x: int):
     fn: Callable[[int], int] = lambda x: x + 42
     gn = compose(fn)
@@ -30,7 +30,7 @@ def test_compose_1(x: int):
     assert gn(x) == fn(x) == x + 42
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_compose_2(x: int):
     fn: Func = lambda x: x + 42
     gn: Func = lambda x: x - 3
@@ -39,7 +39,7 @@ def test_compose_2(x: int):
     assert hn(x) == gn(fn(x))
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_compose_3(x: int):
     fn: Func = lambda x: x + 42
     gn: Func = lambda x: x - 3
@@ -50,7 +50,7 @@ def test_compose_3(x: int):
     assert cn(x) == hn(gn(fn(x)))
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_compose_many(x: int):
     fn: Func = lambda x: x + 42
     gn: Func = lambda x: x - 3
@@ -61,7 +61,7 @@ def test_compose_many(x: int):
     assert cn(x) == fn(gn(hn(fn(hn(gn(fn(x)))))))
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_compose_rigth_identity(x: int):
     fn: Func = lambda x: x + 42
 
@@ -70,7 +70,7 @@ def test_compose_rigth_identity(x: int):
     assert cn(x) == fn(x)
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_compose_left_identity(x: int):
     fn: Func = lambda x: x + 42
 
@@ -79,7 +79,7 @@ def test_compose_left_identity(x: int):
     assert cn(x) == fn(x)
 
 
-@given(st.integers(), st.integers(), st.integers())
+@given(st.integers(), st.integers(), st.integers())  # type: ignore
 def test_compose_associative(x: int, y: int, z: int):
     """Rearranging the parentheses in an expression will not change the result."""
     fn: Func = lambda a: a + x

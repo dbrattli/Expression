@@ -1,13 +1,13 @@
 import asyncio
 from typing import Callable, List, Tuple
 
-from hypothesis import given
+from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
 from expression import AsyncReplyChannel, MailboxProcessor
 
 
-@given(st.lists(st.integers()))
+@given(st.lists(st.integers()))  # type: ignore
 def test_mailbox(xs: List[int]) -> None:
     result: List[int] = []
 
@@ -33,7 +33,7 @@ def test_mailbox(xs: List[int]) -> None:
     assert result == xs
 
 
-@given(st.integers())
+@given(st.integers())  # type: ignore
 def test_mailbox_post_and_async_reply(x: int):
     async def runner():
         async def process(
