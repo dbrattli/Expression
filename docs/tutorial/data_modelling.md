@@ -1,6 +1,23 @@
+---
+jupytext:
+  cell_metadata_filter: -all
+  formats: md:myst
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.11.5
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
+---
+(tutorial_data_modelling)=
+
 # Data Modelling
 
-With Expression and Python you can model your types using data-classes and tagged-unions.
+With Expression and Python you can model your types using data-classes and
+tagged-unions. Let's start by importing some types we need before we begin.
 
 ```{code-cell} python
 from __future__ import annotations
@@ -13,7 +30,7 @@ from expression import Tag, TaggedUnion, match
 _T = TypeVar("_T")
 ```
 
-You define your record types using Python data-classes e.g:
+You define your record types using normal Python data-classes e.g:
 
 ```{code-cell} python
 @dataclass
@@ -53,12 +70,12 @@ A more complex type modelling example:
 from __future__ import annotations
 from typing import Tuple, final
 
-from expression import DiscriminatedUnion, match
+from expression import TaggedUnion, match
 from expression.core.union import Tag
 
 
 @final
-class Suit(DiscriminatedUnion):
+class Suit(TaggedUnion):
     HEARTS = Tag[None]
     SPADES = Tag[None]()
     CLUBS = Tag[None]()
@@ -82,7 +99,7 @@ class Suit(DiscriminatedUnion):
 
 
 @final
-class Face(DiscriminatedUnion):
+class Face(TaggedUnion):
     JACK = Tag[None]()
     QUEEN = Tag[None]()
     KIND = Tag[None]()
@@ -106,7 +123,7 @@ class Face(DiscriminatedUnion):
 
 
 @final
-class Card(DiscriminatedUnion):
+class Card(TaggedUnion):
     FACE_CARD = Tag[Tuple[Suit, Face]]()
     VALUE_CARD = Tag[Tuple[Suit, int]]()
     JOKER = Tag[None]()
