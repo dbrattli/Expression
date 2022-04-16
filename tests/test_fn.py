@@ -4,7 +4,7 @@ from expression import TailCall, TailCallResult, tailrec
 
 def test_factorial():
     @tailrec
-    def factorial(n: int, acc: int = 1) -> TailCallResult[int]:
+    def factorial(n: int, acc: int = 1) -> TailCallResult[int, [int, int]]:
         if n == 0:
             return acc
 
