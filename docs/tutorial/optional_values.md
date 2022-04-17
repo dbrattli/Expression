@@ -118,7 +118,7 @@ An Option has an underlying type and can hold a value of that type `Some(value)`
 might not have the value and be `Nothing`.
 
 
-The Expression library provides an `option` module in the `expression.core` package:
+The Expression library provides an `option` module in the `expression` package:
 
 ```{code-cell} python
 from expression import Option, option, Some, Nothing
@@ -132,7 +132,7 @@ Create some values using the `Some` constructor:
 from expression import Some
 
 xs = Some(42)
-xs
+print(xs)
 ```
 
 You should not normally want to retrieve the value of an option since you do not know if
@@ -155,7 +155,7 @@ code you write.
 from expression import Nothing
 
 xs = Nothing
-xs
+print(xs)
 ```
 
 To test if an option is nothing you use `is` test:
@@ -217,7 +217,7 @@ ys = pipe(
     xs,
     option.map(lambda x: x*10)
 )
-ys
+print(ys)
 ```
 
 If we map a value that is `Nothing` then the result is also `Nothing`. Nothing in,
@@ -229,7 +229,7 @@ ys = pipe(
     xs,
     option.map(lambda x: x*10)
 )
-ys
+print(ys)
 ```
 
 ## Option as an effect

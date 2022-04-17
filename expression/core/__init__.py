@@ -34,7 +34,7 @@ from .typing import (
     try_downcast,
     upcast,
 )
-from .union import Tag, TaggedUnion
+from .union import SingleCaseUnion, Tag, TaggedUnion
 
 __all__ = [
     "aiotools",
@@ -74,6 +74,7 @@ __all__ = [
     "pipe3",
     "result",
     "Result",
+    "SingleCaseUnion",
     "snd",
     "Some",
     "Success",

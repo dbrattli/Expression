@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, Tuple, TypeVar, final
 
-from expression import Tag, TaggedUnion, match
+from expression import SingleCaseUnion, Tag, TaggedUnion, match
 
 _T = TypeVar("_T")
 
@@ -234,3 +234,53 @@ def test_union_cards():
 
     rummy_score = calculate_value(joker)
     assert rummy_score == 0
+
+
+class EmailAddress(SingleCaseUnion[str]):
+    @staticmethod
+    def email_address(email: str) -> EmailAddress:
+        return EmailAddress(email)
+
+
+def test_single_case_union_create():
+    addr = "foo@bar.com"
+    email = EmailAddress.email_address(addr)
+
+    assert email.VALUE.tag == 1000
+    assert email.value == addr
+
+
+def test_single_case_union_match():
+    addr = "foo@bar.com"
+    email = EmailAddress.email_address(addr)
+
+    with match(email) as case:
+        for email in case(str):
+            assert email == addr
+
+        if case._:
+            assert False
+
+
+def test_single_case_union_match_value():
+    addr = "foo@bar.com"
+    email = EmailAddress.email_address(addr)
+
+    with match(email) as case:
+        for email in case(EmailAddress.VALUE(addr)):
+            assert email == addr
+
+        if case._:
+            assert False
+
+
+def test_single_case_union_not_match_value():
+    addr = "foo@bar.com"
+    email = EmailAddress.email_address(addr)
+
+    with match(email) as case:
+        for email in case(EmailAddress.VALUE("test@test.com")):
+            assert email == addr
+
+        if case._:
+            assert False
