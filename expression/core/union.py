@@ -18,12 +18,12 @@ class Tag(SupportsMatch[_T]):
 
     """
 
-    count = itertools.count(start=1000)
+    _count = itertools.count(start=1000)
 
     def __init__(self, tag: Optional[int] = None, *args: Any, **kwargs: Any) -> None:
         self.value = args[0] if args else None
         self.fields: Dict[str, Any] = kwargs
-        self.tag = tag or next(Tag.count)
+        self.tag = tag or next(Tag._count)
 
     def __match__(self, pattern: Any) -> Iterable[_T]:
         if pattern is self:

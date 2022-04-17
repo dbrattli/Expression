@@ -237,14 +237,12 @@ def test_union_cards():
 
 
 class EmailAddress(SingleCaseUnion[str]):
-    @staticmethod
-    def email_address(email: str) -> EmailAddress:
-        return EmailAddress(email)
+    ...
 
 
 def test_single_case_union_create():
     addr = "foo@bar.com"
-    email = EmailAddress.email_address(addr)
+    email = EmailAddress(addr)
 
     assert email.VALUE.tag == 1000
     assert email.value == addr
@@ -252,7 +250,7 @@ def test_single_case_union_create():
 
 def test_single_case_union_match():
     addr = "foo@bar.com"
-    email = EmailAddress.email_address(addr)
+    email = EmailAddress(addr)
 
     with match(email) as case:
         for email in case(str):
@@ -264,7 +262,7 @@ def test_single_case_union_match():
 
 def test_single_case_union_match_value():
     addr = "foo@bar.com"
-    email = EmailAddress.email_address(addr)
+    email = EmailAddress(addr)
 
     with match(email) as case:
         for email in case(EmailAddress.VALUE(addr)):
@@ -276,7 +274,7 @@ def test_single_case_union_match_value():
 
 def test_single_case_union_not_match_value():
     addr = "foo@bar.com"
-    email = EmailAddress.email_address(addr)
+    email = EmailAddress(addr)
 
     with match(email) as case:
         for email in case(EmailAddress.VALUE("test@test.com")):
