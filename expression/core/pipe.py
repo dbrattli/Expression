@@ -11,7 +11,6 @@ Example:
     >>> gn = lambda x: x * 2
     >>>
     >>> assert pipe(v, fn, gn) == gn(fn(v))
-
 """
 from typing import Any, Callable, Tuple, TypeVar, overload
 
