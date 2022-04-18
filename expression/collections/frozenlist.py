@@ -13,9 +13,9 @@ Example:
     >>> xs = frozenlist.of_list([1, 2, 3, 4, 5])
     >>> ys = frozenlist.empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     >>> zs = pipe(
-...     xs,
-...     frozenlist.filter(lambda x: x<10)
-... )
+    ...     xs,
+    ...     frozenlist.filter(lambda x: x<10)
+    ... )
 """
 from __future__ import annotations
 
@@ -28,9 +28,11 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     Optional,
     Tuple,
     TypeVar,
+    Union,
     cast,
     get_origin,
     overload,
@@ -43,6 +45,7 @@ from expression.core import (
     Option,
     Some,
     SupportsLessThan,
+    SupportsSum,
     pipe,
 )
 
@@ -50,6 +53,7 @@ from . import seq
 
 _TSource = TypeVar("_TSource")
 _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
+_TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
 _TResult = TypeVar("_TResult")
 _TState = TypeVar("_TState")
 
@@ -344,6 +348,11 @@ class FrozenList(Iterable[_TSource], MatchMixin[Iterable[_TSource]]):
             Partially applied map function.
         """
         return FrozenList(starmap(mapping)(self))
+
+    def sum(
+        self: FrozenList[Union[_TSourceSum, Literal[0]]]
+    ) -> Union[_TSourceSum, Literal[0]]:
+        return builtins.sum(self.value)
 
     def mapi(
         self, mapping: Callable[[int, _TSource], _TResult]
@@ -974,6 +983,12 @@ def sort_with(
         return source.sort_with(func, reverse)
 
     return _sort_with
+
+
+def sum(
+    source: FrozenList[Union[_TSourceSum, Literal[0]]]
+) -> Union[_TSourceSum, Literal[0]]:
+    return builtins.sum(source.value)
 
 
 def tail(source: FrozenList[_TSource]) -> FrozenList[_TSource]:

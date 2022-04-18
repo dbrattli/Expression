@@ -97,6 +97,8 @@ on-demand as we go along.
     programming in Python.
   - **Try** - a simpler result type that pins the error to an Exception.
 - **Collections** - immutable collections.
+  - **TypedArray** - a generic array type that abstracts the details of
+    `bytearray`, `array.array` and `list` modules.
   - **Sequence** - a better
     [itertools](https://docs.python.org/3/library/itertools.html) and
     fully compatible with Python iterables.

@@ -18,7 +18,8 @@ class Tag(SupportsMatch[_T]):
 
     """
 
-    _count = itertools.count(start=1000)
+    INITIAL_TAG = 1000
+    _count = itertools.count(start=INITIAL_TAG)
 
     def __init__(self, tag: Optional[int] = None, *args: Any, **kwargs: Any) -> None:
         self.value = args[0] if args else None

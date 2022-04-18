@@ -18,6 +18,7 @@
 
 ## Collections
 
+- [Typed Array](reference_array)
 - [Map](reference_map)
 - [FrozenList](reference_frozenlist)
 - [Seq](reference_seq)
