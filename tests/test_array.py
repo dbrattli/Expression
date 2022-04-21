@@ -1,5 +1,6 @@
 from typing import Callable, List
 
+import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
@@ -32,7 +33,7 @@ def test_array_non_empty():
 def test_array_create_bytes():
     xs = TypedArray[int](b"test")
 
-    assert xs.type_code == array.TypeCode.Byte
+    assert xs.typecode == array.TypeCode.Byte
     assert len(xs) == 4
 
 
@@ -42,7 +43,7 @@ def test_array_map_int_to_str():
 
     ys: TypedArray[str] = pipe(xs, array.map(str))
     assert len(ys) == 3
-    assert ys.type_code == array.TypeCode.Any
+    assert ys.typecode == array.TypeCode.Any
     assert ys == TypedArray(["1", "2", "3"])
 
 
@@ -52,8 +53,8 @@ def test_array_map_str_to_uint8():
 
     ys: TypedArray[array.uint8] = pipe(xs, array.map(array.uint8))
     assert len(ys) == 3
-    assert ys.type_code == array.TypeCode.Uint8
-    assert ys == TypedArray([1, 2, 3], type_code=array.TypeCode.Uint8)
+    assert ys.typecode == array.TypeCode.Uint8
+    assert ys == TypedArray([1, 2, 3], typecode=array.TypeCode.Uint8)
 
 
 def test_array_map_str_to_uint16():
@@ -62,8 +63,8 @@ def test_array_map_str_to_uint16():
 
     ys: TypedArray[array.uint16] = pipe(xs, array.map(array.uint16))
     assert len(ys) == 3
-    assert ys.type_code == array.TypeCode.Uint16
-    assert ys == TypedArray([1, 2, 3], type_code=array.TypeCode.Uint16)
+    assert ys.typecode == array.TypeCode.Uint16
+    assert ys == TypedArray([1, 2, 3], typecode=array.TypeCode.Uint16)
 
 
 def test_array_map_str_to_uint32():
@@ -72,8 +73,8 @@ def test_array_map_str_to_uint32():
 
     ys: TypedArray[array.uint32] = pipe(xs, array.map(array.uint32))
     assert len(ys) == 3
-    assert ys.type_code == array.TypeCode.Uint32
-    assert ys == TypedArray([1, 2, 3], type_code=array.TypeCode.Uint32)
+    assert ys.typecode == array.TypeCode.Uint32
+    assert ys == TypedArray([1, 2, 3], typecode=array.TypeCode.Uint32)
 
 
 def test_array_map_str_to_float32():
@@ -82,8 +83,8 @@ def test_array_map_str_to_float32():
 
     ys: TypedArray[array.float32] = pipe(xs, array.map(array.float32))
     assert len(ys) == 3
-    assert ys.type_code == array.TypeCode.Float
-    assert ys == TypedArray([1, 2, 3], type_code=array.TypeCode.Float)
+    assert ys.typecode == array.TypeCode.Float
+    assert ys == TypedArray([1, 2, 3], typecode=array.TypeCode.Float)
 
 
 def test_array_filter_preserves_type():
@@ -92,8 +93,8 @@ def test_array_filter_preserves_type():
 
     ys: TypedArray[array.int16] = pipe(xs, array.filter(lambda x: x < 2))
     assert len(ys) == 1
-    assert ys.type_code == array.TypeCode.Int16
-    assert ys == TypedArray([1], type_code=array.TypeCode.Int16)
+    assert ys.typecode == array.TypeCode.Int16
+    assert ys == TypedArray([1], typecode=array.TypeCode.Int16)
 
 
 @given(st.lists(st.integers()))  # type: ignore
@@ -102,14 +103,21 @@ def test_array_length(xs: List[int]):
     assert len(xs) == len(ys)
 
 
-# def test_array_is_null_after_cons_and_tail_fluent():
-#     xs: FrozenList[int] = frozenlist.empty.cons(42).tail()
-#     assert xs.is_empty()
+def test_array_uint8_overflow():
+    with pytest.raises(OverflowError):
+        TypedArray([256], typecode=array.TypeCode.Uint8)
 
 
-# def test_array_not_null_after_cons_fluent():
-#     xs = frozenlist.empty.cons(42)
-#     assert not xs.is_empty()
+def test_array_sum_works():
+    xs = TypedArray([1.0, 2.0])
+    ys = pipe(xs, array.sum)
+    assert ys == 3.0
+
+
+def test_array_sum_by_works():
+    xs = TypedArray([1.0, 2.0])
+    ys = pipe(xs, array.sum_by(lambda x: x * 2.0))
+    assert ys == 6.0
 
 
 # def test_array_head_fluent():

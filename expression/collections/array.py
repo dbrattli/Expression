@@ -24,15 +24,27 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    cast,
     get_origin,
     overload,
 )
 
-from expression.core import MatchMixin, Option, Some, SupportsSum, pipe
+from expression.core import (
+    MatchMixin,
+    Nothing,
+    Option,
+    Some,
+    SupportsLessThan,
+    SupportsSum,
+    pipe,
+)
+
+from . import seq
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
 _TState = TypeVar("_TState")
+_TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
 
 _TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
 _T1 = TypeVar("_T1")
@@ -187,20 +199,18 @@ class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]]):
     def __init__(
         self,
         initializer: Optional[Iterable[_TSource]] = None,
-        type_code: Optional[TypeCode] = None,
+        typecode: Optional[TypeCode] = None,
     ) -> None:
-        if type_code:
-            arr = array_from_typecode(type_code, initializer)
+        if typecode:
+            arr = array_from_typecode(typecode, initializer)
         else:
-            arr, type_code = array_from_initializer(initializer)
+            arr, typecode = array_from_initializer(initializer)
 
         self.value: _Array[Any] = arr
-        self.type_code = type_code
+        self.typecode = typecode
 
     def map(self, mapping: Callable[[_TSource], _TResult]) -> TypedArray[_TResult]:
-        # print("map1", self.value)
         result = builtins.map(mapping, self.value)
-        # print("map1", result)
         return TypedArray(result)
 
     def choose(
@@ -261,7 +271,7 @@ class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]]):
             predicate.
         """
         return TypedArray(
-            builtins.filter(predicate, self.value), type_code=self.type_code
+            builtins.filter(predicate, self.value), typecode=self.typecode
         )
 
     def fold(
@@ -286,6 +296,58 @@ class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]]):
             and returns the final state value.
         """
         return functools.reduce(folder, self, state)
+
+    def forall(self, predicate: Callable[[_TSource], bool]) -> bool:
+        """Tests if all elements of the collection satisfy the given
+        predicate.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            True if all of the elements satisfy the predicate.
+        """
+        return all(predicate(x) for x in self)
+
+    def head(self) -> _TSource:
+        """Returns the first element of the list.
+
+        Args:
+            source: The input list.
+
+        Returns:
+            The first element of the list.
+
+        Raises:
+            ValueError: Thrown when the list is empty.
+        """
+
+        head, *_ = self
+        return head
+
+    def indexed(self, start: int = 0) -> TypedArray[Tuple[int, _TSource]]:
+        """Returns a new array whose elements are the corresponding
+        elements of the input array paired with the index (from `start`)
+        of each element.
+
+        Args:
+            start: Optional index to start from. Defaults to 0.
+
+        Returns:
+            The list of indexed elements.
+        """
+        return of_seq(enumerate(self))
+
+    def item(self, index: int) -> _TSource:
+        """Indexes into the list. The first element has index 0.
+
+        Args:
+            index: The index to retrieve.
+
+        Returns:
+            The value at the given index.
+        """
+        return self.value[index]
 
     @staticmethod
     def of(*args: _TSource) -> TypedArray[_TSource]:
@@ -353,6 +415,118 @@ class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]]):
         """Pipe list through the given functions."""
         return pipe(self, *args)
 
+    def skip(self, count: int) -> TypedArray[_TSource]:
+        """Returns the array after removing the first N elements.
+
+        Args:
+            count: The number of elements to skip.
+
+        Returns:
+            The array after removing the first N elements.
+        """
+        return TypedArray(self.value[count:])
+
+    def skip_last(self, count: int) -> TypedArray[_TSource]:
+        return TypedArray(self.value[:-count])
+
+    def sort(
+        self: TypedArray[_TSourceSortable], reverse: bool = False
+    ) -> TypedArray[_TSourceSortable]:
+        """Sort array directly.
+
+        Returns a new sorted collection.
+
+        Args:
+            reverse: Sort in reversed order.
+
+        Returns:
+            A sorted array.
+        """
+        return TypedArray(builtins.sorted(self.value, reverse=reverse))
+
+    def sort_with(
+        self, func: Callable[[_TSource], Any], reverse: bool = False
+    ) -> TypedArray[_TSource]:
+        """Sort array with supplied function.
+
+        Returns a new sorted collection.
+
+        Args:
+            func: The function to extract a comparison key from each element in list.
+            reverse: Sort in reversed order.
+
+        Returns:
+            A sorted array.
+        """
+        return TypedArray(builtins.sorted(self.value, key=func, reverse=reverse))
+
+    def sum(self: TypedArray[_TSourceSum]) -> Union[_TSourceSum, Literal[0]]:
+        return sum(self)
+
+    def sum_by(
+        self, projection: Callable[[_TSource], _TSourceSum]
+    ) -> Union[_TSourceSum, Literal[0]]:
+        return pipe(self, sum_by(projection))
+
+    def tail(self) -> TypedArray[_TSource]:
+        """Return tail of List."""
+
+        _, *tail = self.value
+        return TypedArray(tail)
+
+    def take(self, count: int) -> TypedArray[_TSource]:
+        """Returns the first N elements of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        """
+        return TypedArray(self.value[:count])
+
+    def take_last(self, count: int) -> TypedArray[_TSource]:
+        """Returns a specified number of contiguous elements from the
+        end of the list.
+
+        Args:
+            count: The number of items to take.
+
+        Returns:
+            The result list.
+        """
+        return TypedArray(self.value[-count:])
+
+    def try_head(self) -> Option[_TSource]:
+        """Returns the first element of the list, or None if the list is
+        empty.
+        """
+        if self.value:
+            value = cast("_TSource", self.value[0])
+            return Some(value)
+
+        return Nothing
+
+    @staticmethod
+    def unfold(
+        generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]], state: _TState
+    ) -> TypedArray[_TSource]:
+        """Returns a list that contains the elements generated by the
+        given computation. The given initial state argument is passed to
+        the element generator.
+
+        Args:
+            generator: A function that takes in the current state and
+                returns an option tuple of the next element of the list
+                and the next state value.
+            state: The initial state.
+
+        Returns:
+            The result list.
+        """
+
+        return pipe(state, unfold(generator))
+
     def __match__(self, pattern: Any) -> Iterable[List[_TSource]]:
         if self == pattern:
             return [[val for val in self]]
@@ -411,19 +585,13 @@ def map(
         mapper: The function to transform elements from the input array.
 
     Returns:
-        The array of transformed elements.
+        A new array of transformed elements.
     """
 
     def _map(source: TypedArray[_TSource]) -> TypedArray[_TResult]:
         return source.map(mapper)
 
     return _map
-
-
-def sum(
-    source: TypedArray[Union[_TSourceSum, Literal[0]]]
-) -> Union[_TSourceSum, Literal[0]]:
-    return builtins.sum(source.value)
 
 
 def empty() -> TypedArray[Any]:
@@ -512,14 +680,105 @@ def singleton(value: _TSource) -> TypedArray[_TSource]:
     return TypedArray((value,))
 
 
+def sum(source: TypedArray[_TSourceSum]) -> Union[_TSourceSum, Literal[0]]:
+    return builtins.sum(source.value)
+
+
+def sum_by(
+    projection: Callable[[_TSource], _TSourceSum]
+) -> Callable[[TypedArray[_TSource]], Union[_TSourceSum, Literal[0]]]:
+    def _sum_by(source: TypedArray[_TSource]) -> Union[_TSourceSum, Literal[0]]:
+        return builtins.sum(source.map(projection).value)
+
+    return _sum_by
+
+
+def take(count: int) -> Callable[[TypedArray[_TSource]], TypedArray[_TSource]]:
+    """Returns the first N elements of the array.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result array.
+    """
+
+    def _take(source: TypedArray[_TSource]) -> TypedArray[_TSource]:
+        return source.take(count)
+
+    return _take
+
+
+def take_last(count: int) -> Callable[[TypedArray[_TSource]], TypedArray[_TSource]]:
+    """Returns a specified number of contiguous elements from the end of
+    the list.
+
+    Args:
+        count: The number of items to take.
+
+    Returns:
+        The result list.
+    """
+
+    def _take(source: TypedArray[_TSource]) -> TypedArray[_TSource]:
+        return source.take_last(count)
+
+    return _take
+
+
+def try_head(source: TypedArray[_TSource]) -> Option[_TSource]:
+    """Try to get the first element from the list.
+
+    Returns the first element of the list, or None if the list is empty.
+
+    Args:
+        source: The input list.
+
+    Returns:
+        The first element of the list or `Nothing`.
+    """
+    return source.try_head()
+
+
+def unfold(
+    generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]]
+) -> Callable[[_TState], TypedArray[_TSource]]:
+    """Returns a list that contains the elements generated by the
+    given computation. The given initial state argument is passed to
+    the element generator.
+
+    Args:
+        generator: A function that takes in the current state and
+            returns an option tuple of the next element of the list
+            and the next state value.
+        state: The initial state.
+
+    Returns:
+        The result list.
+    """
+
+    def _unfold(state: _TState) -> TypedArray[_TSource]:
+        xs = pipe(state, seq.unfold(generator))
+        return TypedArray(xs)
+
+    return _unfold
+
+
 __all__ = [
-    "TypedArray",
-    "singleton",
+    "empty",
+    "filter",
+    "fold",
+    "is_empty",
+    "map",
     "of_option",
     "of_seq",
     "of",
-    "is_empty",
-    "empty",
     "sum",
-    "map",
+    "sum_by",
+    "singleton",
+    "take",
+    "take_last",
+    "try_head",
+    "TypedArray",
+    "unfold",
 ]

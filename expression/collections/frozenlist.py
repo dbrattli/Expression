@@ -354,6 +354,11 @@ class FrozenList(Iterable[_TSource], MatchMixin[Iterable[_TSource]]):
     ) -> Union[_TSourceSum, Literal[0]]:
         return builtins.sum(self.value)
 
+    def sum_by(
+        self, projection: Callable[[_TSource], _TSourceSum]
+    ) -> Union[_TSourceSum, Literal[0]]:
+        return pipe(self, sum_by(projection))
+
     def mapi(
         self, mapping: Callable[[int, _TSource], _TResult]
     ) -> FrozenList[_TResult]:
@@ -989,6 +994,15 @@ def sum(
     source: FrozenList[Union[_TSourceSum, Literal[0]]]
 ) -> Union[_TSourceSum, Literal[0]]:
     return builtins.sum(source.value)
+
+
+def sum_by(
+    projection: Callable[[_TSource], _TSourceSum]
+) -> Callable[[FrozenList[_TSource]], Union[_TSourceSum, Literal[0]]]:
+    def _sum_by(source: FrozenList[_TSource]) -> Union[_TSourceSum, Literal[0]]:
+        return builtins.sum(source.map(projection).value)
+
+    return _sum_by
 
 
 def tail(source: FrozenList[_TSource]) -> FrozenList[_TSource]:
