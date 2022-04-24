@@ -8,12 +8,14 @@ the only argument.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import json
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Generator,
     Iterable,
+    Iterator,
     List,
     Optional,
     TypeVar,
@@ -25,6 +27,7 @@ from typing import (
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
 from .pipe import pipe
+from .typing import Validated, Validator
 
 if TYPE_CHECKING:
     from ..collections.seq import Seq
@@ -38,10 +41,26 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
+def _validate(value: Optional[_TSource]) -> Option[_TSource]:
+    if value is None:
+        return Nothing
+
+    return value
+
+
 class Option(
-    Iterable[_TSource], MatchMixin[_TSource], SupportsMatch[Union[_TSource, bool]], ABC
+    Iterable[_TSource],
+    MatchMixin[_TSource],
+    SupportsMatch[Union[_TSource, bool]],
+    Validated[_TSource],
+    ABC,
 ):
     """Option abstract base class."""
+
+    __validators__: List[Validator[_TSource]] = [_validate]
+
+    # def __init__(self, value: _TSource = None) -> None:
+    #    print("__init__", value)
 
     @overload
     def pipe(self, __fn1: Callable[[Option[_TSource]], _TResult]) -> _TResult:
@@ -156,6 +175,11 @@ class Option(
         """Convert optional value to an option."""
         return of_optional(value)
 
+    @abstractmethod
+    def to_json(self) -> str:
+        """Returns a json string representation of the option."""
+        raise NotImplementedError
+
     @property
     @abstractmethod
     def value(self) -> _TSource:
@@ -176,11 +200,22 @@ class Option(
     def __repr__(self) -> str:
         return self.__str__()
 
+    @classmethod
+    def __get_validators__(cls) -> Iterator[Validator[_TSource]]:
+        yield from cls.__validators__
+
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        print("__modify_schema__", field_schema)
+        1 / 0
+        return field_schema
+
 
 class Some(Option[_TSource]):
     """The Some option case class."""
 
     def __init__(self, value: _TSource) -> None:
+        print("init:", [value])
         self._value = value
 
     def default_value(self, value: _TSource) -> _TSource:
@@ -244,6 +279,10 @@ class Some(Option[_TSource]):
         from expression.collections.seq import Seq
 
         return Seq.of(self._value)
+
+    def to_json(self) -> str:
+        print("to_json:", [self, self.value])
+        return json.dumps(self.value)
 
     @property
     def value(self) -> _TSource:
@@ -349,6 +388,9 @@ class Nothing_(Option[_TSource], EffectError):
         from expression.collections.seq import Seq
 
         return Seq()
+
+    def to_json(self) -> str:
+        return "null"
 
     @property
     def value(self) -> _TSource:
@@ -510,6 +552,10 @@ def of_obj(value: Any) -> Option[Any]:
         The result option.
     """
     return of_optional(value)
+
+
+def to_json(value: Option[Any]) -> str:
+    return value.to_json()
 
 
 def default_arg(value: Option[_TSource], default_value: _TSource) -> _TSource:

@@ -60,8 +60,9 @@ You can install the latest `expression` from PyPI by running `pip` (or
 `pip3`). Note that `expression` only works for Python 3.9+.
 
 ```console
-$ pip3 install expression
+> pip3 install expression
 ```
+
 ## Goals
 
 - Industrial strength library for functional programming in Python.
@@ -80,6 +81,7 @@ $ pip3 install expression
 - Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
 - Code must pass strict static type checking by [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/). Pylance is awesome, use it!
+- Data types compatible with [Pydantic](https://pydantic-docs.helpmanual.io/)
 
 ## Supported features
 

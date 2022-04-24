@@ -80,12 +80,23 @@ class TaggedUnion(ABC):
         try:
             origin: Any = get_origin(pattern)
             if isinstance(self.value, origin or pattern):
-                print("got here", self.value, origin, pattern)
                 return [self.value]
         except TypeError:
             pass
 
         return []
+
+    @classmethod
+    def __get_validators__(cls) -> Any:
+        yield cls.validate
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Any) -> Any:
+        ...
+
+    @classmethod
+    def validate(cls, v: Any) -> Any:
+        ...
 
 
 class SingleCaseUnion(Generic[_T], TaggedUnion):

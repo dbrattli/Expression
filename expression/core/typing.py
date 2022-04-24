@@ -1,6 +1,18 @@
 from abc import abstractmethod
-from typing import Any, Iterable, Optional, Protocol, Type, TypeVar, cast, get_origin
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    Optional,
+    Protocol,
+    Type,
+    TypeVar,
+    cast,
+    get_origin,
+)
 
+_T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
 
 _Base = TypeVar("_Base")
@@ -36,6 +48,19 @@ class SupportsMatch(Protocol[_T_co]):
         matches value, else an empty iterable (e.g. `[]`)."""
 
         raise NotImplementedError
+
+
+Validator = Callable[[_T], _T]
+
+
+class Validated(Protocol[_T_co]):
+    """A type that implements __get_validators__ to be used with
+    pydantic."""
+
+    @classmethod
+    def __get_validators__(cls) -> Iterator[Validator[_T_co]]:
+        """Yield an iterator of validators."""
+        ...
 
 
 def upcast(type: Type[_Base], expr: _Base) -> _Base:
