@@ -120,9 +120,9 @@ def test_array_sum_by_works():
     assert ys == 6.0
 
 
-# def test_array_head_fluent():
-#     x = empty.cons(42).head()
-#     assert x == 42
+def test_array_head_fluent():
+    x = array.singleton(42).head()
+    assert x == 42
 
 
 # def test_array_head_match():
