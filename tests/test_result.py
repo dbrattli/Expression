@@ -1,8 +1,9 @@
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List, Type
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
+from pydantic import BaseModel
 
 from expression import Error, Ok, Result, effect, match, result
 from expression.extra.result import pipeline, sequence
@@ -346,3 +347,28 @@ def test_pipeline_error():
     )
 
     assert hn(42) == error
+
+
+class MyError(BaseModel):
+    message: str
+
+
+class Model(BaseModel):
+    one: Result[int, MyError]
+    two: Result[str, MyError] = Error(MyError(message="error"))
+    three: Result[float, MyError] = Error(MyError(message="error"))
+
+    class Config:
+        json_encoders: Dict[Type[Any], Callable[[Any], str]] = {
+            Result: result.to_json,
+        }
+
+
+def test_parse_frozenlist_works():
+    obj = dict(one=dict(ok=42))
+    model = Model.parse_obj(obj)
+
+    assert isinstance(model.one, Result)
+    assert model.one == Ok(42)
+    assert model.two == Error(MyError(message="error"))
+    assert model.three == Error(MyError(message="error"))

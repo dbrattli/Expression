@@ -10,6 +10,7 @@ the Result type to Exception.
 """
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -17,9 +18,11 @@ from typing import (
     Generator,
     Iterable,
     Iterator,
+    List,
     Type,
     TypeVar,
     Union,
+    cast,
     get_origin,
     overload,
 )
@@ -27,6 +30,7 @@ from typing import (
 from .error import EffectError
 from .match import Case, SupportsMatch
 from .pipe import pipe
+from .typing import Validated, Validator
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -42,8 +46,23 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
-class Result(Iterable[_TSource], SupportsMatch[Union[_TSource, _TError]], ABC):
+def _validate(result: Any) -> Result[Any, Any]:
+    if isinstance(result, Result):
+        return cast(Result[Any, Any], result)
+
+    value = result.get("ok")  # FIXME
+    return Ok(value)
+
+
+class Result(
+    Iterable[_TSource],
+    SupportsMatch[Union[_TSource, _TError]],
+    Validated[Union[_TSource, _TError]],
+    ABC,
+):
     """The result abstract base class."""
+
+    __validators__: List[Validator[_TSource]] = [_validate]
 
     @overload
     def pipe(
@@ -139,6 +158,11 @@ class Result(Iterable[_TSource], SupportsMatch[Union[_TSource, _TError]], ABC):
 
         raise NotImplementedError
 
+    @abstractmethod
+    def to_json(self) -> str:
+        """Returns a json string representation of the result."""
+        raise NotImplementedError
+
     def __eq__(self, o: Any) -> bool:
         raise NotImplementedError
 
@@ -148,6 +172,10 @@ class Result(Iterable[_TSource], SupportsMatch[Union[_TSource, _TError]], ABC):
 
     def __repr__(self) -> str:
         return str(self)
+
+    @classmethod
+    def __get_validators__(cls) -> Iterator[Validator[_TSource]]:
+        yield from cls.__validators__
 
 
 class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
@@ -184,6 +212,10 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
         """Returns `True` if the result is an `Ok` value."""
 
         return True
+
+    def to_json(self) -> str:
+        """Returns a json string representation of the ok value."""
+        return json.dumps(dict(ok=self._value))
 
     def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
@@ -253,6 +285,10 @@ class Error(ResultException, Result[_TSource, _TError]):
         """Returns `True` if the result is an `Ok` value."""
         return False
 
+    def to_json(self) -> str:
+        """Returns a json string representation of the ok value."""
+        return json.dumps(dict(error=self._error))
+
     def __match__(self, pattern: Any) -> Iterable[_TError]:
         if self is pattern or self == pattern:
             return [self.error]
@@ -303,10 +339,15 @@ def bind(
     return _bind
 
 
+def to_json(source: Result[Any, Any]) -> str:
+    return source.to_json()
+
+
 __all__ = [
     "Result",
     "Ok",
     "Error",
     "map",
     "bind",
+    "to_json",
 ]

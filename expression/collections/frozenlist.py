@@ -22,6 +22,7 @@ from __future__ import annotations
 import builtins
 import functools
 import itertools
+import json
 from typing import (
     Any,
     Callable,
@@ -45,6 +46,7 @@ from expression.core import (
     SupportsLessThan,
     pipe,
 )
+from expression.core.typing import Validated, Validator
 
 from . import seq
 
@@ -61,7 +63,18 @@ _T5 = TypeVar("_T5")
 _T6 = TypeVar("_T6")
 
 
-class FrozenList(Iterable[_TSource], MatchMixin[Iterable[_TSource]]):
+def _validate(value: Any) -> FrozenList[Any]:
+    if isinstance(value, FrozenList):
+        return cast(FrozenList[Any], value)
+
+    return FrozenList(value)
+
+
+class FrozenList(
+    Iterable[_TSource],
+    MatchMixin[Iterable[_TSource]],
+    Validated[Iterable[_TSource]],
+):
     """Immutable list type.
 
     Is faster than `List` for prepending, but slower for
@@ -78,6 +91,8 @@ class FrozenList(Iterable[_TSource], MatchMixin[Iterable[_TSource]]):
         >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
+
+    __validators__: List[Validator[_TSource]] = [_validate]
 
     def __init__(self, value: Optional[Iterable[_TSource]] = None) -> None:
         # Use composition instead of inheritance since generic tuples
@@ -475,6 +490,10 @@ class FrozenList(Iterable[_TSource], MatchMixin[Iterable[_TSource]]):
         """
         return FrozenList(self.value[-count:])
 
+    def to_json(self) -> str:
+        """Returns a json string representation of the option."""
+        return json.dumps(list(self.value))
+
     def try_head(self) -> Option[_TSource]:
         """Returns the first element of the list, or None if the list is
         empty.
@@ -559,6 +578,10 @@ class FrozenList(Iterable[_TSource], MatchMixin[Iterable[_TSource]]):
 
     def __repr__(self) -> str:
         return str(self)
+
+    @classmethod
+    def __get_validators__(cls) -> Iterator[Validator[Iterable[_TSource]]]:
+        yield from cls.__validators__
 
 
 def append(
@@ -1013,6 +1036,10 @@ def take_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSourc
     return _take
 
 
+def to_json(source: FrozenList[Any]) -> str:
+    return source.to_json()
+
+
 def try_head(source: FrozenList[_TSource]) -> Option[_TSource]:
     """Try to get the first element from the list.
 
@@ -1107,6 +1134,7 @@ __all__ = [
     "tail",
     "take",
     "take_last",
+    "to_json",
     "try_head",
     "unfold",
     "zip",

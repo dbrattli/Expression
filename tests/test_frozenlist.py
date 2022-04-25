@@ -1,9 +1,10 @@
 import functools
 from builtins import list as list
-from typing import Any, Callable, Iterable, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
+from pydantic import BaseModel
 
 from expression import Nothing, Option, Some, match, pipe
 from expression.collections import FrozenList, frozenlist
@@ -385,3 +386,29 @@ def test_list_monad_law_associativity_iterable(xs: List[int]):
 
     m = frozenlist.of_seq(xs)
     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
+
+
+class Model(BaseModel):
+    one: FrozenList[int]
+    two: FrozenList[str] = frozenlist.empty
+    three: FrozenList[float] = frozenlist.empty
+
+    class Config:
+        json_encoders: Dict[Type[Any], Callable[[Any], str]] = {
+            FrozenList: frozenlist.to_json
+        }
+
+
+def test_parse_frozenlist_works():
+    obj = dict(one=[1, 2, 3])
+    model = Model.parse_obj(obj)
+
+    assert isinstance(model.one, FrozenList)
+    assert model.one == FrozenList([1, 2, 3])
+    assert model.two == FrozenList.empty()
+    assert model.three == frozenlist.empty
+
+
+def test_serialize_frozenlist_works():
+    model = Model(one=FrozenList([1, 2, 3]), two=FrozenList.empty())
+    _json = model.json()

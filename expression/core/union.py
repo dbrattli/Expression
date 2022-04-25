@@ -2,11 +2,29 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC
-from typing import Any, Dict, Generic, Iterable, Optional, TypeVar, cast, get_origin
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    TypeVar,
+    cast,
+    get_origin,
+)
 
-from .typing import SupportsMatch
+from .typing import SupportsMatch, Validated, Validator
 
 _T = TypeVar("_T")
+
+
+def _validate(union: Any) -> TaggedUnion:
+    if isinstance(union, TaggedUnion):
+        return union
+
+    raise NotImplementedError
 
 
 class Tag(SupportsMatch[_T]):
@@ -63,10 +81,12 @@ class Tag(SupportsMatch[_T]):
         return self.__class__(self.tag, *args, **kwargs)
 
 
-class TaggedUnion(ABC):
+class TaggedUnion(Validated[Any], ABC):
     """A discriminated (tagged) union.
 
     Takes a value, and an optional tag that may be used for matching."""
+
+    __validators__: List[Validator[Any]] = [_validate]
 
     def __init__(self, tag: Tag[Any], __value: Any = None, **kwargs: Any) -> None:
         self.value = __value
@@ -87,19 +107,11 @@ class TaggedUnion(ABC):
         return []
 
     @classmethod
-    def __get_validators__(cls) -> Any:
-        yield cls.validate
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Any) -> Any:
-        ...
-
-    @classmethod
-    def validate(cls, v: Any) -> Any:
-        ...
+    def __get_validators__(cls) -> Iterator[Validator[Any]]:
+        yield from cls.__validators__
 
 
-class SingleCaseUnion(Generic[_T], TaggedUnion):
+class SingleCaseUnion(TaggedUnion, Generic[_T]):
     """Single case union.
 
     Helper class to make single case tagged unions without having to

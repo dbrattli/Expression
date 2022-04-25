@@ -1,13 +1,13 @@
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, Type
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
+from pydantic import BaseModel
 
 from expression import Nothing, Option, Some, effect, match, option, pipe, pipe2
 from expression.extra.option import pipeline
 from tests.utils import CustomException
-from pydantic import BaseModel, Field
 
 
 def test_option_some():
@@ -501,6 +501,4 @@ def test_parse_option_works():
 
 def test_serialize_option_works():
     model = Model(one=Some(10), two=Nothing)
-    json = model.json()
-    print(json)
-    assert False
+    _ = model.json()

@@ -7,8 +7,8 @@ the only argument.
 """
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import json
+from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,6 +20,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
     get_origin,
     overload,
 )
@@ -41,11 +42,12 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
-def _validate(value: Optional[_TSource]) -> Option[_TSource]:
-    if value is None:
-        return Nothing
+def _validate(value: Any) -> Option[Any]:
+    print("validate: ", [value])
+    if isinstance(value, Option):
+        return cast(Option[Any], value)
 
-    return value
+    return Some(value)
 
 
 class Option(
@@ -58,9 +60,6 @@ class Option(
     """Option abstract base class."""
 
     __validators__: List[Validator[_TSource]] = [_validate]
-
-    # def __init__(self, value: _TSource = None) -> None:
-    #    print("__init__", value)
 
     @overload
     def pipe(self, __fn1: Callable[[Option[_TSource]], _TResult]) -> _TResult:
@@ -203,12 +202,6 @@ class Option(
     @classmethod
     def __get_validators__(cls) -> Iterator[Validator[_TSource]]:
         yield from cls.__validators__
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        print("__modify_schema__", field_schema)
-        1 / 0
-        return field_schema
 
 
 class Some(Option[_TSource]):
@@ -390,7 +383,7 @@ class Nothing_(Option[_TSource], EffectError):
         return Seq()
 
     def to_json(self) -> str:
-        return "null"
+        return json.dumps(None)
 
     @property
     def value(self) -> _TSource:
@@ -582,6 +575,7 @@ __all__ = [
     "is_some",
     "or_else",
     "to_list",
+    "to_json",
     "to_seq",
     "of_optional",
     "of_obj",
