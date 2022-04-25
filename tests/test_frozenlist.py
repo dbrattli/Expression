@@ -411,4 +411,4 @@ def test_parse_frozenlist_works():
 
 def test_serialize_frozenlist_works():
     model = Model(one=FrozenList([1, 2, 3]), two=FrozenList.empty())
-    _json = model.json()
+    _ = model.json()
