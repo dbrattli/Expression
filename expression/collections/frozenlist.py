@@ -490,9 +490,9 @@ class FrozenList(
         """
         return FrozenList(self.value[-count:])
 
-    def to_json(self) -> str:
-        """Returns a json string representation of the option."""
-        return json.dumps(list(self.value))
+    def to_json(self) -> List[_TSource]:
+        """Returns a json serializable representation of the list."""
+        return list(self.value)
 
     def try_head(self) -> Option[_TSource]:
         """Returns the first element of the list, or None if the list is
@@ -1036,7 +1036,7 @@ def take_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSourc
     return _take
 
 
-def to_json(source: FrozenList[Any]) -> str:
+def to_json(source: FrozenList[_TSource]) -> List[_TSource]:
     return source.to_json()
 
 

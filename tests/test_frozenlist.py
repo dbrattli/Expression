@@ -394,13 +394,13 @@ class Model(BaseModel):
     three: FrozenList[float] = frozenlist.empty
 
     class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], str]] = {
+        json_encoders: Dict[Type[Any], Callable[[Any], List[Any]]] = {
             FrozenList: frozenlist.to_json
         }
 
 
 def test_parse_frozenlist_works():
-    obj = dict(one=[1, 2, 3])
+    obj = dict(one=[1, 2, 3], two=[])
     model = Model.parse_obj(obj)
 
     assert isinstance(model.one, FrozenList)
@@ -410,5 +410,14 @@ def test_parse_frozenlist_works():
 
 
 def test_serialize_frozenlist_works():
+    # arrange
     model = Model(one=FrozenList([1, 2, 3]), two=FrozenList.empty())
-    _ = model.json()
+
+    # act
+    json = model.json()
+
+    # assert
+    model_ = Model.parse_raw(json)
+    assert model_.one == FrozenList([1, 2, 3])
+    assert model_.two == FrozenList.empty()
+    assert model_.three == frozenlist.empty

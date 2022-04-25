@@ -175,7 +175,7 @@ class Option(
         return of_optional(value)
 
     @abstractmethod
-    def to_json(self) -> str:
+    def to_json(self) -> Optional[_TSource]:
         """Returns a json string representation of the option."""
         raise NotImplementedError
 
@@ -273,9 +273,8 @@ class Some(Option[_TSource]):
 
         return Seq.of(self._value)
 
-    def to_json(self) -> str:
-        print("to_json:", [self, self.value])
-        return json.dumps(self.value)
+    def to_json(self) -> Optional[_TSource]:
+        return self.value
 
     @property
     def value(self) -> _TSource:
@@ -382,8 +381,8 @@ class Nothing_(Option[_TSource], EffectError):
 
         return Seq()
 
-    def to_json(self) -> str:
-        return json.dumps(None)
+    def to_json(self) -> Optional[_TSource]:
+        return None
 
     @property
     def value(self) -> _TSource:

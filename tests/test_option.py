@@ -501,4 +501,10 @@ def test_parse_option_works():
 
 def test_serialize_option_works():
     model = Model(one=Some(10), two=Nothing)
-    _ = model.json()
+    json = model.json()
+    print("json", json)
+    model_ = Model.parse_raw(json)
+    assert model_.one.is_some()
+    assert model_.one.value == 10
+    assert model_.two == Nothing
+    assert model_.three == Nothing

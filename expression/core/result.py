@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from typing import (
     Any,
     Callable,
+    Dict,
     Generator,
     Iterable,
     Iterator,
@@ -159,8 +160,8 @@ class Result(
         raise NotImplementedError
 
     @abstractmethod
-    def to_json(self) -> str:
-        """Returns a json string representation of the result."""
+    def to_json(self) -> Dict[str, Union[_TSource, _TError]]:
+        """Returns a json serializable representation of the result."""
         raise NotImplementedError
 
     def __eq__(self, o: Any) -> bool:
@@ -213,9 +214,9 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
 
         return True
 
-    def to_json(self) -> str:
+    def to_json(self) -> Dict[str, Union[_TSource, _TError]]:
         """Returns a json string representation of the ok value."""
-        return json.dumps(dict(ok=self._value))
+        return dict(ok=self._value)
 
     def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
@@ -285,9 +286,9 @@ class Error(ResultException, Result[_TSource, _TError]):
         """Returns `True` if the result is an `Ok` value."""
         return False
 
-    def to_json(self) -> str:
-        """Returns a json string representation of the ok value."""
-        return json.dumps(dict(error=self._error))
+    def to_json(self) -> Dict[str, Union[_TSource, _TError]]:
+        """Returns a json serializable representation of the error value."""
+        return dict(error=self._error)
 
     def __match__(self, pattern: Any) -> Iterable[_TError]:
         if self is pattern or self == pattern:
@@ -339,7 +340,7 @@ def bind(
     return _bind
 
 
-def to_json(source: Result[Any, Any]) -> str:
+def to_json(source: Result[_TSource, _TError]) -> Dict[str, Union[_TSource, _TError]]:
     return source.to_json()
 
 

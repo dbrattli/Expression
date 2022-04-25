@@ -106,6 +106,9 @@ class TaggedUnion(Validated[Any], ABC):
 
         return []
 
+    def to_json(self) -> Any:
+        raise NotImplementedError
+
     @classmethod
     def __get_validators__(cls) -> Iterator[Validator[Any]]:
         yield from cls.__validators__
