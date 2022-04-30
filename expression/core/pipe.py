@@ -257,7 +257,7 @@ class PipeMixin:
         ...
 
     def pipe(self, *args: Any) -> Any:
-        """Pipe list through the given functions."""
+        """Pipe the left side object through the given functions."""
         return pipe(self, *args)
 
 
