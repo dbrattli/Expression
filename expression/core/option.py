@@ -19,12 +19,11 @@ from typing import (
     TypeVar,
     Union,
     get_origin,
-    overload,
 )
 
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
-from .pipe import pipe
+from .pipe import PipeMixin
 
 if TYPE_CHECKING:
     from ..collections.seq import Seq
@@ -39,42 +38,13 @@ _T4 = TypeVar("_T4")
 
 
 class Option(
-    Iterable[_TSource], MatchMixin[_TSource], SupportsMatch[Union[_TSource, bool]], ABC
+    Iterable[_TSource],
+    MatchMixin[_TSource],
+    PipeMixin,
+    SupportsMatch[Union[_TSource, bool]],
+    ABC,
 ):
     """Option abstract base class."""
-
-    @overload
-    def pipe(self, __fn1: Callable[[Option[_TSource]], _TResult]) -> _TResult:
-        ...
-
-    @overload
-    def pipe(
-        self, __fn1: Callable[[Option[_TSource]], _T1], __fn2: Callable[[_T1], _T2]
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Option[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Option[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe option through the given functions."""
-        return pipe(self, *args)
 
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
