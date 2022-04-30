@@ -42,6 +42,7 @@ from typing import (
 from expression.core import (
     Case,
     Option,
+    PipeMixin,
     SupportsGreaterThan,
     SupportsLessThan,
     SupportsSum,
@@ -64,7 +65,7 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
-class Seq(Iterable[_TSource]):
+class Seq(Iterable[_TSource], PipeMixin):
     """Sequence type.
 
     Contains instance methods for dot-chaining operators methods on
@@ -242,41 +243,6 @@ class Seq(Iterable[_TSource]):
     def match(self, pattern: Optional[Any] = None) -> Any:
         case: Case[Iterable[_TSource]] = Case(self)
         return case(pattern) if pattern else case
-
-    @overload
-    def pipe(self, __fn1: Callable[["Seq[_TSource]"], _TResult]) -> _TResult:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[["Seq[_TSource]"], _T1],
-        __fn2: Callable[[_T1], _T2],
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[["Seq[_TSource]"], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[["Seq[_TSource]"], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe sequence through the given functions."""
-        return pipe(self, *args)
 
     @overload
     @staticmethod

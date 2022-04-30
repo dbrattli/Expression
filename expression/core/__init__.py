@@ -22,7 +22,7 @@ from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .match import Case, MatchMixin, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some, default_arg
-from .pipe import pipe, pipe2, pipe3
+from .pipe import PipeMixin, pipe, pipe2, pipe3
 from .result import Error, Ok, Result
 from .try_ import Failure, Success, Try
 from .typing import (
@@ -72,6 +72,7 @@ __all__ = [
     "pipe",
     "pipe2",
     "pipe3",
+    "PipeMixin",
     "result",
     "Result",
     "SingleCaseUnion",

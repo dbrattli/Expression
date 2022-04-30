@@ -41,10 +41,6 @@ _TError = TypeVar("_TError")
 _TSourceM = TypeVar("_TSourceM")
 _TErrorM = TypeVar("_TErrorM")
 
-_T1 = TypeVar("_T1")
-_T2 = TypeVar("_T2")
-_T3 = TypeVar("_T3")
-_T4 = TypeVar("_T4")
 
 
 def _validate(result: Any) -> Result[Any, Any]:

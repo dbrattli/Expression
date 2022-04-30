@@ -42,6 +42,7 @@ from expression.core import (
     MatchMixin,
     Nothing,
     Option,
+    PipeMixin,
     Some,
     SupportsLessThan,
     pipe,
@@ -59,8 +60,6 @@ _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
-_T5 = TypeVar("_T5")
-_T6 = TypeVar("_T6")
 
 
 def _validate(value: Any) -> FrozenList[Any]:
@@ -110,62 +109,6 @@ class FrozenList(
     def match(self, pattern: Any = None) -> Any:
         case: Case[_TSource] = Case(self)
         return case(pattern) if pattern else case
-
-    @overload
-    def pipe(self, __fn1: Callable[[FrozenList[_TSource]], _TResult]) -> _TResult:
-        ...
-
-    @overload
-    def pipe(
-        self, __fn1: Callable[[FrozenList[_TSource]], _T1], __fn2: Callable[[_T1], _T2]
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[FrozenList[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[FrozenList[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[FrozenList[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-        __fn5: Callable[[_T4], _T5],
-    ) -> _T5:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[FrozenList[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-        __fn5: Callable[[_T4], _T5],
-        __fn6: Callable[[_T5], _T6],
-    ) -> _T6:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe list through the given functions."""
-        return pipe(self, *args)
 
     def append(self, other: FrozenList[_TSource]) -> FrozenList[_TSource]:
         """Append frozen list to end of the frozen list."""

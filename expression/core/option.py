@@ -22,11 +22,11 @@ from typing import (
     Union,
     cast,
     get_origin,
-    overload,
 )
 
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
+from .pipe import PipeMixin
 from .pipe import pipe
 from .typing import Validated, Validator
 
