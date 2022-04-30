@@ -28,10 +28,9 @@ from typing import (
     Tuple,
     TypeVar,
     cast,
-    overload,
 )
 
-from expression.core import Option, SupportsLessThan, pipe
+from expression.core import Option, PipeMixin, SupportsLessThan, pipe
 
 from . import maptree, seq
 from .frozenlist import FrozenList
@@ -49,7 +48,7 @@ T5 = TypeVar("T5")
 T6 = TypeVar("T6")
 
 
-class Map(Mapping[Key, Value]):
+class Map(Mapping[Key, Value], PipeMixin):
     """The immutable map class."""
 
     def __init__(self, __tree: Optional[MapTree[Key, Value]] = None) -> None:
@@ -57,62 +56,6 @@ class Map(Mapping[Key, Value]):
 
     def add(self, key: Key, value: Value) -> Map[Key, Value]:
         return Map(maptree.add(key, value, self._tree))
-
-    @overload
-    def pipe(self, __fn1: Callable[[Map[Key, Value]], Result]) -> Result:
-        ...
-
-    @overload
-    def pipe(
-        self, __fn1: Callable[[Map[Key, Value]], T1], __fn2: Callable[[T1], T2]
-    ) -> T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Map[Key, Value]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-    ) -> T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Map[Key, Value]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-    ) -> T4:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Map[Key, Value]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-        __fn5: Callable[[T4], T5],
-    ) -> T5:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Map[Key, Value]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-        __fn5: Callable[[T4], T5],
-        __fn6: Callable[[T5], T6],
-    ) -> T6:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe map through the given functions."""
-        return pipe(self, *args)
 
     @staticmethod
     def create(ie: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:

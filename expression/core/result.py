@@ -26,7 +26,7 @@ from typing import (
 
 from .error import EffectError
 from .match import Case, SupportsMatch
-from .pipe import pipe
+from .pipe import PipeMixin
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -36,52 +36,22 @@ _TError = TypeVar("_TError")
 _TSourceM = TypeVar("_TSourceM")
 _TErrorM = TypeVar("_TErrorM")
 
-_T1 = TypeVar("_T1")
-_T2 = TypeVar("_T2")
-_T3 = TypeVar("_T3")
-_T4 = TypeVar("_T4")
 
 
 class Result(Iterable[_TSource], SupportsMatch[Union[_TSource, _TError]], ABC):
     """The result abstract base class."""
 
-    @overload
-    def pipe(
-        self: Result[_T1, _TError],
-        __fn1: Callable[[Result[_T1, _TError]], Result[_T2, _TError]],
-    ) -> Result[_T2, _TError]:
-        ...
 
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Result[_TSource, _TError]], _T1],
-        __fn2: Callable[[_T1], _T2],
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Result[_TSource, _TError]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Result[_TSource, _TError]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
+class Result(
+    Iterable[_TSource],
+    PipeMixin,
+    SupportsMatch[Union[_TSource, _TError]],
+    Validated[Union[_TSource, _TError]],
+    ABC,
+):
+    """The result abstract base class."""
 
     def pipe(self, *args: Any) -> Any:
-        """Pipe result through the given functions."""
-        return pipe(self, *args)
 
     @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:

@@ -17,6 +17,7 @@ from typing import Any, Callable, Tuple, TypeVar, overload
 from .compose import compose
 from .misc import starid
 
+_TSource = TypeVar("_TSource")
 _A = TypeVar("_A")
 _B = TypeVar("_B")
 _C = TypeVar("_C")
@@ -202,4 +203,62 @@ def starpipe(args: Any, *fns: Callable[..., Any]):
     return compose(*fns[1:])(fn(*args))
 
 
-__all__ = ["pipe", "pipe2", "pipe3", "starpipe"]
+class PipeMixin:
+    """A pipe mixin class that enabled a class to use pipe fluently."""
+
+    @overload
+    def pipe(self: _A, __fn1: Callable[[_A], _B]) -> _B:
+        ...
+
+    @overload
+    def pipe(self: _A, __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> _C:
+        ...
+
+    @overload
+    def pipe(
+        self: _A,
+        __fn1: Callable[[_A], _B],
+        __fn2: Callable[[_B], _C],
+        __fn3: Callable[[_C], _D],
+    ) -> _D:
+        ...
+
+    @overload
+    def pipe(
+        self: _A,
+        __fn1: Callable[[_A], _B],
+        __fn2: Callable[[_B], _C],
+        __fn3: Callable[[_C], _D],
+        __fn4: Callable[[_D], _E],
+    ) -> _E:
+        ...
+
+    @overload
+    def pipe(
+        self: _A,
+        __fn1: Callable[[_A], _B],
+        __fn2: Callable[[_B], _C],
+        __fn3: Callable[[_C], _D],
+        __fn4: Callable[[_D], _E],
+        __fn5: Callable[[_E], _F],
+    ) -> _F:
+        ...
+
+    @overload
+    def pipe(
+        self: _A,
+        __fn1: Callable[[_A], _B],
+        __fn2: Callable[[_B], _C],
+        __fn3: Callable[[_C], _D],
+        __fn4: Callable[[_D], _E],
+        __fn5: Callable[[_E], _F],
+        __fn6: Callable[[_F], _G],
+    ) -> _G:
+        ...
+
+    def pipe(self, *args: Any) -> Any:
+        """Pipe list through the given functions."""
+        return pipe(self, *args)
+
+
+__all__ = ["pipe", "pipe2", "pipe3", "PipeMixin", "starpipe"]
