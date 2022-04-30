@@ -71,7 +71,7 @@ def _validate(value: Any) -> FrozenList[Any]:
 class FrozenList(
     Iterable[_TSource],
     MatchMixin[Iterable[_TSource]],
-    Validated[Iterable[_TSource]],
+    Validated["FrozenList[_TSource]"],
     PipeMixin,
 ):
     """Immutable list type.
@@ -91,7 +91,7 @@ class FrozenList(
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
 
-    __validators__: List[Validator[_TSource]] = [_validate]
+    __validators__: List[Validator[FrozenList[_TSource]]] = [_validate]
 
     def __init__(self, value: Optional[Iterable[_TSource]] = None) -> None:
         # Use composition instead of inheritance since generic tuples
@@ -523,7 +523,7 @@ class FrozenList(
         return str(self)
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[Validator[Iterable[_TSource]]]:
+    def __get_validators__(cls) -> Iterator[Validator[FrozenList[_TSource]]]:
         yield from cls.__validators__
 
 

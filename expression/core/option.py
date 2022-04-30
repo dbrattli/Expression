@@ -27,7 +27,6 @@ from typing import (
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
 from .pipe import PipeMixin
-from .pipe import pipe
 from .typing import Validated, Validator
 
 if TYPE_CHECKING:
@@ -62,7 +61,7 @@ class Option(
 ):
     """Option abstract base class."""
 
-    __validators__: List[Validator[_TSource]] = [_validate]
+    __validators__: List[Validator[Option[_TSource]]] = [_validate]
 
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.

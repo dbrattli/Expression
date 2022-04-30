@@ -8,6 +8,7 @@ from typing import (
     Protocol,
     Type,
     TypeVar,
+    Union,
     cast,
     get_origin,
 )
@@ -50,7 +51,8 @@ class SupportsMatch(Protocol[_T_co]):
         raise NotImplementedError
 
 
-Validator = Callable[[_T], _T]
+Validator = Callable[[Any], _T]
+GenericValidator = Callable[[Any, Any], _T]
 
 
 class Validated(Protocol[_T_co]):
@@ -58,7 +60,9 @@ class Validated(Protocol[_T_co]):
     pydantic."""
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[Validator[_T_co]]:
+    def __get_validators__(
+        cls,
+    ) -> Iterator[Union[Validator[_T_co], GenericValidator[_T_co]]]:
         """Yield an iterator of validators."""
         ...
 
