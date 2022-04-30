@@ -44,6 +44,7 @@ from expression.core import (
     PipeMixin,
     Some,
     SupportsLessThan,
+    curry_flipped,
     pipe,
 )
 
@@ -517,23 +518,24 @@ def append(
     return _append
 
 
+@curry_flipped(1)
 def choose(
-    chooser: Callable[[_TSource], Option[_TResult]]
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TResult]]:
-    def _choose(source: FrozenList[_TSource]) -> FrozenList[_TResult]:
-        return source.choose(chooser)
-
-    return _choose
+    source: FrozenList[_TSource], chooser: Callable[[_TSource], Option[_TResult]]
+) -> FrozenList[_TResult]:
+    return source.choose(chooser)
 
 
+@curry_flipped(1)
 def collect(
-    mapping: Callable[[_TSource], FrozenList[_TResult]]
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TResult]]:
+    source: FrozenList[_TSource], mapping: Callable[[_TSource], FrozenList[_TResult]]
+) -> FrozenList[_TResult]:
+
     """For each element of the list, applies the given function.
     Concatenates all the results and return the combined list.
 
     Args:
-        mapping: he function to transform each input element into
+        source: The input list (curried flipped).
+        mapping: The function to transform each input element into
         a sublist to be concatenated.
 
     Returns:
@@ -541,19 +543,7 @@ def collect(
         list and returns the concatenation of the transformed sublists.
     """
 
-    def _collect(source: FrozenList[_TSource]) -> FrozenList[_TResult]:
-        """For each element of the list, applies the given function.
-        Concatenates all the results and return the combined list.
-
-        Args:
-            source: The input list.
-
-        Returns:
-            The concatenation of the transformed sublists.
-        """
-        return source.collect(mapping)
-
-    return _collect
+    return source.collect(mapping)
 
 
 def concat(sources: Iterable[FrozenList[_TSource]]) -> FrozenList[_TSource]:

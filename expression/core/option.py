@@ -21,6 +21,7 @@ from typing import (
     get_origin,
 )
 
+from .curry import curry_flipped
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
 from .pipe import PipeMixin
@@ -370,9 +371,11 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 """
 
 
+@curry_flipped(1)
 def bind(
-    mapper: Callable[[_TSource], Option[_TResult]]
-) -> Callable[[Option[_TSource]], Option[_TResult]]:
+    option: Option[_TSource],
+    mapper: Callable[[_TSource], Option[_TResult]],
+) -> Option[_TResult]:
     """Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -388,10 +391,7 @@ def bind(
         option of the output type of the mapper.
     """
 
-    def _bind(option: Option[_TSource]) -> Option[_TResult]:
-        return option.bind(mapper)
-
-    return _bind
+    return option.bind(mapper)
 
 
 def default_value(value: _TSource) -> Callable[[Option[_TSource]], _TSource]:
@@ -413,13 +413,11 @@ def is_some(option: Option[Any]) -> bool:
     return option.is_some()
 
 
+@curry_flipped(1)
 def map(
-    mapper: Callable[[_TSource], _TResult]
-) -> Callable[[Option[_TSource]], Option[_TResult]]:
-    def _map(option: Option[_TSource]) -> Option[_TResult]:
-        return option.map(mapper)
-
-    return _map
+    option: Option[_TSource], mapper: Callable[[_TSource], _TResult]
+) -> Option[_TResult]:
+    return option.map(mapper)
 
 
 def map2(

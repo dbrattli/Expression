@@ -46,6 +46,7 @@ from expression.core import (
     SupportsGreaterThan,
     SupportsLessThan,
     SupportsSum,
+    curry_flipped,
     identity,
     pipe,
 )
@@ -426,18 +427,17 @@ def choose(
     return _choose
 
 
+@curry_flipped(1)
 def collect(
-    mapping: Callable[[_TSource], Iterable[_TResult]]
-) -> Callable[[Iterable[_TSource]], Iterable[_TResult]]:
-    def _collect(source: Iterable[_TSource]) -> Iterable[_TResult]:
-        def gen():
-            for xs in source:
-                for x in mapping(xs):
-                    yield x
+    source: Iterable[_TSource],
+    mapping: Callable[[_TSource], Iterable[_TResult]],
+) -> Iterable[_TResult]:
+    def gen():
+        for xs in source:
+            for x in mapping(xs):
+                yield x
 
-        return SeqGen(gen)
-
-    return _collect
+    return SeqGen(gen)
 
 
 def concat(*iterables: Iterable[_TSource]) -> Iterable[_TSource]:
@@ -477,9 +477,10 @@ empty: Seq[Any] = Seq()
 """The empty sequence."""
 
 
+@curry_flipped(1)
 def filter(
-    predicate: Callable[[_TSource], bool]
-) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
+    source: Iterable[_TSource], predicate: Callable[[_TSource], bool]
+) -> Iterable[_TSource]:
     """Filter sequence.
 
     Filters the sequence to a new sequence containing only the
@@ -487,28 +488,15 @@ def filter(
     `True`.
 
     Args:
+        source: (curried) The input sequence to to filter.
         predicate: A function to test whether each item in the
             input sequence should be included in the output.
-        source: (curried) The input sequence to to filter.
 
     Returns:
         A partially applied filter function.
     """
 
-    def _filter(source: Iterable[_TSource]) -> Iterable[_TSource]:
-        """Filter sequence (partially applied).
-
-        Args:
-            source: The input sequence to to filter.
-
-        Returns:
-            Returns a new collection containing only the elements
-            of the collection for which the given predicate returns
-            `True`.
-        """
-        return builtins.filter(predicate, source)
-
-    return _filter
+    return builtins.filter(predicate, source)
 
 
 def fold(
