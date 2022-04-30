@@ -7,12 +7,12 @@ the only argument.
 """
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Generator,
     Iterable,
     Iterator,
@@ -43,16 +43,19 @@ _T4 = TypeVar("_T4")
 
 
 def _validate(value: Any) -> Option[Any]:
-    print("validate: ", [value])
     if isinstance(value, Option):
         return cast(Option[Any], value)
 
-    return Some(value)
+    if isinstance(value, Dict) and not value:
+        return Nothing
+
+    return Some(cast(Any, value))
 
 
 class Option(
     Iterable[_TSource],
     MatchMixin[_TSource],
+    PipeMixin,
     SupportsMatch[Union[_TSource, bool]],
     Validated[_TSource],
     ABC,
@@ -60,39 +63,6 @@ class Option(
     """Option abstract base class."""
 
     __validators__: List[Validator[_TSource]] = [_validate]
-
-    @overload
-    def pipe(self, __fn1: Callable[[Option[_TSource]], _TResult]) -> _TResult:
-        ...
-
-    @overload
-    def pipe(
-        self, __fn1: Callable[[Option[_TSource]], _T1], __fn2: Callable[[_T1], _T2]
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Option[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Option[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe option through the given functions."""
-        return pipe(self, *args)
 
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
@@ -381,8 +351,8 @@ class Nothing_(Option[_TSource], EffectError):
 
         return Seq()
 
-    def to_json(self) -> Optional[_TSource]:
-        return None
+    def to_json(self) -> Union[_TSource, Dict[Any, Any]]:
+        return dict()  # Pydantic cannot handle None or other types than Optional
 
     @property
     def value(self) -> _TSource:

@@ -306,7 +306,10 @@ def test_list_sort_with(xs: List[str]):
     expected = sorted(xs, key=lambda x: x[1])
     ys: FrozenList[str] = frozenlist.of_seq(xs)
     func: Callable[[str], str] = lambda x: x[1]
-    result = pipe(ys, frozenlist.sort_with(func))
+    result = pipe(
+        ys,
+        frozenlist.sort_with(func),
+    )
 
     assert list(result) == list(expected)
 

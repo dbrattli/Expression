@@ -10,7 +10,6 @@ the Result type to Exception.
 """
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -30,7 +29,7 @@ from typing import (
 
 from .error import EffectError
 from .match import Case, SupportsMatch
-from .pipe import pipe
+from .pipe import PipeMixin
 from .typing import Validated, Validator
 
 _TSource = TypeVar("_TSource")
@@ -40,7 +39,6 @@ _TError = TypeVar("_TError")
 # Used for generic methods
 _TSourceM = TypeVar("_TSourceM")
 _TErrorM = TypeVar("_TErrorM")
-
 
 
 def _validate(result: Any) -> Result[Any, Any]:
@@ -53,6 +51,7 @@ def _validate(result: Any) -> Result[Any, Any]:
 
 class Result(
     Iterable[_TSource],
+    PipeMixin,
     SupportsMatch[Union[_TSource, _TError]],
     Validated[Union[_TSource, _TError]],
     ABC,
@@ -60,44 +59,6 @@ class Result(
     """The result abstract base class."""
 
     __validators__: List[Validator[_TSource]] = [_validate]
-
-    @overload
-    def pipe(
-        self: Result[_T1, _TError],
-        __fn1: Callable[[Result[_T1, _TError]], Result[_T2, _TError]],
-    ) -> Result[_T2, _TError]:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Result[_TSource, _TError]], _T1],
-        __fn2: Callable[[_T1], _T2],
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Result[_TSource, _TError]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Result[_TSource, _TError]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe result through the given functions."""
-        return pipe(self, *args)
 
     @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:

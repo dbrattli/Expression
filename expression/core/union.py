@@ -15,6 +15,7 @@ from typing import (
     get_origin,
 )
 
+from .pipe import PipeMixin
 from .typing import SupportsMatch, Validated, Validator
 
 _T = TypeVar("_T")
@@ -81,7 +82,7 @@ class Tag(SupportsMatch[_T]):
         return self.__class__(self.tag, *args, **kwargs)
 
 
-class TaggedUnion(Validated[Any], ABC):
+class TaggedUnion(Validated[Any], PipeMixin, ABC):
     """A discriminated (tagged) union.
 
     Takes a value, and an optional tag that may be used for matching."""

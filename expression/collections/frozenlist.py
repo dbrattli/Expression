@@ -22,7 +22,6 @@ from __future__ import annotations
 import builtins
 import functools
 import itertools
-import json
 from typing import (
     Any,
     Callable,
@@ -73,6 +72,7 @@ class FrozenList(
     Iterable[_TSource],
     MatchMixin[Iterable[_TSource]],
     Validated[Iterable[_TSource]],
+    PipeMixin,
 ):
     """Immutable list type.
 
