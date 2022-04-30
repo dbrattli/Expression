@@ -12,7 +12,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generator,
     Iterable,
     List,
@@ -22,7 +21,6 @@ from typing import (
     get_origin,
 )
 
-from .curry import curry_flipped
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
 from .pipe import PipeMixin
@@ -40,27 +38,13 @@ _T4 = TypeVar("_T4")
 
 
 class Option(
-    Iterable[_TSource], MatchMixin[_TSource], SupportsMatch[Union[_TSource, bool]], ABC
-):
-    """Option abstract base class."""
-
-    @overload
-    def pipe(self, __fn1: Callable[[Option[_TSource]], _TResult]) -> _TResult:
-
-    @overload
-
-
-class Option(
     Iterable[_TSource],
     MatchMixin[_TSource],
     PipeMixin,
     SupportsMatch[Union[_TSource, bool]],
-        __fn3: Callable[[_T2], _T3],
     ABC,
 ):
     """Option abstract base class."""
-
-    def pipe(self, *args: Any) -> Any:
 
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.

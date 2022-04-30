@@ -46,7 +46,6 @@ from expression.core import (
     SupportsGreaterThan,
     SupportsLessThan,
     SupportsSum,
-    curry_flipped,
     identity,
     pipe,
 )

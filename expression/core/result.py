@@ -37,21 +37,13 @@ _TSourceM = TypeVar("_TSourceM")
 _TErrorM = TypeVar("_TErrorM")
 
 
-
-class Result(Iterable[_TSource], SupportsMatch[Union[_TSource, _TError]], ABC):
-    """The result abstract base class."""
-
-
 class Result(
     Iterable[_TSource],
     PipeMixin,
     SupportsMatch[Union[_TSource, _TError]],
-    Validated[Union[_TSource, _TError]],
     ABC,
 ):
     """The result abstract base class."""
-
-    def pipe(self, *args: Any) -> Any:
 
     @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
