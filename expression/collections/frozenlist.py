@@ -47,6 +47,7 @@ from expression.core import (
     curry_flipped,
     pipe,
 )
+from expression.core.typing import GenericValidator, ModelField, SupportsValidation
 
 from . import seq
 
@@ -61,10 +62,34 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
+def _validate(value: Any, field: ModelField) -> FrozenList[Any]:
+    if isinstance(value, FrozenList):
+        return cast(FrozenList[Any], value)
+
+    if not isinstance(value, List):
+        raise ValueError("not a list")
+
+    value_ = cast(List[Any], value)
+
+    if field.sub_fields:
+        sub_field = field.sub_fields[0]
+
+        value__: List[Any] = []
+        for item in value_:
+            val, error = sub_field.validate(item, {}, loc="FrozenList")
+            if error:
+                raise ValueError(str(error))
+            value__.append(val)
+        value_ = value__
+
+    return FrozenList(value_)
+
+
 class FrozenList(
     Iterable[_TSource],
-    MatchMixin[Iterable[_TSource]],
     PipeMixin,
+    MatchMixin[Iterable[_TSource]],
+    SupportsValidation["FrozenList[_TSource]"],
 ):
     """Immutable list type.
 
@@ -82,6 +107,8 @@ class FrozenList(
         >>> xs = Cons(5, Cons(4, Cons(3, Cons(2, Cons(1, Nil)))))
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
+
+    __validators__: List[GenericValidator[FrozenList[_TSource]]] = [_validate]
 
     def __init__(self, value: Optional[Iterable[_TSource]] = None) -> None:
         # Use composition instead of inheritance since generic tuples
@@ -423,6 +450,17 @@ class FrozenList(
         """
         return FrozenList(self.value[-count:])
 
+    def dict(self) -> List[_TSource]:
+        """Returns a json serializable representation of the list."""
+
+        def to_obj(value: Any) -> Any:
+            attr = getattr(value, "dict", None) or getattr(value, "dict", None)
+            if attr and callable(attr):
+                value = attr()
+            return value
+
+        return [to_obj(value) for value in self.value]
+
     def try_head(self) -> Option[_TSource]:
         """Returns the first element of the list, or None if the list is
         empty.
@@ -507,6 +545,10 @@ class FrozenList(
 
     def __repr__(self) -> str:
         return str(self)
+
+    @classmethod
+    def __get_validators__(cls) -> Iterator[GenericValidator[FrozenList[_TSource]]]:
+        yield from cls.__validators__
 
 
 def append(
@@ -950,6 +992,10 @@ def take_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSourc
     return _take
 
 
+def dict(source: FrozenList[_TSource]) -> List[_TSource]:
+    return source.dict()
+
+
 def try_head(source: FrozenList[_TSource]) -> Option[_TSource]:
     """Try to get the first element from the list.
 
@@ -1044,6 +1090,7 @@ __all__ = [
     "tail",
     "take",
     "take_last",
+    "dict",
     "try_head",
     "unfold",
     "zip",

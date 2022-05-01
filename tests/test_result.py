@@ -1,8 +1,9 @@
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List, Type, Union
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
+from pydantic import BaseModel, parse_obj_as
 
 from expression import Error, Ok, Result, effect, match, result
 from expression.extra.result import pipeline, sequence
@@ -346,3 +347,59 @@ def test_pipeline_error():
     )
 
     assert hn(42) == error
+
+
+class MyError(BaseModel):
+    message: str
+
+
+class Model(BaseModel):
+    one: Result[int, MyError]
+    two: Result[str, MyError] = Error(MyError(message="error"))
+    three: Result[float, MyError] = Error(MyError(message="error"))
+
+    class Config:
+        json_encoders: Dict[Type[Any], Callable[[Any], Union[Any, Any]]] = {
+            Result: result.dict,
+        }
+
+
+def test_parse_frozenlist_works():
+    obj = dict(one=dict(ok=42))
+    model = Model.parse_obj(obj)
+
+    assert isinstance(model.one, Result)
+    assert model.one == Ok(42)
+    assert model.two == Error(MyError(message="error"))
+    assert model.three == Error(MyError(message="error"))
+
+
+def test_ok_to_dict_works():
+    result = Ok[int, MyError](10)
+    obj = result.dict()
+    assert obj == dict(ok=10)
+
+
+def test_error_to_dict_works():
+    error = MyError(message="got error")
+    result = Error[int, MyError](error)
+    obj = result.dict()
+    assert obj == dict(error=dict(message="got error"))
+
+
+def test_ok_from_from_dict_works():
+    obj = dict(ok=10)
+    result = parse_obj_as(Result[int, MyError], obj)
+
+    assert result
+    assert isinstance(result, Ok)
+    assert result.value == 10
+
+
+def test_error_from_dict_works():
+    obj = dict(error=dict(message="got error"))
+    result = parse_obj_as(Result[int, MyError], obj)
+
+    assert result
+    assert isinstance(result, Error)
+    assert result.error == MyError(message="got error")

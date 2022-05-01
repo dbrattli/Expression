@@ -14,12 +14,15 @@ from abc import ABC, abstractmethod
 from typing import (
     Any,
     Callable,
+    Dict,
     Generator,
     Iterable,
     Iterator,
+    List,
     Type,
     TypeVar,
     Union,
+    cast,
     get_origin,
     overload,
 )
@@ -27,6 +30,7 @@ from typing import (
 from .error import EffectError
 from .match import Case, SupportsMatch
 from .pipe import PipeMixin
+from .typing import GenericValidator, ModelField, SupportsValidation
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -37,13 +41,43 @@ _TSourceM = TypeVar("_TSourceM")
 _TErrorM = TypeVar("_TErrorM")
 
 
+def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
+    if isinstance(result, Result):
+        return cast(Result[Any, Any], result)
+
+    if not isinstance(result, Dict):
+        raise ValueError("not result type")
+
+    try:
+        value: Any = result["ok"]
+        if field.sub_fields:
+            sub_field = field.sub_fields[0]
+            value, err = sub_field.validate(value, {}, loc="Result")
+            if err:
+                raise ValueError(str(err))
+        return Ok(value)
+    except KeyError:
+        try:
+            error: Any = result["error"]
+            sub_field = field.sub_fields[1]
+            error, err = sub_field.validate(error, {}, loc="Result")
+            if err:
+                raise ValueError(str(err))
+            return Error(error)
+        except KeyError:
+            raise ValueError("not a result")
+
+
 class Result(
     Iterable[_TSource],
     PipeMixin,
     SupportsMatch[Union[_TSource, _TError]],
+    SupportsValidation["Result[_TSource, _TError]"],
     ABC,
 ):
     """The result abstract base class."""
+
+    __validators__: List[GenericValidator[Result[_TSource, _TError]]] = [_validate]
 
     @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
@@ -101,6 +135,11 @@ class Result(
 
         raise NotImplementedError
 
+    @abstractmethod
+    def dict(self) -> Dict[str, Union[_TSource, _TError]]:
+        """Returns a json serializable representation of the result."""
+        raise NotImplementedError
+
     def __eq__(self, o: Any) -> bool:
         raise NotImplementedError
 
@@ -110,6 +149,12 @@ class Result(
 
     def __repr__(self) -> str:
         return str(self)
+
+    @classmethod
+    def __get_validators__(
+        cls,
+    ) -> Iterator[GenericValidator[Result[_TSource, _TError]]]:
+        yield from cls.__validators__
 
 
 class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
@@ -146,6 +191,16 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
         """Returns `True` if the result is an `Ok` value."""
 
         return True
+
+    def dict(self) -> Dict[str, Union[_TSource, _TError]]:
+        """Returns a json string representation of the ok value."""
+        attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
+        if attr and callable(attr):
+            value = attr()
+        else:
+            value = self._value
+
+        return {"ok": value}
 
     def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
@@ -215,6 +270,16 @@ class Error(ResultException, Result[_TSource, _TError]):
         """Returns `True` if the result is an `Ok` value."""
         return False
 
+    def dict(self) -> Dict[str, Any]:
+        """Returns a json serializable representation of the error value."""
+        attr = getattr(self._error, "dict") or getattr(self._error, "dict")
+        if callable(attr):
+            error = attr()
+        else:
+            error = self._error
+
+        return {"error": error}
+
     def __match__(self, pattern: Any) -> Iterable[_TError]:
         if self is pattern or self == pattern:
             return [self.error]
@@ -265,10 +330,15 @@ def bind(
     return _bind
 
 
+def dict(source: Result[_TSource, _TError]) -> Dict[str, Union[_TSource, _TError]]:
+    return source.dict()
+
+
 __all__ = [
     "Result",
     "Ok",
     "Error",
     "map",
     "bind",
+    "dict",
 ]
