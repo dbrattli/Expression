@@ -51,7 +51,7 @@ from expression.core import (
 )
 
 if TYPE_CHECKING:
-    from .frozenlist import FrozenList
+    from .block import Block
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -311,7 +311,7 @@ class Seq(Iterable[_TSource], PipeMixin):
         """
         return Seq(pipe(self, take(count)))
 
-    def to_list(self) -> "FrozenList[_TSource]":
+    def to_list(self) -> "Block[_TSource]":
         return to_list(self)
 
     def dict(self) -> Iterable[_TSource]:
@@ -947,10 +947,10 @@ def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
     return _take
 
 
-def to_list(source: Iterable[_TSource]) -> "FrozenList[_TSource]":
-    from .frozenlist import FrozenList
+def to_list(source: Iterable[_TSource]) -> "Block[_TSource]":
+    from .block import Block
 
-    return FrozenList.of_seq(source)
+    return Block.of_seq(source)
 
 
 def unfold(

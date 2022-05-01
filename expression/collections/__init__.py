@@ -1,15 +1,15 @@
 """
 Collection abstractions.
 """
-from . import asyncseq, frozenlist, map, seq
-from .frozenlist import FrozenList
+from . import asyncseq, block, map, seq
+from .block import Block
 from .map import Map
 from .seq import Seq
 
 __all__ = [
     "asyncseq",
-    "FrozenList",
-    "frozenlist",
+    "Block",
+    "block",
     "Map",
     "map",
     "Seq",

@@ -364,7 +364,7 @@ class Model(BaseModel):
         }
 
 
-def test_parse_frozenlist_works():
+def test_parse_block_works():
     obj = dict(one=dict(ok=42))
     model = Model.parse_obj(obj)
 

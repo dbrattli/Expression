@@ -1,7 +1,7 @@
 from typing import Any, Iterable, List
 
 from expression import Nothing, Option, Some, match
-from expression.collections import FrozenList
+from expression.collections import Block
 from expression.core import SupportsMatch
 
 
@@ -75,9 +75,9 @@ def test_match_not_equals() -> None:
 
 
 def test_match_destructure() -> None:
-    xs: FrozenList[int] = FrozenList.empty().cons(42)
+    xs: Block[int] = Block.empty().cons(42)
     with match(xs) as case:
-        for (head, *_) in case(FrozenList[int]):
+        for (head, *_) in case(Block[int]):
             assert head == 42
 
 

@@ -1,20 +1,20 @@
 """A frozen immutable list module.
 
-This module provides an immutable list type `FrozenList` and  a set of
+This module provides an immutable list type `Block` and  a set of
 useful methods and functions for working with the list.
 
-Named "FrozenList" to avoid conflicts with the builtin Python List type.
+Named "Block" to avoid conflicts with the builtin Python List type.
 
-A FrozenList is actually a Python tuple. Tuples in Python are
+A Block is actually a Python tuple. Tuples in Python are
 immutable and gives us a high performant implementation of immutable
 lists.
 
 Example:
-    >>> xs = frozenlist.of_list([1, 2, 3, 4, 5])
-    >>> ys = frozenlist.empty.cons(1).cons(2).cons(3).cons(4).cons(5)
+    >>> xs = block.of_list([1, 2, 3, 4, 5])
+    >>> ys = block.empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     >>> zs = pipe(
 ...     xs,
-...     frozenlist.filter(lambda x: x<10)
+...     block.filter(lambda x: x<10)
 ... )
 """
 from __future__ import annotations
@@ -61,9 +61,9 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
-def _validate(value: Any, field: ModelField) -> FrozenList[Any]:
-    if isinstance(value, FrozenList):
-        return cast(FrozenList[Any], value)
+def _validate(value: Any, field: ModelField) -> Block[Any]:
+    if isinstance(value, Block):
+        return cast(Block[Any], value)
 
     if not isinstance(value, List):
         raise ValueError("not a list")
@@ -75,20 +75,20 @@ def _validate(value: Any, field: ModelField) -> FrozenList[Any]:
 
         value__: List[Any] = []
         for item in value_:
-            val, error = sub_field.validate(item, {}, loc="FrozenList")
+            val, error = sub_field.validate(item, {}, loc="Block")
             if error:
                 raise ValueError(str(error))
             value__.append(val)
         value_ = value__
 
-    return FrozenList(value_)
+    return Block(value_)
 
 
-class FrozenList(
+class Block(
     Iterable[_TSource],
     PipeMixin,
     MatchMixin[Iterable[_TSource]],
-    SupportsValidation["FrozenList[_TSource]"],
+    SupportsValidation["Block[_TSource]"],
 ):
     """Immutable list type.
 
@@ -97,7 +97,7 @@ class FrozenList(
 
     Count: 200K::
 
-        | Operation | FrozenList | List   |
+        | Operation | Block      | List   |
         |-----------|------------|--------|
         | Append    | 3.29 s     | 0.02 s |
         | Prepend   | 0.05 s     | 7.02 s |
@@ -107,7 +107,7 @@ class FrozenList(
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
 
-    __validators__: List[GenericValidator[FrozenList[_TSource]]] = [_validate]
+    __validators__: List[GenericValidator[Block[_TSource]]] = [_validate]
 
     def __init__(self, value: Optional[Iterable[_TSource]] = None) -> None:
         # Use composition instead of inheritance since generic tuples
@@ -126,14 +126,14 @@ class FrozenList(
         case: Case[_TSource] = Case(self)
         return case(pattern) if pattern else case
 
-    def append(self, other: FrozenList[_TSource]) -> FrozenList[_TSource]:
+    def append(self, other: Block[_TSource]) -> Block[_TSource]:
         """Append frozen list to end of the frozen list."""
 
-        return FrozenList(self.value + other.value)
+        return Block(self.value + other.value)
 
     def choose(
         self, chooser: Callable[[_TSource], Option[_TResult]]
-    ) -> FrozenList[_TResult]:
+    ) -> Block[_TResult]:
         """Choose items from the list.
 
         Applies the given function to each element of the list. Returns
@@ -148,30 +148,30 @@ class FrozenList(
             function.
         """
 
-        def mapper(x: _TSource) -> FrozenList[_TResult]:
-            return FrozenList(chooser(x).to_seq())
+        def mapper(x: _TSource) -> Block[_TResult]:
+            return Block(chooser(x).to_seq())
 
         return self.collect(mapper)
 
     def collect(
-        self, mapping: Callable[[_TSource], FrozenList[_TResult]]
-    ) -> FrozenList[_TResult]:
+        self, mapping: Callable[[_TSource], Block[_TResult]]
+    ) -> Block[_TResult]:
         mapped = builtins.map(mapping, self.value)
         xs = (y for x in mapped for y in x)
-        return FrozenList(xs)
+        return Block(xs)
 
-    def cons(self, element: _TSource) -> FrozenList[_TSource]:
+    def cons(self, element: _TSource) -> Block[_TSource]:
         """Add element to front of list."""
 
-        return FrozenList((element,) + self.value)  # NOTE: Faster than (element, *self)
+        return Block((element,) + self.value)  # NOTE: Faster than (element, *self)
 
     @staticmethod
-    def empty() -> FrozenList[Any]:
+    def empty() -> Block[Any]:
         """Returns empty list."""
 
-        return FrozenList()
+        return Block()
 
-    def filter(self, predicate: Callable[[_TSource], bool]) -> FrozenList[_TSource]:
+    def filter(self, predicate: Callable[[_TSource], bool]) -> Block[_TSource]:
         """Filter list.
 
         Returns a new collection containing only the elements of the
@@ -184,7 +184,7 @@ class FrozenList(
             A list containing only the elements that satisfy the
             predicate.
         """
-        return FrozenList(builtins.filter(predicate, self.value))
+        return Block(builtins.filter(predicate, self.value))
 
     def fold(
         self, folder: Callable[[_TState, _TSource], _TState], state: _TState
@@ -237,7 +237,7 @@ class FrozenList(
         head, *_ = self
         return head
 
-    def indexed(self, start: int = 0) -> FrozenList[Tuple[int, _TSource]]:
+    def indexed(self, start: int = 0) -> Block[Tuple[int, _TSource]]:
         """Returns a new list whose elements are the corresponding
         elements of the input list paired with the index (from `start`)
         of each element.
@@ -266,7 +266,7 @@ class FrozenList(
 
         return not bool(self)
 
-    def map(self, mapping: Callable[[_TSource], _TResult]) -> FrozenList[_TResult]:
+    def map(self, mapping: Callable[[_TSource], _TResult]) -> Block[_TResult]:
         """Map list.
 
         Builds a new collection whose elements are the results of
@@ -280,31 +280,31 @@ class FrozenList(
         Returns:
             The list of transformed elements.
         """
-        return FrozenList((*builtins.map(mapping, self),))
+        return Block((*builtins.map(mapping, self),))
 
     @overload
     def starmap(
-        self: FrozenList[Tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]
-    ) -> FrozenList[_TResult]:
+        self: Block[Tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]
+    ) -> Block[_TResult]:
         ...
 
     @overload
     def starmap(
-        self: FrozenList[Tuple[_T1, _T2, _T3]],
+        self: Block[Tuple[_T1, _T2, _T3]],
         mapping: Callable[[_T1, _T2, _T3], _TResult],
-    ) -> FrozenList[_TResult]:
+    ) -> Block[_TResult]:
         ...
 
     @overload
     def starmap(
-        self: FrozenList[Tuple[_T1, _T2, _T3, _T4]],
+        self: Block[Tuple[_T1, _T2, _T3, _T4]],
         mapping: Callable[[_T1, _T2, _T3, _T4], _TResult],
-    ) -> FrozenList[_TResult]:
+    ) -> Block[_TResult]:
         ...
 
     def starmap(
-        self: FrozenList[Tuple[Any, ...]], mapping: Callable[..., Any]
-    ) -> FrozenList[Any]:
+        self: Block[Tuple[Any, ...]], mapping: Callable[..., Any]
+    ) -> Block[Any]:
         """Starmap source sequence.
 
         Unpack arguments grouped as tuple elements. Builds a new collection
@@ -317,11 +317,9 @@ class FrozenList(
         Returns:
             Partially applied map function.
         """
-        return FrozenList(starmap(mapping)(self))
+        return Block(starmap(mapping)(self))
 
-    def mapi(
-        self, mapping: Callable[[int, _TSource], _TResult]
-    ) -> FrozenList[_TResult]:
+    def mapi(self, mapping: Callable[[int, _TSource], _TResult]) -> Block[_TResult]:
         """Map list with index.
 
         Builds a new collection whose elements are the results of
@@ -336,46 +334,46 @@ class FrozenList(
         Returns:
             The list of transformed elements.
         """
-        return FrozenList((*itertools.starmap(mapping, enumerate(self)),))
+        return Block((*itertools.starmap(mapping, enumerate(self)),))
 
     @staticmethod
-    def of(*args: _TSource) -> FrozenList[_TSource]:
+    def of(*args: _TSource) -> Block[_TSource]:
         """Create list from a number of arguments."""
-        return FrozenList((*args,))
+        return Block((*args,))
 
     @staticmethod
-    def of_seq(xs: Iterable[_TSource]) -> FrozenList[_TSource]:
+    def of_seq(xs: Iterable[_TSource]) -> Block[_TSource]:
         """Create list from iterable sequence."""
-        return FrozenList((*xs,))
+        return Block((*xs,))
 
     @staticmethod
-    def of_option(option: Option[_TSource]) -> FrozenList[_TSource]:
+    def of_option(option: Option[_TSource]) -> Block[_TSource]:
         return of_option(option)
 
     @overload
     @staticmethod
-    def range(stop: int) -> FrozenList[int]:
+    def range(stop: int) -> Block[int]:
         ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int) -> FrozenList[int]:
+    def range(start: int, stop: int) -> Block[int]:
         ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: int) -> FrozenList[int]:
+    def range(start: int, stop: int, step: int) -> Block[int]:
         ...
 
     @staticmethod
-    def range(*args: int, **kw: int) -> FrozenList[int]:
+    def range(*args: int, **kw: int) -> Block[int]:
         return range(*args, **kw)
 
     @staticmethod
-    def singleton(item: _TSource) -> FrozenList[_TSource]:
+    def singleton(item: _TSource) -> Block[_TSource]:
         return singleton(item)
 
-    def skip(self, count: int) -> FrozenList[_TSource]:
+    def skip(self, count: int) -> Block[_TSource]:
         """Returns the list after removing the first N elements.
 
         Args:
@@ -384,20 +382,20 @@ class FrozenList(
         Returns:
             The list after removing the first N elements.
         """
-        return FrozenList(self.value[count:])
+        return Block(self.value[count:])
 
-    def skip_last(self, count: int) -> FrozenList[_TSource]:
-        return FrozenList(self.value[:-count])
+    def skip_last(self, count: int) -> Block[_TSource]:
+        return Block(self.value[:-count])
 
-    def tail(self) -> FrozenList[_TSource]:
+    def tail(self) -> Block[_TSource]:
         """Return tail of List."""
 
         _, *tail = self.value
-        return FrozenList(tail)
+        return Block(tail)
 
     def sort(
-        self: FrozenList[_TSourceSortable], reverse: bool = False
-    ) -> FrozenList[_TSourceSortable]:
+        self: Block[_TSourceSortable], reverse: bool = False
+    ) -> Block[_TSourceSortable]:
         """Sort list directly.
 
         Returns a new sorted collection.
@@ -408,11 +406,11 @@ class FrozenList(
         Returns:
             A sorted list.
         """
-        return FrozenList(builtins.sorted(self.value, reverse=reverse))
+        return Block(builtins.sorted(self.value, reverse=reverse))
 
     def sort_with(
         self, func: Callable[[_TSource], Any], reverse: bool = False
-    ) -> FrozenList[_TSource]:
+    ) -> Block[_TSource]:
         """Sort list with supplied function.
 
         Returns a new sorted collection.
@@ -424,9 +422,9 @@ class FrozenList(
         Returns:
             A sorted list.
         """
-        return FrozenList(builtins.sorted(self.value, key=func, reverse=reverse))
+        return Block(builtins.sorted(self.value, key=func, reverse=reverse))
 
-    def take(self, count: int) -> FrozenList[_TSource]:
+    def take(self, count: int) -> Block[_TSource]:
         """Returns the first N elements of the list.
 
         Args:
@@ -435,9 +433,9 @@ class FrozenList(
         Returns:
             The result list.
         """
-        return FrozenList(self.value[:count])
+        return Block(self.value[:count])
 
-    def take_last(self, count: int) -> FrozenList[_TSource]:
+    def take_last(self, count: int) -> Block[_TSource]:
         """Returns a specified number of contiguous elements from the
         end of the list.
 
@@ -447,7 +445,7 @@ class FrozenList(
         Returns:
             The result list.
         """
-        return FrozenList(self.value[-count:])
+        return Block(self.value[-count:])
 
     def dict(self) -> List[_TSource]:
         """Returns a json serializable representation of the list."""
@@ -473,7 +471,7 @@ class FrozenList(
     @staticmethod
     def unfold(
         generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]], state: _TState
-    ) -> FrozenList[_TSource]:
+    ) -> Block[_TSource]:
         """Returns a list that contains the elements generated by the
         given computation. The given initial state argument is passed to
         the element generator.
@@ -490,7 +488,7 @@ class FrozenList(
 
         return pipe(state, unfold(generator))
 
-    def zip(self, other: FrozenList[_TResult]) -> FrozenList[Tuple[_TSource, _TResult]]:
+    def zip(self, other: Block[_TResult]) -> Block[Tuple[_TSource, _TResult]]:
         """Combines the two lists into a list of pairs. The two lists
         must have equal lengths. .
 
@@ -503,11 +501,11 @@ class FrozenList(
         """
         return of_seq(builtins.zip(self.value, other.value))
 
-    def __add__(self, other: FrozenList[_TSource]) -> FrozenList[_TSource]:
-        return FrozenList(self.value + other.value)
+    def __add__(self, other: Block[_TSource]) -> Block[_TSource]:
+        return Block(self.value + other.value)
 
     @overload
-    def __getitem__(self, key: slice) -> FrozenList[_TSource]:
+    def __getitem__(self, key: slice) -> Block[_TSource]:
         ...
 
     @overload
@@ -546,14 +544,14 @@ class FrozenList(
         return str(self)
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[GenericValidator[FrozenList[_TSource]]]:
+    def __get_validators__(cls) -> Iterator[GenericValidator[Block[_TSource]]]:
         yield from cls.__validators__
 
 
 def append(
-    source: FrozenList[_TSource],
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
-    def _append(other: FrozenList[_TSource]) -> FrozenList[_TSource]:
+    source: Block[_TSource],
+) -> Callable[[Block[_TSource]], Block[_TSource]]:
+    def _append(other: Block[_TSource]) -> Block[_TSource]:
         return source.append(other)
 
     return _append
@@ -561,16 +559,16 @@ def append(
 
 def choose(
     chooser: Callable[[_TSource], Option[_TResult]]
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TResult]]:
-    def _choose(source: FrozenList[_TSource]) -> FrozenList[_TResult]:
+) -> Callable[[Block[_TSource]], Block[_TResult]]:
+    def _choose(source: Block[_TSource]) -> Block[_TResult]:
         return source.choose(chooser)
 
     return _choose
 
 
 def collect(
-    mapping: Callable[[_TSource], FrozenList[_TResult]]
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TResult]]:
+    mapping: Callable[[_TSource], Block[_TResult]]
+) -> Callable[[Block[_TSource]], Block[_TResult]]:
     """For each element of the list, applies the given function.
     Concatenates all the results and return the combined list.
 
@@ -583,7 +581,7 @@ def collect(
         list and returns the concatenation of the transformed sublists.
     """
 
-    def _collect(source: FrozenList[_TSource]) -> FrozenList[_TResult]:
+    def _collect(source: Block[_TSource]) -> Block[_TResult]:
         """For each element of the list, applies the given function.
         Concatenates all the results and return the combined list.
 
@@ -598,29 +596,27 @@ def collect(
     return _collect
 
 
-def concat(sources: Iterable[FrozenList[_TSource]]) -> FrozenList[_TSource]:
-    """Concatenate sequence of FrozenList's"""
+def concat(sources: Iterable[Block[_TSource]]) -> Block[_TSource]:
+    """Concatenate sequence of Block's"""
 
-    def reducer(
-        t: FrozenList[_TSource], s: FrozenList[_TSource]
-    ) -> FrozenList[_TSource]:
+    def reducer(t: Block[_TSource], s: Block[_TSource]) -> Block[_TSource]:
         return t.append(s)
 
     return pipe(sources, seq.fold(reducer, empty))
 
 
-def cons(head: _TSource, tail: FrozenList[_TSource]) -> FrozenList[_TSource]:
-    return FrozenList((head, *tail))
+def cons(head: _TSource, tail: Block[_TSource]) -> Block[_TSource]:
+    return Block((head, *tail))
 
 
-nil: FrozenList[Any] = FrozenList()
-empty: FrozenList[Any] = nil
+nil: Block[Any] = Block()
+empty: Block[Any] = nil
 """The empty list."""
 
 
 def filter(
     predicate: Callable[[_TSource], bool]
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
+) -> Callable[[Block[_TSource]], Block[_TSource]]:
     """Returns a new collection containing only the elements of the
     collection for which the given predicate returns `True`
 
@@ -631,7 +627,7 @@ def filter(
         Partially applied filter function.
     """
 
-    def _filter(source: FrozenList[_TSource]) -> FrozenList[_TSource]:
+    def _filter(source: Block[_TSource]) -> Block[_TSource]:
         """Returns a new collection containing only the elements of the
         collection for which the given predicate returns `True`
 
@@ -649,7 +645,7 @@ def filter(
 
 def fold(
     folder: Callable[[_TState, _TSource], _TState], state: _TState
-) -> Callable[[FrozenList[_TSource]], _TState]:
+) -> Callable[[Block[_TSource]], _TState]:
     """Applies a function to each element of the collection, threading
     an accumulator argument through the computation. Take the second
     argument, and apply the function to it and the first element of the
@@ -669,15 +665,13 @@ def fold(
         and returns the final state value.
     """
 
-    def _fold(source: FrozenList[_TSource]) -> _TState:
+    def _fold(source: Block[_TSource]) -> _TState:
         return source.fold(folder, state)
 
     return _fold
 
 
-def forall(
-    predicate: Callable[[_TSource], bool]
-) -> Callable[[FrozenList[_TSource]], bool]:
+def forall(predicate: Callable[[_TSource], bool]) -> Callable[[Block[_TSource]], bool]:
     """Tests if all elements of the collection satisfy the given
     predicate.
 
@@ -688,13 +682,13 @@ def forall(
         True if all of the elements satisfy the predicate.
     """
 
-    def _forall(source: FrozenList[_TSource]) -> bool:
+    def _forall(source: Block[_TSource]) -> bool:
         return source.forall(predicate)
 
     return _forall
 
 
-def head(source: FrozenList[_TSource]) -> _TSource:
+def head(source: Block[_TSource]) -> _TSource:
     """Returns the first element of the list.
 
     Args:
@@ -709,7 +703,7 @@ def head(source: FrozenList[_TSource]) -> _TSource:
     return source.head()
 
 
-def indexed(source: FrozenList[_TSource]) -> FrozenList[Tuple[int, _TSource]]:
+def indexed(source: Block[_TSource]) -> Block[Tuple[int, _TSource]]:
     """Returns a new list whose elements are the corresponding
     elements of the input list paired with the index (from 0)
     of each element.
@@ -720,7 +714,7 @@ def indexed(source: FrozenList[_TSource]) -> FrozenList[Tuple[int, _TSource]]:
     return source.indexed()
 
 
-def item(index: int) -> Callable[[FrozenList[_TSource]], _TSource]:
+def item(index: int) -> Callable[[Block[_TSource]], _TSource]:
     """Indexes into the list. The first element has index 0.
 
     Args:
@@ -730,20 +724,20 @@ def item(index: int) -> Callable[[FrozenList[_TSource]], _TSource]:
         The value at the given index.
     """
 
-    def _item(source: FrozenList[_TSource]) -> _TSource:
+    def _item(source: Block[_TSource]) -> _TSource:
         return source.item(index)
 
     return _item
 
 
-def is_empty(source: FrozenList[Any]) -> bool:
+def is_empty(source: Block[Any]) -> bool:
     """Returns `True` if the list is empty, `False` otherwise."""
     return source.is_empty()
 
 
 def map(
     mapper: Callable[[_TSource], _TResult]
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TResult]]:
+) -> Callable[[Block[_TSource]], Block[_TResult]]:
     """Map list.
 
     Builds a new collection whose elements are the results of applying
@@ -756,7 +750,7 @@ def map(
         The list of transformed elements.
     """
 
-    def _map(source: FrozenList[_TSource]) -> FrozenList[_TResult]:
+    def _map(source: Block[_TSource]) -> Block[_TResult]:
         return source.map(mapper)
 
     return _map
@@ -765,27 +759,27 @@ def map(
 @overload
 def starmap(
     mapper: Callable[[_T1, _T2], _TResult]
-) -> Callable[[FrozenList[Tuple[_T1, _T2]]], FrozenList[_TResult]]:
+) -> Callable[[Block[Tuple[_T1, _T2]]], Block[_TResult]]:
     ...
 
 
 @overload
 def starmap(
     mapper: Callable[[_T1, _T2, _T3], _TResult]
-) -> Callable[[FrozenList[Tuple[_T1, _T2, _T3]]], FrozenList[_TResult]]:
+) -> Callable[[Block[Tuple[_T1, _T2, _T3]]], Block[_TResult]]:
     ...
 
 
 @overload
 def starmap(
     mapper: Callable[[_T1, _T2, _T3, _T4], _TResult]
-) -> Callable[[FrozenList[Tuple[_T1, _T2, _T3, _T4]]], FrozenList[_TResult]]:
+) -> Callable[[Block[Tuple[_T1, _T2, _T3, _T4]]], Block[_TResult]]:
     ...
 
 
 def starmap(
     mapper: Callable[..., Any]
-) -> Callable[[FrozenList[Tuple[Any, ...]]], FrozenList[Any]]:
+) -> Callable[[Block[Tuple[Any, ...]]], Block[Any]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
@@ -807,19 +801,19 @@ def starmap(
 
 def map2(
     mapper: Callable[[_T1, _T2], _TResult]
-) -> Callable[[FrozenList[Tuple[_T1, _T2]]], FrozenList[_TResult]]:
+) -> Callable[[Block[Tuple[_T1, _T2]]], Block[_TResult]]:
     return starmap(mapper)
 
 
 def map3(
     mapper: Callable[[_T1, _T2, _T3], _TResult]
-) -> Callable[[FrozenList[Tuple[_T1, _T2, _T3]]], FrozenList[_TResult]]:
+) -> Callable[[Block[Tuple[_T1, _T2, _T3]]], Block[_TResult]]:
     return starmap(mapper)
 
 
 def mapi(
     mapper: Callable[[int, _TSource], _TResult]
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TResult]]:
+) -> Callable[[Block[_TSource]], Block[_TResult]]:
     """Map list with index.
 
     Builds a new collection whose elements are the results of
@@ -835,52 +829,52 @@ def mapi(
         The list of transformed elements.
     """
 
-    def _mapi(source: FrozenList[_TSource]) -> FrozenList[_TResult]:
+    def _mapi(source: Block[_TSource]) -> Block[_TResult]:
         return source.mapi(mapper)
 
     return _mapi
 
 
-def of(*args: _TSource) -> FrozenList[_TSource]:
+def of(*args: _TSource) -> Block[_TSource]:
     """Create list from a number of arguments."""
-    return FrozenList((*args,))
+    return Block((*args,))
 
 
-def of_seq(xs: Iterable[_TSource]) -> FrozenList[_TSource]:
+def of_seq(xs: Iterable[_TSource]) -> Block[_TSource]:
     """Create list from iterable sequence."""
-    return FrozenList((*xs,))
+    return Block((*xs,))
 
 
-def of_option(option: Option[_TSource]) -> FrozenList[_TSource]:
+def of_option(option: Option[_TSource]) -> Block[_TSource]:
     if isinstance(option, Some):
         return singleton(option.value)
     return empty
 
 
 @overload
-def range(stop: int) -> FrozenList[int]:
+def range(stop: int) -> Block[int]:
     ...
 
 
 @overload
-def range(start: int, stop: int) -> FrozenList[int]:
+def range(start: int, stop: int) -> Block[int]:
     ...
 
 
 @overload
-def range(start: int, stop: int, step: int) -> FrozenList[int]:
+def range(start: int, stop: int, step: int) -> Block[int]:
     ...
 
 
-def range(*args: int, **kw: int) -> FrozenList[int]:
-    return FrozenList((*builtins.range(*args, **kw),))
+def range(*args: int, **kw: int) -> Block[int]:
+    return Block((*builtins.range(*args, **kw),))
 
 
-def singleton(value: _TSource) -> FrozenList[_TSource]:
-    return FrozenList((value,))
+def singleton(value: _TSource) -> Block[_TSource]:
+    return Block((value,))
 
 
-def skip(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
+def skip(count: int) -> Callable[[Block[_TSource]], Block[_TSource]]:
     """Returns the list after removing the first N elements.
 
     Args:
@@ -890,13 +884,13 @@ def skip(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
         The list after removing the first N elements.
     """
 
-    def _skip(source: FrozenList[_TSource]) -> FrozenList[_TSource]:
+    def _skip(source: Block[_TSource]) -> Block[_TSource]:
         return source.skip(count)
 
     return _skip
 
 
-def skip_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
+def skip_last(count: int) -> Callable[[Block[_TSource]], Block[_TSource]]:
     """Returns the list after removing the last N elements.
 
     Args:
@@ -906,7 +900,7 @@ def skip_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSourc
         The list after removing the last N elements.
     """
 
-    def _skip_last(source: FrozenList[_TSource]) -> FrozenList[_TSource]:
+    def _skip_last(source: Block[_TSource]) -> Block[_TSource]:
         return source.skip_last(count)
 
     return _skip_last
@@ -914,7 +908,7 @@ def skip_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSourc
 
 def sort(
     reverse: bool = False,
-) -> Callable[[FrozenList[_TSourceSortable]], FrozenList[_TSourceSortable]]:
+) -> Callable[[Block[_TSourceSortable]], Block[_TSourceSortable]]:
     """Returns a new sorted collection
 
     Args:
@@ -924,7 +918,7 @@ def sort(
         Partially applied sort function.
     """
 
-    def _sort(source: FrozenList[_TSourceSortable]) -> FrozenList[_TSourceSortable]:
+    def _sort(source: Block[_TSourceSortable]) -> Block[_TSourceSortable]:
         """Returns a new sorted collection
 
         Args:
@@ -940,7 +934,7 @@ def sort(
 
 def sort_with(
     func: Callable[[_TSource], Any], reverse: bool = False
-) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
+) -> Callable[[Block[_TSource]], Block[_TSource]]:
     """Returns a new collection sorted using "func" key function.
 
     Args:
@@ -951,7 +945,7 @@ def sort_with(
         Partially applied sort function.
     """
 
-    def _sort_with(source: FrozenList[_TSource]) -> FrozenList[_TSource]:
+    def _sort_with(source: Block[_TSource]) -> Block[_TSource]:
         """Returns a new collection sorted using "func" key function.
 
         Args:
@@ -965,11 +959,11 @@ def sort_with(
     return _sort_with
 
 
-def tail(source: FrozenList[_TSource]) -> FrozenList[_TSource]:
+def tail(source: Block[_TSource]) -> Block[_TSource]:
     return source.tail()
 
 
-def take(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
+def take(count: int) -> Callable[[Block[_TSource]], Block[_TSource]]:
     """Returns the first N elements of the list.
 
     Args:
@@ -979,13 +973,13 @@ def take(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
         The result list.
     """
 
-    def _take(source: FrozenList[_TSource]) -> FrozenList[_TSource]:
+    def _take(source: Block[_TSource]) -> Block[_TSource]:
         return source.take(count)
 
     return _take
 
 
-def take_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSource]]:
+def take_last(count: int) -> Callable[[Block[_TSource]], Block[_TSource]]:
     """Returns a specified number of contiguous elements from the end of
     the list.
 
@@ -996,17 +990,17 @@ def take_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSourc
         The result list.
     """
 
-    def _take(source: FrozenList[_TSource]) -> FrozenList[_TSource]:
+    def _take(source: Block[_TSource]) -> Block[_TSource]:
         return source.take_last(count)
 
     return _take
 
 
-def dict(source: FrozenList[_TSource]) -> List[_TSource]:
+def dict(source: Block[_TSource]) -> List[_TSource]:
     return source.dict()
 
 
-def try_head(source: FrozenList[_TSource]) -> Option[_TSource]:
+def try_head(source: Block[_TSource]) -> Option[_TSource]:
     """Try to get the first element from the list.
 
     Returns the first element of the list, or None if the list is empty.
@@ -1022,7 +1016,7 @@ def try_head(source: FrozenList[_TSource]) -> Option[_TSource]:
 
 def unfold(
     generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]]
-) -> Callable[[_TState], FrozenList[_TSource]]:
+) -> Callable[[_TState], Block[_TSource]]:
     """Returns a list that contains the elements generated by the
     given computation. The given initial state argument is passed to
     the element generator.
@@ -1037,16 +1031,16 @@ def unfold(
         The result list.
     """
 
-    def _unfold(state: _TState) -> FrozenList[_TSource]:
+    def _unfold(state: _TState) -> Block[_TSource]:
         xs = pipe(state, seq.unfold(generator))
-        return FrozenList(xs)
+        return Block(xs)
 
     return _unfold
 
 
 def zip(
-    other: FrozenList[_TResult],
-) -> Callable[[FrozenList[_TSource]], FrozenList[Tuple[_TSource, _TResult]]]:
+    other: Block[_TResult],
+) -> Callable[[Block[_TSource]], Block[Tuple[_TSource, _TResult]]]:
     """Combines the two lists into a list of pairs. The two lists
     must have equal lengths.
 
@@ -1059,7 +1053,7 @@ def zip(
         the input lists.
     """
 
-    def _zip(source: FrozenList[_TSource]) -> FrozenList[Tuple[_TSource, _TResult]]:
+    def _zip(source: Block[_TSource]) -> Block[Tuple[_TSource, _TResult]]:
         """Combines the two lists into a list of pairs. The two lists
         must have equal lengths.
 
@@ -1076,7 +1070,7 @@ def zip(
 
 
 __all__ = [
-    "FrozenList",
+    "Block",
     "append",
     "choose",
     "collect",
