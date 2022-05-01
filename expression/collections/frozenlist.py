@@ -65,13 +65,23 @@ def _validate(value: Any, field: ModelField) -> FrozenList[Any]:
     if isinstance(value, FrozenList):
         return cast(FrozenList[Any], value)
 
+    if not isinstance(value, List):
+        raise ValueError("not a list")
+
+    value_ = cast(List[Any], value)
+
     if field.sub_fields:
         sub_field = field.sub_fields[0]
-        value, error = sub_field.validate(value, {}, loc="FrozenList")
-        if error:
-            raise ValueError(str(error))
 
-    return FrozenList(value)
+        value__: List[Any] = []
+        for item in value_:
+            val, error = sub_field.validate(item, {}, loc="FrozenList")
+            if error:
+                raise ValueError(str(error))
+            value__.append(val)
+        value_ = value__
+
+    return FrozenList(value_)
 
 
 class FrozenList(
@@ -441,7 +451,14 @@ class FrozenList(
 
     def to_json(self) -> List[_TSource]:
         """Returns a json serializable representation of the list."""
-        return list(self.value)
+
+        def to_obj(value: Any) -> Any:
+            attr = getattr(value, "dict", None) or getattr(value, "to_json", None)
+            if attr and callable(attr):
+                value = attr()
+            return value
+
+        return [to_obj(value) for value in self.value]
 
     def try_head(self) -> Option[_TSource]:
         """Returns the first element of the list, or None if the list is

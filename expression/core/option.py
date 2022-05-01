@@ -249,7 +249,15 @@ class Some(Option[_TSource]):
         return Seq.of(self._value)
 
     def to_json(self) -> Optional[_TSource]:
-        return self.value
+        attr = getattr(self._value, "dict", None) or getattr(
+            self._value, "to_json", None
+        )
+        if attr and callable(attr):
+            value = attr()
+        else:
+            value = self._value
+
+        return value
 
     @property
     def value(self) -> _TSource:

@@ -194,7 +194,15 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
 
     def to_json(self) -> Dict[str, Union[_TSource, _TError]]:
         """Returns a json string representation of the ok value."""
-        return dict(ok=self._value)
+        attr = getattr(self._value, "dict", None) or getattr(
+            self._value, "to_json", None
+        )
+        if attr and callable(attr):
+            value = attr()
+        else:
+            value = self._value
+
+        return dict(ok=value)
 
     def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
