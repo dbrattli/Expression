@@ -26,13 +26,13 @@ from typing import (
     Union,
     cast,
     get_origin,
-    overload,
 )
 
 from expression.core import (
     MatchMixin,
     Nothing,
     Option,
+    PipeMixin,
     Some,
     SupportsLessThan,
     SupportsSum,
@@ -49,10 +49,6 @@ _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
 _TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
-_T3 = TypeVar("_T3")
-_T4 = TypeVar("_T4")
-_T5 = TypeVar("_T5")
-_T6 = TypeVar("_T6")
 
 _Array = Union[List[_TSource], MutableSequence[_TSource]]
 
@@ -195,7 +191,7 @@ def array_from_initializer(
     return arr, type_code
 
 
-class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]]):
+class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]], PipeMixin):
     def __init__(
         self,
         initializer: Optional[Iterable[_TSource]] = None,
@@ -358,62 +354,6 @@ class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]]):
     def of_seq(xs: Iterable[_TSource]) -> TypedArray[_TSource]:
         """Create list from iterable sequence."""
         return TypedArray((*xs,))
-
-    @overload
-    def pipe(self, __fn1: Callable[[TypedArray[_TSource]], _TResult]) -> _TResult:
-        ...
-
-    @overload
-    def pipe(
-        self, __fn1: Callable[[TypedArray[_TSource]], _T1], __fn2: Callable[[_T1], _T2]
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[TypedArray[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[TypedArray[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[TypedArray[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-        __fn5: Callable[[_T4], _T5],
-    ) -> _T5:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[TypedArray[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-        __fn5: Callable[[_T4], _T5],
-        __fn6: Callable[[_T5], _T6],
-    ) -> _T6:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe list through the given functions."""
-        return pipe(self, *args)
 
     def skip(self, count: int) -> TypedArray[_TSource]:
         """Returns the array after removing the first N elements.
