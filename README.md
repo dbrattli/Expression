@@ -60,7 +60,7 @@ You can install the latest `expression` from PyPI by running `pip` (or
 `pip3`). Note that `expression` only works for Python 3.9+.
 
 ```console
-$ pip3 install expression
+> pip3 install expression
 ```
 
 ## Goals
@@ -80,7 +80,11 @@ $ pip3 install expression
     should be hidden within the SDK.
 - Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
-- Code must pass strict static type checking by [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/). Pylance is awesome, use it!
+- Code must pass strict static type checking by
+  [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
+  Pylance is awesome, use it!
+- [Pydantic](https://pydantic-docs.helpmanual.io/) friendly data types. Use Expression
+  types as part of your Pydantic data model and (de)serialize to/from JSON.
 
 ## Supported features
 
@@ -103,7 +107,7 @@ on-demand as we go along.
   - **Sequence** - a better
     [itertools](https://docs.python.org/3/library/itertools.html) and
     fully compatible with Python iterables.
-  - **FrozenList** - a frozen and immutable list type.
+  - **Block** - a frozen and immutable list type.
   - **Map** - a frozen and immutable dictionary type.
   - **AsyncSeq** - Asynchronous iterables.
   - **AsyncObservable** - Asynchronous observables. Provided separately
@@ -432,8 +436,8 @@ unwrapped values will get the right type without having to cast.
 Pattern matching can also be used with destructuring of iterables:
 
 ```python
-xs: FrozenList[int] = empty.cons(42)
-for (head, *tail) in xs.match(FrozenList):
+xs: Block[int] = empty.cons(42)
+for (head, *tail) in xs.match(Block):
     assert head == 42
 ```
 
@@ -635,8 +639,8 @@ Code checks are done using
 To run code checks on changed files every time you commit, install the pre-commit hooks
 by running:
 
-```
-pre-commit install
+```console
+> pre-commit install
 ```
 
 ## Code of Conduct

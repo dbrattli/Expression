@@ -42,6 +42,7 @@ from typing import (
 from expression.core import (
     Case,
     Option,
+    PipeMixin,
     SupportsGreaterThan,
     SupportsLessThan,
     SupportsSum,
@@ -50,7 +51,7 @@ from expression.core import (
 )
 
 if TYPE_CHECKING:
-    from .frozenlist import FrozenList
+    from .block import Block
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -64,7 +65,7 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
-class Seq(Iterable[_TSource]):
+class Seq(Iterable[_TSource], PipeMixin):
     """Sequence type.
 
     Contains instance methods for dot-chaining operators methods on
@@ -244,41 +245,6 @@ class Seq(Iterable[_TSource]):
         return case(pattern) if pattern else case
 
     @overload
-    def pipe(self, __fn1: Callable[["Seq[_TSource]"], _TResult]) -> _TResult:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[["Seq[_TSource]"], _T1],
-        __fn2: Callable[[_T1], _T2],
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[["Seq[_TSource]"], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[["Seq[_TSource]"], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe sequence through the given functions."""
-        return pipe(self, *args)
-
-    @overload
     @staticmethod
     def range(stop: int) -> Iterable[int]:
         ...
@@ -345,8 +311,19 @@ class Seq(Iterable[_TSource]):
         """
         return Seq(pipe(self, take(count)))
 
-    def to_list(self) -> "FrozenList[_TSource]":
+    def to_list(self) -> "Block[_TSource]":
         return to_list(self)
+
+    def dict(self) -> Iterable[_TSource]:
+        """Returns a json serializable representation of the list."""
+
+        def to_obj(value: Any) -> Any:
+            attr = getattr(value, "dict", None) or getattr(value, "dict", None)
+            if attr and callable(attr):
+                value = attr()
+            return value
+
+        return (to_obj(value) for value in self)
 
     @classmethod
     def unfold(
@@ -970,10 +947,10 @@ def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
     return _take
 
 
-def to_list(source: Iterable[_TSource]) -> "FrozenList[_TSource]":
-    from .frozenlist import FrozenList
+def to_list(source: Iterable[_TSource]) -> "Block[_TSource]":
+    from .block import Block
 
-    return FrozenList.of_seq(source)
+    return Block.of_seq(source)
 
 
 def unfold(

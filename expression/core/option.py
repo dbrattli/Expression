@@ -12,19 +12,22 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Generator,
     Iterable,
+    Iterator,
     List,
     Optional,
     TypeVar,
     Union,
+    cast,
     get_origin,
-    overload,
 )
 
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
-from .pipe import pipe
+from .pipe import PipeMixin
+from .typing import GenericValidator, ModelField, SupportsValidation
 
 if TYPE_CHECKING:
     from ..collections.seq import Seq
@@ -34,47 +37,35 @@ _TResult = TypeVar("_TResult")
 
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
-_T3 = TypeVar("_T3")
-_T4 = TypeVar("_T4")
+
+
+def _validate(value: Any, field: ModelField) -> Option[Any]:
+    if isinstance(value, Option):
+        return cast(Option[Any], value)
+
+    if isinstance(value, Dict) and not value:
+        return Nothing
+
+    if field.sub_fields:
+        sub_field = field.sub_fields[0]
+        value, error = sub_field.validate(value, {}, loc="Option")
+        if error:
+            raise ValueError(str(error))
+
+    return Some(cast(Any, value))
 
 
 class Option(
-    Iterable[_TSource], MatchMixin[_TSource], SupportsMatch[Union[_TSource, bool]], ABC
+    Iterable[_TSource],
+    MatchMixin[_TSource],
+    PipeMixin,
+    SupportsMatch[Union[_TSource, bool]],
+    SupportsValidation[_TSource],
+    ABC,
 ):
     """Option abstract base class."""
 
-    @overload
-    def pipe(self, __fn1: Callable[[Option[_TSource]], _TResult]) -> _TResult:
-        ...
-
-    @overload
-    def pipe(
-        self, __fn1: Callable[[Option[_TSource]], _T1], __fn2: Callable[[_T1], _T2]
-    ) -> _T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Option[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-    ) -> _T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Option[_TSource]], _T1],
-        __fn2: Callable[[_T1], _T2],
-        __fn3: Callable[[_T2], _T3],
-        __fn4: Callable[[_T3], _T4],
-    ) -> _T4:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe option through the given functions."""
-        return pipe(self, *args)
+    __validators__: List[GenericValidator[Option[_TSource]]] = [_validate]
 
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
@@ -156,6 +147,11 @@ class Option(
         """Convert optional value to an option."""
         return of_optional(value)
 
+    @abstractmethod
+    def dict(self) -> Optional[_TSource]:
+        """Returns a json string representation of the option."""
+        raise NotImplementedError
+
     @property
     @abstractmethod
     def value(self) -> _TSource:
@@ -175,6 +171,10 @@ class Option(
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    @classmethod
+    def __get_validators__(cls) -> Iterator[GenericValidator[_TSource]]:
+        yield from cls.__validators__
 
 
 class Some(Option[_TSource]):
@@ -244,6 +244,15 @@ class Some(Option[_TSource]):
         from expression.collections.seq import Seq
 
         return Seq.of(self._value)
+
+    def dict(self) -> Optional[_TSource]:
+        attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
+        if attr and callable(attr):
+            value = attr()
+        else:
+            value = self._value
+
+        return value
 
     @property
     def value(self) -> _TSource:
@@ -349,6 +358,9 @@ class Nothing_(Option[_TSource], EffectError):
         from expression.collections.seq import Seq
 
         return Seq()
+
+    def dict(self) -> Union[_TSource, Dict[Any, Any]]:
+        return {}  # Pydantic cannot handle None or other types than Optional
 
     @property
     def value(self) -> _TSource:
@@ -512,6 +524,10 @@ def of_obj(value: Any) -> Option[Any]:
     return of_optional(value)
 
 
+def dict(value: Option[Any]) -> str:
+    return value.dict()
+
+
 def default_arg(value: Option[_TSource], default_value: _TSource) -> _TSource:
     """Specify default argument.
 
@@ -536,6 +552,7 @@ __all__ = [
     "is_some",
     "or_else",
     "to_list",
+    "dict",
     "to_seq",
     "of_optional",
     "of_obj",

@@ -126,7 +126,7 @@ def test_array_head_fluent():
 
 
 # def test_array_head_match():
-#     xs: FrozenList[int] = empty.cons(42)
+#     xs: Block[int] = empty.cons(42)
 #     with match(xs) as case:
 #         for (head, *_) in case(Iterable[int]):
 #             assert head == 42
@@ -136,10 +136,10 @@ def test_array_head_fluent():
 
 
 # def test_array_head_match_fluent():
-#     xs: FrozenList[int] = empty.cons(42)
+#     xs: Block[int] = empty.cons(42)
 
 #     for (head, *_) in [
-#         (head, *tail) for (head, *tail) in xs.match(FrozenList) if head > 10
+#         (head, *tail) for (head, *tail) in xs.match(Block) if head > 10
 #     ]:
 #         assert head == 42
 #         return
@@ -205,7 +205,7 @@ def test_array_head_fluent():
 #     ys = frozenlist.of_seq(xs)
 #     zs = ys.pipe(frozenlist.map(mapper))
 
-#     assert isinstance(zs, FrozenList)
+#     assert isinstance(zs, Block)
 #     assert [y for y in zs] == [mapper(x) for x in xs]
 
 
@@ -217,7 +217,7 @@ def test_array_head_fluent():
 #         frozenlist.starmap(mapper),
 #     )
 
-#     assert isinstance(ys, FrozenList)
+#     assert isinstance(ys, Block)
 #     assert [y for y in ys] == [x + y for (x, y) in xs]
 
 
@@ -229,7 +229,7 @@ def test_array_head_fluent():
 #         frozenlist.map2(mapper),
 #     )
 
-#     assert isinstance(ys, FrozenList)
+#     assert isinstance(ys, Block)
 #     assert [y for y in ys] == [x + y for (x, y) in xs]
 
 
@@ -241,7 +241,7 @@ def test_array_head_fluent():
 #         frozenlist.map3(mapper),
 #     )
 
-#     assert isinstance(ys, FrozenList)
+#     assert isinstance(ys, Block)
 #     assert [y for y in ys] == [x + y + z for (x, y, z) in xs]
 
 
@@ -253,7 +253,7 @@ def test_array_head_fluent():
 #     ys = frozenlist.of_seq(xs)
 #     zs = ys.pipe(frozenlist.mapi(mapper))
 
-#     assert isinstance(zs, FrozenList)
+#     assert isinstance(zs, Block)
 #     assert [z for z in zs] == [x + i for i, x in enumerate(xs)]
 
 
@@ -276,7 +276,7 @@ def test_array_head_fluent():
 
 # @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
 # def test_array_take(xs: List[int], x: int):
-#     ys: FrozenList[int]
+#     ys: Block[int]
 #     try:
 #         ys = frozenlist.of_seq(xs).take(x)
 #         assert list(ys) == xs[:x]
@@ -287,14 +287,14 @@ def test_array_head_fluent():
 # @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
 # def test_array_take_last(xs: List[int], x: int):
 #     expected = xs[-x:]
-#     ys: FrozenList[int]
+#     ys: Block[int]
 #     ys = frozenlist.of_seq(xs).take_last(x)
 #     assert list(ys) == expected
 
 
 # @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
 # def test_array_skip(xs: List[int], x: int):
-#     ys: FrozenList[int]
+#     ys: Block[int]
 #     try:
 #         ys = frozenlist.of_seq(xs).skip(x)
 #         assert list(ys) == xs[x:]
@@ -305,7 +305,7 @@ def test_array_head_fluent():
 # @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
 # def test_array_skip_last(xs: List[int], x: int):
 #     expected = xs[:-x]
-#     ys: FrozenList[int]
+#     ys: Block[int]
 #     ys = frozenlist.of_seq(xs).skip_last(x)
 #     assert list(ys) == expected
 
@@ -314,7 +314,7 @@ def test_array_head_fluent():
 # def test_array_slice(xs: List[int], x: int, y: int):
 #     expected = xs[x:y]
 
-#     ys: FrozenList[int] = frozenlist.of_seq(xs)
+#     ys: Block[int] = frozenlist.of_seq(xs)
 #     zs = ys[x:y]
 
 #     assert list(zs) == expected
@@ -326,10 +326,10 @@ def test_array_head_fluent():
 #     x = x % len(xs) if x > 0 else x
 #     expected = xs[x]
 
-#     ys: FrozenList[int] = frozenlist.of_seq(xs)
+#     ys: Block[int] = frozenlist.of_seq(xs)
 #     y = ys[x]
 
-#     item: Callable[[FrozenList[int]], int] = frozenlist.item(x)
+#     item: Callable[[Block[int]], int] = frozenlist.item(x)
 #     h = ys.pipe(item)
 
 #     i = ys.item(x)
@@ -342,7 +342,7 @@ def test_array_head_fluent():
 
 #     expected = list(enumerate(xs))
 
-#     ys: FrozenList[int] = frozenlist.of_seq(xs)
+#     ys: Block[int] = frozenlist.of_seq(xs)
 #     zs = frozenlist.indexed(ys)
 
 #     assert list(zs) == expected
@@ -355,7 +355,7 @@ def test_array_head_fluent():
 
 #     expected: int = functools.reduce(folder, xs, 0)
 
-#     ys: FrozenList[int] = frozenlist.of_seq(xs)
+#     ys: Block[int] = frozenlist.of_seq(xs)
 #     result = pipe(ys, frozenlist.fold(folder, 0))
 
 #     assert result == expected
@@ -368,7 +368,7 @@ def test_array_head_fluent():
 #             return Some((state, state + 1))
 #         return Nothing
 
-#     result = FrozenList.unfold(unfolder, 0)
+#     result = Block.unfold(unfolder, 0)
 
 #     assert list(result) == list(range(x))
 
@@ -377,7 +377,7 @@ def test_array_head_fluent():
 # def test_array_filter(xs: List[int], limit: int):
 #     expected = filter(lambda x: x < limit, xs)
 
-#     ys: FrozenList[int] = frozenlist.of_seq(xs)
+#     ys: Block[int] = frozenlist.of_seq(xs)
 #     predicate: Callable[[int], bool] = lambda x: x < limit
 #     result = pipe(ys, frozenlist.filter(predicate))
 
@@ -387,7 +387,7 @@ def test_array_head_fluent():
 # @given(st.lists(st.integers()))  # type: ignore
 # def test_array_sort(xs: List[int]):
 #     expected = sorted(xs)
-#     ys: FrozenList[int] = frozenlist.of_seq(xs)
+#     ys: Block[int] = frozenlist.of_seq(xs)
 #     result = pipe(ys, frozenlist.sort())
 
 #     assert list(result) == list(expected)
@@ -396,21 +396,21 @@ def test_array_head_fluent():
 # @given(st.lists(st.text(min_size=2)))  # type: ignore
 # def test_array_sort_with(xs: List[str]):
 #     expected = sorted(xs, key=lambda x: x[1])
-#     ys: FrozenList[str] = frozenlist.of_seq(xs)
+#     ys: Block[str] = frozenlist.of_seq(xs)
 #     func: Callable[[str], str] = lambda x: x[1]
 #     result = pipe(ys, frozenlist.sort_with(func))
 
 #     assert list(result) == list(expected)
 
 
-# rtn: Callable[[int], FrozenList[int]] = frozenlist.singleton
-# empty: FrozenList[Any] = frozenlist.empty
+# rtn: Callable[[int], Block[int]] = frozenlist.singleton
+# empty: Block[Any] = frozenlist.empty
 
 
 # @given(st.integers(), st.integers())  # type: ignore
 # def test_array_monad_bind(x: int, y: int):
 #     m = rtn(x)
-#     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + y)
+#     f: Callable[[int], Block[int]] = lambda x: rtn(x + y)
 
 #     assert m.collect(f) == rtn(x + y)
 
@@ -418,7 +418,7 @@ def test_array_head_fluent():
 # @given(st.integers())  # type: ignore
 # def test_array_monad_empty_bind(value: int):
 #     m = empty
-#     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + value)
+#     f: Callable[[int], Block[int]] = lambda x: rtn(x + value)
 
 #     assert m.collect(f) == m
 
@@ -430,7 +430,7 @@ def test_array_head_fluent():
 #     return x >>= f is the same thing as f x
 #     """
 
-#     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + 42)
+#     f: Callable[[int], Block[int]] = lambda x: rtn(x + 42)
 
 #     assert rtn(value).collect(f) == f(value)
 
@@ -452,8 +452,8 @@ def test_array_head_fluent():
 
 #     (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
 #     """
-#     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + 10)
-#     g: Callable[[int], FrozenList[int]] = lambda y: rtn(y * 42)
+#     f: Callable[[int], Block[int]] = lambda x: rtn(x + 10)
+#     g: Callable[[int], Block[int]] = lambda y: rtn(y * 42)
 
 #     m = rtn(value)
 #     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
@@ -462,8 +462,8 @@ def test_array_head_fluent():
 # @given(st.integers())  # type: ignore
 # def test_array_monad_law_associativity_empty(value: int):
 #     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
-#     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + 1000)
-#     g: Callable[[int], FrozenList[int]] = lambda y: rtn(y * 42)
+#     f: Callable[[int], Block[int]] = lambda x: rtn(x + 1000)
+#     g: Callable[[int], Block[int]] = lambda y: rtn(y * 42)
 
 #     # Empty list
 #     m = empty
@@ -473,8 +473,8 @@ def test_array_head_fluent():
 # @given(st.lists(st.integers()))  # type: ignore
 # def test_array_monad_law_associativity_iterable(xs: List[int]):
 #     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
-#     f: Callable[[int], FrozenList[int]] = lambda x: rtn(x + 10)
-#     g: Callable[[int], FrozenList[int]] = lambda y: rtn(y * 42)
+#     f: Callable[[int], Block[int]] = lambda x: rtn(x + 10)
+#     g: Callable[[int], Block[int]] = lambda y: rtn(y * 42)
 
 #     m = frozenlist.of_seq(xs)
 #     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))

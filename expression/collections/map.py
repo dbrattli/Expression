@@ -28,13 +28,12 @@ from typing import (
     Tuple,
     TypeVar,
     cast,
-    overload,
 )
 
-from expression.core import Option, SupportsLessThan, pipe
+from expression.core import Option, PipeMixin, SupportsLessThan, pipe
 
 from . import maptree, seq
-from .frozenlist import FrozenList
+from .block import Block
 from .maptree import MapTree
 
 Key = TypeVar("Key", bound=SupportsLessThan)
@@ -49,7 +48,7 @@ T5 = TypeVar("T5")
 T6 = TypeVar("T6")
 
 
-class Map(Mapping[Key, Value]):
+class Map(Mapping[Key, Value], PipeMixin):
     """The immutable map class."""
 
     def __init__(self, __tree: Optional[MapTree[Key, Value]] = None) -> None:
@@ -57,62 +56,6 @@ class Map(Mapping[Key, Value]):
 
     def add(self, key: Key, value: Value) -> Map[Key, Value]:
         return Map(maptree.add(key, value, self._tree))
-
-    @overload
-    def pipe(self, __fn1: Callable[[Map[Key, Value]], Result]) -> Result:
-        ...
-
-    @overload
-    def pipe(
-        self, __fn1: Callable[[Map[Key, Value]], T1], __fn2: Callable[[T1], T2]
-    ) -> T2:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Map[Key, Value]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-    ) -> T3:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Map[Key, Value]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-    ) -> T4:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Map[Key, Value]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-        __fn5: Callable[[T4], T5],
-    ) -> T5:
-        ...
-
-    @overload
-    def pipe(
-        self,
-        __fn1: Callable[[Map[Key, Value]], T1],
-        __fn2: Callable[[T1], T2],
-        __fn3: Callable[[T2], T3],
-        __fn4: Callable[[T3], T4],
-        __fn5: Callable[[T4], T5],
-        __fn6: Callable[[T5], T6],
-    ) -> T6:
-        ...
-
-    def pipe(self, *args: Any) -> Any:
-        """Pipe map through the given functions."""
-        return pipe(self, *args)
 
     @staticmethod
     def create(ie: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
@@ -209,7 +152,7 @@ class Map(Mapping[Key, Value]):
     def remove(self, key: Key) -> Map[Key, Value]:
         return Map(maptree.remove(key, self._tree))
 
-    def to_list(self) -> FrozenList[Tuple[Key, Value]]:
+    def to_list(self) -> Block[Tuple[Key, Value]]:
         return maptree.to_list(self._tree)
 
     def to_seq(self) -> Iterable[Tuple[Key, Value]]:
@@ -240,13 +183,13 @@ class Map(Mapping[Key, Value]):
         return Map(maptree.of_seq(args.items()))
 
     @staticmethod
-    def of_frozenlist(lst: FrozenList[Tuple[Key, Value]]) -> Map[Key, Value]:
+    def of_block(lst: Block[Tuple[Key, Value]]) -> Map[Key, Value]:
         """Generate map from list.
 
         Returns:
             The new map.
         """
-        return of_frozenlist((lst))
+        return of_block((lst))
 
     @staticmethod
     def of_list(lst: List[Tuple[Key, Value]]) -> Map[Key, Value]:
@@ -565,19 +508,19 @@ def of(**args: Value) -> Map[str, Value]:
     return Map(maptree.of_seq(args.items()))
 
 
-def of_frozenlist(elements: FrozenList[Tuple[Key, Value]]) -> Map[Key, Value]:
+def of_block(elements: Block[Tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_list(elements))
 
 
 def of_list(elements: List[Tuple[Key, Value]]) -> Map[Key, Value]:
-    return Map(maptree.of_list(FrozenList(elements)))
+    return Map(maptree.of_list(Block(elements)))
 
 
 def of_seq(elements: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_seq(elements))
 
 
-def to_list(table: Map[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
+def to_list(table: Map[Key, Value]) -> Block[Tuple[Key, Value]]:
     return table.to_list()
 
 
@@ -631,7 +574,7 @@ __all__ = [
     "iterate",
     "map",
     "of",
-    "of_frozenlist",
+    "of_block",
     "of_list",
     "of_seq",
     "partition",

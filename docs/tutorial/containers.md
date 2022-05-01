@@ -62,16 +62,16 @@ The advantages of immutable data types are:
 
 Expression extends Python with a couple of more immutable data types:
 
-## FrozenList
+## Block
 
-A FrozenList is an immutable List type. The implementation is based on the already
+A Block is an immutable List type. The implementation is based on the already
 immutable tuple type but gives it a list feeling and lots of functions and methods to
 work with it.
 
 ```{code-cell} python
-from expression.collections import FrozenList
+from expression.collections import Block
 
-xs = FrozenList.of_seq(range(10))
+xs = Block.of_seq(range(10))
 print(xs)
 
 ys = xs.cons(10)

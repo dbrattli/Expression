@@ -1,17 +1,17 @@
 """
 Collection abstractions.
 """
-from . import array, asyncseq, frozenlist, map, seq
+from . import array, asyncseq, block, map, seq
 from .array import TypedArray
-from .frozenlist import FrozenList
+from .block import Block
 from .map import Map
 from .seq import Seq
 
 __all__ = [
     "array",
     "asyncseq",
-    "FrozenList",
-    "frozenlist",
+    "Block",
+    "block",
     "Map",
     "map",
     "Seq",

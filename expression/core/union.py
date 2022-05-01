@@ -2,9 +2,20 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC
-from typing import Any, Dict, Generic, Iterable, Optional, TypeVar, cast, get_origin
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterable,
+    Iterator,
+    Optional,
+    TypeVar,
+    cast,
+    get_origin,
+)
 
-from .typing import SupportsMatch
+from .pipe import PipeMixin
+from .typing import GenericValidator, ModelField, SupportsMatch, SupportsValidation
 
 _T = TypeVar("_T")
 
@@ -60,11 +71,17 @@ class Tag(SupportsMatch[_T]):
 
         return self.tag == other.tag
 
+    def __str__(self) -> str:
+        return f"tag: {self.tag}"
+
+    def __repr__(self) -> str:
+        return f"tag: {self.tag}"
+
     def __call__(self, *args: Any, **kwargs: Any) -> Tag[_T]:
         return self.__class__(self.tag, *args, **kwargs)
 
 
-class TaggedUnion(ABC):
+class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
     """A discriminated (tagged) union.
 
     Takes a value, and an optional tag that may be used for matching."""
@@ -81,15 +98,50 @@ class TaggedUnion(ABC):
         try:
             origin: Any = get_origin(pattern)
             if isinstance(self.value, origin or pattern):
-                print("got here", self.value, origin, pattern)
                 return [self.value]
         except TypeError:
             pass
 
         return []
 
+    def dict(self) -> Any:
+        tags: Dict[str, Any] = {
+            k: v for (k, v) in self.__class__.__dict__.items() if v is self.tag
+        }
+        if hasattr(self.value, "dict"):
+            value = self.value.dict()
+        else:
+            value = self.value
+        return dict(tag=list(tags.keys())[0], value=value)
 
-class SingleCaseUnion(Generic[_T], TaggedUnion):
+    @classmethod
+    def __get_validators__(cls) -> Iterator[GenericValidator[TaggedUnion]]:
+        def _validate(union: Any, field: ModelField) -> TaggedUnion:
+            if isinstance(union, TaggedUnion):
+                return union
+
+            tags: Dict[str, Any] = {
+                k: v for (k, v) in cls.__dict__.items() if k == union["tag"]
+            }
+            if field.sub_fields:
+                sub_field = field.sub_fields[0]
+                value, error = sub_field.validate(union["value"], {}, loc=union["tag"])
+                if error:
+                    raise ValueError(str(error))
+            else:
+                value = union["value"]
+            return cls(tags[union["tag"]], value)
+
+        yield _validate
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, TaggedUnion):
+            return False
+
+        return self.tag == other.tag and self.value == other.value
+
+
+class SingleCaseUnion(TaggedUnion, Generic[_T]):
     """Single case union.
 
     Helper class to make single case tagged unions without having to

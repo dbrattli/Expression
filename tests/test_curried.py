@@ -99,7 +99,6 @@ def test_curry_flipped_1():
         map(mapper=lambda x: x * 10),
     )
 
-    print(ys)
     assert ys == [10, 20, 30]
 
 
@@ -112,5 +111,4 @@ def test_curry_flipped_2():
 
     ys = pipe(xs, map(lambda x: x * 10)(10))
 
-    print(ys)
     assert ys == [20, 30, 40]

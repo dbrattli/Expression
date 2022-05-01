@@ -28,8 +28,8 @@ from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, c
 
 from expression.core import Nothing, Option, Some, SupportsLessThan, failwith, pipe
 
-from . import frozenlist, seq
-from .frozenlist import FrozenList
+from . import block, seq
+from .block import Block
 
 Key = TypeVar("Key", bound=SupportsLessThan)
 Value = TypeVar("Value")
@@ -465,10 +465,10 @@ def fold(
         return x
 
 
-def to_list(m: MapTree[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
+def to_list(m: MapTree[Key, Value]) -> Block[Tuple[Key, Value]]:
     def loop(
-        m: MapTree[Key, Value], acc: FrozenList[Tuple[Key, Value]]
-    ) -> FrozenList[Tuple[Key, Value]]:
+        m: MapTree[Key, Value], acc: Block[Tuple[Key, Value]]
+    ) -> Block[Tuple[Key, Value]]:
         for m2 in m.to_list():
             if isinstance(m2, MapTreeNode):
                 mn = m2
@@ -478,10 +478,10 @@ def to_list(m: MapTree[Key, Value]) -> FrozenList[Tuple[Key, Value]]:
         else:
             return acc
 
-    return loop(m, frozenlist.empty)
+    return loop(m, block.empty)
 
 
-def of_list(xs: FrozenList[Tuple[Key, Value]]) -> MapTree[Key, Value]:
+def of_list(xs: Block[Tuple[Key, Value]]) -> MapTree[Key, Value]:
     def folder(acc: MapTree[Key, Value], kv: Tuple[Key, Value]):
         k, v = kv
         return add(k, v, acc)
@@ -510,11 +510,9 @@ def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
 # collapseLHS:
 # a) Always returns either [] or a list starting with MapOne.
 # b) The "fringe" of the set stack is unchanged.
-def collapseLHS(
-    stack: FrozenList[MapTree[Key, Value]]
-) -> FrozenList[MapTree[Key, Value]]:
+def collapseLHS(stack: Block[MapTree[Key, Value]]) -> Block[MapTree[Key, Value]]:
     if stack.is_empty():
-        return frozenlist.empty
+        return block.empty
     m, rest = stack.head(), stack.tail()
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
@@ -529,7 +527,7 @@ def collapseLHS(
 
 class MkIterator(Iterator[Tuple[Key, Value]]):
     def __init__(self, m: MapTree[Key, Value]) -> None:
-        self.stack = collapseLHS(frozenlist.singleton(m))
+        self.stack = collapseLHS(block.singleton(m))
 
     def __next__(self) -> Tuple[Key, Value]:
         if not self.stack:
