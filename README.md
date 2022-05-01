@@ -105,7 +105,7 @@ on-demand as we go along.
   - **Sequence** - a better
     [itertools](https://docs.python.org/3/library/itertools.html) and
     fully compatible with Python iterables.
-  - **FrozenList** - a frozen and immutable list type.
+  - **Block** - a frozen and immutable list type.
   - **Map** - a frozen and immutable dictionary type.
   - **AsyncSeq** - Asynchronous iterables.
   - **AsyncObservable** - Asynchronous observables. Provided separately
@@ -434,8 +434,8 @@ unwrapped values will get the right type without having to cast.
 Pattern matching can also be used with destructuring of iterables:
 
 ```python
-xs: FrozenList[int] = empty.cons(42)
-for (head, *tail) in xs.match(FrozenList):
+xs: Block[int] = empty.cons(42)
+for (head, *tail) in xs.match(Block):
     assert head == 42
 ```
 

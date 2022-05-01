@@ -11,13 +11,10 @@
 
 - [Pipe](reference_pipe)
 - [Curry](reference_curry)
-
-##
-
 - [Mailbox](reference_mailbox)
 
 ## Collections
 
 - [Map](reference_map)
-- [FrozenList](reference_frozenlist)
+- [Block](reference_block)
 - [Seq](reference_seq)

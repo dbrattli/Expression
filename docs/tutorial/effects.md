@@ -138,7 +138,7 @@ Effects are not the same as side-effects. Effects are just values with a context
 
 * Option
 * Result
-* FrozenList
+* Block
 * Observable
 * Async
 * AsyncObservable
