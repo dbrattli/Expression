@@ -476,7 +476,7 @@ def map2(
 def or_else(
     if_none: Option[_TSource],
 ) -> Callable[[Option[_TSource]], Option[_TSource]]:
-    """Returns option if it is Some, otherwise returns ifNone."""
+    """Returns option if it is Some, otherwise returns `if_none`."""
 
     def _or_else(option: Option[_TSource]) -> Option[_TSource]:
         return option.or_else(if_none)

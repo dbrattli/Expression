@@ -5,7 +5,7 @@ useful methods and functions for working with the list.
 
 Named "Block" to avoid conflicts with the builtin Python List type.
 
-A Block is actually a Python tuple. Tuples in Python are
+A Block is actually backed by a Python tuple. Tuples in Python are
 immutable and gives us a high performant implementation of immutable
 lists.
 
@@ -28,9 +28,11 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     Optional,
     Tuple,
     TypeVar,
+    Union,
     cast,
     get_origin,
     overload,
@@ -44,6 +46,7 @@ from expression.core import (
     PipeMixin,
     Some,
     SupportsLessThan,
+    SupportsSum,
     pipe,
 )
 from expression.core.typing import GenericValidator, ModelField, SupportsValidation
@@ -52,6 +55,7 @@ from . import seq
 
 _TSource = TypeVar("_TSource")
 _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
+_TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
 _TResult = TypeVar("_TResult")
 _TState = TypeVar("_TState")
 
@@ -127,7 +131,7 @@ class Block(
         return case(pattern) if pattern else case
 
     def append(self, other: Block[_TSource]) -> Block[_TSource]:
-        """Append frozen list to end of the frozen list."""
+        """Append other block to end of the block."""
 
         return Block(self.value + other.value)
 
@@ -318,6 +322,16 @@ class Block(
             Partially applied map function.
         """
         return Block(starmap(mapping)(self))
+
+    def sum(
+        self: Block[Union[_TSourceSum, Literal[0]]]
+    ) -> Union[_TSourceSum, Literal[0]]:
+        return builtins.sum(self.value)
+
+    def sum_by(
+        self, projection: Callable[[_TSource], _TSourceSum]
+    ) -> Union[_TSourceSum, Literal[0]]:
+        return pipe(self, sum_by(projection))
 
     def mapi(self, mapping: Callable[[int, _TSource], _TResult]) -> Block[_TResult]:
         """Map list with index.
@@ -957,6 +971,21 @@ def sort_with(
         return source.sort_with(func, reverse)
 
     return _sort_with
+
+
+def sum(
+    source: Block[Union[_TSourceSum, Literal[0]]]
+) -> Union[_TSourceSum, Literal[0]]:
+    return builtins.sum(source.value)
+
+
+def sum_by(
+    projection: Callable[[_TSource], _TSourceSum]
+) -> Callable[[Block[_TSource]], Union[_TSourceSum, Literal[0]]]:
+    def _sum_by(source: Block[_TSource]) -> Union[_TSourceSum, Literal[0]]:
+        return builtins.sum(source.map(projection).value)
+
+    return _sum_by
 
 
 def tail(source: Block[_TSource]) -> Block[_TSource]:

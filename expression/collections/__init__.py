@@ -1,12 +1,14 @@
 """
 Collection abstractions.
 """
-from . import asyncseq, block, map, seq
+from . import array, asyncseq, block, map, seq
+from .array import TypedArray
 from .block import Block
 from .map import Map
 from .seq import Seq
 
 __all__ = [
+    "array",
     "asyncseq",
     "Block",
     "block",
@@ -14,4 +16,5 @@ __all__ = [
     "map",
     "Seq",
     "seq",
+    "TypedArray",
 ]

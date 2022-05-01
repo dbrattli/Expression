@@ -15,6 +15,7 @@
 
 ## Collections
 
+- [Typed Array](reference_array)
 - [Map](reference_map)
 - [Block](reference_block)
 - [Seq](reference_seq)
