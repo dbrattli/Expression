@@ -103,12 +103,12 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
 
         return []
 
-    def to_json(self) -> Any:
+    def dict(self) -> Any:
         tags: Dict[str, Any] = {
             k: v for (k, v) in self.__class__.__dict__.items() if v is self.tag
         }
-        if hasattr(self.value, "to_json"):
-            value = self.value.to_json()
+        if hasattr(self.value, "dict"):
+            value = self.value.dict()
         else:
             value = self.value
         return dict(tag=list(tags.keys())[0], value=value)

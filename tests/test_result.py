@@ -360,7 +360,7 @@ class Model(BaseModel):
 
     class Config:
         json_encoders: Dict[Type[Any], Callable[[Any], Union[Any, Any]]] = {
-            Result: result.to_json,
+            Result: result.dict,
         }
 
 
@@ -374,20 +374,20 @@ def test_parse_frozenlist_works():
     assert model.three == Error(MyError(message="error"))
 
 
-def test_ok_to_json_works():
+def test_ok_to_dict_works():
     result = Ok[int, MyError](10)
-    obj = result.to_json()
+    obj = result.dict()
     assert obj == dict(ok=10)
 
 
-def test_error_to_json_works():
+def test_error_to_dict_works():
     error = MyError(message="got error")
     result = Error[int, MyError](error)
-    obj = result.to_json()
+    obj = result.dict()
     assert obj == dict(error=dict(message="got error"))
 
 
-def test_ok_from_json_works():
+def test_ok_from_from_dict_works():
     obj = dict(ok=10)
     result = parse_obj_as(Result[int, MyError], obj)
 
@@ -396,7 +396,7 @@ def test_ok_from_json_works():
     assert result.value == 10
 
 
-def test_error_from_json_works():
+def test_error_from_dict_works():
     obj = dict(error=dict(message="got error"))
     result = parse_obj_as(Result[int, MyError], obj)
 

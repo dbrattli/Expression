@@ -286,13 +286,13 @@ def test_single_case_union_not_match_value():
             assert False
 
 
-def test_union_to_json_works():
+def test_union_to_dict_works():
     maybe = Maybe.just(10)
-    obj = maybe.to_json()
+    obj = maybe.dict()
     assert obj == dict(tag="JUST", value=10)
 
 
-def test_union_from_json_works():
+def test_union_from_dict_works():
     obj = dict(tag="JUST", value=10)
     maybe = parse_obj_as(Maybe[int], obj)
 
@@ -300,13 +300,13 @@ def test_union_from_json_works():
     assert maybe.value == 10
 
 
-def test_nested_union_to_json_works():
+def test_nested_union_to_dict_works():
     maybe = Maybe.just(Maybe.just(10))
-    obj = maybe.to_json()
+    obj = maybe.dict()
     assert obj == dict(tag="JUST", value=dict(tag="JUST", value=10))
 
 
-def test_nested_union_from_json_works():
+def test_nested_union_from_dict_works():
     obj = dict(tag="JUST", value=dict(tag="JUST", value=10))
 
     maybe = parse_obj_as(Maybe[Maybe[int]], obj)

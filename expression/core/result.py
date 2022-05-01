@@ -136,7 +136,7 @@ class Result(
         raise NotImplementedError
 
     @abstractmethod
-    def to_json(self) -> Dict[str, Union[_TSource, _TError]]:
+    def dict(self) -> Dict[str, Union[_TSource, _TError]]:
         """Returns a json serializable representation of the result."""
         raise NotImplementedError
 
@@ -192,17 +192,15 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
 
         return True
 
-    def to_json(self) -> Dict[str, Union[_TSource, _TError]]:
+    def dict(self) -> Dict[str, Union[_TSource, _TError]]:
         """Returns a json string representation of the ok value."""
-        attr = getattr(self._value, "dict", None) or getattr(
-            self._value, "to_json", None
-        )
+        attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
         if attr and callable(attr):
             value = attr()
         else:
             value = self._value
 
-        return dict(ok=value)
+        return {"ok": value}
 
     def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
@@ -272,15 +270,15 @@ class Error(ResultException, Result[_TSource, _TError]):
         """Returns `True` if the result is an `Ok` value."""
         return False
 
-    def to_json(self) -> Dict[str, Any]:
+    def dict(self) -> Dict[str, Any]:
         """Returns a json serializable representation of the error value."""
-        attr = getattr(self._error, "dict") or getattr(self._error, "to_json")
+        attr = getattr(self._error, "dict") or getattr(self._error, "dict")
         if callable(attr):
             error = attr()
         else:
             error = self._error
 
-        return dict(error=error)
+        return {"error": error}
 
     def __match__(self, pattern: Any) -> Iterable[_TError]:
         if self is pattern or self == pattern:
@@ -332,8 +330,8 @@ def bind(
     return _bind
 
 
-def to_json(source: Result[_TSource, _TError]) -> Dict[str, Union[_TSource, _TError]]:
-    return source.to_json()
+def dict(source: Result[_TSource, _TError]) -> Dict[str, Union[_TSource, _TError]]:
+    return source.dict()
 
 
 __all__ = [
@@ -342,5 +340,5 @@ __all__ = [
     "Error",
     "map",
     "bind",
-    "to_json",
+    "dict",
 ]

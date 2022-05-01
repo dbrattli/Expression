@@ -150,7 +150,7 @@ class Option(
         return of_optional(value)
 
     @abstractmethod
-    def to_json(self) -> Optional[_TSource]:
+    def dict(self) -> Optional[_TSource]:
         """Returns a json string representation of the option."""
         raise NotImplementedError
 
@@ -248,10 +248,8 @@ class Some(Option[_TSource]):
 
         return Seq.of(self._value)
 
-    def to_json(self) -> Optional[_TSource]:
-        attr = getattr(self._value, "dict", None) or getattr(
-            self._value, "to_json", None
-        )
+    def dict(self) -> Optional[_TSource]:
+        attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
         if attr and callable(attr):
             value = attr()
         else:
@@ -364,8 +362,8 @@ class Nothing_(Option[_TSource], EffectError):
 
         return Seq()
 
-    def to_json(self) -> Union[_TSource, Dict[Any, Any]]:
-        return dict()  # Pydantic cannot handle None or other types than Optional
+    def dict(self) -> Union[_TSource, Dict[Any, Any]]:
+        return {}  # Pydantic cannot handle None or other types than Optional
 
     @property
     def value(self) -> _TSource:
@@ -529,8 +527,8 @@ def of_obj(value: Any) -> Option[Any]:
     return of_optional(value)
 
 
-def to_json(value: Option[Any]) -> str:
-    return value.to_json()
+def dict(value: Option[Any]) -> str:
+    return value.dict()
 
 
 def default_arg(value: Option[_TSource], default_value: _TSource) -> _TSource:
@@ -557,7 +555,7 @@ __all__ = [
     "is_some",
     "or_else",
     "to_list",
-    "to_json",
+    "dict",
     "to_seq",
     "of_optional",
     "of_obj",

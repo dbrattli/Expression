@@ -398,7 +398,7 @@ class Model(BaseModel):
 
     class Config:
         json_encoders: Dict[Type[Any], Callable[[Any], List[Any]]] = {
-            FrozenList: frozenlist.to_json
+            FrozenList: frozenlist.dict
         }
 
 

@@ -449,11 +449,11 @@ class FrozenList(
         """
         return FrozenList(self.value[-count:])
 
-    def to_json(self) -> List[_TSource]:
+    def dict(self) -> List[_TSource]:
         """Returns a json serializable representation of the list."""
 
         def to_obj(value: Any) -> Any:
-            attr = getattr(value, "dict", None) or getattr(value, "to_json", None)
+            attr = getattr(value, "dict", None) or getattr(value, "dict", None)
             if attr and callable(attr):
                 value = attr()
             return value
@@ -1002,8 +1002,8 @@ def take_last(count: int) -> Callable[[FrozenList[_TSource]], FrozenList[_TSourc
     return _take
 
 
-def to_json(source: FrozenList[_TSource]) -> List[_TSource]:
-    return source.to_json()
+def dict(source: FrozenList[_TSource]) -> List[_TSource]:
+    return source.dict()
 
 
 def try_head(source: FrozenList[_TSource]) -> Option[_TSource]:
@@ -1100,7 +1100,7 @@ __all__ = [
     "tail",
     "take",
     "take_last",
-    "to_json",
+    "dict",
     "try_head",
     "unfold",
     "zip",
