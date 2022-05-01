@@ -37,8 +37,6 @@ _TResult = TypeVar("_TResult")
 
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
-_T3 = TypeVar("_T3")
-_T4 = TypeVar("_T4")
 
 
 def _validate(value: Any, field: ModelField) -> Option[Any]:
@@ -183,7 +181,6 @@ class Some(Option[_TSource]):
     """The Some option case class."""
 
     def __init__(self, value: _TSource) -> None:
-        print("init:", [value])
         self._value = value
 
     def default_value(self, value: _TSource) -> _TSource:
