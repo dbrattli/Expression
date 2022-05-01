@@ -314,6 +314,17 @@ class Seq(Iterable[_TSource], PipeMixin):
     def to_list(self) -> "FrozenList[_TSource]":
         return to_list(self)
 
+    def dict(self) -> Iterable[_TSource]:
+        """Returns a json serializable representation of the list."""
+
+        def to_obj(value: Any) -> Any:
+            attr = getattr(value, "dict", None) or getattr(value, "dict", None)
+            if attr and callable(attr):
+                value = attr()
+            return value
+
+        return (to_obj(value) for value in self)
+
     @classmethod
     def unfold(
         cls,

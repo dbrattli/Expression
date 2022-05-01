@@ -39,6 +39,8 @@ dunamai = "^1.9.0"
 hypothesis = "^6.39.3"
 jupyter-book = "^0.12.2"
 sphinx-autodoc-typehints = "^1.17.0"
+pytest-benchmark = "^3.4.1"
+pydantic = "^1.9.0"
 
 [tool.black]
 line-length = 88

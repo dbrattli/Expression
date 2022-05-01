@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, Tuple, TypeVar, final
 
+from pydantic import parse_obj_as
+
 from expression import SingleCaseUnion, Tag, TaggedUnion, match
 
 _T = TypeVar("_T")
@@ -282,3 +284,32 @@ def test_single_case_union_not_match_value():
 
         if case._:
             assert False
+
+
+def test_union_to_dict_works():
+    maybe = Maybe.just(10)
+    obj = maybe.dict()
+    assert obj == dict(tag="JUST", value=10)
+
+
+def test_union_from_dict_works():
+    obj = dict(tag="JUST", value=10)
+    maybe = parse_obj_as(Maybe[int], obj)
+
+    assert maybe
+    assert maybe.value == 10
+
+
+def test_nested_union_to_dict_works():
+    maybe = Maybe.just(Maybe.just(10))
+    obj = maybe.dict()
+    assert obj == dict(tag="JUST", value=dict(tag="JUST", value=10))
+
+
+def test_nested_union_from_dict_works():
+    obj = dict(tag="JUST", value=dict(tag="JUST", value=10))
+
+    maybe = parse_obj_as(Maybe[Maybe[int]], obj)
+    assert maybe
+    assert maybe.value
+    assert maybe.value.value == 10

@@ -1,8 +1,9 @@
-from typing import Any, Callable
+from typing import Any, Callable, Dict, Type
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
+from pydantic import BaseModel
 
 from expression import Nothing, Option, Some, effect, match, option, pipe, pipe2
 from expression.extra.option import pipeline
@@ -477,3 +478,33 @@ def test_pipeline_error():
     )
 
     assert hn(42) == Nothing
+
+
+class Model(BaseModel):
+    one: Option[int]
+    two: Option[str] = Nothing
+    three: Option[float] = Nothing
+
+    class Config:
+        json_encoders: Dict[Type[Any], Callable[[Any], str]] = {Option: option.dict}
+
+
+def test_parse_option_works():
+    obj = dict(one=10)
+    model = Model.parse_obj(obj)
+
+    assert model.one.is_some()
+    assert model.one.value == 10
+    assert model.two == Nothing
+    assert model.three == Nothing
+
+
+def test_serialize_option_works():
+    model = Model(one=Some(10), two=Nothing)
+    json = model.json()
+    model_ = Model.parse_raw(json)
+
+    assert model_.one.is_some()
+    assert model_.one.value == 10
+    assert model_.two == Nothing
+    assert model_.three == Nothing
