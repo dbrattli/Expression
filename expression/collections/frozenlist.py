@@ -46,7 +46,7 @@ from expression.core import (
     SupportsLessThan,
     pipe,
 )
-from expression.core.typing import Validated, Validator
+from expression.core.typing import GenericValidator, ModelField, SupportsValidation
 
 from . import seq
 
@@ -61,18 +61,24 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
-def _validate(value: Any) -> FrozenList[Any]:
+def _validate(value: Any, field: ModelField) -> FrozenList[Any]:
     if isinstance(value, FrozenList):
         return cast(FrozenList[Any], value)
+
+    if field.sub_fields:
+        sub_field = field.sub_fields[0]
+        value, error = sub_field.validate(value, {}, loc="FrozenList")
+        if error:
+            raise ValueError(str(error))
 
     return FrozenList(value)
 
 
 class FrozenList(
     Iterable[_TSource],
-    MatchMixin[Iterable[_TSource]],
-    Validated["FrozenList[_TSource]"],
     PipeMixin,
+    MatchMixin[Iterable[_TSource]],
+    SupportsValidation["FrozenList[_TSource]"],
 ):
     """Immutable list type.
 
@@ -91,7 +97,7 @@ class FrozenList(
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
 
-    __validators__: List[Validator[FrozenList[_TSource]]] = [_validate]
+    __validators__: List[GenericValidator[FrozenList[_TSource]]] = [_validate]
 
     def __init__(self, value: Optional[Iterable[_TSource]] = None) -> None:
         # Use composition instead of inheritance since generic tuples
@@ -523,7 +529,7 @@ class FrozenList(
         return str(self)
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[Validator[FrozenList[_TSource]]]:
+    def __get_validators__(cls) -> Iterator[GenericValidator[FrozenList[_TSource]]]:
         yield from cls.__validators__
 
 

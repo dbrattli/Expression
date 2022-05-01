@@ -3,35 +3,19 @@ from __future__ import annotations
 import itertools
 from abc import ABC
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
     Generic,
     Iterable,
     Iterator,
-    List,
     Optional,
-    Tuple,
     TypeVar,
     cast,
     get_origin,
 )
 
 from .pipe import PipeMixin
-from .typing import GenericValidator, SupportsMatch, Validated
-
-if TYPE_CHECKING:
-
-    class ModelField:
-        """Type mock to avoid taking a hard dependency on pydantic."""
-
-        sub_fields: List[ModelField]
-
-        def validate(
-            self, value: Any, values: Dict[str, str], loc: str
-        ) -> Tuple[Any, Any]:
-            ...
-
+from .typing import GenericValidator, ModelField, SupportsMatch, SupportsValidation
 
 _T = TypeVar("_T")
 
@@ -96,7 +80,7 @@ class Tag(SupportsMatch[_T]):
         return self.__class__(self.tag, *args, **kwargs)
 
 
-class TaggedUnion(Validated[Any], PipeMixin, ABC):
+class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
     """A discriminated (tagged) union.
 
     Takes a value, and an optional tag that may be used for matching."""
@@ -153,8 +137,6 @@ class TaggedUnion(Validated[Any], PipeMixin, ABC):
         if not isinstance(other, TaggedUnion):
             return False
 
-        print("tag eq", self.tag == other.tag)
-        print("value eq", self.value == other.value, self.value, other.value)
         return self.tag == other.tag and self.value == other.value
 
 

@@ -27,7 +27,7 @@ from typing import (
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
 from .pipe import PipeMixin
-from .typing import Validated, Validator
+from .typing import GenericValidator, ModelField, SupportsValidation
 
 if TYPE_CHECKING:
     from ..collections.seq import Seq
@@ -41,12 +41,18 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 
 
-def _validate(value: Any) -> Option[Any]:
+def _validate(value: Any, field: ModelField) -> Option[Any]:
     if isinstance(value, Option):
         return cast(Option[Any], value)
 
     if isinstance(value, Dict) and not value:
         return Nothing
+
+    if field.sub_fields:
+        sub_field = field.sub_fields[0]
+        value, error = sub_field.validate(value, {}, loc="Option")
+        if error:
+            raise ValueError(str(error))
 
     return Some(cast(Any, value))
 
@@ -56,12 +62,12 @@ class Option(
     MatchMixin[_TSource],
     PipeMixin,
     SupportsMatch[Union[_TSource, bool]],
-    Validated[_TSource],
+    SupportsValidation[_TSource],
     ABC,
 ):
     """Option abstract base class."""
 
-    __validators__: List[Validator[Option[_TSource]]] = [_validate]
+    __validators__: List[GenericValidator[Option[_TSource]]] = [_validate]
 
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
@@ -169,7 +175,7 @@ class Option(
         return self.__str__()
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[Validator[_TSource]]:
+    def __get_validators__(cls) -> Iterator[GenericValidator[_TSource]]:
         yield from cls.__validators__
 
 

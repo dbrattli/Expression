@@ -30,7 +30,7 @@ from typing import (
 from .error import EffectError
 from .match import Case, SupportsMatch
 from .pipe import PipeMixin
-from .typing import Validated, Validator
+from .typing import GenericValidator, ModelField, SupportsValidation
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -41,24 +41,43 @@ _TSourceM = TypeVar("_TSourceM")
 _TErrorM = TypeVar("_TErrorM")
 
 
-def _validate(result: Any) -> Result[Any, Any]:
+def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
     if isinstance(result, Result):
         return cast(Result[Any, Any], result)
 
-    value = result.get("ok")  # FIXME
-    return Ok(value)
+    if not isinstance(result, Dict):
+        raise ValueError("not result type")
+
+    try:
+        value: Any = result["ok"]
+        if field.sub_fields:
+            sub_field = field.sub_fields[0]
+            value, err = sub_field.validate(value, {}, loc="Result")
+            if err:
+                raise ValueError(str(err))
+        return Ok(value)
+    except KeyError:
+        try:
+            error: Any = result["error"]
+            sub_field = field.sub_fields[1]
+            error, err = sub_field.validate(error, {}, loc="Result")
+            if err:
+                raise ValueError(str(err))
+            return Error(error)
+        except KeyError:
+            raise ValueError("not a result")
 
 
 class Result(
     Iterable[_TSource],
     PipeMixin,
     SupportsMatch[Union[_TSource, _TError]],
-    Validated[Union[_TSource, _TError]],
+    SupportsValidation["Result[_TSource, _TError]"],
     ABC,
 ):
     """The result abstract base class."""
 
-    __validators__: List[Validator[_TSource]] = [_validate]
+    __validators__: List[GenericValidator[Result[_TSource, _TError]]] = [_validate]
 
     @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
@@ -132,7 +151,9 @@ class Result(
         return str(self)
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[Validator[_TSource]]:
+    def __get_validators__(
+        cls,
+    ) -> Iterator[GenericValidator[Result[_TSource, _TError]]]:
         yield from cls.__validators__
 
 
@@ -243,9 +264,15 @@ class Error(ResultException, Result[_TSource, _TError]):
         """Returns `True` if the result is an `Ok` value."""
         return False
 
-    def to_json(self) -> Dict[str, Union[_TSource, _TError]]:
+    def to_json(self) -> Dict[str, Any]:
         """Returns a json serializable representation of the error value."""
-        return dict(error=self._error)
+        attr = getattr(self._error, "dict") or getattr(self._error, "to_json")
+        if callable(attr):
+            error = attr()
+        else:
+            error = self._error
+
+        return dict(error=error)
 
     def __match__(self, pattern: Any) -> Iterable[_TError]:
         if self is pattern or self == pattern:

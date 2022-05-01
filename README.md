@@ -80,8 +80,11 @@ You can install the latest `expression` from PyPI by running `pip` (or
     should be hidden within the SDK.
 - Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
-- Code must pass strict static type checking by [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/). Pylance is awesome, use it!
-- Data types compatible with [Pydantic](https://pydantic-docs.helpmanual.io/)
+- Code must pass strict static type checking by
+  [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
+  Pylance is awesome, use it!
+- [Pydantic](https://pydantic-docs.helpmanual.io/) friendly data types. Use Expression
+  types as part of your Pydantic data model and (de)serialize to/from JSON.
 
 ## Supported features
 
@@ -634,8 +637,8 @@ Code checks are done using
 To run code checks on changed files every time you commit, install the pre-commit hooks
 by running:
 
-```
-pre-commit install
+```console
+> pre-commit install
 ```
 
 ## Code of Conduct

@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Type, Union
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel
+from pydantic import BaseModel, parse_obj_as
 
 from expression import Error, Ok, Result, effect, match, result
 from expression.extra.result import pipeline, sequence
@@ -372,3 +372,34 @@ def test_parse_frozenlist_works():
     assert model.one == Ok(42)
     assert model.two == Error(MyError(message="error"))
     assert model.three == Error(MyError(message="error"))
+
+
+def test_ok_to_json_works():
+    result = Ok[int, MyError](10)
+    obj = result.to_json()
+    assert obj == dict(ok=10)
+
+
+def test_error_to_json_works():
+    error = MyError(message="got error")
+    result = Error[int, MyError](error)
+    obj = result.to_json()
+    assert obj == dict(error=dict(message="got error"))
+
+
+def test_ok_from_json_works():
+    obj = dict(ok=10)
+    result = parse_obj_as(Result[int, MyError], obj)
+
+    assert result
+    assert isinstance(result, Ok)
+    assert result.value == 10
+
+
+def test_error_from_json_works():
+    obj = dict(error=dict(message="got error"))
+    result = parse_obj_as(Result[int, MyError], obj)
+
+    assert result
+    assert isinstance(result, Error)
+    assert result.error == MyError(message="got error")

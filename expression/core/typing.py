@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from typing import (
     Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
+    List,
     Optional,
     Protocol,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -51,11 +56,20 @@ class SupportsMatch(Protocol[_T_co]):
         raise NotImplementedError
 
 
+class ModelField:
+    """Type mock to avoid taking a hard dependency on pydantic."""
+
+    sub_fields: List[ModelField]
+
+    def validate(self, value: Any, values: Dict[str, str], loc: str) -> Tuple[Any, Any]:
+        ...
+
+
 Validator = Callable[[Any], _T]
-GenericValidator = Callable[[Any, Any], _T]
+GenericValidator = Callable[[Any, ModelField], _T]
 
 
-class Validated(Protocol[_T_co]):
+class SupportsValidation(Protocol[_T_co]):
     """A type that implements __get_validators__ to be used with
     pydantic."""
 
@@ -108,4 +122,16 @@ def try_downcast(type_: Type[_Derived], expr: Any) -> Optional[_Derived]:
     return None
 
 
-__all__ = ["SupportsLessThan", "SupportsSum", "downcast", "upcast", "try_downcast"]
+__all__ = [
+    "downcast",
+    "upcast",
+    "try_downcast",
+    "GenericValidator",
+    "SupportsLessThan",
+    "SupportsSum",
+    "SupportsGreaterThan",
+    "SupportsValidation",
+    "SupportsMatch",
+    "Validator",
+    "GenericValidator",
+]
