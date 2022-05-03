@@ -47,8 +47,8 @@ from expression.core import (
     Some,
     SupportsLessThan,
     SupportsSum,
-    pipe,
     curry_flipped,
+    pipe,
 )
 from expression.core.typing import GenericValidator, ModelField, SupportsValidation
 
