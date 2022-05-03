@@ -48,6 +48,7 @@ from expression.core import (
     SupportsLessThan,
     SupportsSum,
     pipe,
+    curry_flipped,
 )
 from expression.core.typing import GenericValidator, ModelField, SupportsValidation
 
@@ -364,6 +365,34 @@ class Block(
     def of_option(option: Option[_TSource]) -> Block[_TSource]:
         return of_option(option)
 
+    def partition(
+        self, predicate: Callable[[_TSource], bool]
+    ) -> Tuple[Block[_TSource], Block[_TSource]]:
+        """Partition block.
+
+        Splits the collection into two collections, containing the
+        elements for which the given predicate returns True and False
+        respectively. Element order is preserved in both of the created
+        lists.
+
+        Args:
+            predicate: The function to test the input elements.
+
+        Returns:
+            A list containing the elements for which the predicate
+            evaluated to true and a list containing the elements for
+            which the predicate evaluated to false.
+        """
+        list1: List[_TSource] = []
+        list2: List[_TSource] = []
+
+        for item in self.value:
+            if predicate(item):
+                list1.append(item)
+            else:
+                list2.append(item)
+        return (Block(list1), Block(list2))
+
     @overload
     @staticmethod
     def range(stop: int) -> Block[int]:
@@ -580,9 +609,10 @@ def choose(
     return _choose
 
 
+@curry_flipped(1)
 def collect(
-    mapping: Callable[[_TSource], Block[_TResult]]
-) -> Callable[[Block[_TSource]], Block[_TResult]]:
+    source: Block[_TSource], mapping: Callable[[_TSource], Block[_TResult]]
+) -> Block[_TResult]:
     """For each element of the list, applies the given function.
     Concatenates all the results and return the combined list.
 
@@ -595,19 +625,7 @@ def collect(
         list and returns the concatenation of the transformed sublists.
     """
 
-    def _collect(source: Block[_TSource]) -> Block[_TResult]:
-        """For each element of the list, applies the given function.
-        Concatenates all the results and return the combined list.
-
-        Args:
-            source: The input list.
-
-        Returns:
-            The concatenation of the transformed sublists.
-        """
-        return source.collect(mapping)
-
-    return _collect
+    return source.collect(mapping)
 
 
 def concat(sources: Iterable[Block[_TSource]]) -> Block[_TSource]:
@@ -863,6 +881,29 @@ def of_option(option: Option[_TSource]) -> Block[_TSource]:
     if isinstance(option, Some):
         return singleton(option.value)
     return empty
+
+
+@curry_flipped(1)
+def partition(
+    source: Block[_TSource], predicate: Callable[[_TSource], bool]
+) -> Tuple[Block[_TSource], Block[_TSource]]:
+    """Partition block.
+
+    Splits the collection into two collections, containing the
+    elements for which the given predicate returns True and False
+    respectively. Element order is preserved in both of the created
+    lists.
+
+    Args:
+        source: The source block to partition (curried flipped)
+        predicate: The function to test the input elements.
+
+    Returns:
+        A list containing the elements for which the predicate
+        evaluated to true and a list containing the elements for
+        which the predicate evaluated to false.
+    """
+    return source.partition(predicate)
 
 
 @overload
