@@ -13,27 +13,27 @@ Func = Callable[[int], int]
 
 
 @given(st.integers(min_value=0, max_value=10000))  # type: ignore
-def test_list_large_list(x: int):
+def test_block_large_list(x: int):
     xs = block.of_seq(range(x))
     assert len(xs) == x
 
 
-def test_list_is_null_after_cons_and_tail_fluent():
+def test_block_is_null_after_cons_and_tail_fluent():
     xs: Block[int] = block.empty.cons(42).tail()
     assert xs.is_empty()
 
 
-def test_list_not_null_after_cons_fluent():
+def test_block_not_null_after_cons_fluent():
     xs = block.empty.cons(42)
     assert not xs.is_empty()
 
 
-def test_list_head_fluent():
+def test_block_head_fluent():
     x = empty.cons(42).head()
     assert x == 42
 
 
-def test_list_head_match():
+def test_block_head_match():
     xs: Block[int] = empty.cons(42)
     with match(xs) as case:
         for (head, *_) in case(Iterable[int]):
@@ -43,7 +43,7 @@ def test_list_head_match():
             assert False
 
 
-def test_list_head_match_fluent():
+def test_block_head_match_fluent():
     xs: Block[int] = empty.cons(42)
 
     for (head, *_) in [(head, *tail) for (head, *tail) in xs.match(Block) if head > 10]:
@@ -54,29 +54,29 @@ def test_list_head_match_fluent():
 
 
 @given(st.text(), st.text())  # type: ignore
-def test_list_tail_head_fluent(a: str, b: str):
+def test_block_tail_head_fluent(a: str, b: str):
     xs = block.empty.cons(b).cons(a)
     assert a == xs.head()
 
 
-def test_list_tail_tail_null_fluent():
+def test_block_tail_tail_null_fluent():
     xs = empty.cons("b").cons("a")
     assert xs.tail().tail().is_empty()
 
 
-def test_list_list_fluent():
+def test_block_list_fluent():
     xs = block.empty.cons(empty.cons(42))
     assert 42 == xs.head().head()
 
 
-def test_list_empty():
+def test_block_empty():
     xs = block.empty
     assert len(xs) == 0
     assert not xs
     assert pipe(xs, block.is_empty)
 
 
-def test_list_non_empty():
+def test_block_non_empty():
     xs = block.singleton(42)
     assert len(xs) == 1
     assert xs
@@ -84,19 +84,19 @@ def test_list_non_empty():
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_list_length(xs: List[int]):
+def test_block_length(xs: List[int]):
     ys = block.of_seq(xs)
     assert len(xs) == len(ys)
 
 
 @given(st.one_of(st.integers(), st.text()))  # type: ignore
-def test_list_cons_head(value: Any):
+def test_block_cons_head(value: Any):
     x = pipe(block.empty.cons(value), block.head)
     assert x == value
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
-def test_list_item(xs: List[int], index: int):
+def test_block_item(xs: List[int], index: int):
     ys = block.of_seq(xs)
     while index and index >= len(xs):
         index //= 2
@@ -104,7 +104,7 @@ def test_list_item(xs: List[int], index: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_list_pipe_map(xs: List[int]):
+def test_block_pipe_map(xs: List[int]):
     def mapper(x: int):
         return x + 1
 
@@ -152,7 +152,7 @@ def test_seq_pipe_map3(xs: List[Tuple[int, int, int]]):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_list_pipe_mapi(xs: List[int]):
+def test_block_pipe_mapi(xs: List[int]):
     def mapper(i: int, x: int):
         return x + i
 
@@ -164,13 +164,13 @@ def test_list_pipe_mapi(xs: List[int]):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_list_len(xs: List[int]):
+def test_block_len(xs: List[int]):
     ys = block.of_seq(xs)
     assert len(xs) == len(ys)
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()))  # type: ignore
-def test_list_append(xs: List[int], ys: List[int]):
+def test_block_append(xs: List[int], ys: List[int]):
     expected = xs + ys
     fx = block.of_seq(xs)
     fy = block.of_seq(ys)
@@ -181,7 +181,7 @@ def test_list_append(xs: List[int], ys: List[int]):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_list_take(xs: List[int], x: int):
+def test_block_take(xs: List[int], x: int):
     ys: Block[int]
     try:
         ys = block.of_seq(xs).take(x)
@@ -191,7 +191,7 @@ def test_list_take(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_list_take_last(xs: List[int], x: int):
+def test_block_take_last(xs: List[int], x: int):
     expected = xs[-x:]
     ys: Block[int]
     ys = block.of_seq(xs).take_last(x)
@@ -199,7 +199,7 @@ def test_list_take_last(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_list_skip(xs: List[int], x: int):
+def test_block_skip(xs: List[int], x: int):
     ys: Block[int]
     try:
         ys = block.of_seq(xs).skip(x)
@@ -209,7 +209,7 @@ def test_list_skip(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_list_skip_last(xs: List[int], x: int):
+def test_block_skip_last(xs: List[int], x: int):
     expected = xs[:-x]
     ys: Block[int]
     ys = block.of_seq(xs).skip_last(x)
@@ -217,7 +217,7 @@ def test_list_skip_last(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()), st.integers(), st.integers())  # type: ignore
-def test_list_slice(xs: List[int], x: int, y: int):
+def test_block_slice(xs: List[int], x: int, y: int):
     expected = xs[x:y]
 
     ys: Block[int] = block.of_seq(xs)
@@ -227,7 +227,7 @@ def test_list_slice(xs: List[int], x: int, y: int):
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
-def test_list_index(xs: List[int], x: int):
+def test_block_index(xs: List[int], x: int):
 
     x = x % len(xs) if x > 0 else x
     expected = xs[x]
@@ -244,7 +244,7 @@ def test_list_index(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_list_indexed(xs: List[int]):
+def test_block_indexed(xs: List[int]):
 
     expected = list(enumerate(xs))
 
@@ -255,7 +255,7 @@ def test_list_indexed(xs: List[int]):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_list_fold(xs: List[int]):
+def test_block_fold(xs: List[int]):
     def folder(x: int, y: int) -> int:
         return x + y
 
@@ -268,7 +268,7 @@ def test_list_fold(xs: List[int]):
 
 
 @given(st.integers(max_value=100))  # type: ignore
-def test_list_unfold(x: int):
+def test_block_unfold(x: int):
     def unfolder(state: int) -> Option[Tuple[int, int]]:
         if state < x:
             return Some((state, state + 1))
@@ -280,7 +280,7 @@ def test_list_unfold(x: int):
 
 
 @given(st.lists(st.integers()), st.integers())  # type: ignore
-def test_list_filter(xs: List[int], limit: int):
+def test_block_filter(xs: List[int], limit: int):
     expected = filter(lambda x: x < limit, xs)
 
     ys: Block[int] = block.of_seq(xs)
@@ -291,7 +291,7 @@ def test_list_filter(xs: List[int], limit: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_list_sort(xs: List[int]):
+def test_block_sort(xs: List[int]):
     expected = sorted(xs)
     ys: Block[int] = block.of_seq(xs)
     result = pipe(ys, block.sort())
@@ -300,7 +300,7 @@ def test_list_sort(xs: List[int]):
 
 
 @given(st.lists(st.text(min_size=2)))  # type: ignore
-def test_list_sort_with(xs: List[str]):
+def test_block_sort_with(xs: List[str]):
     expected = sorted(xs, key=lambda x: x[1])
     ys: Block[str] = block.of_seq(xs)
     func: Callable[[str], str] = lambda x: x[1]
@@ -312,12 +312,20 @@ def test_list_sort_with(xs: List[str]):
     assert list(result) == list(expected)
 
 
+def test_block_partition_works():
+    xs = Block.range(10)
+    ys, zs = xs.partition(lambda x: x > 5)
+
+    assert ys == Block.range(6, 10)
+    assert zs == Block.range(6)
+
+
 rtn: Callable[[int], Block[int]] = block.singleton
 empty: Block[Any] = block.empty
 
 
 @given(st.integers(), st.integers())  # type: ignore
-def test_list_monad_bind(x: int, y: int):
+def test_block_monad_bind(x: int, y: int):
     m = rtn(x)
     f: Callable[[int], Block[int]] = lambda x: rtn(x + y)
 
@@ -325,7 +333,7 @@ def test_list_monad_bind(x: int, y: int):
 
 
 @given(st.integers())  # type: ignore
-def test_list_monad_empty_bind(value: int):
+def test_block_monad_empty_bind(value: int):
     m = empty
     f: Callable[[int], Block[int]] = lambda x: rtn(x + value)
 
@@ -333,7 +341,7 @@ def test_list_monad_empty_bind(value: int):
 
 
 @given(st.integers())  # type: ignore
-def test_list_monad_law_left_identity(value: int):
+def test_block_monad_law_left_identity(value: int):
     """Monad law left identity.
 
     return x >>= f is the same thing as f x
@@ -345,7 +353,7 @@ def test_list_monad_law_left_identity(value: int):
 
 
 @given(st.integers())  # type: ignore
-def test_list_monad_law_right_identity(value: int):
+def test_block_monad_law_right_identity(value: int):
     r"""Monad law right identity.
 
     m >>= return is no different than just m.
@@ -356,7 +364,7 @@ def test_list_monad_law_right_identity(value: int):
 
 
 @given(st.integers())  # type: ignore
-def test_list_monad_law_associativity(value: int):
+def test_block_monad_law_associativity(value: int):
     r"""Monad law associativity.
 
     (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
@@ -369,7 +377,7 @@ def test_list_monad_law_associativity(value: int):
 
 
 @given(st.integers())  # type: ignore
-def test_list_monad_law_associativity_empty(value: int):
+def test_block_monad_law_associativity_empty(value: int):
     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
     f: Callable[[int], Block[int]] = lambda x: rtn(x + 1000)
     g: Callable[[int], Block[int]] = lambda y: rtn(y * 42)
@@ -380,7 +388,7 @@ def test_list_monad_law_associativity_empty(value: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_list_monad_law_associativity_iterable(xs: List[int]):
+def test_block_monad_law_associativity_iterable(xs: List[int]):
     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
     f: Callable[[int], Block[int]] = lambda x: rtn(x + 10)
     g: Callable[[int], Block[int]] = lambda y: rtn(y * 42)
