@@ -6,6 +6,7 @@ from hypothesis import strategies as st
 from pydantic import BaseModel, parse_obj_as
 
 from expression import Error, Ok, Result, effect, match, result
+from expression.collections import Block
 from expression.extra.result import pipeline, sequence
 
 from .utils import CustomException
@@ -197,7 +198,7 @@ def test_result_bind_piped(x: int, y: int):
 
 @given(st.lists(st.integers()))  # type: ignore
 def test_result_traverse_ok(xs: List[int]):
-    ys: List[Result[int, str]] = [Ok(x) for x in xs]
+    ys: Block[Result[int, str]] = Block([Ok(x) for x in xs])
     zs = sequence(ys)
     for value in zs.match(Ok[List[int], str]):
         assert sum(value) == sum(xs)
@@ -209,9 +210,9 @@ def test_result_traverse_ok(xs: List[int]):
 @given(st.lists(st.integers(), min_size=5))  # type: ignore
 def test_result_traverse_error(xs: List[int]):
     error = "Do'h"
-    ys: List[Result[int, str]] = [
-        Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)
-    ]
+    ys: Block[Result[int, str]] = Block(
+        [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
+    )
 
     zs = sequence(ys)
     for err in zs.match(Error[int, str]):

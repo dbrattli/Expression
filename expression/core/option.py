@@ -24,6 +24,8 @@ from typing import (
     get_origin,
 )
 
+from typing_extensions import TypeGuard
+
 from .error import EffectError
 from .match import MatchMixin, SupportsMatch
 from .pipe import PipeMixin
@@ -128,12 +130,12 @@ class Option(
         raise NotImplementedError
 
     @abstractmethod
-    def is_some(self) -> bool:
+    def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns true if the option is not Nothing."""
         raise NotImplementedError
 
     @abstractmethod
-    def is_none(self) -> bool:
+    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
         """Returns true if the option is Nothing."""
         raise NotImplementedError
 
@@ -189,11 +191,11 @@ class Some(Option[_TSource]):
         """
         return self._value
 
-    def is_some(self) -> bool:
+    def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns `True`."""
         return True
 
-    def is_none(self) -> bool:
+    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
         """Returns `False`."""
         return False
 
@@ -307,11 +309,11 @@ class Nothing_(Option[_TSource], EffectError):
         """
         return value
 
-    def is_some(self) -> bool:
+    def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns `False`."""
         return False
 
-    def is_none(self) -> bool:
+    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
         """Returns `True`."""
         return True
 
@@ -447,11 +449,11 @@ def default_value(value: _TSource) -> Callable[[Option[_TSource]], _TSource]:
     return _default_value
 
 
-def is_none(option: Option[Any]) -> bool:
+def is_none(option: Option[_TSource]) -> TypeGuard[Nothing_[_TSource]]:
     return option.is_none()
 
 
-def is_some(option: Option[Any]) -> bool:
+def is_some(option: Option[_TSource]) -> TypeGuard[Some[_TSource]]:
     return option.is_some()
 
 

@@ -16,6 +16,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -26,6 +27,8 @@ from typing import (
     get_origin,
     overload,
 )
+
+from typing_extensions import TypeGuard
 
 from .error import EffectError
 from .match import Case, SupportsMatch
@@ -71,8 +74,8 @@ def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
 class Result(
     Iterable[_TSource],
     PipeMixin,
-    SupportsMatch[Union[_TSource, _TError]],
     SupportsValidation["Result[_TSource, _TError]"],
+    Generic[_TSource, _TError],
     ABC,
 ):
     """The result abstract base class."""
@@ -124,13 +127,13 @@ class Result(
         return case(pattern) if pattern else case
 
     @abstractmethod
-    def is_error(self) -> bool:
+    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
         """Returns `True` if the result is an `Error` value."""
 
         raise NotImplementedError
 
     @abstractmethod
-    def is_ok(self) -> bool:
+    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
 
         raise NotImplementedError
@@ -182,12 +185,12 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
         function, or Ok if the input is Ok."""
         return Ok(self._value)
 
-    def is_error(self) -> bool:
+    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
 
         return False
 
-    def is_ok(self) -> bool:
+    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
 
         return True
@@ -236,7 +239,11 @@ class ResultException(EffectError):
         self.message = message
 
 
-class Error(ResultException, Result[_TSource, _TError]):
+class Error(
+    ResultException,
+    Result[_TSource, _TError],
+    SupportsMatch[_TError],
+):
     """The Error result case class."""
 
     def __init__(self, error: _TError) -> None:
@@ -262,11 +269,11 @@ class Error(ResultException, Result[_TSource, _TError]):
         function, or Ok if the input is Ok."""
         return Error(mapper(self._error))
 
-    def is_error(self) -> bool:
+    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
         return True
 
-    def is_ok(self) -> bool:
+    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
         return False
 

@@ -152,7 +152,7 @@ class Case(Generic[_TSource]):
             return []
 
         self.is_matched = True
-        return [ret or self.value]
+        return ret or [self.value]
 
     def __enter__(self) -> Case[_TSource]:
         """Enter context management."""
