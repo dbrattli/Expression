@@ -114,6 +114,8 @@ on-demand as we go along.
     by [aioreactive](https://github.com/dbrattli/aioreactive).
 - **Data Modelling** - sum and product types
   - **TaggedUnion** - A tagged (discriminated) union type.
+- **Parser Combinators** - A recursive decent string parser combinator
+  library.
 - **Effects**: - lightweight computational expressions for Python. This
   is amazing stuff.
   - **option** - an optional world for working with optional values.

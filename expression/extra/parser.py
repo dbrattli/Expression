@@ -40,15 +40,24 @@ def pchar(char: str, input: str) -> ParseResult[str]:
 
 
 @curry(2)
-def and_then(
-    parser2: Parser[_B], parser1: Parser[_A], input: str
-) -> ParseResult[Tuple[_A, _B]]:
-    result1 = parser1(input)
+def and_then(p2: Parser[_B], p1: Parser[_A], input: str) -> ParseResult[Tuple[_A, _B]]:
+    """The parser p1 .>>. p2 applies the parsers p1 and p2 in sequence
+    and returns the results in a tuple.
+
+    Args:
+        p2 (Parser[_B]): Second parser.
+        p1 (Parser[_A]): First parser.
+        input (str): input string.
+
+    Returns:
+        ParseResult[Tuple[_A, _B]]: Result parser.
+    """
+    result1 = p1(input)
     with match(result1) as case:
         for error in case(Error[Any, str]):
             return Error[Tuple[Tuple[_A, _B], str], str](error)
         for value1, remaining1 in case(Ok[Tuple[_A, str], str]):
-            result2 = parser2(remaining1)
+            result2 = p2(remaining1)
 
             with match(result2) as case:
                 for error in case(Error[Any, str]):
@@ -85,6 +94,7 @@ def any_of(list_of_chars: str) -> Parser[str]:
 
 
 parse_lowercase = any_of(string.ascii_lowercase)
+parse_letters = any_of(string.ascii_letters)
 parse_digit = any_of(string.digits)
 
 
@@ -236,6 +246,10 @@ def many1(input: str, parser: Parser[_A]) -> ParseResult[Block[_A]]:
         return Error("parser error")
 
 
+# define parser for one or more digits
+digits = many1(parse_digit)
+
+
 def opt(p: Parser[_A]) -> Parser[Option[_A]]:
     nothing = cast(Option[_A], Nothing)
 
@@ -249,39 +263,63 @@ def opt(p: Parser[_A]) -> Parser[Option[_A]]:
 
 @curry(1)
 def then_ignore(
-    parser2: Parser[_B],
-    parser1: Parser[_A],
+    p2: Parser[_B],
+    p1: Parser[_A],
 ) -> Parser[_A]:
+    """The parser p1 .>> p2 applies the parsers p1 and p2 in sequence
+    and returns the result of p1.
+
+    Args:
+        p2 (Parser[_B]): Second parser.
+        p1 (Parser[_A]): First parser
+
+    Returns:
+        Parser[_A]: Result parser.
+    """
+
     def mapper(value: Tuple[_A, _B]) -> _A:
         return value[0]
 
     return pipe(
-        parser1,
-        and_then(parser2),
+        p1,
+        and_then(p2),
         map(mapper),
     )
 
 
 @curry(1)
-def ignore_then(parser2: Parser[_B], parser1: Parser[_A]) -> Parser[_B]:
+def ignore_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[_B]:
+    """The parser p1 >>. p2 applies the parsers p1 and p2 in sequence
+    and returns the result of p2.
+
+    Args:
+        p2 (Parser[_B]): Second parser
+        p1 (Parser[_A]): First parser.
+
+    Returns:
+        Parser[_B]: Result parser.
+    """
+
     def mapper(value: Tuple[_A, _B]) -> _B:
         return value[1]
 
     return pipe(
-        parser1,
-        and_then(parser2),
+        p1,
+        and_then(p2),
         map(mapper),
     )
 
 
 def _pint() -> Parser[int]:
     # helper
-    def result_to_int(sign: Option[str], digitList: Block[str]) -> int:
+    def result_to_int(sign: Option[str], digit_list: Block[str]) -> int:
         # ignore int overflow for now
-        return pipe(digitList, str, int) * -1 if sign.is_some() else 1
-
-    # define parser for one or more digits
-    digits = many1(parse_digit)
+        ret = pipe(
+            digit_list,
+            lambda digit_list: "".join(digit_list),
+            int,
+        )
+        return ret * -1 if sign.is_some() else ret
 
     # map the digits to an int
     ret = pipe(
@@ -304,7 +342,14 @@ def _pfloat() -> Parser[float]:
         sign, digits1 = sd
         if digits2.is_some():
             digits1 = digits1 + digits2.value.cons(".")
-        return pipe(digits1, str, int) * -1 if sign.is_some() else 1
+
+        ret = pipe(
+            digits1,
+            lambda digits: "".join(digits),
+            float,
+        )
+
+        return ret * -1 if sign.is_some() else ret
 
     # define parser for one or more digits
     digits = many1(parse_digit)
@@ -313,8 +358,14 @@ def _pfloat() -> Parser[float]:
     ret = pipe(
         opt(pchar("-")),
         and_then(digits),
-        then_ignore(opt(pchar("."))),
-        and_then(opt(digits)),
+        and_then(
+            opt(
+                pipe(
+                    pchar("."),
+                    ignore_then(digits),
+                )
+            ),
+        ),
         starmap(result_to_float),
     )
     return ret
@@ -323,7 +374,7 @@ def _pfloat() -> Parser[float]:
 pfloat = _pfloat()
 
 
-whitespace_char = any_of(" \t\n")
+whitespace_char = any_of(string.whitespace)
 whitespace = many1(whitespace_char)
 
 
@@ -357,29 +408,31 @@ def bind(input: str, f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> ParseResul
 
 
 __all__ = [
+    "and_then",
+    "any_of",
+    "apply",
     "bind",
+    "choice",
+    "fail",
+    "digits",
+    "map",
+    "ignore_then",
+    "lift2",
+    "many1",
+    "many",
+    "opt",
+    "or_else",
+    "parse_digit",
+    "parse_letters",
+    "parse_lowercase",
+    "pint",
     "ParseResult",
     "Parser",
     "pchar",
-    "and_then",
-    "or_else",
-    "choice",
-    "any_of",
-    "parse_lowercase",
-    "parse_digit",
-    "map",
-    "rtn",
-    "fail",
-    "apply",
-    "lift2",
-    "sequence",
     "pstring",
-    "many1",
-    "many",
-    "pint",
+    "rtn",
+    "sequence",
     "starts_with",
     "then_ignore",
-    "ignore_then",
     "whitespace",
-    "opt",
 ]

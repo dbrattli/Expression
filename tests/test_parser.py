@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from expression import Error, Ok, match, pipe
-from expression.extra.parser import Parser, and_then, pchar, pint, pstring
+from expression.extra.parser import Parser, and_then, pchar, pfloat, pint, pstring
 
 
 def test_parse_and_then():
@@ -74,6 +74,53 @@ def test_int():
     with match(ret) as case:
         for success, remaining in case(Ok[Tuple[int, str], str]):
             assert success == 123
+            assert remaining == "C"
+        if case._:
+            assert False
+
+
+def test_int_negative():
+    ret = pint("-123C")
+    print(ret)
+
+    with match(ret) as case:
+        for success, remaining in case(Ok[Tuple[int, str], str]):
+            assert success == -123
+            assert remaining == "C"
+        if case._:
+            assert False
+
+
+def test_float():
+    ret = pfloat("123C")
+    print(ret)
+
+    with match(ret) as case:
+        for success, remaining in case(Ok[Tuple[float, str], str]):
+            assert success == 123
+            assert remaining == "C"
+        if case._:
+            assert False
+
+
+def test_float_with_decimal():
+    ret = pfloat("123.45C")
+    print(ret)
+
+    with match(ret) as case:
+        for success, remaining in case(Ok[Tuple[float, str], str]):
+            assert success == 123.45
+            assert remaining == "C"
+        if case._:
+            assert False
+
+
+def test_negative_float_with_decimal():
+    ret = pfloat("-123.45C")
+
+    with match(ret) as case:
+        for success, remaining in case(Ok[Tuple[float, str], str]):
+            assert success == -123.45
             assert remaining == "C"
         if case._:
             assert False
