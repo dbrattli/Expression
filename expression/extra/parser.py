@@ -271,7 +271,7 @@ def then_ignore(
 
     Args:
         p2 (Parser[_B]): Second parser.
-        p1 (Parser[_A]): First parser
+        p1 (Parser[_A]): First parser.
 
     Returns:
         Parser[_A]: Result parser.
@@ -394,6 +394,7 @@ def _starts_with(string: str, prefix: str) -> bool:
 starts_with = lift2(_starts_with)
 
 
+@curry_flipped(1)
 def bind(input: str, f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> ParseResult[_B]:
     result1 = p(input)
     with match(result1) as case:
