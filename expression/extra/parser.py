@@ -1,32 +1,10 @@
 from __future__ import annotations
 
 import string
-from abc import abstractmethod
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Iterable,
-    Tuple,
-    TypeVar,
-    cast,
-    get_origin,
-    overload,
-)
+from typing import Any, Callable, Generic, Tuple, TypeVar, cast, overload
 
 from expression.collections import Block, block
-from expression.core import (
-    Error,
-    Nothing,
-    Ok,
-    Option,
-    Result,
-    Some,
-    SupportsMatch,
-    curry,
-    match,
-    pipe,
-)
+from expression.core import Error, Nothing, Ok, Option, Result, Some, curry, match, pipe
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")
@@ -46,80 +24,18 @@ class Parser(Generic[_A]):
     def __call__(self, __input: str) -> ParseResult[_A]:
         return self.run(__input)
 
-    @abstractmethod
-    def pchar(self, char: str) -> Parser[str]:
-        ...
-
-    @abstractmethod
-    def then(self, p2: Parser[_B]) -> Parser[Tuple[_A, _B]]:
-        ...
-
-
-class Failure(Parser[_A], SupportsMatch[str]):
-    """A failed parser."""
-
-    def __init__(self, error: str) -> None:
-        self.error = error
-
-    def pchar(self, char: str) -> Parser[str]:
-        return Failure(self.error)
-
-    def then(self, p2: Parser[_B]) -> Parser[Tuple[_A, _B]]:
-        return Failure(self.error)
-
-    def __call__(self, __input: str) -> ParseResult[_A]:
-        return Error(self.error)
-
-    def __match__(self, pattern: Any) -> Iterable[str]:
-        if self is pattern or self == pattern:
-            return [self.error]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [self.error]
-        except TypeError:
-            pass
-
-        return []
-
-
-class Success(Parser[_A], SupportsMatch[Tuple[_A, str]]):
-    """A successful parser."""
-
-    def __init__(self, value: _A, remaining: str) -> None:
-        self.value = value
-        self.remaining = remaining
-
-    def pchar(self, char: str) -> Parser[str]:
+    @staticmethod
+    def pchar(char: str) -> Parser[str]:
         return pchar(char)
 
-    def then(self, p2: Parser[_B]) -> Parser[Tuple[_A, _B]]:
-        result2 = p2(self.remaining)
+    def and_then(self, p2: Parser[_B]) -> Parser[Tuple[_A, _B]]:
+        return and_then(p2)(self)
 
-        with match(result2) as case:
-            for error in case(Failure):
-                return Failure(error)
-            for value2, remaining2 in case(Success[_B]):
-                return Success((self.value, value2), remaining2)
+    def or_else(self, parser2: Parser[_A]) -> Parser[_A]:
+        return or_else(self)(parser2)
 
-        return case.default(Failure[Tuple[_A, _B]]("parser error"))
-
-    def __call__(self, __input: str) -> ParseResult[_A]:
-        return Ok((self.value, self.remaining))
-
-    def __match__(self, pattern: Any) -> Iterable[Tuple[_A, str]]:
-        if self is pattern or self == pattern:
-            return [(self.value, self.remaining)]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [(self.value, self.remaining)]
-        except TypeError:
-            pass
-
-        return []
+    def map(self, mapper: Callable[[_A], _B]) -> Parser[_B]:
+        return map(mapper)(self)
 
 
 def pchar(char: str) -> Parser[str]:
@@ -170,6 +86,7 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
     return Parser(run)
 
 
+@curry(1)
 def or_else(parser1: Parser[_A], parser2: Parser[_A]) -> Parser[_A]:
     def run(input: str) -> ParseResult[_A]:
         result1 = parser1(input)
@@ -186,7 +103,7 @@ def or_else(parser1: Parser[_A], parser2: Parser[_A]) -> Parser[_A]:
 
 
 def choice(list_of_parsers: Block[Parser[_A]]) -> Parser[_A]:
-    return list_of_parsers.reduce(or_else)
+    return list_of_parsers.reduce(lambda a, b: or_else(a)(b))
 
 
 def any_of(list_of_chars: str) -> Parser[str]:
@@ -203,7 +120,7 @@ parse_digit = any_of(string.digits)
 
 
 @curry(1)
-def map(f: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
+def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
     def run(input: str) -> ParseResult[_B]:
         # run parser with the input
         result = parser(input)
@@ -212,7 +129,7 @@ def map(f: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
         with match(result) as case:
             for value, remaining in case(Ok[Tuple[_A, str], str]):
                 # if success, return the value transformed by f
-                new_value = f(value)
+                new_value = mapper(value)
                 return Ok[Tuple[_B, str], str]((new_value, remaining))
 
             for error in case(Error[Tuple[_A, str], str]):
@@ -377,7 +294,7 @@ def opt(p: Parser[_A]) -> Parser[Option[_A]]:
 
     some: Parser[Option[_A]] = pipe(p, map(mapper))
     none: Parser[Option[_A]] = rtn(nothing)
-    return or_else(some, none)
+    return or_else(some)(none)
 
 
 @curry(1)

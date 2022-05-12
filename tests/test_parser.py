@@ -4,9 +4,23 @@ from expression import Error, Ok, match, pipe
 from expression.extra.parser import Parser, and_then, pchar, pfloat, pint, pstring
 
 
-def test_parse_and_then():
+def test_parse_pchar():
     input = "ABC"
     parseA: Parser[str] = pchar("A")
+
+    result = parseA(input)
+
+    assert result.is_ok()
+    with match(result) as case:
+        for (a, b) in case(Ok[Tuple[str, str], str]):
+            assert (a, b) == ("A", "BC")
+        if case._:
+            assert False
+
+
+def test_parse_pchar_fluent():
+    input = "ABC"
+    parseA: Parser[str] = Parser.pchar("A")
 
     result = parseA(input)
 
@@ -27,6 +41,20 @@ def test_parse_a_then_b():
         parse_a,
         and_then(parse_b),
     )
+
+    result = parseAB(input)
+    assert result.is_ok()
+    with match(result) as case:
+        for (a, b), c in case(Ok[Tuple[Tuple[str, str], str], str]):
+            assert (a, b) == ("A", "B")
+            assert c == "C"
+        if case._:
+            assert False
+
+
+def test_parse_a_then_b_fluent():
+    input = "ABC"
+    parseAB = pchar("A").and_then(pchar("B"))
 
     result = parseAB(input)
     assert result.is_ok()
