@@ -142,17 +142,17 @@ class Case(Generic[_TSource]):
         ...
 
     @overload
-    def default(self, ret: Optional[_TResult]) -> _TResult:
+    def default(self, default_value: _TResult) -> _TResult:
         ...
 
-    def default(self, ret: Optional[Any] = None) -> Any:
+    def default(self, default_value: Any = None) -> Any:
         """Handle default case. Always matches."""
 
         if self.is_matched:
             return []
 
         self.is_matched = True
-        return ret or [self.value]
+        return default_value or [self.value]
 
     def __enter__(self) -> Case[_TSource]:
         """Enter context management."""

@@ -18,7 +18,7 @@ def test_parse_and_then():
             assert False
 
 
-def test_parse_a():
+def test_parse_a_then_b():
     input = "ABC"
     parse_a: Parser[str] = pchar("A")
     parse_b: Parser[str] = pchar("B")
