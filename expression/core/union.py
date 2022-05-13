@@ -117,17 +117,13 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
 
         if not hasattr(self.__class__, "_tags"):
             tags = {
-                tag.tag: self._camel(name)
+                tag.tag: name
                 for (name, tag) in self.__class__.__dict__.items()
                 if isinstance(tag, Tag)
             }
             setattr(self.__class__, "_tags", tags)
-        self.name = getattr(self.__class__, "_tags")[tag.tag]
 
-    @staticmethod
-    def _camel(snake_str: str) -> str:
-        first, *others = snake_str.lower().split("_")
-        return "".join([first.capitalize(), *map(str.title, others)])
+        self.name = getattr(self.__class__, "_tags")[tag.tag]
 
     def __match__(self, pattern: _T) -> Iterable[_T]:
         if self.value is pattern:
@@ -197,6 +193,7 @@ class SingleCaseUnion(TaggedUnion, Generic[_T]):
     VALUE = Tag[_T]()
 
     def __init__(self, value: _T) -> None:
+        setattr(self.__class__, "_tags", {SingleCaseUnion.VALUE.tag: "VALUE"})
         super().__init__(SingleCaseUnion.VALUE, value)
 
 
