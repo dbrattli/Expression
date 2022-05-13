@@ -5,7 +5,7 @@ from typing import Generic, Tuple, TypeVar, final
 
 from pydantic import parse_obj_as
 
-from expression import SingleCaseUnion, Tag, TaggedUnion, match
+from expression import SingleCaseUnion, Tag, TaggedUnion, match, tag
 
 _T = TypeVar("_T")
 
@@ -23,8 +23,8 @@ class Circle:
 
 @final
 class Shape(TaggedUnion):
-    RECTANGLE = Tag[Rectangle]()
-    CIRCLE = Tag[Circle]()
+    RECTANGLE = tag(Rectangle)
+    CIRCLE = tag(Circle)
 
     @staticmethod
     def rectangle(width: float, length: float) -> Shape:
@@ -85,8 +85,8 @@ def test_union_no_match_value():
 
 @final
 class Weather(TaggedUnion):
-    Sunny = Tag[None]()
-    Rainy = Tag[None]()
+    Sunny = tag()
+    Rainy = tag()
 
     @staticmethod
     def sunny() -> Weather:
@@ -110,7 +110,7 @@ def test_union_wether_match():
 
 
 class Maybe(TaggedUnion, Generic[_T]):
-    NOTHING = Tag[None]()
+    NOTHING = tag()
     JUST = Tag[_T]()
 
     @staticmethod
@@ -139,10 +139,10 @@ def test_union_maybe_match():
 
 @final
 class Suit(TaggedUnion):
-    HEARTS = Tag[None]
-    SPADES = Tag[None]()
-    CLUBS = Tag[None]()
-    DIAMONDS = Tag[None]()
+    HEARTS = tag()
+    SPADES = tag()
+    CLUBS = tag()
+    DIAMONDS = tag()
 
     @staticmethod
     def hearts() -> Suit:
@@ -163,10 +163,10 @@ class Suit(TaggedUnion):
 
 @final
 class Face(TaggedUnion):
-    JACK = Tag[None]()
-    QUEEN = Tag[None]()
-    KIND = Tag[None]()
-    ACE = Tag[None]()
+    JACK = tag()
+    QUEEN = tag()
+    KIND = tag()
+    ACE = tag()
 
     @staticmethod
     def jack() -> Face:
@@ -187,12 +187,12 @@ class Face(TaggedUnion):
 
 @final
 class Card(TaggedUnion):
-    FACE_CARD = Tag[Tuple[Suit, Face]]()
-    VALUE_CARD = Tag[Tuple[Suit, int]]()
-    JOKER = Tag[None]()
+    FACE_CARD = tag(Tuple[Suit, Face])
+    VALUE_CARD = tag(Tuple[Suit, int])
+    JOKER = tag()
 
-    @classmethod
-    def face_card(cls, suit: Suit, face: Face) -> Card:
+    @staticmethod
+    def face_card(suit: Suit, face: Face) -> Card:
         return Card(Card.FACE_CARD, suit=suit, face=face)
 
     @staticmethod

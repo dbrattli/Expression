@@ -520,7 +520,7 @@ tagged union cases.
 
 ```python
 from dataclasses import dataclass
-from expression import TaggedUnion, Tag
+from expression import TaggedUnion, tag
 
 @dataclass
 class Rectangle:
@@ -532,8 +532,8 @@ class Circle:
     radius: float
 
 class Shape(TaggedUnion):
-    RECTANGLE = Tag[Rectangle]()
-    CIRCLE = Tag[Circle]()
+    RECTANGLE = tag(Rectangle)
+    CIRCLE = tag(Circle)
 
     @staticmethod
     def rectangle(width: float, length: float) -> Shape:

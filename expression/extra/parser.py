@@ -10,7 +10,7 @@ _A = TypeVar("_A")
 _B = TypeVar("_B")
 _C = TypeVar("_C")
 _D = TypeVar("_D")
-
+_E = TypeVar("_E")
 
 ParseResult = Result[Tuple[_A, str], str]
 
@@ -25,6 +25,10 @@ class Parser(Generic[_A]):
         return self.run(__input)
 
     @staticmethod
+    def fail(error: str) -> Parser[Any]:
+        return fail(error)
+
+    @staticmethod
     def pchar(char: str) -> Parser[str]:
         return pchar(char)
 
@@ -36,6 +40,29 @@ class Parser(Generic[_A]):
 
     def map(self, mapper: Callable[[_A], _B]) -> Parser[_B]:
         return map(mapper)(self)
+
+    @overload
+    def starmap(
+        self: Parser[Tuple[_B, _C]], mapper: Callable[[_B, _C], _D]
+    ) -> Parser[_D]:
+        ...
+
+    @overload
+    def starmap(
+        self: Parser[Tuple[_B, _C, _D]], mapper: Callable[[_B, _C, _D], _E]
+    ) -> Parser[_E]:
+        ...
+
+    def starmap(
+        self: Parser[Tuple[Any, ...]], mapper: Callable[..., Any]
+    ) -> Parser[Any]:
+        return starmap(mapper)(self)
+
+    def bind(self, binder: Callable[[_A], Parser[_B]]) -> Parser[_B]:
+        return bind(binder)(self)
+
+    def between(self, p2: Parser[_A], p3: Parser[Any]) -> Parser[_A]:
+        return between(p2)(p3)(self)
 
 
 def pchar(char: str) -> Parser[str]:
@@ -143,26 +170,28 @@ def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
 
 @curry(1)
 @overload
-def starmap(f: Callable[[_A, _B], _C], parser: Parser[Tuple[_A, _B]]) -> Parser[_C]:
+def starmap(
+    mapper: Callable[[_A, _B], _C], parser: Parser[Tuple[_A, _B]]
+) -> Parser[_C]:
     ...
 
 
 @curry(1)
 @overload
 def starmap(
-    f: Callable[[_A, _B, _C], _D], parser: Parser[Tuple[_A, _B, _C]]
+    mapper: Callable[[_A, _B, _C], _D], parser: Parser[Tuple[_A, _B, _C]]
 ) -> Parser[_D]:
     ...
 
 
 @curry(1)
-def starmap(f: Callable[..., Any], parser: Parser[Tuple[Any, ...]]) -> Parser[Any]:
-    def mapper(values: Tuple[Any, ...]) -> Any:
-        return f(*values)
+def starmap(mapper: Callable[..., Any], parser: Parser[Tuple[Any, ...]]) -> Parser[Any]:
+    def mapper_(values: Tuple[Any, ...]) -> Any:
+        return mapper(*values)
 
     return pipe(
         parser,
-        map(mapper),
+        map(mapper_),
     )
 
 
@@ -196,9 +225,9 @@ def apply(f_p: Parser[Callable[[_A], _B]], x_p: Parser[_A]) -> Parser[_B]:
 
 @curry(2)
 def lift2(
-    f: Callable[[_A], Callable[[_B], _C]], xP: Parser[_A], yP: Parser[_B]
+    fn: Callable[[_A], Callable[[_B], _C]], xP: Parser[_A], yP: Parser[_B]
 ) -> Parser[_C]:
-    return apply(apply(rtn(f), xP), yP)
+    return apply(apply(rtn(fn), xP), yP)
 
 
 def sequence(parser_list: Block[Parser[_A]]) -> Parser[Block[_A]]:
@@ -414,7 +443,8 @@ whitespace_char = any_of(string.whitespace)
 whitespace = many1(whitespace_char)
 
 
-def between(p1: Parser[Any], p2: Parser[_A], p3: Parser[Any]) -> Parser[_A]:
+@curry(2)
+def between(p2: Parser[_A], p3: Parser[Any], p1: Parser[Any]) -> Parser[_A]:
     return pipe(
         p1,
         ignore_then(p2),
@@ -430,6 +460,7 @@ def _starts_with(string: str, prefix: str) -> bool:
 starts_with = lift2(_starts_with)
 
 
+@curry(1)
 def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
     def run(input: str) -> ParseResult[_B]:
         result1 = p(input)

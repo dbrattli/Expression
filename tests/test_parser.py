@@ -1,7 +1,23 @@
-from typing import Tuple
+from __future__ import annotations
 
-from expression import Error, Ok, match, pipe
-from expression.extra.parser import Parser, and_then, pchar, pfloat, pint, pstring
+import string
+from dataclasses import dataclass
+from typing import Any, Tuple
+
+from expression import Error, Nothing, Ok, Option, Some, TaggedUnion, match, pipe, tag
+from expression.collections import Block
+from expression.extra.parser import (
+    Parser,
+    and_then,
+    any_of,
+    choice,
+    many,
+    opt,
+    pchar,
+    pfloat,
+    pint,
+    pstring,
+)
 
 
 def test_parse_pchar():
@@ -152,3 +168,102 @@ def test_negative_float_with_decimal():
             assert remaining == "C"
         if case._:
             assert False
+
+
+class ComparisonOperator(TaggedUnion):
+    EQ = tag()
+    NOT_EQ = tag()
+    LT = tag()
+    LT_E = tag()
+    GT = tag()
+    GT_E = tag()
+    IS = tag()
+    IS_NOT = tag()
+    IN = tag()
+    NOT_IN = tag()
+
+    @staticmethod
+    def eq() -> ComparisonOperator:
+        return ComparisonOperator(ComparisonOperator.EQ)
+
+    @staticmethod
+    def not_eq() -> ComparisonOperator:
+        return ComparisonOperator(ComparisonOperator.NOT_EQ)
+
+
+@dataclass
+class Compare:
+    left: Expression
+    comparators: Block[Expression]
+    ops: Block[ComparisonOperator]
+
+
+class BoolOp(TaggedUnion):
+    AND = tag()
+    OR = tag()
+
+    @staticmethod
+    def and_() -> BoolOp:
+        return BoolOp(BoolOp.AND)
+
+    @staticmethod
+    def or_() -> BoolOp:
+        return BoolOp(BoolOp.OR)
+
+
+class Expression(TaggedUnion):
+    CONSTANT = tag(Any)
+    NAME = tag(str)
+    BOOL_OP = tag(BoolOp)
+    COMPARE = tag(Compare)
+
+    @staticmethod
+    def name(name: str) -> Expression:
+        return Expression(Expression.NAME, name)
+
+    @staticmethod
+    def compare(compare: Compare) -> Expression:
+        return Expression(Expression.COMPARE, compare)
+
+    @staticmethod
+    def constant(value: Any) -> Expression:
+        return Expression(Expression.CONSTANT, value)
+
+
+def pname() -> Parser[Expression]:
+    first = any_of(string.ascii_letters + "_")
+    rest = pipe(
+        any_of(string.ascii_letters + string.ascii_letters + "_"),
+        many,
+        opt,
+    )
+
+    def mapper(first: str, rest: Option[Block[str]]) -> str:
+        with match(rest) as case:
+            if case(Nothing):
+                return first
+            for letters in case(Some[Block[str]]):
+                return first + "".join(letters)
+
+            return case.default(first)
+
+    return first.and_then(rest).starmap(mapper).map(Expression.name)
+
+
+def pexpr() -> Parser[Expression]:
+    parsers = [
+        pname(),
+    ]
+    return pipe(
+        parsers,
+        Block[Parser[Expression]].of_seq,
+        choice,
+    )
+
+
+def test_parse_name_expr():
+    name = pipe(
+        "test",
+        pexpr(),
+    )
+    assert name.is_ok()
