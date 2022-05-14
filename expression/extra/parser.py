@@ -4,7 +4,18 @@ import string
 from typing import Any, Callable, Generic, Tuple, TypeVar, cast, overload
 
 from expression.collections import Block, block
-from expression.core import Error, Nothing, Ok, Option, Result, Some, curry, match, pipe
+from expression.core import (
+    Error,
+    Nothing,
+    Ok,
+    Option,
+    Result,
+    Some,
+    curry,
+    fst,
+    match,
+    pipe,
+)
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")
@@ -19,10 +30,13 @@ class Parser(Generic[_A]):
     """Parser abstract base class."""
 
     def __init__(self, run: Callable[[str], ParseResult[_A]]) -> None:
-        self.run = run
+        self._run = run
 
-    def __call__(self, __input: str) -> ParseResult[_A]:
-        return self.run(__input)
+    def __call__(self, __input: str) -> Result[_A, str]:
+        return self._run(__input).map(fst)
+
+    def run(self, __input: str) -> ParseResult[_A]:
+        return self._run(__input)
 
     @staticmethod
     def fail(error: str) -> Parser[Any]:
@@ -101,12 +115,12 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
     """
 
     def run(input: str) -> ParseResult[Tuple[_A, _B]]:
-        result1 = p1(input)
+        result1 = p1.run(input)
         with match(result1) as case:
             for error in case(Error[Any, str]):
                 return Error(error)
             for value1, remaining1 in case(Ok[Tuple[_A, str], str]):
-                result2 = p2(remaining1)
+                result2 = p2.run(remaining1)
 
                 with match(result2) as case:
                     for error in case(Error[Any, str]):
@@ -121,12 +135,12 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
 @curry(1)
 def or_else(parser1: Parser[_A], parser2: Parser[_A]) -> Parser[_A]:
     def run(input: str) -> ParseResult[_A]:
-        result1 = parser1(input)
+        result1 = parser1.run(input)
         with match(result1) as case:
             if case(Ok[Tuple[_A, str], str]):
                 return result1
             if case(Error):
-                result2 = parser2(input)
+                result2 = parser2.run(input)
                 return result2
 
         return case.default(Error[Tuple[_A, str], str]("parser error"))
@@ -155,7 +169,7 @@ parse_digit = any_of(string.digits)
 def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
     def run(input: str) -> ParseResult[_B]:
         # run parser with the input
-        result = parser(input)
+        result = parser.run(input)
 
         # test the result for Failure/Success
         with match(result) as case:
@@ -267,7 +281,7 @@ def pstring(string_input: str) -> Parser[str]:
 
 def parse_zero_or_more(parser: Parser[_A], input: str) -> Tuple[Block[_A], str]:
     # run parser with the input
-    first_result = parser(input)
+    first_result = parser.run(input)
 
     # test the result for Failure/Success
     with match(first_result) as case:
@@ -297,7 +311,7 @@ def many(parser: Parser[_A]) -> Parser[Block[_A]]:
 def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
     def run(input: str) -> ParseResult[Block[_A]]:
         # run parser with the input
-        firstResult = parser(input)
+        firstResult = parser.run(input)
         # test the result for Failure/Success
         with match(firstResult) as case:
             for first_value, input_after_first_parse in case(Ok[Tuple[_A, str], str]):
@@ -392,12 +406,12 @@ def _pint() -> Parser[int]:
         return ret * -1 if sign.is_some() else ret
 
     # map the digits to an int
-    ret = pipe(
-        opt(pchar("-")),
+    return pipe(
+        pchar("-"),
+        opt,
         and_then(digits),
         starmap(result_to_int),
     )
-    return ret
 
 
 pint = _pint()
@@ -481,11 +495,11 @@ starts_with = lift2(_starts_with)
 @curry(1)
 def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
     def run(input: str) -> ParseResult[_B]:
-        result1 = p(input)
+        result1 = p.run(input)
         with match(result1) as case:
             for value1, remaning_input in case(Ok[Tuple[_A, str], str]):
                 p2 = f(value1)
-                return p2(remaning_input)
+                return p2.run(remaning_input)
             for err in case(Error[Any, str]):
                 return Error(err)  # failed
             else:
