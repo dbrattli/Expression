@@ -267,3 +267,16 @@ def test_parse_name_expr():
         pexpr(),
     )
     assert name.is_ok()
+    with match(name) as case:
+        if case(Nothing):
+            assert False
+        for expr, _ in case(Ok[Tuple[Expression, str], str]):
+            with match(expr) as case:
+                for name in case(Expression.NAME):
+                    assert name == "test"
+                    break
+                else:
+                    assert False
+                break
+        else:
+            assert False

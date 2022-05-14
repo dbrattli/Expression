@@ -35,6 +35,12 @@ class Parser(Generic[_A]):
     def and_then(self, p2: Parser[_B]) -> Parser[Tuple[_A, _B]]:
         return and_then(p2)(self)
 
+    def ignore_then(self, p2: Parser[_B]) -> Parser[_B]:
+        return ignore_then(p2)(self)
+
+    def then_ignore(self, p2: Parser[Any]) -> Parser[_A]:
+        return then_ignore(p2)(self)
+
     def or_else(self, parser2: Parser[_A]) -> Parser[_A]:
         return or_else(self)(parser2)
 
@@ -89,10 +95,9 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
     Args:
         p2 (Parser[_B]): Second parser.
         p1 (Parser[_A]): First parser.
-        input (str): input string.
 
     Returns:
-        ParseResult[Tuple[_A, _B]]: Result parser.
+        Parser[Tuple[_A, _B]]: Result parser.
     """
 
     def run(input: str) -> ParseResult[Tuple[_A, _B]]:
@@ -195,7 +200,7 @@ def starmap(mapper: Callable[..., Any], parser: Parser[Tuple[Any, ...]]) -> Pars
     )
 
 
-def rtn(x: _A) -> Parser[_A]:
+def preturn(x: _A) -> Parser[_A]:
     def run(input: str) -> ParseResult[_A]:
         return Ok((x, input))
 
@@ -227,7 +232,7 @@ def apply(f_p: Parser[Callable[[_A], _B]], x_p: Parser[_A]) -> Parser[_B]:
 def lift2(
     fn: Callable[[_A], Callable[[_B], _C]], xP: Parser[_A], yP: Parser[_B]
 ) -> Parser[_C]:
-    return apply(apply(rtn(fn), xP), yP)
+    return apply(apply(preturn(fn), xP), yP)
 
 
 def sequence(parser_list: Block[Parser[_A]]) -> Parser[Block[_A]]:
@@ -242,7 +247,7 @@ def sequence(parser_list: Block[Parser[_A]]) -> Parser[Block[_A]]:
     # process the list of parsers recursively
     with match(parser_list) as case:
         if case(block.empty):
-            return rtn(block.empty)
+            return preturn(block.empty)
         for head, *tail in case(Block[Parser[_A]]):
             tail_ = sequence(Block(tail))
             return cons_p(head)(tail_)
@@ -322,7 +327,7 @@ def opt(p: Parser[_A]) -> Parser[Option[_A]]:
         return Some(a)
 
     some: Parser[Option[_A]] = pipe(p, map(mapper))
-    none: Parser[Option[_A]] = rtn(nothing)
+    none: Parser[Option[_A]] = preturn(nothing)
     return or_else(some)(none)
 
 
@@ -444,11 +449,24 @@ whitespace = many1(whitespace_char)
 
 
 @curry(2)
-def between(p2: Parser[_A], p3: Parser[Any], p1: Parser[Any]) -> Parser[_A]:
+def between(popen: Parser[Any], pclose: Parser[Any], p: Parser[_A]) -> Parser[_A]:
+    """Parse between.
+
+    The parser between popen pclose p applies the parsers popen, p and
+    pclose in sequence. It returns the result of p.
+
+    Args:
+        popen (Parser[Any]): First parser
+        pclose (Parser[Any]): Last parser
+        p (Parser[_A]): Parser in between.
+
+    Returns:
+        Parser[_A]: Result of the middle (p) parser.
+    """
     return pipe(
-        p1,
-        ignore_then(p2),
-        then_ignore(p3),
+        popen,
+        ignore_then(p),
+        then_ignore(pclose),
     )
 
 
@@ -476,15 +494,24 @@ def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
     return Parser(run)
 
 
+def ignore(p: Parser[Any]) -> Parser[None]:
+    def mapper(_: Any) -> None:
+        return None
+
+    return pipe(p, map(mapper))
+
+
 __all__ = [
     "and_then",
     "any_of",
     "apply",
+    "between",
     "bind",
     "choice",
     "fail",
     "digits",
     "map",
+    "ignore",
     "ignore_then",
     "lift2",
     "many1",
@@ -499,7 +526,7 @@ __all__ = [
     "Parser",
     "pchar",
     "pstring",
-    "rtn",
+    "preturn",
     "sequence",
     "starts_with",
     "then_ignore",
