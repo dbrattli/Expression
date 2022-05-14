@@ -27,15 +27,17 @@ ParseResult = Result[Tuple[_A, str], str]
 
 
 class Parser(Generic[_A]):
-    """Parser abstract base class."""
+    """The Parser class."""
 
     def __init__(self, run: Callable[[str], ParseResult[_A]]) -> None:
         self._run = run
 
     def __call__(self, __input: str) -> Result[_A, str]:
+        """Returns result without the remaining string."""
         return self._run(__input).map(fst)
 
     def run(self, __input: str) -> ParseResult[_A]:
+        """Returns parser result and the remaining string."""
         return self._run(__input)
 
     @staticmethod
@@ -86,6 +88,8 @@ class Parser(Generic[_A]):
 
 
 def pchar(char: str) -> Parser[str]:
+    """Parse the given character."""
+
     def run(input: str) -> ParseResult[str]:
         if not input:
             return Error("no more input")
@@ -154,7 +158,8 @@ def choice(list_of_parsers: Block[Parser[_A]]) -> Parser[_A]:
 
 def any_of(list_of_chars: str) -> Parser[str]:
     return pipe(
-        block.of_seq(list_of_chars),
+        list_of_chars,
+        block.of_seq,
         block.map(pchar),  # convert into parsers
         choice,  # combine them
     )
@@ -330,6 +335,22 @@ def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
     return Parser(run)
 
 
+def sep_by1(p: Parser[_A], sep: Parser[Any]) -> Parser[Block[_A]]:
+    """Parses one or more occurrences of p separated by sep."""
+
+    sep_then_p = sep.ignore_then(p)
+
+    def mapper(p: _A, plist: Block[_A]) -> Block[_A]:
+        return plist.cons(p)
+
+    return p.and_then(many(sep_then_p)).starmap(mapper)
+
+
+def sep_by(p: Parser[_A], sep: Parser[Any]) -> Parser[Block[_A]]:
+    """Parses zero or more occurrences of p separated by sep."""
+    return sep_by1(p, sep).or_else(preturn(block.empty))
+
+
 # define parser for one or more digits
 digits = many1(parse_digit)
 
@@ -407,7 +428,8 @@ def _pint() -> Parser[int]:
 
     # map the digits to an int
     return pipe(
-        pchar("-"),
+        "-",
+        pchar,
         opt,
         and_then(digits),
         starmap(result_to_int),
@@ -542,6 +564,8 @@ __all__ = [
     "pstring",
     "preturn",
     "sequence",
+    "sep_by",
+    "sep_by1",
     "starts_with",
     "then_ignore",
     "whitespace",
