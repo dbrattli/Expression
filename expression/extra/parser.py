@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import string
-from typing import Any, Callable, Generic, Tuple, TypeVar, cast, overload
+from typing import Any, Callable, Generic, Optional, Tuple, TypeVar, cast, overload
 
 from expression.collections import Block, block
 from expression.core import (
@@ -23,22 +23,26 @@ _C = TypeVar("_C")
 _D = TypeVar("_D")
 _E = TypeVar("_E")
 
-ParseResult = Result[Tuple[_A, str], str]
+Remaining = Tuple[str, int]
+ParseResult = Result[Tuple[_A, Remaining], str]
 
 
 class Parser(Generic[_A]):
     """The Parser class."""
 
-    def __init__(self, run: Callable[[str], ParseResult[_A]]) -> None:
+    def __init__(
+        self, run: Callable[[Remaining], ParseResult[_A]], name: Optional[str] = None
+    ) -> None:
         self._run = run
+        self._name = name or "parser"
 
-    def __call__(self, __input: str) -> Result[_A, str]:
+    def __call__(self, input: str) -> Result[_A, str]:
         """Returns result without the remaining string."""
-        return self._run(__input).map(fst)
+        return self._run((input, 0)).map(fst)
 
-    def run(self, __input: str) -> ParseResult[_A]:
+    def run(self, input: Remaining) -> ParseResult[_A]:
         """Returns parser result and the remaining string."""
-        return self._run(__input)
+        return self._run(input)
 
     @staticmethod
     def fail(error: str) -> Parser[Any]:
@@ -86,23 +90,29 @@ class Parser(Generic[_A]):
     def between(self, p2: Parser[_A], p3: Parser[Any]) -> Parser[_A]:
         return between(p2)(p3)(self)
 
+    def __repr__(self) -> str:
+        return self._name
+
+    def __str__(self) -> str:
+        return repr(self)
+
 
 def pchar(char: str) -> Parser[str]:
     """Parse the given character."""
 
-    def run(input: str) -> ParseResult[str]:
-        if not input:
+    def run(input: Remaining) -> ParseResult[str]:
+        remaining, pos = input
+        if pos >= len(remaining):
             return Error("no more input")
 
-        first = input[0]
+        first = remaining[pos]
         if first == char:
-            remaining = input[1:]
-            return Ok((char, remaining))
+            return Ok((char, (remaining, pos + 1)))
         else:
             msg = f"Expecting '{char}'. Got '{first}'"
             return Error(msg)
 
-    return Parser(run)
+    return Parser(run, f"pchar('{char}')")
 
 
 @curry(1)
@@ -118,38 +128,40 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
         Parser[Tuple[_A, _B]]: Result parser.
     """
 
-    def run(input: str) -> ParseResult[Tuple[_A, _B]]:
+    def run(input: Remaining) -> ParseResult[Tuple[_A, _B]]:
         result1 = p1.run(input)
         with match(result1) as case:
             for error in case(Error[Any, str]):
                 return Error(error)
-            for value1, remaining1 in case(Ok[Tuple[_A, str], str]):
+            for value1, remaining1 in case(Ok[Tuple[_A, Remaining], str]):
                 result2 = p2.run(remaining1)
 
                 with match(result2) as case:
                     for error in case(Error[Any, str]):
                         return Error(error)
-                    for value2, remaining2 in case(Ok[Tuple[_B, str], str]):
+                    for value2, remaining2 in case(Ok[Tuple[_B, Remaining], str]):
                         return Ok(((value1, value2), remaining2))
-            return case.default(Error[Tuple[Tuple[_A, _B], str], str]("parser error"))
+            return case.default(
+                Error[Tuple[Tuple[_A, _B], Remaining], str]("parser error")
+            )
 
-    return Parser(run)
+    return Parser(run, f"and_then({p2}, {p1}")
 
 
 @curry(1)
-def or_else(parser1: Parser[_A], parser2: Parser[_A]) -> Parser[_A]:
-    def run(input: str) -> ParseResult[_A]:
-        result1 = parser1.run(input)
+def or_else(p1: Parser[_A], p2: Parser[_A]) -> Parser[_A]:
+    def run(input: Remaining) -> ParseResult[_A]:
+        result1 = p1.run(input)
         with match(result1) as case:
             if case(Ok[Tuple[_A, str], str]):
                 return result1
             if case(Error):
-                result2 = parser2.run(input)
+                result2 = p2.run(input)
                 return result2
 
-        return case.default(Error[Tuple[_A, str], str]("parser error"))
+        return case.default(Error[Tuple[_A, Remaining], str]("parser error"))
 
-    return Parser(run)
+    return Parser(run, f"or_else({p2}, {p1}")
 
 
 def choice(list_of_parsers: Block[Parser[_A]]) -> Parser[_A]:
@@ -172,24 +184,24 @@ parse_digit = any_of(string.digits)
 
 @curry(1)
 def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
-    def run(input: str) -> ParseResult[_B]:
+    def run(input: Remaining) -> ParseResult[_B]:
         # run parser with the input
         result = parser.run(input)
 
         # test the result for Failure/Success
         with match(result) as case:
-            for value, remaining in case(Ok[Tuple[_A, str], str]):
+            for value, remaining in case(Ok[Tuple[_A, Remaining], str]):
                 # if success, return the value transformed by f
                 new_value = mapper(value)
-                return Ok[Tuple[_B, str], str]((new_value, remaining))
+                return Ok[Tuple[_B, Remaining], str]((new_value, remaining))
 
             for error in case(Error[Tuple[_A, str], str]):
                 # if failed, return the error
-                return Error[Tuple[_B, str], str](error)
+                return Error[Tuple[_B, Remaining], str](error)
 
-        return case.default(Error[Tuple[_B, str], str]("parser error"))
+        return case.default(Error[Tuple[_B, Remaining], str]("parser error"))
 
-    return Parser(run)
+    return Parser(run, f"map(A => B, {parser})")
 
 
 @curry(1)
@@ -220,17 +232,17 @@ def starmap(mapper: Callable[..., Any], parser: Parser[Tuple[Any, ...]]) -> Pars
 
 
 def preturn(x: _A) -> Parser[_A]:
-    def run(input: str) -> ParseResult[_A]:
+    def run(input: Remaining) -> ParseResult[_A]:
         return Ok((x, input))
 
-    return Parser(run)
+    return Parser(run, f"preturn({x})")
 
 
 def fail(error: str) -> Parser[Any]:
-    def run(input: str) -> ParseResult[Any]:
-        return Error[Tuple[Any, str], str](error)
+    def run(input: Remaining) -> ParseResult[Any]:
+        return Error[Tuple[Any, Remaining], str](error)
 
-    return Parser(run)
+    return Parser(run, f'fail("{error}")')
 
 
 def apply(f_p: Parser[Callable[[_A], _B]], x_p: Parser[_A]) -> Parser[_B]:
@@ -284,13 +296,15 @@ def pstring(string_input: str) -> Parser[str]:
     )
 
 
-def parse_zero_or_more(parser: Parser[_A], input: str) -> Tuple[Block[_A], str]:
+def parse_zero_or_more(
+    parser: Parser[_A], input: Remaining
+) -> Tuple[Block[_A], Remaining]:
     # run parser with the input
     first_result = parser.run(input)
 
     # test the result for Failure/Success
     with match(first_result) as case:
-        for first_value, input_after_first_parse in case(Ok[Tuple[_A, str], str]):
+        for first_value, input_after_first_parse in case(Ok[Tuple[_A, Remaining], str]):
             # if parse succeeds, call recursively
             # to get the subsequent values
             subsequent_values, remaining_input = parse_zero_or_more(
@@ -299,40 +313,41 @@ def parse_zero_or_more(parser: Parser[_A], input: str) -> Tuple[Block[_A], str]:
             values = subsequent_values.cons(first_value)
             return values, remaining_input
 
-        ret = case.default((block.empty, input))
-        return ret
+        return case.default((block.empty, input))
 
 
 def many(parser: Parser[_A]) -> Parser[Block[_A]]:
-    def run(input: str) -> ParseResult[Block[_A]]:
+    def run(input: Remaining) -> ParseResult[Block[_A]]:
 
         # parse the input -- wrap in Success as it always succeeds
         ok = parse_zero_or_more(parser, input)
-        return Ok[Tuple[Block[_A], str], str](ok)
+        return Ok[Tuple[Block[_A], Remaining], str](ok)
 
-    return Parser(run)
+    return Parser(run, f"many({parser})")
 
 
 def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
-    def run(input: str) -> ParseResult[Block[_A]]:
+    def run(input: Remaining) -> ParseResult[Block[_A]]:
         # run parser with the input
         firstResult = parser.run(input)
         # test the result for Failure/Success
         with match(firstResult) as case:
-            for first_value, input_after_first_parse in case(Ok[Tuple[_A, str], str]):
+            for first_value, input_after_first_parse in case(
+                Ok[Tuple[_A, Remaining], str]
+            ):
                 # if first found, look for zeroOrMore now
                 subsequent_values, remaining_input = parse_zero_or_more(
                     parser, input_after_first_parse
                 )
                 values = subsequent_values.cons(first_value)
-                return Ok[Tuple[Block[_A], str], str]((values, remaining_input))
+                return Ok[Tuple[Block[_A], Remaining], str]((values, remaining_input))
 
             for err in case(Error[Tuple[_A, str], str]):
                 return Error(err)  # failed
 
             return Error("parser error")
 
-    return Parser(run)
+    return Parser(run, f"many({parser})")
 
 
 def sep_by1(p: Parser[_A], sep: Parser[Any]) -> Parser[Block[_A]]:
@@ -516,10 +531,10 @@ starts_with = lift2(_starts_with)
 
 @curry(1)
 def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
-    def run(input: str) -> ParseResult[_B]:
+    def run(input: Remaining) -> ParseResult[_B]:
         result1 = p.run(input)
         with match(result1) as case:
-            for value1, remaning_input in case(Ok[Tuple[_A, str], str]):
+            for value1, remaning_input in case(Ok[Tuple[_A, Remaining], str]):
                 p2 = f(value1)
                 return p2.run(remaning_input)
             for err in case(Error[Any, str]):
@@ -527,7 +542,7 @@ def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
             else:
                 return Error("parser error")
 
-    return Parser(run)
+    return Parser(run, f"bind(A => Parser[B], {p}")
 
 
 def ignore(p: Parser[Any]) -> Parser[None]:

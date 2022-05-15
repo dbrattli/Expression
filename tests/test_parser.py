@@ -24,12 +24,12 @@ def test_parse_pchar():
     input = "ABC"
     parseA: Parser[str] = pchar("A")
 
-    result = parseA.run(input)
+    result = parseA(input)
 
     assert result.is_ok()
     with match(result) as case:
-        for (a, b) in case(Ok[Tuple[str, str], str]):
-            assert (a, b) == ("A", "BC")
+        for a in case(Ok[str, str]):
+            assert a == "A"
         if case._:
             assert False
 
@@ -38,12 +38,12 @@ def test_parse_pchar_fluent():
     input = "ABC"
     parseA: Parser[str] = Parser.pchar("A")
 
-    result = parseA.run(input)
+    result = parseA(input)
 
     assert result.is_ok()
     with match(result) as case:
-        for (a, b) in case(Ok[Tuple[str, str], str]):
-            assert (a, b) == ("A", "BC")
+        for a in case(Ok[str, str]):
+            assert a == "A"
         if case._:
             assert False
 
@@ -58,12 +58,11 @@ def test_parse_a_then_b():
         and_then(parse_b),
     )
 
-    result = parseAB.run(input)
+    result = parseAB(input)
     assert result.is_ok()
     with match(result) as case:
-        for (a, b), c in case(Ok[Tuple[Tuple[str, str], str], str]):
+        for (a, b) in case(Ok[Tuple[str, str], str]):
             assert (a, b) == ("A", "B")
-            assert c == "C"
         if case._:
             assert False
 
@@ -72,12 +71,11 @@ def test_parse_a_then_b_fluent():
     input = "ABC"
     parseAB = pchar("A").and_then(pchar("B"))
 
-    result = parseAB.run(input)
+    result = parseAB(input)
     assert result.is_ok()
     with match(result) as case:
-        for (a, b), c in case(Ok[Tuple[Tuple[str, str], str], str]):
+        for (a, b) in case(Ok[Tuple[str, str], str]):
             assert (a, b) == ("A", "B")
-            assert c == "C"
         if case._:
             assert False
 
@@ -85,19 +83,18 @@ def test_parse_a_then_b_fluent():
 def test_pstring():
     parse_abc = pstring("ABC")
 
-    ret = parse_abc.run("ABCDE")  # Success ("ABC", "DE")
+    ret = parse_abc("ABCDE")  # Success ("ABC", "DE")
     assert ret.is_ok()
     with match(ret) as case:
-        for success, remaining in case(Ok[Tuple[str, str], str]):
+        for success in case(Ok[str, str]):
             assert success == "ABC"
-            assert remaining == "DE"
         if case._:
             assert False
 
     ret = parse_abc("A|CDE")  # Failure "Expecting 'B'. Got '|'"
     assert ret.is_error()
     with match(ret) as case:
-        for error in case(Error[Tuple[str, str], str]):
+        for error in case(Error[str, str]):
             assert error == "Expecting 'B'. Got '|'"
         if case._:
             assert False
@@ -105,63 +102,58 @@ def test_pstring():
     ret = parse_abc("AB|DE")  # Failure "Expecting 'C'. Got '|'"
     assert ret.is_error()
     with match(ret) as case:
-        for error in case(Error[Tuple[str, str], str]):
+        for error in case(Error[str, str]):
             assert error == "Expecting 'C'. Got '|'"
         if case._:
             assert False
 
 
 def test_int():
-    ret = pint.run("123C")
+    ret = pint("123C")
 
     with match(ret) as case:
-        for success, remaining in case(Ok[Tuple[int, str], str]):
+        for success in case(Ok[int, str]):
             assert success == 123
-            assert remaining == "C"
         if case._:
             assert False
 
 
 def test_int_negative():
-    ret = pint.run("-123C")
+    ret = pint("-123C")
 
     with match(ret) as case:
-        for success, remaining in case(Ok[Tuple[int, str], str]):
+        for success in case(Ok[int, str]):
             assert success == -123
-            assert remaining == "C"
         if case._:
             assert False
 
 
 def test_float():
-    ret = pfloat.run("123C")
+    ret = pfloat("123C")
 
     with match(ret) as case:
-        for success, remaining in case(Ok[Tuple[float, str], str]):
+        for success in case(Ok[float, str]):
             assert success == 123
-            assert remaining == "C"
         if case._:
             assert False
 
 
 def test_float_with_decimal():
-    ret = pfloat.run("123.45C")
+    ret = pfloat("123.45C")
 
     with match(ret) as case:
-        for success, remaining in case(Ok[Tuple[float, str], str]):
+        for success in case(Ok[float, str]):
             assert success == 123.45
-            assert remaining == "C"
         if case._:
             assert False
 
 
 def test_negative_float_with_decimal():
-    ret = pfloat.run("-123.45C")
+    ret = pfloat("-123.45C")
 
     with match(ret) as case:
-        for success, remaining in case(Ok[Tuple[float, str], str]):
+        for success in case(Ok[float, str]):
             assert success == -123.45
-            assert remaining == "C"
         if case._:
             assert False
 
@@ -262,6 +254,7 @@ def test_parse_name_expr():
         "test",
         pexpr(),
     )
+
     assert name.is_ok()
     with match(name) as case:
         if case(Nothing):
