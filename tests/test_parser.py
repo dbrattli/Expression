@@ -221,7 +221,7 @@ class Expression(TaggedUnion):
 def pname() -> Parser[Expression]:
     first = any_of(string.ascii_letters + "_")
     rest = pipe(
-        any_of(string.ascii_letters + string.ascii_letters + "_"),
+        any_of(string.ascii_letters + string.digits + "_"),
         many,
         opt,
     )

@@ -30,6 +30,8 @@ ParseResult = Result[Tuple[_A, Remaining], str]
 class Parser(Generic[_A]):
     """The Parser class."""
 
+    __slots__ = ["_name", "_run"]
+
     def __init__(
         self, run: Callable[[Remaining], ParseResult[_A]], name: Optional[str] = None
     ) -> None:
@@ -52,20 +54,24 @@ class Parser(Generic[_A]):
     def pchar(char: str) -> Parser[str]:
         return pchar(char)
 
+    @staticmethod
+    def any_of(list_of_chars: str) -> Parser[str]:
+        return any_of(list_of_chars)
+
     def and_then(self, p2: Parser[_B]) -> Parser[Tuple[_A, _B]]:
-        return and_then(p2)(self)
+        return pipe(self, and_then(p2))
 
     def ignore_then(self, p2: Parser[_B]) -> Parser[_B]:
-        return ignore_then(p2)(self)
+        return pipe(self, ignore_then(p2))
 
     def then_ignore(self, p2: Parser[Any]) -> Parser[_A]:
-        return then_ignore(p2)(self)
+        return pipe(self, then_ignore(p2))
 
     def or_else(self, parser2: Parser[_A]) -> Parser[_A]:
         return or_else(self)(parser2)
 
     def map(self, mapper: Callable[[_A], _B]) -> Parser[_B]:
-        return map(mapper)(self)
+        return pipe(self, map(mapper))
 
     @overload
     def starmap(
@@ -82,10 +88,16 @@ class Parser(Generic[_A]):
     def starmap(
         self: Parser[Tuple[Any, ...]], mapper: Callable[..., Any]
     ) -> Parser[Any]:
-        return starmap(mapper)(self)
+        return pipe(self, starmap(mapper))
+
+    def opt(self) -> Parser[Option[_A]]:
+        return opt(self)
+
+    def ignore(self) -> Parser[None]:
+        return ignore(self)
 
     def bind(self, binder: Callable[[_A], Parser[_B]]) -> Parser[_B]:
-        return bind(binder)(self)
+        return pipe(self, bind(binder))
 
     def between(self, p2: Parser[_A], p3: Parser[Any]) -> Parser[_A]:
         return between(p2)(p3)(self)
@@ -105,7 +117,7 @@ def pchar(char: str) -> Parser[str]:
         if pos >= len(remaining):
             return Error("no more input")
 
-        first = remaining[pos]
+        first = remaining[pos]  # input[0], remaining = input[1:]
         if first == char:
             return Ok((char, (remaining, pos + 1)))
         else:
@@ -250,13 +262,12 @@ def apply(f_p: Parser[Callable[[_A], _B]], x_p: Parser[_A]) -> Parser[_B]:
         return fx[0](fx[1])
 
     # create a Parser containing a pair (f,x)
-    ret = pipe(
+    return pipe(
         f_p,
         and_then(x_p),
         # map the pair by applying f to x
         map(mapper),
     )
-    return ret
 
 
 @curry(2)
@@ -549,7 +560,10 @@ def ignore(p: Parser[Any]) -> Parser[None]:
     def mapper(_: Any) -> None:
         return None
 
-    return pipe(p, map(mapper))
+    return pipe(
+        p,
+        map(mapper),
+    )
 
 
 __all__ = [
