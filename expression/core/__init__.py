@@ -34,7 +34,7 @@ from .typing import (
     try_downcast,
     upcast,
 )
-from .union import SingleCaseUnion, Tag, TaggedUnion
+from .union import SingleCaseUnion, Tag, TaggedUnion, tag
 
 __all__ = [
     "aiotools",
@@ -90,6 +90,7 @@ __all__ = [
     "tailrec",
     "tailrec_async",
     "Try",
+    "tag",
     "try_downcast",
     "upcast",
 ]

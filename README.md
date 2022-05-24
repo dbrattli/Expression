@@ -114,6 +114,8 @@ on-demand as we go along.
     by [aioreactive](https://github.com/dbrattli/aioreactive).
 - **Data Modelling** - sum and product types
   - **TaggedUnion** - A tagged (discriminated) union type.
+- **Parser Combinators** - A recursive decent string parser combinator
+  library.
 - **Effects**: - lightweight computational expressions for Python. This
   is amazing stuff.
   - **option** - an optional world for working with optional values.
@@ -518,7 +520,7 @@ tagged union cases.
 
 ```python
 from dataclasses import dataclass
-from expression import TaggedUnion, Tag
+from expression import TaggedUnion, tag
 
 @dataclass
 class Rectangle:
@@ -530,8 +532,8 @@ class Circle:
     radius: float
 
 class Shape(TaggedUnion):
-    RECTANGLE = Tag[Rectangle]()
-    CIRCLE = Tag[Circle]()
+    RECTANGLE = tag(Rectangle)
+    CIRCLE = tag(Circle)
 
     @staticmethod
     def rectangle(width: float, length: float) -> Shape:

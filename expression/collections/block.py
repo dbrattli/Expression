@@ -412,6 +412,26 @@ class Block(
     def range(*args: int, **kw: int) -> Block[int]:
         return range(*args, **kw)
 
+    def reduce(
+        self,
+        reduction: Callable[[_TSource, _TSource], _TSource],
+    ) -> _TSource:
+        """Apply a function to each element of the collection, threading an
+        accumulator argument through the computation. Apply the function to
+        the first two elements of the list. Then feed this result into the
+        function along with the third element and so on. Return the final
+        result. If the input function is f and the elements are i0...iN then
+        computes f (... (f i0 i1) i2 ...) iN.
+
+        Args:
+            reduction: The function to reduce two list elements to a
+            single element.
+
+        Returns:
+            Returns the final state value.
+        """
+        return reduce(reduction)(self)
+
     @staticmethod
     def singleton(item: _TSource) -> Block[_TSource]:
         return singleton(item)
@@ -646,9 +666,10 @@ empty: Block[Any] = nil
 """The empty list."""
 
 
+@curry_flipped(1)
 def filter(
-    predicate: Callable[[_TSource], bool]
-) -> Callable[[Block[_TSource]], Block[_TSource]]:
+    source: Block[_TSource], predicate: Callable[[_TSource], bool]
+) -> Block[_TSource]:
     """Returns a new collection containing only the elements of the
     collection for which the given predicate returns `True`
 
@@ -659,20 +680,7 @@ def filter(
         Partially applied filter function.
     """
 
-    def _filter(source: Block[_TSource]) -> Block[_TSource]:
-        """Returns a new collection containing only the elements of the
-        collection for which the given predicate returns `True`
-
-        Args:
-            source: The input list.
-
-        Returns:
-            A list containing only the elements that satisfy the
-            predicate.
-        """
-        return source.filter(predicate)
-
-    return _filter
+    return source.filter(predicate)
 
 
 def fold(
@@ -786,6 +794,34 @@ def map(
         return source.map(mapper)
 
     return _map
+
+
+@curry_flipped(1)
+def reduce(
+    source: Block[_TSource],
+    reduction: Callable[[_TSource, _TSource], _TSource],
+) -> _TSource:
+    """Apply a function to each element of the collection, threading an
+    accumulator argument through the computation. Apply the function to
+    the first two elements of the list. Then feed this result into the
+    function along with the third element and so on. Return the final
+    result. If the input function is f and the elements are i0...iN then
+    computes f (... (f i0 i1) i2 ...) iN.
+
+    Args:
+        source: The input block (curried flipped)
+        reduction: The function to reduce two list elements to a single
+            element.
+
+    Returns:
+        Partially applied reduce function that takes the source block
+        and returns the final state value.
+    """
+
+    if source.is_empty():
+        raise ValueError("Collection was empty")
+
+    return source.tail().fold(reduction, source.head())
 
 
 @overload

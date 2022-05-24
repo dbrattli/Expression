@@ -23,6 +23,15 @@ def test_curry_simple():
     assert add(3)(4) == 7
 
 
+def test_curry_simple_curry_2_of_2():
+    @curry(2)
+    def add(a: int, b: int) -> int:
+        """Add a + b"""
+        return a + b
+
+    assert add(3)(4)() == 7
+
+
 def test_curry_named():
     @curry(1)
     def add(a: int, b: int) -> int:

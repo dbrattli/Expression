@@ -9,9 +9,11 @@ from typing import (
     Iterable,
     Iterator,
     Optional,
+    Type,
     TypeVar,
     cast,
     get_origin,
+    overload,
 )
 
 from .pipe import PipeMixin
@@ -32,7 +34,12 @@ class Tag(SupportsMatch[_T]):
     INITIAL_TAG = 1000
     _count = itertools.count(start=INITIAL_TAG)
 
-    def __init__(self, tag: Optional[int] = None, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        tag: Optional[int] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         self.value = args[0] if args else None
         self.fields: Dict[str, Any] = kwargs
         self.tag = tag or next(Tag._count)
@@ -81,6 +88,23 @@ class Tag(SupportsMatch[_T]):
         return self.__class__(self.tag, *args, **kwargs)
 
 
+@overload
+def tag() -> Tag[None]:
+    ...
+
+
+@overload
+def tag(type: Type[_T]) -> Tag[_T]:
+    ...
+
+
+def tag(type: Optional[Type[Any]] = None) -> Tag[Any]:
+    """Convenience from creating tags.
+
+    Less and simpler syntax since the type is given as an argument."""
+    return Tag()
+
+
 class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
     """A discriminated (tagged) union.
 
@@ -90,6 +114,16 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
         self.value = __value
         self.tag = tag
         self.fields = kwargs
+
+        if not hasattr(self.__class__, "_tags"):
+            tags = {
+                tag.tag: name
+                for (name, tag) in self.__class__.__dict__.items()
+                if isinstance(tag, Tag)
+            }
+            setattr(self.__class__, "_tags", tags)
+
+        self.name = getattr(self.__class__, "_tags")[tag.tag]
 
     def __match__(self, pattern: _T) -> Iterable[_T]:
         if self.value is pattern:
@@ -113,6 +147,12 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
         else:
             value = self.value
         return dict(tag=list(tags.keys())[0], value=value)
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}: {self.name} {self.value}"
+
+    def __repr__(self) -> str:
+        return str(self)
 
     @classmethod
     def __get_validators__(cls) -> Iterator[GenericValidator[TaggedUnion]]:
@@ -153,7 +193,8 @@ class SingleCaseUnion(TaggedUnion, Generic[_T]):
     VALUE = Tag[_T]()
 
     def __init__(self, value: _T) -> None:
+        setattr(self.__class__, "_tags", {SingleCaseUnion.VALUE.tag: "VALUE"})
         super().__init__(SingleCaseUnion.VALUE, value)
 
 
-__all__ = ["SingleCaseUnion", "Tag", "TaggedUnion"]
+__all__ = ["SingleCaseUnion", "Tag", "TaggedUnion", "tag"]
