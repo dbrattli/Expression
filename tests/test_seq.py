@@ -1,6 +1,6 @@
 import functools
 from itertools import accumulate
-from typing import Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, List, Optional, Tuple
 
 import pytest
 from hypothesis import given  # type: ignore
@@ -112,7 +112,11 @@ def test_seq_head_pipe(xs: List[int]):
 
 def test_seq_head_empty_source():
     with pytest.raises(ValueError):
-        pipe(Seq.empty(), seq.head)
+        empty: Seq[Any] = Seq.empty()
+        pipe(
+            empty,
+            seq.head,
+        )
 
 
 @given(st.lists(st.integers(), min_size=1))  # type: ignore

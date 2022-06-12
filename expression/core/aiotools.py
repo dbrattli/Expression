@@ -98,7 +98,11 @@ def start_immediate(
 
 def run_synchronously(computation: Awaitable[_TSource]) -> _TSource:
     """Runs the asynchronous computation and await its result."""
-    return asyncio.run(computation)
+
+    async def runner() -> _TSource:
+        return await computation
+
+    return asyncio.run(runner())
 
 
 async def singleton(value: _TSource) -> _TSource:

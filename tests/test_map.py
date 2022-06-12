@@ -113,7 +113,7 @@ def test_map_pipe_fluent():
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_count(xs: Dict[str, int]):
-    ys = map.of(**xs)
+    ys: Map[str, int] = map.of(**xs)
 
     assert len(ys) == len(xs) == map.count(ys)
 
