@@ -486,7 +486,7 @@ class Model(BaseModel):
     three: Option[float] = Nothing
 
     class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], str]] = {Option: option.dict}
+        json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {Option: option.dict}
 
 
 def test_parse_option_works():

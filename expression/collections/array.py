@@ -18,7 +18,6 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Literal,
     MutableSequence,
     Optional,
     Tuple,
@@ -400,12 +399,10 @@ class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]], Pipe
         """
         return TypedArray(builtins.sorted(self.value, key=func, reverse=reverse))
 
-    def sum(self: TypedArray[_TSourceSum]) -> Union[_TSourceSum, Literal[0]]:
+    def sum(self: TypedArray[_TSourceSum]) -> int:
         return sum(self)
 
-    def sum_by(
-        self, projection: Callable[[_TSource], _TSourceSum]
-    ) -> Union[_TSourceSum, Literal[0]]:
+    def sum_by(self, projection: Callable[[_TSource], _TSourceSum]) -> int:
         return pipe(self, sum_by(projection))
 
     def tail(self) -> TypedArray[_TSource]:
@@ -620,14 +617,14 @@ def singleton(value: _TSource) -> TypedArray[_TSource]:
     return TypedArray((value,))
 
 
-def sum(source: TypedArray[_TSourceSum]) -> Union[_TSourceSum, Literal[0]]:
+def sum(source: TypedArray[_TSourceSum]) -> int:
     return builtins.sum(source.value)
 
 
 def sum_by(
     projection: Callable[[_TSource], _TSourceSum]
-) -> Callable[[TypedArray[_TSource]], Union[_TSourceSum, Literal[0]]]:
-    def _sum_by(source: TypedArray[_TSource]) -> Union[_TSourceSum, Literal[0]]:
+) -> Callable[[TypedArray[_TSource]], int]:
+    def _sum_by(source: TypedArray[_TSource]) -> int:
         return builtins.sum(source.map(projection).value)
 
     return _sum_by

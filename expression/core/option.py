@@ -62,7 +62,7 @@ class Option(
     MatchMixin[_TSource],
     PipeMixin,
     SupportsMatch[Union[_TSource, bool]],
-    SupportsValidation[_TSource],
+    SupportsValidation["Option[_TSource]"],
     ABC,
 ):
     """Option abstract base class."""
@@ -175,7 +175,7 @@ class Option(
         return self.__str__()
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[GenericValidator[_TSource]]:
+    def __get_validators__(cls) -> Iterator[GenericValidator[Option[_TSource]]]:
         yield from cls.__validators__
 
 
@@ -266,12 +266,12 @@ class Some(Option[_TSource]):
 
     def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
-            return [self.value]
+            return [self._value]
 
         try:
             origin: Any = get_origin(pattern)
             if isinstance(self, origin or pattern):
-                return [self.value]
+                return [self._value]
         except TypeError:
             pass
 
@@ -526,7 +526,7 @@ def of_obj(value: Any) -> Option[Any]:
     return of_optional(value)
 
 
-def dict(value: Option[Any]) -> str:
+def dict(value: Option[_TSource]) -> Union[_TSource, Dict[Any, Any]]:
     return value.dict()
 
 

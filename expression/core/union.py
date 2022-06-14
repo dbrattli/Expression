@@ -11,6 +11,7 @@ from typing import (
     Optional,
     Type,
     TypeVar,
+    Union,
     cast,
     get_origin,
     overload,
@@ -125,7 +126,7 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
 
         self.name = getattr(self.__class__, "_tags")[tag.tag]
 
-    def __match__(self, pattern: _T) -> Iterable[_T]:
+    def __match__(self, pattern: Union[_T, Type[_T]]) -> Iterable[_T]:
         if self.value is pattern:
             return [self.value]
 
