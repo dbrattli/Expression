@@ -20,18 +20,15 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Type,
     TypeVar,
     Union,
     cast,
     get_origin,
-    overload,
 )
 
 from typing_extensions import TypeGuard
 
 from .error import EffectError
-from .match import Case, SupportsMatch
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation
 
@@ -100,32 +97,6 @@ class Result(
     ) -> Result[_TResult, _TError]:
         raise NotImplementedError
 
-    @overload
-    def match(self, pattern: "Ok[_TSourceM, Any]") -> Iterable[_TSourceM]:
-        ...
-
-    @overload
-    def match(self, pattern: "Error[Any, _TErrorM]") -> Iterable[_TErrorM]:
-        ...
-
-    @overload
-    def match(self, pattern: "Case[Ok[_TSourceM, Any]]") -> Iterable[_TSourceM]:
-        ...
-
-    @overload
-    def match(self, pattern: "Case[Error[Any, _TErrorM]]") -> Iterable[_TErrorM]:
-        ...
-
-    @overload
-    def match(self, pattern: "Type[Result[_TSourceM, Any]]") -> Iterable[_TSourceM]:
-        ...
-
-    def match(self, pattern: Any) -> Any:
-        """Match result with pattern."""
-
-        case: Case[Iterable[Union[_TSource, _TError]]] = Case(self)
-        return case(pattern) if pattern else case
-
     @abstractmethod
     def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
         """Returns `True` if the result is an `Error` value."""
@@ -160,7 +131,7 @@ class Result(
         yield from cls.__validators__
 
 
-class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
+class Ok(Result[_TSource, _TError]):
     """The Ok result case class."""
 
     __match_args__ = ("value",)
@@ -244,7 +215,6 @@ class ResultException(EffectError):
 class Error(
     ResultException,
     Result[_TSource, _TError],
-    SupportsMatch[_TError],
 ):
     """The Error result case class."""
 
@@ -290,19 +260,6 @@ class Error(
             error = self._error
 
         return {"error": error}
-
-    def __match__(self, pattern: Any) -> Iterable[_TError]:
-        if self is pattern or self == pattern:
-            return [self.error]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [self.error]
-        except TypeError:
-            pass
-
-        return []
 
     def __eq__(self, o: Any) -> bool:
         if isinstance(o, Error):

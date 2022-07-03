@@ -6,24 +6,20 @@ from typing import (
     Any,
     Dict,
     Generic,
-    Iterable,
     Iterator,
     Optional,
     Type,
     TypeVar,
-    Union,
-    cast,
-    get_origin,
     overload,
 )
 
 from .pipe import PipeMixin
-from .typing import GenericValidator, ModelField, SupportsMatch, SupportsValidation
+from .typing import GenericValidator, ModelField, SupportsValidation
 
 _T = TypeVar("_T")
 
 
-class Tag(SupportsMatch[_T]):
+class Tag(Generic[_T]):
     """For creating tagged union cases.
 
     Args:
@@ -44,31 +40,6 @@ class Tag(SupportsMatch[_T]):
         self.value = args[0] if args else None
         self.fields: Dict[str, Any] = kwargs
         self.tag = tag or next(Tag._count)
-
-    def __match__(self, pattern: Any) -> Iterable[_T]:
-        if pattern is self:
-            return [cast(_T, None)]
-
-        if isinstance(pattern, Tag):
-            if pattern.tag == self.tag:
-                return [cast(_T, None)]
-
-        if isinstance(pattern, TaggedUnion):
-            if pattern.tag.tag == self.tag:
-                if self.value and self.value == pattern.value:
-                    return [pattern.value]
-
-                for key, value in self.fields.items():
-                    if pattern.value and getattr(pattern.value, key) != value:
-                        return []
-                    if pattern.fields and pattern.fields.get(key) != value:
-                        return []
-
-                if hasattr(pattern, "value"):
-                    return [pattern.value]
-                return [cast(_T, pattern.fields.values())]
-
-        return []
 
     def __eq__(self, other: Any) -> bool:
         if self is other:
@@ -127,19 +98,6 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
             setattr(self.__class__, "_tags", tags)
 
         self.name = getattr(self.__class__, "_tags")[tag.tag]
-
-    def __match__(self, pattern: Union[_T, Type[_T]]) -> Iterable[_T]:
-        if self.value is pattern:
-            return [self.value]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self.value, origin or cast(Type[_T], pattern)):
-                return [self.value]
-        except TypeError:
-            pass
-
-        return []
 
     def dict(self) -> Any:
         tags: Dict[str, Any] = {

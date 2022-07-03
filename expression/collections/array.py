@@ -28,7 +28,6 @@ from typing import (
 )
 
 from expression.core import (
-    MatchMixin,
     Nothing,
     Option,
     PipeMixin,
@@ -190,7 +189,9 @@ def array_from_initializer(
     return arr, type_code
 
 
-class TypedArray(MutableSequence[_TSource], MatchMixin[Iterable[_TSource]], PipeMixin):
+class TypedArray(MutableSequence[_TSource], PipeMixin):
+    __match_args__ = ("typecode",)
+
     def __init__(
         self,
         initializer: Optional[Iterable[_TSource]] = None,
