@@ -112,6 +112,8 @@ class Block(
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
 
+    __match_args__ = ("value",)
+
     __validators__: List[GenericValidator[Block[_TSource]]] = [_validate]
 
     def __init__(self, value: Optional[Iterable[_TSource]] = None) -> None:

@@ -111,8 +111,10 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
 
     Takes a value, and an optional tag that may be used for matching."""
 
-    def __init__(self, tag: Tag[Any], __value: Any = None, **kwargs: Any) -> None:
-        self.value = __value
+    __match_args__ = ("tag", "value")
+
+    def __init__(self, tag: Tag[Any], value: Any = None, **kwargs: Any) -> None:
+        self.value = value
         self.tag = tag
         self.fields = kwargs
 
@@ -132,7 +134,7 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
 
         try:
             origin: Any = get_origin(pattern)
-            if isinstance(self.value, origin or pattern):
+            if isinstance(self.value, origin or cast(Type[_T], pattern)):
                 return [self.value]
         except TypeError:
             pass

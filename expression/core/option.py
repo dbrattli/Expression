@@ -182,6 +182,8 @@ class Option(
 class Some(Option[_TSource]):
     """The Some option case class."""
 
+    __match_args__ = ("value",)
+
     def __init__(self, value: _TSource) -> None:
         self._value = value
 

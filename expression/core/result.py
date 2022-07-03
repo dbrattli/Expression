@@ -163,6 +163,8 @@ class Result(
 class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
     """The Ok result case class."""
 
+    __match_args__ = ("value",)
+
     def __init__(self, value: _TSource) -> None:
         self._value = value
 
@@ -245,6 +247,8 @@ class Error(
     SupportsMatch[_TError],
 ):
     """The Error result case class."""
+
+    __match_args__ = ("error",)
 
     def __init__(self, error: _TError) -> None:
         super().__init__(str(error))
