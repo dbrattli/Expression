@@ -8,9 +8,8 @@ from typing import (
     Generic,
     Iterator,
     Optional,
-    Type,
     TypeVar,
-    overload,
+    cast,
 )
 
 from .pipe import PipeMixin
@@ -28,17 +27,12 @@ class Tag(Generic[_T]):
 
     """
 
+    __match_args__ = ("tag",)
+
     INITIAL_TAG = 1000
     _count = itertools.count(start=INITIAL_TAG)
 
-    def __init__(
-        self,
-        tag: Optional[int] = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        self.value = args[0] if args else None
-        self.fields: Dict[str, Any] = kwargs
+    def __init__(self, tag: Optional[int] = None) -> None:
         self.tag = tag or next(Tag._count)
 
     def __eq__(self, other: Any) -> bool:
@@ -56,38 +50,26 @@ class Tag(Generic[_T]):
     def __repr__(self) -> str:
         return f"tag: {self.tag}"
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Tag[_T]:
-        return self.__class__(self.tag, *args, **kwargs)
 
-
-@overload
-def tag() -> Tag[None]:
-    ...
-
-
-@overload
-def tag(type: Type[_T]) -> Tag[_T]:
-    ...
-
-
-def tag(type: Optional[Type[Any]] = None) -> Tag[Any]:
+def tag(tag: Optional[int] = None) -> Tag[None]:
     """Convenience from creating tags.
 
     Less and simpler syntax since the type is given as an argument."""
-    return Tag()
+    return Tag(tag)
 
 
-class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
+class TypedTaggedUnion(
+    SupportsValidation["TypedTaggedUnion[_T]"], Generic[_T], PipeMixin, ABC
+):
     """A discriminated (tagged) union.
 
     Takes a value, and an optional tag that may be used for matching."""
 
     __match_args__ = ("tag", "value")
 
-    def __init__(self, tag: Tag[Any], value: Any = None, **kwargs: Any) -> None:
+    def __init__(self, tag: Tag[_T], value: _T = None) -> None:
         self.value = value
         self.tag = tag
-        self.fields = kwargs
 
         if not hasattr(self.__class__, "_tags"):
             tags = {
@@ -103,8 +85,8 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
         tags: Dict[str, Any] = {
             k: v for (k, v) in self.__class__.__dict__.items() if v is self.tag
         }
-        if hasattr(self.value, "dict"):
-            value = self.value.dict()
+        if self.value and hasattr(self.value, "dict"):
+            value: Any = self.value.dict()  # type: ignore
         else:
             value = self.value
         return dict(tag=list(tags.keys())[0], value=value)
@@ -116,10 +98,10 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
         return str(self)
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[GenericValidator[TaggedUnion]]:
-        def _validate(union: Any, field: ModelField) -> TaggedUnion:
-            if isinstance(union, TaggedUnion):
-                return union
+    def __get_validators__(cls) -> Iterator[GenericValidator[TypedTaggedUnion[_T]]]:
+        def _validate(union: Any, field: ModelField) -> TypedTaggedUnion[_T]:
+            if isinstance(union, TypedTaggedUnion):
+                return cast(TypedTaggedUnion[_T], union)
 
             tags: Dict[str, Any] = {
                 k: v for (k, v) in cls.__dict__.items() if k == union["tag"]
@@ -136,13 +118,17 @@ class TaggedUnion(SupportsValidation[Any], PipeMixin, ABC):
         yield _validate
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, TaggedUnion):
+        if not isinstance(other, TypedTaggedUnion):
             return False
 
-        return self.tag == other.tag and self.value == other.value
+        return self.tag == other.tag and self.value == other.value  # type: ignore
 
 
-class SingleCaseUnion(TaggedUnion, Generic[_T]):
+class TaggedUnion(TypedTaggedUnion[Any]):
+    ...
+
+
+class SingleCaseUnion(TypedTaggedUnion[_T]):
     """Single case union.
 
     Helper class to make single case tagged unions without having to
@@ -153,7 +139,7 @@ class SingleCaseUnion(TaggedUnion, Generic[_T]):
 
     VALUE = Tag[_T]()
 
-    def __init__(self, value: _T) -> None:
+    def __init__(self, value: Any) -> None:
         setattr(self.__class__, "_tags", {SingleCaseUnion.VALUE.tag: "VALUE"})
         super().__init__(SingleCaseUnion.VALUE, value)
 

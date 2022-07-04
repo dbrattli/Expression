@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from turtle import width
 from typing import Generic, Tuple, TypeVar, final
 
 from pydantic import parse_obj_as
 
-from expression import SingleCaseUnion, Tag, TaggedUnion, tag
+from expression import SingleCaseUnion, TaggedUnion, tag, Tag
 
 _T = TypeVar("_T")
 
@@ -24,8 +23,8 @@ class Circle:
 
 @final
 class Shape(TaggedUnion):
-    RECTANGLE = tag(Rectangle)
-    CIRCLE = tag(Circle)
+    RECTANGLE = Tag[Rectangle]()
+    CIRCLE = Tag[Circle]()
 
     @staticmethod
     def rectangle(width: float, length: float) -> Shape:
@@ -86,25 +85,25 @@ def test_union_no_match_value():
 
 @final
 class Weather(TaggedUnion):
-    Sunny = tag()
-    Rainy = tag()
+    SUNNY = tag()
+    RAINY = tag()
 
     @staticmethod
     def sunny() -> Weather:
-        return Weather(Weather.Sunny)
+        return Weather(Weather.SUNNY)
 
     @staticmethod
     def rainy() -> Weather:
-        return Weather(Weather.Rainy)
+        return Weather(Weather.RAINY)
 
 
 def test_union_wether_match():
     rainy = Weather.sunny()
 
     match rainy:
-        case Weather(Weather.Rainy):
+        case Weather(Weather.RAINY):
             assert False
-        case Weather(Weather.Sunny):
+        case Weather(Weather.SUNNY):
             assert True
         case _:
             assert False
@@ -139,14 +138,14 @@ def test_union_maybe_match():
 
 @final
 class Suit(TaggedUnion):
-    HEARTS = tag()
-    SPADES = tag()
-    CLUBS = tag()
-    DIAMONDS = tag()
+    HEARTS = tag(1)
+    SPADES = tag(2)
+    CLUBS = tag(3)
+    DIAMONDS = tag(4)
 
     @staticmethod
     def hearts() -> Suit:
-        return Suit(Suit.HEARTS())
+        return Suit(Suit.HEARTS)
 
     @staticmethod
     def spades() -> Suit:
@@ -187,17 +186,17 @@ class Face(TaggedUnion):
 
 @final
 class Card(TaggedUnion):
-    FACE_CARD = tag(Tuple[Suit, Face])
-    VALUE_CARD = tag(Tuple[Suit, int])
+    FACE_CARD = Tag[Tuple[Suit, Face]]()
+    VALUE_CARD = Tag[Tuple[Suit, int]]()
     JOKER = tag()
 
     @staticmethod
     def face_card(suit: Suit, face: Face) -> Card:
-        return Card(Card.FACE_CARD, suit=suit, face=face)
+        return Card(Card.FACE_CARD, (suit, face))
 
     @staticmethod
     def value_card(suit: Suit, value: int) -> Card:
-        return Card(Card.VALUE_CARD, suit=suit, value=value)
+        return Card(Card.VALUE_CARD, (suit, value))
 
     @staticmethod
     def Joker() -> Card:
@@ -213,103 +212,98 @@ def calculate_value(card: Card) -> int:
     match card:
         case Card(Card.JOKER):
             return 0
-        case (Card(Card.FACE_CARD(suit=Suit.SPADES, face=Face.QUEEN)):
+        case Card(value=Face(suit=Suit.SPADES, face=Face.QUEEN)):
             return 40
-        if case(Card.FACE_CARD(face=Face.ACE)):
+        case Card(value=Face(face=Face.ACE)):
             return 15
-        if case(Card.FACE_CARD()):
+        case Card(Card.FACE_CARD):
             return 10
-        if case(Card.VALUE_CARD(value=10)):
+        case Card(tag=Card.FACE_CARD, value=(_, 10)):
             return 10
-        if case._:
+        case _:
             return 5
 
-    assert False
+
+def test_union_cards():
+    rummy_score = calculate_value(jack_of_hearts)
+    assert rummy_score == 10
+
+    rummy_score = calculate_value(three_of_clubs)
+    assert rummy_score == 5
+
+    rummy_score = calculate_value(joker)
+    assert rummy_score == 0
 
 
-# def test_union_cards():
-#     rummy_score = calculate_value(jack_of_hearts)
-#     assert rummy_score == 10
-
-#     rummy_score = calculate_value(three_of_clubs)
-#     assert rummy_score == 5
-
-#     rummy_score = calculate_value(joker)
-#     assert rummy_score == 0
+class EmailAddress(SingleCaseUnion[str]):
+    ...
 
 
-# class EmailAddress(SingleCaseUnion[str]):
-#     ...
+def test_single_case_union_create():
+    addr = "foo@bar.com"
+    email = EmailAddress(addr)
+
+    assert email.VALUE.tag == 1000
+    assert email.value == addr
 
 
-# def test_single_case_union_create():
-#     addr = "foo@bar.com"
-#     email = EmailAddress(addr)
+def test_single_case_union_match():
+    addr = "foo@bar.com"
+    email = EmailAddress(addr)
 
-#     assert email.VALUE.tag == 1000
-#     assert email.value == addr
-
-
-# def test_single_case_union_match():
-#     addr = "foo@bar.com"
-#     email = EmailAddress(addr)
-
-#     with match(email) as case:
-#         for email in case(str):
-#             assert email == addr
-
-#         if case._:
-#             assert False
+    match email:
+        case EmailAddress():
+            assert True
+        case _:
+            assert False
 
 
-# def test_single_case_union_match_value():
-#     addr = "foo@bar.com"
-#     email = EmailAddress(addr)
+def test_single_case_union_match_value():
+    addr = "foo@bar.com"
+    email = EmailAddress(addr)
 
-#     with match(email) as case:
-#         for email in case(EmailAddress.VALUE(addr)):
-#             assert email == addr
-
-#         if case._:
-#             assert False
-
-
-# def test_single_case_union_not_match_value():
-#     addr = "foo@bar.com"
-#     email = EmailAddress(addr)
-
-#     with match(email) as case:
-#         for email in case(EmailAddress.VALUE("test@test.com")):
-#             assert email == addr
-
-#         if case._:
-#             assert False
+    match email:
+        case EmailAddress(value=value):
+            assert value == addr
+        case _:
+            assert False
 
 
-# def test_union_to_dict_works():
-#     maybe = Maybe.just(10)
-#     obj = maybe.dict()
-#     assert obj == dict(tag="JUST", value=10)
+def test_single_case_union_not_match_value():
+    addr = "foo@bar.com"
+    email = EmailAddress(addr)
+
+    match email:
+        case EmailAddress(value="test@test.com"):
+            assert False
+        case _:
+            assert True
 
 
-# def test_union_from_dict_works():
-#     obj = dict(tag="JUST", value=10)
-#     maybe = parse_obj_as(Maybe[int], obj)
-
-#     assert maybe
-#     assert maybe.value == 10
+def test_union_to_dict_works():
+    maybe = Maybe.just(10)
+    obj = maybe.dict()
+    assert obj == dict(tag="JUST", value=10)
 
 
-# def test_nested_union_to_dict_works():
-#     maybe = Maybe.just(Maybe.just(10))
-#     obj = maybe.dict()
-#     assert obj == dict(tag="JUST", value=dict(tag="JUST", value=10))
+def test_union_from_dict_works():
+    obj = dict(tag="JUST", value=10)
+    maybe = parse_obj_as(Maybe[int], obj)
+
+    assert maybe
+    assert maybe.value == 10
 
 
-# def test_nested_union_from_dict_works():
-#     obj = dict(tag="JUST", value=dict(tag="JUST", value=10))
+def test_nested_union_to_dict_works():
+    maybe = Maybe.just(Maybe.just(10))
+    obj = maybe.dict()
+    assert obj == dict(tag="JUST", value=dict(tag="JUST", value=10))
 
-#     maybe = parse_obj_as(Maybe[Maybe[int]], obj)
-#     assert maybe
-#     assert maybe.value
-#     assert maybe.value.value == 10
+
+def test_nested_union_from_dict_works():
+    obj = dict(tag="JUST", value=dict(tag="JUST", value=10))
+
+    maybe = parse_obj_as(Maybe[Maybe[int]], obj)
+    assert maybe
+    assert maybe.value
+    assert maybe.value.value == 10
