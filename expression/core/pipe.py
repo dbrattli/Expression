@@ -17,7 +17,6 @@ from typing import Any, Callable, Tuple, TypeVar, overload
 from .compose import compose
 from .misc import starid
 
-_TSource = TypeVar("_TSource")
 _A = TypeVar("_A")
 _B = TypeVar("_B")
 _C = TypeVar("_C")

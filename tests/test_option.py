@@ -5,7 +5,8 @@ from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel
 
-from expression import Nothing, Option, Some, effect, match, option, pipe, pipe2
+from expression import Nothing, Option, Some, effect, option, pipe, pipe2
+from expression.core.option import Nothing_
 from expression.extra.option import pipeline
 from tests.utils import CustomException
 
@@ -21,11 +22,11 @@ def test_option_some():
 def test_option_some_match():
     xs = Some(42)
 
-    with match(xs) as case:
-        for x in case(Some[int]):
+    match xs:
+        case Some(x):
             assert x == 42
 
-        while case.default():
+        case _:
             assert False
 
 
@@ -33,11 +34,11 @@ def test_option_some_match_fluent():
     xs = Some(42)
     ys = xs.map(lambda x: x + 1)
 
-    for value in ys.match(Some[int]):
-        assert value == 43
-        break
-    else:
-        assert False
+    match ys:
+        case Some(value):
+            assert value == 43
+        case _:
+            assert False
 
 
 def test_option_some_iterate():
@@ -61,14 +62,14 @@ def test_option_none():
 def test_option_none_match():
     xs = Nothing
 
-    with match(xs) as case:
-        for _ in case(Some[int]):
+    match xs:
+        case Some():
             assert False
 
-        while case(Nothing):
+        case x if x is Nothing:
             assert True
 
-        while case.default():
+        case _:
             assert False
 
 
@@ -139,11 +140,11 @@ def test_option_some_map_piped():
     mapper: Callable[[int], int] = lambda x: x + 1
     ys: Option[int] = xs.pipe(option.map(mapper))
 
-    for y in ys.match(Some):
-        assert y == 43
-        break
-    else:
-        assert False
+    match ys:
+        case Some(y):
+            assert y == 43
+        case _:
+            assert False
 
 
 def test_option_none_map_piped():
@@ -159,11 +160,11 @@ def test_option_some_map_fluent():
     xs = Some(42)
     ys = xs.map(lambda x: x + 1)
 
-    for value in ys.match(Some):
-        assert value == 43
-        break
-    else:
-        assert False
+    match ys:
+        case Some(value):
+            assert value == 43
+        case _:
+            assert False
 
 
 def test_option_none_map():
@@ -180,43 +181,44 @@ def test_option_some_map2_piped(x: int, y: int):
     mapper: Callable[[int, int], int] = lambda x, y: x + y
     zs = pipe2((xs, ys), option.map2(mapper))
 
-    for value in zs.match(Some):
-        assert value == x + y
-        break
-    else:
-        assert False
+    match zs:
+        case Some(value):
+            assert value == x + y
+        case _:
+            assert False
 
 
 def test_option_some_bind_fluent():
     xs = Some(42)
     ys = xs.bind(lambda x: Some(x + 1))
 
-    for value in ys.match(Some):
-        assert value == 43
-        break
-    else:
-        assert False
+    match ys:
+        case Some(value):
+            assert value == 43
+        case _:
+            assert False
 
 
 def test_option_some_bind_none_fluent():
     xs = Some(42)
     ys = xs.bind(lambda x: Nothing)
 
-    for _ in ys.match(Nothing):
-        assert True
-        break
-    else:
-        assert False
+    match ys:
+        case Nothing_():
+            assert True
+        case _:
+            assert False
 
 
 def test_option_none_bind_none_fluent():
     xs = Nothing
     ys = xs.bind(lambda x: Nothing)
 
-    for _ in ys.match(Some):
-        assert False
-    else:
-        assert True
+    match ys:
+        case Some():
+            assert False
+        case _:
+            assert True
 
 
 def test_option_some_bind_piped():
@@ -226,11 +228,11 @@ def test_option_some_bind_piped():
         option.bind(binder),
     )
 
-    for value in ys.match(Some):
-        assert value == 43
-        break
-    else:
-        assert False
+    match ys:
+        case Some(value):
+            assert value == 43
+        case _:
+            assert False
 
 
 def test_option_filter_none():
@@ -320,11 +322,11 @@ def test_option_builder_yield_value():
         yield 42
 
     xs = fn()
-    for value in xs.match(Some):
-        assert value == 42
-        break
-    else:
-        assert False
+    match xs:
+        case Some(value):
+            assert value == 42
+        case _:
+            assert False
 
 
 def test_option_builder_yield_value_async():
@@ -333,11 +335,11 @@ def test_option_builder_yield_value_async():
         yield 42
 
     xs = fn()
-    for value in xs.match(Some):
-        assert value == 42
-        break
-    else:
-        assert False
+    match xs:
+        case Some(value):
+            assert value == 42
+        case _:
+            assert False
 
 
 def test_option_builder_yield_some_wrapped():
@@ -347,11 +349,11 @@ def test_option_builder_yield_some_wrapped():
         return x
 
     xs = fn()
-    for value in xs.match(Some):
-        assert value == Some(42)
-        break
-    else:
-        assert False
+    match xs:
+        case Some(value):
+            assert value == Some(42)
+        case _:
+            assert False
 
 
 def test_option_builder_return_some():
@@ -361,11 +363,11 @@ def test_option_builder_return_some():
         return x
 
     xs = fn()
-    for value in xs.match(Some):
-        assert value == 42
-        break
-    else:
-        assert False
+    match xs:
+        case Some(value):
+            assert value == 42
+        case _:
+            assert False
 
 
 def test_option_builder_return_nothing_wrapped():
@@ -375,11 +377,11 @@ def test_option_builder_return_nothing_wrapped():
         yield
 
     xs = fn()
-    for value in xs.match(Some):
-        assert value is Nothing
-        break
-    else:
-        assert False
+    match xs:
+        case Some(value):
+            assert value is Nothing
+        case _:
+            assert False
 
 
 def test_option_builder_yield_from_some():
@@ -389,11 +391,11 @@ def test_option_builder_yield_from_some():
         return x + 1
 
     xs = fn()
-    for value in xs.match(Some):
-        assert value == 43
-        break
-    else:
-        assert False
+    match xs:
+        case Some(value):
+            assert value == 43
+        case _:
+            assert False
 
 
 def test_option_builder_yield_from_none():
@@ -416,11 +418,11 @@ def test_option_builder_multiple_some():
         return x + y
 
     xs = fn()
-    for value in xs.match(Some):
-        assert value == 85
-        break
-    else:
-        assert False
+    match xs:
+        case Some(value):
+            assert value == 85
+        case _:
+            assert False
 
 
 def test_option_builder_none_short_circuits():

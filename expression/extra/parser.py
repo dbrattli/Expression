@@ -13,7 +13,6 @@ from expression.core import (
     Some,
     curry,
     fst,
-    match,
     pipe,
 )
 
@@ -142,20 +141,19 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
 
     def run(input: Remaining) -> ParseResult[Tuple[_A, _B]]:
         result1 = p1.run(input)
-        with match(result1) as case:
-            for error in case(Error[Any, str]):
+        match result1:
+            case Error(error):
                 return Error(error)
-            for value1, remaining1 in case(Ok[Tuple[_A, Remaining], str]):
+            case Ok(value1, remaining1):
                 result2 = p2.run(remaining1)
 
-                with match(result2) as case:
-                    for error in case(Error[Any, str]):
+                match result2:
+                    case Error(error):
                         return Error(error)
-                    for value2, remaining2 in case(Ok[Tuple[_B, Remaining], str]):
+                    case Ok(value2, remaining2):
                         return Ok(((value1, value2), remaining2))
-            return case.default(
-                Error[Tuple[Tuple[_A, _B], Remaining], str]("parser error")
-            )
+            case _:
+                return Error[Tuple[Tuple[_A, _B], Remaining], str]("parser error")
 
     return Parser(run, f"and_then({p2}, {p1}")
 
@@ -164,14 +162,12 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
 def or_else(p1: Parser[_A], p2: Parser[_A]) -> Parser[_A]:
     def run(input: Remaining) -> ParseResult[_A]:
         result1 = p1.run(input)
-        with match(result1) as case:
-            if case(Ok[Tuple[_A, str], str]):
+        match result1:
+            case Ok():
                 return result1
-            if case(Error):
+            case _:
                 result2 = p2.run(input)
                 return result2
-
-        return case.default(Error[Tuple[_A, Remaining], str]("parser error"))
 
     return Parser(run, f"or_else({p2}, {p1}")
 
@@ -201,17 +197,17 @@ def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
         result = parser.run(input)
 
         # test the result for Failure/Success
-        with match(result) as case:
-            for value, remaining in case(Ok[Tuple[_A, Remaining], str]):
+        match result:
+            case Ok(value, remaining):
                 # if success, return the value transformed by f
                 new_value = mapper(value)
                 return Ok[Tuple[_B, Remaining], str]((new_value, remaining))
 
-            for error in case(Error[Tuple[_A, str], str]):
+            case Error(error):
                 # if failed, return the error
                 return Error[Tuple[_B, Remaining], str](error)
-
-        return case.default(Error[Tuple[_B, Remaining], str]("parser error"))
+            case _:
+                return Error[Tuple[_B, Remaining], str]("parser error")
 
     return Parser(run, f"map(A => B, {parser})")
 
@@ -287,14 +283,12 @@ def sequence(parser_list: Block[Parser[_A]]) -> Parser[Block[_A]]:
     cons_p = lift2(cons)
 
     # process the list of parsers recursively
-    with match(parser_list) as case:
-        if case(block.empty):
+    match parser_list:
+        case block.empty:
             return preturn(block.empty)
-        for head, *tail in case(Block[Parser[_A]]):
+        case Block([head, *tail]):
             tail_ = sequence(Block(tail))
             return cons_p(head)(tail_)
-
-        return fail("parser error")
 
 
 def pstring(string_input: str) -> Parser[str]:
@@ -314,8 +308,8 @@ def parse_zero_or_more(
     first_result = parser.run(input)
 
     # test the result for Failure/Success
-    with match(first_result) as case:
-        for first_value, input_after_first_parse in case(Ok[Tuple[_A, Remaining], str]):
+    match first_result:
+        case Ok(first_value, input_after_first_parse):
             # if parse succeeds, call recursively
             # to get the subsequent values
             subsequent_values, remaining_input = parse_zero_or_more(
@@ -323,8 +317,8 @@ def parse_zero_or_more(
             )
             values = subsequent_values.cons(first_value)
             return values, remaining_input
-
-        return case.default((block.empty, input))
+        case _:
+            return (block.empty, input)
 
 
 def many(parser: Parser[_A]) -> Parser[Block[_A]]:
@@ -342,10 +336,8 @@ def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
         # run parser with the input
         firstResult = parser.run(input)
         # test the result for Failure/Success
-        with match(firstResult) as case:
-            for first_value, input_after_first_parse in case(
-                Ok[Tuple[_A, Remaining], str]
-            ):
+        match firstResult:
+            case Ok(first_value, input_after_first_parse):
                 # if first found, look for zeroOrMore now
                 subsequent_values, remaining_input = parse_zero_or_more(
                     parser, input_after_first_parse
@@ -353,10 +345,11 @@ def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
                 values = subsequent_values.cons(first_value)
                 return Ok[Tuple[Block[_A], Remaining], str]((values, remaining_input))
 
-            for err in case(Error[Tuple[_A, str], str]):
+            case Error(err):
                 return Error(err)  # failed
 
-            return Error("parser error")
+            case _:
+                return Error("parser error")
 
     return Parser(run, f"many({parser})")
 
@@ -544,13 +537,13 @@ starts_with = lift2(_starts_with)
 def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
     def run(input: Remaining) -> ParseResult[_B]:
         result1 = p.run(input)
-        with match(result1) as case:
-            for value1, remaning_input in case(Ok[Tuple[_A, Remaining], str]):
+        match result1:
+            case Ok(value1, remaning_input):
                 p2 = f(value1)
                 return p2.run(remaning_input)
-            for err in case(Error[Any, str]):
+            case Error(err):
                 return Error(err)  # failed
-            else:
+            case _:
                 return Error("parser error")
 
     return Parser(run, f"bind(A => Parser[B], {p}")
