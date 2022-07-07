@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import string
-from typing import Any, Callable, Generic, Optional, Tuple, TypeVar, cast, overload
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from expression.collections import Block, block
 from expression.core import (
@@ -144,14 +154,16 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
         match result1:
             case Error(error):
                 return Error(error)
-            case Ok(value1, remaining1):
+            case Ok((value1, remaining1)):
                 result2 = p2.run(remaining1)
 
                 match result2:
                     case Error(error):
                         return Error(error)
-                    case Ok(value2, remaining2):
-                        return Ok(((value1, value2), remaining2))
+                    case Ok((value2, remaining2)):
+                        return Ok(((cast(_A, value1), cast(_B, value2)), remaining2))
+                    case _:
+                        return Error("parser error")
             case _:
                 return Error[Tuple[Tuple[_A, _B], Remaining], str]("parser error")
 
@@ -164,7 +176,7 @@ def or_else(p1: Parser[_A], p2: Parser[_A]) -> Parser[_A]:
         result1 = p1.run(input)
         match result1:
             case Ok():
-                return result1
+                return cast(ParseResult[_A], result1)
             case _:
                 result2 = p2.run(input)
                 return result2
@@ -198,9 +210,9 @@ def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
 
         # test the result for Failure/Success
         match result:
-            case Ok(value, remaining):
+            case Ok((value, remaining)):
                 # if success, return the value transformed by f
-                new_value = mapper(value)
+                new_value = mapper(cast(_A, value))
                 return Ok[Tuple[_B, Remaining], str]((new_value, remaining))
 
             case Error(error):
@@ -286,9 +298,9 @@ def sequence(parser_list: Block[Parser[_A]]) -> Parser[Block[_A]]:
     match parser_list:
         case block.empty:
             return preturn(block.empty)
-        case Block([head, *tail]):
-            tail_ = sequence(Block(tail))
-            return cons_p(head)(tail_)
+        case Block([head, *tail]):  # type: ignore
+            tail_ = sequence(Block(cast(List[Parser[_A]], tail)))
+            return cons_p(cast(Parser[_A], head))(tail_)
 
 
 def pstring(string_input: str) -> Parser[str]:
@@ -309,13 +321,13 @@ def parse_zero_or_more(
 
     # test the result for Failure/Success
     match first_result:
-        case Ok(first_value, input_after_first_parse):
+        case Ok((first_value, input_after_first_parse)):
             # if parse succeeds, call recursively
             # to get the subsequent values
             subsequent_values, remaining_input = parse_zero_or_more(
                 parser, input_after_first_parse
             )
-            values = subsequent_values.cons(first_value)
+            values = subsequent_values.cons(cast(_A, first_value))
             return values, remaining_input
         case _:
             return (block.empty, input)
@@ -337,12 +349,12 @@ def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
         firstResult = parser.run(input)
         # test the result for Failure/Success
         match firstResult:
-            case Ok(first_value, input_after_first_parse):
+            case Ok((first_value, input_after_first_parse)):
                 # if first found, look for zeroOrMore now
                 subsequent_values, remaining_input = parse_zero_or_more(
                     parser, input_after_first_parse
                 )
-                values = subsequent_values.cons(first_value)
+                values = subsequent_values.cons(cast(_A, first_value))
                 return Ok[Tuple[Block[_A], Remaining], str]((values, remaining_input))
 
             case Error(err):
@@ -538,8 +550,8 @@ def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
     def run(input: Remaining) -> ParseResult[_B]:
         result1 = p.run(input)
         match result1:
-            case Ok(value1, remaning_input):
-                p2 = f(value1)
+            case Ok((value1, remaning_input)):
+                p2 = f(cast(_A, value1))
                 return p2.run(remaning_input)
             case Error(err):
                 return Error(err)  # failed
