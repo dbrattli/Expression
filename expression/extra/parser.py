@@ -14,17 +14,7 @@ from typing import (
 )
 
 from expression.collections import Block, block
-from expression.core import (
-    Error,
-    Nothing,
-    Ok,
-    Option,
-    Result,
-    Some,
-    curry,
-    fst,
-    pipe,
-)
+from expression.core import Error, Nothing, Ok, Option, Result, Some, curry, fst, pipe
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")

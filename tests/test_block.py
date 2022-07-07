@@ -1,12 +1,12 @@
 import functools
-from builtins import list as list
 import sys
+from builtins import list as list
 from typing import Any, Callable, Dict, List, Tuple, Type
 
+import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel
-import pytest
 
 from expression import Nothing, Option, Some, pipe
 from expression.collections import Block, block

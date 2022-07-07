@@ -5,7 +5,7 @@ from typing import Generic, Tuple, TypeVar, final
 
 from pydantic import parse_obj_as
 
-from expression import SingleCaseUnion, TaggedUnion, tag, Tag
+from expression import SingleCaseUnion, Tag, TaggedUnion, tag
 
 _T = TypeVar("_T")
 

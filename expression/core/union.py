@@ -2,15 +2,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    Iterator,
-    Optional,
-    TypeVar,
-    cast,
-)
+from typing import Any, Dict, Generic, Iterator, Optional, TypeVar, cast
 
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation

@@ -2,20 +2,9 @@ from __future__ import annotations
 
 import string
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import Any
 
-from expression import (
-    Error,
-    Nothing,
-    Nothing_,
-    Ok,
-    Option,
-    Some,
-    TaggedUnion,
-    Tag,
-    pipe,
-    tag,
-)
+from expression import Error, Ok, Option, Some, Tag, TaggedUnion, pipe, tag
 from expression.collections import Block
 from expression.extra.parser import (
     Parser,
@@ -213,8 +202,8 @@ class BoolOp(TaggedUnion):
 class Expression(TaggedUnion):
     CONSTANT = tag()
     NAME = Tag[str]()
-    BOOL_OP = tag(BoolOp)
-    COMPARE = tag(Compare)
+    BOOL_OP = Tag[BoolOp]()
+    COMPARE = Tag[Compare]()
 
     @staticmethod
     def name(name: str) -> Expression:
