@@ -7,11 +7,10 @@ def test_choice_choice1of2():
     assert isinstance(xs, Choice)
     assert isinstance(xs, Choice2)
 
-    with match(xs) as case:
-        for x in Choice1of2.match(case):
+    match xs:
+        case Choice1of2(x):
             assert x == 42
-            break
-        else:
+        case _:
             assert False
 
 
@@ -21,9 +20,8 @@ def test_choice_choice2of2():
     assert isinstance(xs, Choice)
     assert isinstance(xs, Choice2)
 
-    with match(xs) as case:
-        for x in Choice2of2.match(case):
+    match xs:
+        case Choice2of2(x):
             assert x == "test"
-            break
-        else:
+        case _:
             assert False

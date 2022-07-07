@@ -28,6 +28,8 @@ class Choice2(Generic[_A, _B]):
 
 
 class Choice1of2(Choice2[_A, _B], Choice[_A]):
+    __match_args__ = ("value",)
+
     def __init__(self, value: _A) -> None:
         super().__init__(value)
 
@@ -41,6 +43,8 @@ class Choice1of2(Choice2[_A, _B], Choice[_A]):
 
 
 class Choice2of2(Choice2[_A, _B], Choice[_B]):
+    __match_args__ = ("value",)
+
     def __init__(self, value: _B) -> None:
         super().__init__(value)
 
@@ -58,16 +62,22 @@ class Choice3(Generic[_A, _B, _C]):
 
 
 class Choice1of3(Choice3[_A, _B, _C], Choice[_A]):
+    __match_args__ = ("value",)
+
     def __init__(self, value: _A) -> None:
         super().__init__(value)
 
 
 class Choice2of3(Choice3[_A, _B, _C], Choice[_B]):
+    __match_args__ = ("value",)
+
     def __init__(self, value: _B) -> None:
         super().__init__(value)
 
 
 class Choice3of3(Choice3[_A, _B, _C], Choice[_C]):
+    __match_args__ = ("value",)
+
     def __init__(self, value: _C) -> None:
         super().__init__(value)
 
