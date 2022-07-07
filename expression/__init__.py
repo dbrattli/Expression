@@ -40,7 +40,7 @@ from .core import (
     Try,
     compose,
     curry,
-    curry_flipped,
+    curry_flip,
     default_arg,
     downcast,
     failwith,
@@ -60,6 +60,12 @@ from .core import (
     upcast,
 )
 
+curry_flipped = curry_flip
+"""Deprecated.
+
+Will be removed in next major version. Use curry_flip instead.
+"""
+
 __all__ = [
     "AsyncReplyChannel",
     "Builder",
@@ -75,6 +81,7 @@ __all__ = [
     "compose",
     "core",
     "curry",
+    "curry_flip",
     "curry_flipped",
     "default_arg",
     "downcast",

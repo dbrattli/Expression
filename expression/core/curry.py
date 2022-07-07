@@ -113,21 +113,21 @@ def curry(num_args: _Arity) -> Callable[..., Any]:
 
 
 @overload
-def curry_flipped(
+def curry_flip(
     num_args: Literal[0],
 ) -> Callable[[Callable[_P, _A]], Callable[_P, _A]]:
     ...
 
 
 @overload
-def curry_flipped(
+def curry_flip(
     num_args: Literal[1],
 ) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[_P, Callable[[_A], _B]]]:
     ...
 
 
 @overload
-def curry_flipped(
+def curry_flip(
     num_args: Literal[2],
 ) -> Callable[
     [Callable[Concatenate[_A, _B, _P], _C]],
@@ -143,7 +143,7 @@ def curry_flipped(
 
 
 @overload
-def curry_flipped(
+def curry_flip(
     num_args: Literal[3],
 ) -> Callable[
     [Callable[Concatenate[_A, _B, _C, _P], _D]],
@@ -162,7 +162,7 @@ def curry_flipped(
 
 
 @overload
-def curry_flipped(
+def curry_flip(
     num_args: Literal[4],
 ) -> Callable[
     [Callable[Concatenate[_A, _B, _C, _D, _P], _E]],
@@ -180,7 +180,7 @@ def curry_flipped(
     ...
 
 
-def curry_flipped(
+def curry_flip(
     num_args: _Arity,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """A flipped curry decorator.
@@ -194,7 +194,7 @@ def curry_flipped(
         function
 
     Example:
-        >>> @curry_flipped(1)
+        >>> @curry_flip(1)
         ... def map(source: List[int], mapper: Callable[[int], int]):
         ...    return [mapper(x) for x in source]
         >>>
@@ -213,4 +213,4 @@ def curry_flipped(
     return _wrap_fun
 
 
-__all__ = ["curry", "curry_flipped"]
+__all__ = ["curry", "curry_flip"]
