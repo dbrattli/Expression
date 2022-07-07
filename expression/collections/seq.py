@@ -32,7 +32,6 @@ from typing import (
     Callable,
     Iterable,
     Iterator,
-    Optional,
     Tuple,
     TypeVar,
     cast,
@@ -40,7 +39,6 @@ from typing import (
 )
 
 from expression.core import (
-    Case,
     Option,
     PipeMixin,
     SupportsGreaterThan,
@@ -76,7 +74,9 @@ class Seq(Iterable[_TSource], PipeMixin):
         >>> ys = xs.map(lambda x: x + 1).filter(lambda x: x < 3)
     """
 
-    def __init__(self, iterable: Iterable[_TSource] = []) -> None:
+    __match_args__ = ("iterable",)
+
+    def __init__(self, iterable: Iterable[_TSource] = ()) -> None:
         self._value = iterable
 
     @classmethod
@@ -231,18 +231,6 @@ class Seq(Iterable[_TSource], PipeMixin):
             The list of transformed elements.
         """
         return Seq(mapi(mapping)(self))
-
-    @overload
-    def match(self) -> Case[Iterable[_TSource]]:
-        ...
-
-    @overload
-    def match(self, pattern: Any) -> Iterable[Iterable[_TSource]]:
-        ...
-
-    def match(self, pattern: Optional[Any] = None) -> Any:
-        case: Case[Iterable[_TSource]] = Case(self)
-        return case(pattern) if pattern else case
 
     @overload
     @staticmethod

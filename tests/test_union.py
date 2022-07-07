@@ -5,7 +5,7 @@ from typing import Generic, Tuple, TypeVar, final
 
 from pydantic import parse_obj_as
 
-from expression import SingleCaseUnion, Tag, TaggedUnion, match, tag
+from expression import SingleCaseUnion, Tag, TaggedUnion, tag
 
 _T = TypeVar("_T")
 
@@ -23,8 +23,8 @@ class Circle:
 
 @final
 class Shape(TaggedUnion):
-    RECTANGLE = tag(Rectangle)
-    CIRCLE = tag(Circle)
+    RECTANGLE = Tag[Rectangle]()
+    CIRCLE = Tag[Circle]()
 
     @staticmethod
     def rectangle(width: float, length: float) -> Shape:
@@ -44,68 +44,68 @@ def test_union_create():
 def test_union_match_tag():
     shape = Shape.rectangle(2.3, 3.3)
 
-    with match(shape.tag) as case:
-        if case(Shape.CIRCLE):
+    match shape.tag:
+        case Shape.CIRCLE:
             assert False
-        if case(Shape.RECTANGLE):
+        case Shape.RECTANGLE:
             assert True
-        if case.default():
+        case _:
             assert False
 
 
 def test_union_match_type():
     shape = Shape.rectangle(2.3, 3.3)
 
-    with match(shape) as case:
-        for rect in case(Rectangle):
-            assert rect.length == 3.3
-        if case.default():
+    match shape:
+        case Shape(value=Rectangle(length=length)):
+            assert length == 3.3
+        case _:
             assert False
 
 
 def test_union_match_value():
     shape = Shape.rectangle(2.3, 3.3)
 
-    with match(shape) as case:
-        for rect in case(Shape.RECTANGLE(width=2.3)):
-            assert rect.length == 3.3
-        if case.default():
+    match shape:
+        case Shape(value=Rectangle(width=2.3)):
+            assert shape.value.width == 2.3
+        case _:
             assert False
 
 
 def test_union_no_match_value():
     shape = Shape.rectangle(2.3, 3.3)
 
-    with match(shape) as case:
-        if case(Shape.RECTANGLE(width=12.3)):
+    match shape:
+        case Shape(Rectangle(width=12.3)):
             assert False
-        if case.default():
+        case _:
             assert True
 
 
 @final
 class Weather(TaggedUnion):
-    Sunny = tag()
-    Rainy = tag()
+    SUNNY = tag()
+    RAINY = tag()
 
     @staticmethod
     def sunny() -> Weather:
-        return Weather(Weather.Sunny)
+        return Weather(Weather.SUNNY)
 
     @staticmethod
     def rainy() -> Weather:
-        return Weather(Weather.Rainy)
+        return Weather(Weather.RAINY)
 
 
 def test_union_wether_match():
     rainy = Weather.sunny()
 
-    with match(rainy) as case:
-        if case(Weather.Rainy):
+    match rainy:
+        case Weather(Weather.RAINY):
             assert False
-        if case(Weather.Sunny):
+        case Weather(Weather.SUNNY):
             assert True
-        if case.default():
+        case _:
             assert False
 
 
@@ -124,29 +124,28 @@ class Maybe(TaggedUnion, Generic[_T]):
 
 def test_union_maybe_match():
     maybe = Maybe.just(10)
+    value: int
 
-    with match(maybe) as case:
-        if case(Maybe.NOTHING):
+    match maybe:
+        case Maybe(Maybe.NOTHING):
             assert False
-        for value in case(
-            maybe.JUST
-        ):  # Note the lower-case maybe to get the type right
+        case Maybe(value=value):
             assert value == 10
 
-        if case.default():
+        case _:
             assert False
 
 
 @final
 class Suit(TaggedUnion):
-    HEARTS = tag()
-    SPADES = tag()
-    CLUBS = tag()
-    DIAMONDS = tag()
+    HEARTS = tag(1)
+    SPADES = tag(2)
+    CLUBS = tag(3)
+    DIAMONDS = tag(4)
 
     @staticmethod
     def hearts() -> Suit:
-        return Suit(Suit.HEARTS())
+        return Suit(Suit.HEARTS)
 
     @staticmethod
     def spades() -> Suit:
@@ -187,17 +186,17 @@ class Face(TaggedUnion):
 
 @final
 class Card(TaggedUnion):
-    FACE_CARD = tag(Tuple[Suit, Face])
-    VALUE_CARD = tag(Tuple[Suit, int])
+    FACE_CARD = Tag[Tuple[Suit, Face]]()
+    VALUE_CARD = Tag[Tuple[Suit, int]]()
     JOKER = tag()
 
     @staticmethod
     def face_card(suit: Suit, face: Face) -> Card:
-        return Card(Card.FACE_CARD, suit=suit, face=face)
+        return Card(Card.FACE_CARD, (suit, face))
 
     @staticmethod
     def value_card(suit: Suit, value: int) -> Card:
-        return Card(Card.VALUE_CARD, suit=suit, value=value)
+        return Card(Card.VALUE_CARD, (suit, value))
 
     @staticmethod
     def Joker() -> Card:
@@ -210,21 +209,19 @@ joker = Card.Joker()
 
 
 def calculate_value(card: Card) -> int:
-    with match(card) as case:
-        if case(Card.JOKER):
+    match card:
+        case Card(Card.JOKER):
             return 0
-        if case(Card.FACE_CARD(suit=Suit.SPADES, face=Face.QUEEN)):
+        case Card(value=Face(suit=Suit.SPADES, face=Face.QUEEN)):
             return 40
-        if case(Card.FACE_CARD(face=Face.ACE)):
+        case Card(value=Face(face=Face.ACE)):
             return 15
-        if case(Card.FACE_CARD()):
+        case Card(Card.FACE_CARD):
             return 10
-        if case(Card.VALUE_CARD(value=10)):
+        case Card(tag=Card.FACE_CARD, value=(_, 10)):
             return 10
-        if case._:
+        case _:
             return 5
-
-    assert False
 
 
 def test_union_cards():
@@ -254,11 +251,10 @@ def test_single_case_union_match():
     addr = "foo@bar.com"
     email = EmailAddress(addr)
 
-    with match(email) as case:
-        for email in case(str):
-            assert email == addr
-
-        if case._:
+    match email:
+        case EmailAddress():
+            assert True
+        case _:
             assert False
 
 
@@ -266,11 +262,10 @@ def test_single_case_union_match_value():
     addr = "foo@bar.com"
     email = EmailAddress(addr)
 
-    with match(email) as case:
-        for email in case(EmailAddress.VALUE(addr)):
-            assert email == addr
-
-        if case._:
+    match email:
+        case EmailAddress(value=value):
+            assert value == addr
+        case _:
             assert False
 
 
@@ -278,12 +273,11 @@ def test_single_case_union_not_match_value():
     addr = "foo@bar.com"
     email = EmailAddress(addr)
 
-    with match(email) as case:
-        for email in case(EmailAddress.VALUE("test@test.com")):
-            assert email == addr
-
-        if case._:
+    match email:
+        case EmailAddress(value="test@test.com"):
             assert False
+        case _:
+            assert True
 
 
 def test_union_to_dict_works():

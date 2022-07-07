@@ -21,13 +21,11 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_origin,
 )
 
 from typing_extensions import TypeGuard
 
 from .error import EffectError
-from .match import MatchMixin, SupportsMatch
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation
 
@@ -59,9 +57,7 @@ def _validate(value: Any, field: ModelField) -> Option[Any]:
 
 class Option(
     Iterable[_TSource],
-    MatchMixin[_TSource],
     PipeMixin,
-    SupportsMatch[Union[_TSource, bool]],
     SupportsValidation["Option[_TSource]"],
     ABC,
 ):
@@ -182,6 +178,8 @@ class Option(
 class Some(Option[_TSource]):
     """The Some option case class."""
 
+    __match_args__ = ("value",)
+
     def __init__(self, value: _TSource) -> None:
         self._value = value
 
@@ -263,19 +261,6 @@ class Some(Option[_TSource]):
         A `ValueError` is raised if the option is `Nothing`.
         """
         return self._value
-
-    def __match__(self, pattern: Any) -> Iterable[_TSource]:
-        if self is pattern or self == pattern:
-            return [self._value]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [self._value]
-        except TypeError:
-            pass
-
-        return []
 
     def __lt__(self, other: Any) -> bool:
         if isinstance(other, Some):
@@ -372,12 +357,6 @@ class Nothing_(Option[_TSource], EffectError):
         """
 
         raise ValueError("There is no value.")
-
-    def __match__(self, pattern: Any) -> Iterable[Any]:
-        if self is pattern:
-            return [True]
-
-        return []
 
     def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         """Return iterator for the `Nothing` case.

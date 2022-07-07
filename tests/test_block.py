@@ -1,12 +1,14 @@
 import functools
+import sys
 from builtins import list as list
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
+from typing import Any, Callable, Dict, List, Tuple, Type
 
+import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel
 
-from expression import Nothing, Option, Some, match, pipe
+from expression import Nothing, Option, Some, pipe
 from expression.collections import Block, block
 
 Func = Callable[[int], int]
@@ -33,24 +35,16 @@ def test_block_head_fluent():
     assert x == 42
 
 
-def test_block_head_match():
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Uses match statements")  # type: ignore
+def test_block_head_match() -> None:
     xs: Block[int] = empty.cons(42)
-    with match(xs) as case:
-        for (head, *_) in case(Iterable[int]):
+
+    match xs:
+        case Block([head, *_]):
             assert head == 42
             return
-        else:
+        case _:
             assert False
-
-
-def test_block_head_match_fluent():
-    xs: Block[int] = empty.cons(42)
-
-    for (head, *_) in [(head, *tail) for (head, *tail) in xs.match(Block) if head > 10]:
-        assert head == 42
-        return
-    else:
-        assert False
 
 
 @given(st.text(), st.text())  # type: ignore

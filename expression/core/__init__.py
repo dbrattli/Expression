@@ -19,7 +19,6 @@ from .curry import curry, curry_flipped
 from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
-from .match import Case, MatchMixin, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some, default_arg
 from .pipe import PipeMixin, pipe, pipe2, pipe3
@@ -40,7 +39,6 @@ __all__ = [
     "aiotools",
     "AsyncReplyChannel",
     "Builder",
-    "Case",
     "Choice",
     "Choice2",
     "Choice3",
@@ -54,7 +52,6 @@ __all__ = [
     "curry_flipped",
     "default_arg",
     "downcast",
-    "MatchMixin",
     "EffectError",
     "Error",
     "Failure",
@@ -63,7 +60,6 @@ __all__ = [
     "fst",
     "identity",
     "MailboxProcessor",
-    "match",
     "Nothing",
     "Nothing_",
     "Ok",

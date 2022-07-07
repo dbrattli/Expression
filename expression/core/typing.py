@@ -33,6 +33,9 @@ class SupportsLessThan(Protocol):
 
 class SupportsSum(Protocol):
     @abstractmethod
+    def __radd__(self, __other: Any) -> Any:
+        raise NotImplementedError
+
     def __add__(self, __other: Any) -> Any:
         raise NotImplementedError
 

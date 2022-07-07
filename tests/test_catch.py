@@ -20,12 +20,13 @@ def test_catch_wraps_error():
         raise ValueError("error")
 
     result = fn()
-    for ex in result.match(Error[Any, Exception]):
-        assert isinstance(ex, ValueError)
-        assert str(ex) == "error"
-        break
-    else:
-        assert False
+    match result:
+        case Error(ex):
+            assert isinstance(ex, ValueError)
+            assert str(ex) == "error"
+
+        case _:
+            assert False
 
 
 def test_catch_ignores_other_exceptions():
@@ -47,20 +48,20 @@ def test_catch_chained():
         raise ex
 
     result = fn(ValueError("error"))
-    for ex in result.match(Error[Any, Exception]):
-        assert isinstance(ex, ValueError)
-        assert str(ex) == "error"
-        break
-    else:
-        assert False
+    match result:
+        case Error(ex):
+            assert isinstance(ex, ValueError)
+            assert str(ex) == "error"
+        case _:
+            assert False
 
     result = fn(KeyError("error"))
-    for ex in result.match(Error[Any, Exception]):
-        assert isinstance(ex, KeyError)
-        assert str(ex) == "'error'"
-        break
-    else:
-        assert False
+    match result:
+        case Error(ex):
+            assert isinstance(ex, KeyError)
+            assert str(ex) == "'error'"
+        case _:
+            assert False
 
 
 def test_catch_with_effect_ok():
@@ -82,12 +83,12 @@ def test_catch_with_effect_error():
         return a + b
 
     result = fn(1)
-    for ex in result.match(Error[Any, ValueError]):
-        assert isinstance(ex, ValueError)
-        assert str(ex) == "failure"
-        break
-    else:
-        assert False
+    match result:
+        case Error(ex):
+            assert isinstance(ex, ValueError)
+            assert str(ex) == "failure"
+        case _:
+            assert False
 
 
 def test_catch_with_effect_exception():
@@ -98,8 +99,8 @@ def test_catch_with_effect_exception():
         return a + b  # type: ignore (by design)
 
     result = fn(1)
-    for ex in result.match(Error[Any, TypeError]):
-        assert isinstance(ex, TypeError)
-        break
-    else:
-        assert False
+    match result:
+        case Error(ex):
+            assert isinstance(ex, TypeError)
+        case _:
+            assert False

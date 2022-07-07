@@ -34,13 +34,10 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_origin,
     overload,
 )
 
 from expression.core import (
-    Case,
-    MatchMixin,
     Nothing,
     Option,
     PipeMixin,
@@ -92,7 +89,6 @@ def _validate(value: Any, field: ModelField) -> Block[Any]:
 class Block(
     Iterable[_TSource],
     PipeMixin,
-    MatchMixin[Iterable[_TSource]],
     SupportsValidation["Block[_TSource]"],
 ):
     """Immutable list type.
@@ -112,24 +108,14 @@ class Block(
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
 
+    __match_args__ = ("value",)
+
     __validators__: List[GenericValidator[Block[_TSource]]] = [_validate]
 
     def __init__(self, value: Optional[Iterable[_TSource]] = None) -> None:
         # Use composition instead of inheritance since generic tuples
         # are not suppored by mypy.
         self.value: Tuple[_TSource, ...] = tuple(value) if value else tuple()
-
-    @overload
-    def match(self) -> Case[Iterable[_TSource]]:
-        ...
-
-    @overload
-    def match(self, pattern: Any) -> Iterable[Iterable[_TSource]]:
-        ...
-
-    def match(self, pattern: Any = None) -> Any:
-        case: Case[_TSource] = Case(self)
-        return case(pattern) if pattern else case
 
     def append(self, other: Block[_TSource]) -> Block[_TSource]:
         """Append other block to end of the block."""
@@ -586,19 +572,6 @@ class Block(
 
     def __len__(self) -> int:
         return len(self.value)
-
-    def __match__(self, pattern: Any) -> Iterable[List[_TSource]]:
-        if self == pattern:
-            return [[val for val in self]]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [[val for val in self]]
-        except TypeError:
-            pass
-
-        return []
 
     def __str__(self) -> str:
         return f"[{', '.join(self.map(str))}]"

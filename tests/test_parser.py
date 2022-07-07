@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import string
 from dataclasses import dataclass
-from typing import Any, Tuple
+from typing import Any
 
-from expression import Error, Nothing, Ok, Option, Some, TaggedUnion, match, pipe, tag
+from expression import Error, Ok, Option, Some, Tag, TaggedUnion, pipe, tag
 from expression.collections import Block
 from expression.extra.parser import (
     Parser,
@@ -27,10 +27,10 @@ def test_parse_pchar():
     result = parseA(input)
 
     assert result.is_ok()
-    with match(result) as case:
-        for a in case(Ok[str, str]):
+    match result:
+        case Ok(a):
             assert a == "A"
-        if case._:
+        case _:
             assert False
 
 
@@ -41,10 +41,10 @@ def test_parse_pchar_fluent():
     result = parseA(input)
 
     assert result.is_ok()
-    with match(result) as case:
-        for a in case(Ok[str, str]):
+    match result:
+        case Ok(a):
             assert a == "A"
-        if case._:
+        case _:
             assert False
 
 
@@ -60,10 +60,10 @@ def test_parse_a_then_b():
 
     result = parseAB(input)
     assert result.is_ok()
-    with match(result) as case:
-        for (a, b) in case(Ok[Tuple[str, str], str]):
+    match result:
+        case Ok((a, b)):
             assert (a, b) == ("A", "B")
-        if case._:
+        case _:
             assert False
 
 
@@ -73,10 +73,10 @@ def test_parse_a_then_b_fluent():
 
     result = parseAB(input)
     assert result.is_ok()
-    with match(result) as case:
-        for (a, b) in case(Ok[Tuple[str, str], str]):
+    match result:
+        case Ok((a, b)):
             assert (a, b) == ("A", "B")
-        if case._:
+        case _:
             assert False
 
 
@@ -85,76 +85,76 @@ def test_pstring():
 
     ret = parse_abc("ABCDE")  # Success ("ABC", "DE")
     assert ret.is_ok()
-    with match(ret) as case:
-        for success in case(Ok[str, str]):
+    match ret:
+        case Ok(success):
             assert success == "ABC"
-        if case._:
+        case _:
             assert False
 
     ret = parse_abc("A|CDE")  # Failure "Expecting 'B'. Got '|'"
     assert ret.is_error()
-    with match(ret) as case:
-        for error in case(Error[str, str]):
+    match ret:
+        case Error(error):
             assert error == "Expecting 'B'. Got '|'"
-        if case._:
+        case _:
             assert False
 
     ret = parse_abc("AB|DE")  # Failure "Expecting 'C'. Got '|'"
     assert ret.is_error()
-    with match(ret) as case:
-        for error in case(Error[str, str]):
+    match ret:
+        case Error(error):
             assert error == "Expecting 'C'. Got '|'"
-        if case._:
+        case _:
             assert False
 
 
 def test_int():
     ret = pint("123C")
 
-    with match(ret) as case:
-        for success in case(Ok[int, str]):
+    match ret:
+        case Ok(success):
             assert success == 123
-        if case._:
+        case _:
             assert False
 
 
 def test_int_negative():
     ret = pint("-123C")
 
-    with match(ret) as case:
-        for success in case(Ok[int, str]):
+    match ret:
+        case Ok(success):
             assert success == -123
-        if case._:
+        case _:
             assert False
 
 
 def test_float():
     ret = pfloat("123C")
 
-    with match(ret) as case:
-        for success in case(Ok[float, str]):
+    match ret:
+        case Ok(success):
             assert success == 123
-        if case._:
+        case _:
             assert False
 
 
 def test_float_with_decimal():
     ret = pfloat("123.45C")
 
-    with match(ret) as case:
-        for success in case(Ok[float, str]):
+    match ret:
+        case Ok(success):
             assert success == 123.45
-        if case._:
+        case _:
             assert False
 
 
 def test_negative_float_with_decimal():
     ret = pfloat("-123.45C")
 
-    with match(ret) as case:
-        for success in case(Ok[float, str]):
+    match ret:
+        case Ok(success):
             assert success == -123.45
-        if case._:
+        case _:
             assert False
 
 
@@ -200,10 +200,10 @@ class BoolOp(TaggedUnion):
 
 
 class Expression(TaggedUnion):
-    CONSTANT = tag(Any)
-    NAME = tag(str)
-    BOOL_OP = tag(BoolOp)
-    COMPARE = tag(Compare)
+    CONSTANT = tag()
+    NAME = Tag[str]()
+    BOOL_OP = Tag[BoolOp]()
+    COMPARE = Tag[Compare]()
 
     @staticmethod
     def name(name: str) -> Expression:
@@ -227,13 +227,11 @@ def pname() -> Parser[Expression]:
     )
 
     def mapper(first: str, rest: Option[Block[str]]) -> str:
-        with match(rest) as case:
-            if case(Nothing):
-                return first
-            for letters in case(Some[Block[str]]):
+        match rest:
+            case Some(letters):
                 return first + "".join(letters)
-
-            return case.default(first)
+            case _:
+                return first
 
     return first.and_then(rest).starmap(mapper).map(Expression.name)
 
@@ -250,22 +248,15 @@ def pexpr() -> Parser[Expression]:
 
 
 def test_parse_name_expr():
-    name = pipe(
+    result = pipe(
         "test",
         pexpr(),
     )
 
-    assert name.is_ok()
-    with match(name) as case:
-        if case(Nothing):
-            assert False
-        for expr in case(Ok[Expression, str]):
-            with match(expr) as case:
-                for name in case(Expression.NAME):
-                    assert name == "test"
-                    break
-                else:
-                    assert False
-                break
-        else:
+    assert result.is_ok()
+    match result:
+        case Ok(Expression(Expression.NAME, name)):
+            assert name == "test"
+
+        case _:
             assert False

@@ -80,6 +80,7 @@ You can install the latest `expression` from PyPI by running `pip` (or
     should be hidden within the SDK.
 - Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
+- Support PEP 634 and structural pattern matching.
 - Code must pass strict static type checking by
   [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
   Pylance is awesome, use it!

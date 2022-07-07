@@ -22,11 +22,7 @@ def test_pipe_fn(x: int):
 def test_pipe_fn_gn(x: int, y: int, z: int):
     gn: Callable[[int], int] = lambda g: g * y
     fn: Callable[[int], int] = lambda x: x + z
-    value = pipe(
-        x,
-        fn,
-        gn,
-    )
+    value = pipe(x, fn, gn)
 
     assert value == gn(fn(x))
 
