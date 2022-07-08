@@ -1,10 +1,11 @@
-from typing import Callable, List
+import functools
+from typing import Any, Callable, List, Tuple
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
-from expression import pipe
+from expression import Nothing, Option, Some, pipe
 from expression.collections import TypedArray, array
 
 Func = Callable[[int], int]
@@ -125,88 +126,33 @@ def test_array_head_fluent():
     assert x == 42
 
 
-# def test_array_head_match():
-#     xs: Block[int] = empty.cons(42)
-#     with match(xs) as case:
-#         for (head, *_) in case(Iterable[int]):
-#             assert head == 42
-#             return
-#         else:
-#             assert False
+def test_array_head_match_list():
+    xs: TypedArray[int] = array.singleton(42)
+    match xs:
+        case [head, *_]:
+            assert head == 42
+        case _:
+            assert False
 
 
-# def test_array_head_match_fluent():
-#     xs: Block[int] = empty.cons(42)
-
-#     for (head, *_) in [
-#         (head, *tail) for (head, *tail) in xs.match(Block) if head > 10
-#     ]:
-#         assert head == 42
-#         return
-#     else:
-#         assert False
+@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
+def test_array_item(xs: List[int], index: int):
+    ys = array.of_seq(xs)
+    while index and index >= len(xs):
+        index //= 2
+    assert xs[index] == ys[index]
 
 
-# @given(st.text(), st.text())  # type: ignore
-# def test_array_tail_head_fluent(a: str, b: str):
-#     xs = frozenlist.empty.cons(b).cons(a)
-#     assert a == xs.head()
+@given(st.lists(st.integers()))  # type: ignore
+def test_array_pipe_map(xs: List[int]):
+    def mapper(x: int):
+        return x + 1
 
+    ys = array.of_seq(xs)
+    zs = ys.pipe(array.map(mapper))
 
-# def test_array_tail_tail_null_fluent():
-#     xs = empty.cons("b").cons("a")
-#     assert xs.tail().tail().is_empty()
-
-
-# def test_array_list_fluent():
-#     xs = frozenlist.empty.cons(empty.cons(42))
-#     assert 42 == xs.head().head()
-
-
-# def test_array_empty():
-#     xs = frozenlist.empty
-#     assert len(xs) == 0
-#     assert not xs
-#     assert pipe(xs, frozenlist.is_empty)
-
-
-# def test_array_non_empty():
-#     xs = frozenlist.singleton(42)
-#     assert len(xs) == 1
-#     assert xs
-#     assert not pipe(xs, frozenlist.is_empty)
-
-
-# @given(st.lists(st.integers()))  # type: ignore
-# def test_array_length(xs: List[int]):
-#     ys = frozenlist.of_seq(xs)
-#     assert len(xs) == len(ys)
-
-
-# @given(st.one_of(st.integers(), st.text()))  # type: ignore
-# def test_array_cons_head(value: Any):
-#     x = pipe(frozenlist.empty.cons(value), frozenlist.head)
-#     assert x == value
-
-
-# @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
-# def test_array_item(xs: List[int], index: int):
-#     ys = frozenlist.of_seq(xs)
-#     while index and index >= len(xs):
-#         index //= 2
-#     assert xs[index] == ys[index]
-
-
-# @given(st.lists(st.integers()))  # type: ignore
-# def test_array_pipe_map(xs: List[int]):
-#     def mapper(x: int):
-#         return x + 1
-
-#     ys = frozenlist.of_seq(xs)
-#     zs = ys.pipe(frozenlist.map(mapper))
-
-#     assert isinstance(zs, Block)
-#     assert [y for y in zs] == [mapper(x) for x in xs]
+    assert isinstance(zs, TypedArray)
+    assert [y for y in zs] == [mapper(x) for x in xs]
 
 
 # @given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
@@ -250,64 +196,64 @@ def test_array_head_fluent():
 #     def mapper(i: int, x: int):
 #         return x + i
 
-#     ys = frozenlist.of_seq(xs)
-#     zs = ys.pipe(frozenlist.mapi(mapper))
+#     ys = array.of_seq(xs)
+#     zs = ys.pipe(array.mapi(mapper))
 
-#     assert isinstance(zs, Block)
+#     assert isinstance(zs, TypedArray)
 #     assert [z for z in zs] == [x + i for i, x in enumerate(xs)]
 
 
-# @given(st.lists(st.integers()))  # type: ignore
-# def test_array_len(xs: List[int]):
-#     ys = frozenlist.of_seq(xs)
-#     assert len(xs) == len(ys)
+@given(st.lists(st.integers()))  # type: ignore
+def test_array_len(xs: List[int]):
+    ys = array.of_seq(xs)
+    assert len(xs) == len(ys)
 
 
 # @given(st.lists(st.integers()), st.lists(st.integers()))  # type: ignore
 # def test_array_append(xs: List[int], ys: List[int]):
 #     expected = xs + ys
-#     fx = frozenlist.of_seq(xs)
-#     fy = frozenlist.of_seq(ys)
+#     fx = array.of_seq(xs)
+#     fy = array.of_seq(ys)
 #     fz = fx.append(fy)
 #     fh = fx + fy
 
 #     assert list(fz) == list(fh) == expected
 
 
-# @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-# def test_array_take(xs: List[int], x: int):
-#     ys: Block[int]
-#     try:
-#         ys = frozenlist.of_seq(xs).take(x)
-#         assert list(ys) == xs[:x]
-#     except ValueError:
-#         assert x > len(xs)
+@given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
+def test_array_take(xs: List[int], x: int):
+    ys: TypedArray[int]
+    try:
+        ys = array.of_seq(xs).take(x)
+        assert list(ys) == xs[:x]
+    except ValueError:
+        assert x > len(xs)
 
 
-# @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-# def test_array_take_last(xs: List[int], x: int):
-#     expected = xs[-x:]
-#     ys: Block[int]
-#     ys = frozenlist.of_seq(xs).take_last(x)
-#     assert list(ys) == expected
+@given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
+def test_array_take_last(xs: List[int], x: int):
+    expected = xs[-x:]
+    ys: TypedArray[int]
+    ys = array.of_seq(xs).take_last(x)
+    assert list(ys) == expected
 
 
-# @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-# def test_array_skip(xs: List[int], x: int):
-#     ys: Block[int]
-#     try:
-#         ys = frozenlist.of_seq(xs).skip(x)
-#         assert list(ys) == xs[x:]
-#     except ValueError:
-#         assert x > len(xs)
+@given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
+def test_array_skip(xs: List[int], x: int):
+    ys: TypedArray[int]
+    try:
+        ys = array.of_seq(xs).skip(x)
+        assert list(ys) == xs[x:]
+    except ValueError:
+        assert x > len(xs)
 
 
-# @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-# def test_array_skip_last(xs: List[int], x: int):
-#     expected = xs[:-x]
-#     ys: Block[int]
-#     ys = frozenlist.of_seq(xs).skip_last(x)
-#     assert list(ys) == expected
+@given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
+def test_array_skip_last(xs: List[int], x: int):
+    expected = xs[:-x]
+    ys: TypedArray[int]
+    ys = array.of_seq(xs).skip_last(x)
+    assert list(ys) == expected
 
 
 # @given(st.lists(st.integers()), st.integers(), st.integers())  # type: ignore
@@ -320,75 +266,75 @@ def test_array_head_fluent():
 #     assert list(zs) == expected
 
 
-# @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
-# def test_array_index(xs: List[int], x: int):
+@given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
+def test_array_index(xs: List[int], x: int):
 
-#     x = x % len(xs) if x > 0 else x
-#     expected = xs[x]
+    x = x % len(xs) if x > 0 else x
+    expected = xs[x]
 
-#     ys: Block[int] = frozenlist.of_seq(xs)
-#     y = ys[x]
+    ys: TypedArray[int] = array.of_seq(xs)
+    y = ys[x]
 
-#     item: Callable[[Block[int]], int] = frozenlist.item(x)
-#     h = ys.pipe(item)
+    item: Callable[[TypedArray[int]], int] = array.item(x)
+    h = ys.pipe(item)
 
-#     i = ys.item(x)
+    i = ys.item(x)
 
-#     assert y == h == i == expected
-
-
-# @given(st.lists(st.integers()))  # type: ignore
-# def test_array_indexed(xs: List[int]):
-
-#     expected = list(enumerate(xs))
-
-#     ys: Block[int] = frozenlist.of_seq(xs)
-#     zs = frozenlist.indexed(ys)
-
-#     assert list(zs) == expected
+    assert y == h == i == expected
 
 
-# @given(st.lists(st.integers()))  # type: ignore
-# def test_array_fold(xs: List[int]):
-#     def folder(x: int, y: int) -> int:
-#         return x + y
+@given(st.lists(st.integers()))  # type: ignore
+def test_array_indexed(xs: List[int]):
 
-#     expected: int = functools.reduce(folder, xs, 0)
+    expected = list(enumerate(xs))
 
-#     ys: Block[int] = frozenlist.of_seq(xs)
-#     result = pipe(ys, frozenlist.fold(folder, 0))
+    ys: TypedArray[int] = array.of_seq(xs)
+    zs = pipe(ys, array.indexed(0))
 
-#     assert result == expected
+    assert list(zs) == expected
 
 
-# @given(st.integers(max_value=100))  # type: ignore
-# def test_array_unfold(x: int):
-#     def unfolder(state: int) -> Option[Tuple[int, int]]:
-#         if state < x:
-#             return Some((state, state + 1))
-#         return Nothing
+@given(st.lists(st.integers()))  # type: ignore
+def test_array_fold(xs: List[int]):
+    def folder(x: int, y: int) -> int:
+        return x + y
 
-#     result = Block.unfold(unfolder, 0)
+    expected: int = functools.reduce(folder, xs, 0)
 
-#     assert list(result) == list(range(x))
+    ys: TypedArray[int] = array.of_seq(xs)
+    result = pipe(ys, array.fold(folder, 0))
+
+    assert result == expected
 
 
-# @given(st.lists(st.integers()), st.integers())  # type: ignore
-# def test_array_filter(xs: List[int], limit: int):
-#     expected = filter(lambda x: x < limit, xs)
+@given(st.integers(max_value=100))  # type: ignore
+def test_array_unfold(x: int):
+    def unfolder(state: int) -> Option[Tuple[int, int]]:
+        if state < x:
+            return Some((state, state + 1))
+        return Nothing
 
-#     ys: Block[int] = frozenlist.of_seq(xs)
-#     predicate: Callable[[int], bool] = lambda x: x < limit
-#     result = pipe(ys, frozenlist.filter(predicate))
+    result = TypedArray.unfold(unfolder, 0)
 
-#     assert list(result) == list(expected)
+    assert list(result) == list(range(x))
+
+
+@given(st.lists(st.integers()), st.integers())  # type: ignore
+def test_array_filter(xs: List[int], limit: int):
+    expected = filter(lambda x: x < limit, xs)
+
+    ys: TypedArray[int] = array.of_seq(xs)
+    predicate: Callable[[int], bool] = lambda x: x < limit
+    result = pipe(ys, array.filter(predicate))
+
+    assert list(result) == list(expected)
 
 
 # @given(st.lists(st.integers()))  # type: ignore
 # def test_array_sort(xs: List[int]):
 #     expected = sorted(xs)
-#     ys: Block[int] = frozenlist.of_seq(xs)
-#     result = pipe(ys, frozenlist.sort())
+#     ys: TypedArray[int] = array.of_seq(xs)
+#     result = pipe(ys, array.sort())
 
 #     assert list(result) == list(expected)
 
@@ -403,78 +349,78 @@ def test_array_head_fluent():
 #     assert list(result) == list(expected)
 
 
-# rtn: Callable[[int], Block[int]] = frozenlist.singleton
-# empty: Block[Any] = frozenlist.empty
+rtn: Callable[[int], TypedArray[int]] = array.singleton
+empty: TypedArray[Any] = array.empty()
 
 
-# @given(st.integers(), st.integers())  # type: ignore
-# def test_array_monad_bind(x: int, y: int):
-#     m = rtn(x)
-#     f: Callable[[int], Block[int]] = lambda x: rtn(x + y)
+@given(st.integers(), st.integers())  # type: ignore
+def test_array_monad_bind(x: int, y: int):
+    m = rtn(x)
+    f: Callable[[int], TypedArray[int]] = lambda x: rtn(x + y)
 
-#     assert m.collect(f) == rtn(x + y)
-
-
-# @given(st.integers())  # type: ignore
-# def test_array_monad_empty_bind(value: int):
-#     m = empty
-#     f: Callable[[int], Block[int]] = lambda x: rtn(x + value)
-
-#     assert m.collect(f) == m
+    assert m.collect(f) == rtn(x + y)
 
 
-# @given(st.integers())  # type: ignore
-# def test_array_monad_law_left_identity(value: int):
-#     """Monad law left identity.
+@given(st.integers())  # type: ignore
+def test_array_monad_empty_bind(value: int):
+    m = empty
+    f: Callable[[int], TypedArray[int]] = lambda x: rtn(x + value)
 
-#     return x >>= f is the same thing as f x
-#     """
-
-#     f: Callable[[int], Block[int]] = lambda x: rtn(x + 42)
-
-#     assert rtn(value).collect(f) == f(value)
+    assert m.collect(f) == m
 
 
-# @given(st.integers())  # type: ignore
-# def test_array_monad_law_right_identity(value: int):
-#     r"""Monad law right identity.
+@given(st.integers())  # type: ignore
+def test_array_monad_law_left_identity(value: int):
+    """Monad law left identity.
 
-#     m >>= return is no different than just m.
-#     """
-#     m = rtn(value)
+    return x >>= f is the same thing as f x
+    """
 
-#     assert m.collect(rtn) == m
+    f: Callable[[int], TypedArray[int]] = lambda x: rtn(x + 42)
 
-
-# @given(st.integers())  # type: ignore
-# def test_array_monad_law_associativity(value: int):
-#     r"""Monad law associativity.
-
-#     (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
-#     """
-#     f: Callable[[int], Block[int]] = lambda x: rtn(x + 10)
-#     g: Callable[[int], Block[int]] = lambda y: rtn(y * 42)
-
-#     m = rtn(value)
-#     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
+    assert rtn(value).collect(f) == f(value)
 
 
-# @given(st.integers())  # type: ignore
-# def test_array_monad_law_associativity_empty(value: int):
-#     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
-#     f: Callable[[int], Block[int]] = lambda x: rtn(x + 1000)
-#     g: Callable[[int], Block[int]] = lambda y: rtn(y * 42)
+@given(st.integers())  # type: ignore
+def test_array_monad_law_right_identity(value: int):
+    r"""Monad law right identity.
 
-#     # Empty list
-#     m = empty
-#     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
+    m >>= return is no different than just m.
+    """
+    m = rtn(value)
+
+    assert m.collect(rtn) == m
 
 
-# @given(st.lists(st.integers()))  # type: ignore
-# def test_array_monad_law_associativity_iterable(xs: List[int]):
-#     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
-#     f: Callable[[int], Block[int]] = lambda x: rtn(x + 10)
-#     g: Callable[[int], Block[int]] = lambda y: rtn(y * 42)
+@given(st.integers())  # type: ignore
+def test_array_monad_law_associativity(value: int):
+    r"""Monad law associativity.
 
-#     m = frozenlist.of_seq(xs)
-#     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
+    (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
+    """
+    f: Callable[[int], TypedArray[int]] = lambda x: rtn(x + 10)
+    g: Callable[[int], TypedArray[int]] = lambda y: rtn(y * 42)
+
+    m = rtn(value)
+    assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
+
+
+@given(st.integers())  # type: ignore
+def test_array_monad_law_associativity_empty(value: int):
+    # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
+    f: Callable[[int], TypedArray[int]] = lambda x: rtn(x + 1000)
+    g: Callable[[int], TypedArray[int]] = lambda y: rtn(y * 42)
+
+    # Empty list
+    m = empty
+    assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
+
+
+@given(st.lists(st.integers()))  # type: ignore
+def test_array_monad_law_associativity_iterable(xs: List[int]):
+    # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
+    f: Callable[[int], TypedArray[int]] = lambda x: rtn(x + 10)
+    g: Callable[[int], TypedArray[int]] = lambda y: rtn(y * 42)
+
+    m = array.of_seq(xs)
+    assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))

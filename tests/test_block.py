@@ -1,9 +1,7 @@
 import functools
-import sys
 from builtins import list as list
 from typing import Any, Callable, Dict, List, Tuple, Type
 
-import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel
@@ -35,12 +33,33 @@ def test_block_head_fluent():
     assert x == 42
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="Uses match statements")  # type: ignore
 def test_block_head_match() -> None:
     xs: Block[int] = empty.cons(42)
 
     match xs:
         case Block([head, *_]):
+            assert head == 42
+            return
+        case _:
+            assert False
+
+
+def test_block_head_match_iterable() -> None:
+    xs: Block[int] = empty.cons(42)
+
+    match list(xs):
+        case (head, *_):
+            assert head == 42
+            return
+        case _:
+            assert False
+
+
+def test_block_head_match_list() -> None:
+    xs: Block[int] = empty.cons(42)
+
+    match list(xs):
+        case (head, *_):
             assert head == 42
             return
         case _:
@@ -403,7 +422,6 @@ class Model(BaseModel):
 def test_parse_block_works():
     obj = dict(one=[1, 2, 3], two=[])
     model = Model.parse_obj(obj)
-
     assert isinstance(model.one, Block)
     assert model.one == Block([1, 2, 3])
     assert model.two == Block.empty()

@@ -22,6 +22,7 @@ from __future__ import annotations
 import builtins
 import functools
 import itertools
+from collections.abc import Collection
 from typing import (
     Any,
     Callable,
@@ -87,7 +88,7 @@ def _validate(value: Any, field: ModelField) -> Block[Any]:
 
 
 class Block(
-    Iterable[_TSource],
+    Collection[_TSource],  # Sequence breaks pydantic
     PipeMixin,
     SupportsValidation["Block[_TSource]"],
 ):
@@ -552,6 +553,12 @@ class Block(
 
     def __add__(self, other: Block[_TSource]) -> Block[_TSource]:
         return Block(self.value + other.value)
+
+    def __contains__(self, value: Any) -> bool:
+        for v in self:
+            if v is value or v == value:
+                return True
+        return False
 
     @overload
     def __getitem__(self, key: slice) -> Block[_TSource]:
