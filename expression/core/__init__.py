@@ -15,7 +15,7 @@ from .choice import (
     Choice3of3,
 )
 from .compose import compose
-from .curry import curry, curry_flipped
+from .curry import curry, curry_flip
 from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
@@ -49,7 +49,7 @@ __all__ = [
     "Choice3of3",
     "compose",
     "curry",
-    "curry_flipped",
+    "curry_flip",
     "default_arg",
     "downcast",
     "EffectError",

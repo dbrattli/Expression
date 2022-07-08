@@ -44,7 +44,7 @@ from expression.core import (
     Some,
     SupportsLessThan,
     SupportsSum,
-    curry_flipped,
+    curry_flip,
     pipe,
 )
 from expression.core.typing import GenericValidator, ModelField, SupportsValidation
@@ -602,7 +602,7 @@ def choose(
     return _choose
 
 
-@curry_flipped(1)
+@curry_flip(1)
 def collect(
     source: Block[_TSource], mapping: Callable[[_TSource], Block[_TResult]]
 ) -> Block[_TResult]:
@@ -639,7 +639,7 @@ empty: Block[Any] = nil
 """The empty list."""
 
 
-@curry_flipped(1)
+@curry_flip(1)
 def filter(
     source: Block[_TSource], predicate: Callable[[_TSource], bool]
 ) -> Block[_TSource]:
@@ -769,7 +769,7 @@ def map(
     return _map
 
 
-@curry_flipped(1)
+@curry_flip(1)
 def reduce(
     source: Block[_TSource],
     reduction: Callable[[_TSource, _TSource], _TSource],
@@ -892,7 +892,7 @@ def of_option(option: Option[_TSource]) -> Block[_TSource]:
     return empty
 
 
-@curry_flipped(1)
+@curry_flip(1)
 def partition(
     source: Block[_TSource], predicate: Callable[[_TSource], bool]
 ) -> Tuple[Block[_TSource], Block[_TSource]]:
