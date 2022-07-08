@@ -24,7 +24,6 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_origin,
 )
 
 from expression.core import (
@@ -34,6 +33,7 @@ from expression.core import (
     Some,
     SupportsLessThan,
     SupportsSum,
+    curry_flip,
     pipe,
 )
 
@@ -45,9 +45,6 @@ _TState = TypeVar("_TState")
 _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
 
 _TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
-_T1 = TypeVar("_T1")
-_T2 = TypeVar("_T2")
-
 _Array = Union[List[_TSource], MutableSequence[_TSource]]
 
 
@@ -190,7 +187,10 @@ def array_from_initializer(
 
 
 class TypedArray(MutableSequence[_TSource], PipeMixin):
-    __match_args__ = ("typecode",)
+    __match_args__ = (
+        "initializer",
+        "typecode",
+    )
 
     def __init__(
         self,
@@ -465,19 +465,6 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
 
         return pipe(state, unfold(generator))
 
-    def __match__(self, pattern: Any) -> Iterable[List[_TSource]]:
-        if self == pattern:
-            return [[val for val in self]]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [[val for val in self]]
-        except TypeError:
-            pass
-
-        return []
-
     def __eq__(self, o: Any) -> bool:
         print("eq:", [self.value, o])
         if len(self) != len(o):
@@ -593,9 +580,22 @@ def fold(
     return _fold
 
 
+@curry_flip(1)
+def indexed(
+    source: TypedArray[_TSource],
+    start: int = 0,
+) -> TypedArray[Tuple[int, _TSource]]:
+    return source.indexed()
+
+
 def is_empty(source: TypedArray[Any]) -> bool:
     """Returns `True` if the list is empty, `False` otherwise."""
     return source.is_empty()
+
+
+@curry_flip(1)
+def item(source: TypedArray[_TSource], index: int) -> _TSource:
+    return source.item(index)
 
 
 def of(*args: _TSource) -> TypedArray[_TSource]:
@@ -706,7 +706,9 @@ __all__ = [
     "empty",
     "filter",
     "fold",
+    "indexed",
     "is_empty",
+    "item",
     "map",
     "of_option",
     "of_seq",
