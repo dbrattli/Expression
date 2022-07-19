@@ -364,7 +364,7 @@ assert ys == zs
 
 ## Tagged Unions
 
-Tagged Unions (aka discriminated unions) may looks similar to normal Python Unions. But
+Tagged Unions (aka discriminated unions) may look similar to normal Python Unions. But
 they are [different](https://stackoverflow.com/a/61646841) in that the operands in a
 type union `(A | B)` are both types, while the cases in a tagged union type `U = A | B`
 are both constructors for the type U and are not types themselves. One consequence is
