@@ -438,10 +438,6 @@ such as `option.map` and the name `Option` for the type itself.
 <module 'expression.core.option' from '/Users/dbrattli/Developer/Github/Expression/expression/core/option.py'>
 ```
 
-F# pattern matching is awesome and the alternative we present here
-cannot be compared. But it helps us match and decompose without having
-to type-cast every time.
-
 ## Common Gotchas and Pitfalls
 
 A list of common problems and how you may solve it:
