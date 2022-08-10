@@ -505,7 +505,7 @@ def of_obj(value: Any) -> Option[Any]:
     return of_optional(value)
 
 
-def dict(value: Option[_TSource]) -> Union[_TSource, Dict[Any, Any]]:
+def dict(value: Option[_TSource]) -> Union[_TSource, Dict[Any, Any], None]:
     return value.dict()
 
 
