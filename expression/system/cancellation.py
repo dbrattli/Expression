@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from threading import RLock
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, List, Optional
 
 from .disposable import Disposable
 from .error import ObjectDisposedException
@@ -73,15 +73,17 @@ class CancellationTokenSource(Disposable):
     def dispose(self) -> None:
         """Performs the task of cleaning up resources."""
 
-        dispose = False
+        listeners: List[Callable[[], None]] = []
         with self._lock:
             if not self._is_disposed:
-                dispose = True
+                self._is_disposed = True
+                listeners.extend(self._listeners.values())
 
-        if dispose:
-            self._is_disposed = True
-            for listener in self._listeners.values():
+        for listener in listeners:
+            try:
                 listener()
+            except Exception:
+                pass
 
     def register_internal(self, callback: Callable[[], None]) -> Disposable:
         if self._is_disposed:

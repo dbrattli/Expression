@@ -20,24 +20,23 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">= 3.9, < 3.11"
+python = ">= 3.9, < 4"
 typing-extensions = "^4.1.1"
 
 [tool.poetry.dev-dependencies]
-pytest-asyncio = "^0.18.1"
-pytest = "^7.0.1"
-coverage = "^6.3.2"
+pytest-asyncio = "^0.19.0"
+pytest = "^7.1.2"
+coverage = "^6.4.3"
 pytest-xdist = "^2.5.0"
 black = "^22.3.0"
 isort = "^5.10.1"
-pyright = "^0.0.13"
-flake8 = "^4.0.1"
+flake8 = "^5.0.4"
 coveralls = "^3.3.1"
-pre-commit = "^2.17.0"
+pre-commit = "^2.20.0"
 autoflake = "^1.4"
-dunamai = "^1.9.0"
-hypothesis = "^6.39.3"
-jupyter-book = "^0.12.2"
+dunamai = "^1.12.0"
+hypothesis = "^6.54.2"
+jupyter-book = "^0.12.0"
 sphinx-autodoc-typehints = "^1.17.0"
 pytest-benchmark = "^3.4.1"
 pydantic = "^1.9.0"
