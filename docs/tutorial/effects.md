@@ -160,7 +160,7 @@ def divide(a: float, divisor: float) -> Option[float]:
         return Nothing
 
 
-@effect.option()
+@effect.option[float]()
 def comp(x: float):
     result: float = yield from divide(42, x)
     result += 32
