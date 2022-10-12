@@ -110,6 +110,21 @@ def test_option_some_default_value():
     assert zs == 42
 
 
+def test_option_none_default_with():
+    xs = Nothing
+
+    zs = xs.default_with(lambda: 42)
+
+    assert zs == 42
+
+
+def test_option_some_default_with():
+    xs: Option[int] = Some(42)
+    zs = xs.default_with(lambda: 0)
+
+    assert zs == 42
+
+
 def test_option_none_default_arg():
     xs = Nothing
     zs = option.default_arg(xs, 42)
