@@ -258,9 +258,9 @@ def keep_positive(a: int) -> Option[int]:
 ```python
 from expression import Option, Ok
 def exists(x : Option[int]) -> bool:
-    for value in x.match(Ok):
-        return True
-
+    match x:
+        case Some(_):
+            return True
     return False
 ```
 
@@ -408,14 +408,10 @@ Now you may pattern match the shape to get back the actual value:
 
     shape = Shape.Rectangle(2.3, 3.3)
 
-    with match(shape) as case:
-        if case(Circle):
-            assert False
-
-        for rect in case(Shape.RECTANGLE(width=2.3)):
-            assert rect.length == 3.3
-
-        if case.default():
+    match shape:
+        case Shape(value=Rectangle(width=2.3)):
+            assert shape.value.width == 2.3
+        case _:
             assert False
 ```
 
