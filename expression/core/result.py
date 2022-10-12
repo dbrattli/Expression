@@ -80,6 +80,24 @@ class Result(
     __validators__: List[GenericValidator[Result[_TSource, _TError]]] = [_validate]
 
     @abstractmethod
+    def default_value(self, value: _TSource) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
         raise NotImplementedError
 
@@ -130,11 +148,31 @@ class Result(
     ) -> Iterator[GenericValidator[Result[_TSource, _TError]]]:
         yield from cls.__validators__
 
+    @abstractmethod
+    def __hash__(self) -> int:
+        raise NotImplementedError
+
 
 class Ok(Result[_TSource, _TError]):
     """The Ok result case class."""
 
     __match_args__ = ("value",)
+
+    def default_value(self, value: _TSource) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        return self._value
+
+    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return self._value
 
     def __init__(self, value: _TSource) -> None:
         self._value = value
@@ -203,6 +241,9 @@ class Ok(Result[_TSource, _TError]):
     def __str__(self):
         return f"Ok {self._value}"
 
+    def __hash__(self) -> int:
+        return hash(self._value)
+
 
 class ResultException(EffectError):
     """Makes the Error case a valid exception for effect handling. Do
@@ -223,6 +264,22 @@ class Error(
     def __init__(self, error: _TError) -> None:
         super().__init__(str(error))
         self._error = error
+
+    def default_value(self, value: _TSource) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        return value
+
+    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return getter(self._error)
 
     @property
     def error(self) -> _TError:
@@ -279,6 +336,35 @@ class Error(
     def __str__(self):
         return f"Error {self._error}"
 
+    def __hash__(self) -> int:
+        return hash(self._error)
+
+
+def default_value(value: _TSource) -> Callable[[Result[_TSource, Any]], _TSource]:
+    """Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    """
+
+    def _default_value(result: Result[_TSource, Any]) -> _TSource:
+        return result.default_value(value)
+
+    return _default_value
+
+
+def default_with(
+    getter: Callable[[_TError], _TSource]
+) -> Callable[[Result[_TSource, _TError]], _TSource]:
+    """Get with default value lazily.
+
+    Gets the value of the option if the option is Some, otherwise
+    returns the value produced by the getter
+    """
+
+    def _default_with(result: Result[_TSource, _TError]) -> _TSource:
+        return result.default_with(getter)
+
+    return _default_with
+
 
 def map(
     mapper: Callable[[_TSource], _TResult]
@@ -306,6 +392,8 @@ __all__ = [
     "Result",
     "Ok",
     "Error",
+    "default_value",
+    "default_with",
     "map",
     "bind",
     "dict",

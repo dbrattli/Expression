@@ -407,3 +407,33 @@ def test_error_from_dict_works():
     assert result
     assert isinstance(result, Error)
     assert result.error == MyError(message="got error")
+
+
+def test_error_default_value():
+    xs: Result[int, int] = Error(0)
+
+    zs = xs.default_value(42)
+
+    assert zs == 42
+
+
+def test_ok_default_value():
+    xs: Result[int, int] = Ok(42)
+    zs = xs.default_value(0)
+
+    assert zs == 42
+
+
+def test_error_default_with():
+    xs: Result[int, int] = Error(0)
+
+    zs = xs.default_with(lambda x: x + 42)
+
+    assert zs == 42
+
+
+def test_ok_default_with():
+    xs: Result[int, int] = Ok(42)
+    zs = xs.default_with(lambda x: 0)
+
+    assert zs == 42

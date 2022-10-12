@@ -65,11 +65,21 @@ class Option(
 
     __validators__: List[GenericValidator[Option[_TSource]]] = [_validate]
 
+    @abstractmethod
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
 
         Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
         """
         raise NotImplementedError
 
@@ -174,6 +184,10 @@ class Option(
     def __get_validators__(cls) -> Iterator[GenericValidator[Option[_TSource]]]:
         yield from cls.__validators__
 
+    @abstractmethod
+    def __hash__(self) -> int:
+        raise NotImplementedError
+
 
 class Some(Option[_TSource]):
     """The Some option case class."""
@@ -186,6 +200,14 @@ class Some(Option[_TSource]):
     def default_value(self, value: _TSource) -> _TSource:
         """Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
+        """
+        return self._value
+
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
         """
         return self._value
 
@@ -278,6 +300,9 @@ class Some(Option[_TSource]):
     def __str__(self) -> str:
         return f"Some {self._value}"
 
+    def __hash__(self) -> int:
+        return hash(self._value)
+
 
 class Nothing_(Option[_TSource], EffectError):
     """The None option case class.
@@ -293,6 +318,14 @@ class Nothing_(Option[_TSource], EffectError):
         returns the specified default value.
         """
         return value
+
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return getter()
 
     def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns `False`."""
@@ -380,6 +413,9 @@ class Nothing_(Option[_TSource], EffectError):
     def __str__(self):
         return "Nothing"
 
+    def __hash__(self) -> int:
+        return 0
+
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
 # avoid conflicts with the builtin `None` value in Python.
@@ -426,6 +462,21 @@ def default_value(value: _TSource) -> Callable[[Option[_TSource]], _TSource]:
         return option.default_value(value)
 
     return _default_value
+
+
+def default_with(
+    getter: Callable[[], _TSource]
+) -> Callable[[Option[_TSource]], _TSource]:
+    """Get with default value lazily.
+
+    Gets the value of the option if the option is Some, otherwise
+    returns the value produced by the getter
+    """
+
+    def _default_with(option: Option[_TSource]) -> _TSource:
+        return option.default_with(getter)
+
+    return _default_with
 
 
 def is_none(option: Option[_TSource]) -> TypeGuard[Nothing_[_TSource]]:
@@ -527,6 +578,7 @@ __all__ = [
     "bind",
     "default_arg",
     "default_value",
+    "default_with",
     "map",
     "map2",
     "is_none",

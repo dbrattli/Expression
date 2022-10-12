@@ -1,8 +1,8 @@
 """Choice type.
 
 A union type similar to the `Result` type. But also allows for higher
-number of choices. Usually you would most likekly want to use the
-`Result` type instead, but choice can be preferered in non-error cases.
+number of choices. Usually you would most likely want to use the
+`Result` type instead, but choice can be preferred in non-error cases.
 """
 from abc import ABC
 from typing import Any, Generic, TypeVar
@@ -19,6 +19,9 @@ class Choice(ABC, Generic[_TSource]):
 
     def __repr__(self) -> str:
         return str(self)
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class Choice2(Generic[_A, _B]):
