@@ -578,6 +578,7 @@ __all__ = [
     "bind",
     "default_arg",
     "default_value",
+    "default_with",
     "map",
     "map2",
     "is_none",
