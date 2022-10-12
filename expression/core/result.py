@@ -130,6 +130,10 @@ class Result(
     ) -> Iterator[GenericValidator[Result[_TSource, _TError]]]:
         yield from cls.__validators__
 
+    @abstractmethod
+    def __hash__(self) -> int:
+        raise NotImplementedError
+
 
 class Ok(Result[_TSource, _TError]):
     """The Ok result case class."""
@@ -202,6 +206,9 @@ class Ok(Result[_TSource, _TError]):
 
     def __str__(self):
         return f"Ok {self._value}"
+
+    def __hash__(self) -> int:
+        return hash(self._value)
 
 
 class ResultException(EffectError):
@@ -278,6 +285,9 @@ class Error(
 
     def __str__(self):
         return f"Error {self._error}"
+
+    def __hash__(self) -> int:
+        return hash(self._error)
 
 
 def map(

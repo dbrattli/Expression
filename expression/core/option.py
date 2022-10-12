@@ -174,6 +174,10 @@ class Option(
     def __get_validators__(cls) -> Iterator[GenericValidator[Option[_TSource]]]:
         yield from cls.__validators__
 
+    @abstractmethod
+    def __hash__(self) -> int:
+        raise NotImplementedError
+
 
 class Some(Option[_TSource]):
     """The Some option case class."""
@@ -278,6 +282,9 @@ class Some(Option[_TSource]):
     def __str__(self) -> str:
         return f"Some {self._value}"
 
+    def __hash__(self) -> int:
+        return hash(self._value)
+
 
 class Nothing_(Option[_TSource], EffectError):
     """The None option case class.
@@ -379,6 +386,9 @@ class Nothing_(Option[_TSource], EffectError):
 
     def __str__(self):
         return "Nothing"
+
+    def __hash__(self) -> int:
+        return 0
 
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
