@@ -65,11 +65,21 @@ class Option(
 
     __validators__: List[GenericValidator[Option[_TSource]]] = [_validate]
 
+    @abstractmethod
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
 
         Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
         """
         raise NotImplementedError
 
@@ -193,6 +203,14 @@ class Some(Option[_TSource]):
         """
         return self._value
 
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return self._value
+
     def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns `True`."""
         return True
@@ -300,6 +318,14 @@ class Nothing_(Option[_TSource], EffectError):
         returns the specified default value.
         """
         return value
+
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return getter()
 
     def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns `False`."""
@@ -436,6 +462,21 @@ def default_value(value: _TSource) -> Callable[[Option[_TSource]], _TSource]:
         return option.default_value(value)
 
     return _default_value
+
+
+def default_with(
+    getter: Callable[[], _TSource]
+) -> Callable[[Option[_TSource]], _TSource]:
+    """Get with default value lazily.
+
+    Gets the value of the option if the option is Some, otherwise
+    returns the value produced by the getter
+    """
+
+    def _default_with(option: Option[_TSource]) -> _TSource:
+        return option.default_with(getter)
+
+    return _default_with
 
 
 def is_none(option: Option[_TSource]) -> TypeGuard[Nothing_[_TSource]]:
