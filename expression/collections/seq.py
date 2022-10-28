@@ -929,6 +929,8 @@ def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
             for i, n in enumerate(source):
                 if i < count:
                     yield n
+                else:
+                    break
 
         return SeqGen(gen)
 
