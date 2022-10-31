@@ -241,6 +241,13 @@ def test_seq_take(xs: List[int], x: int):
         assert x > len(xs)
 
 
+def test_seq_take_is_lazy():
+    xs = seq.infinite
+
+    ys = pipe(xs, seq.take(5))
+    assert list(ys) == [0, 1, 2, 3, 4]
+
+
 @given(st.lists(st.integers()))  # type: ignore
 def test_seq_length(xs: List[int]):
     ys = seq.of_iterable(xs)

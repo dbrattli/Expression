@@ -927,10 +927,14 @@ def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
     def _take(source: Iterable[_TSource]) -> Iterable[_TSource]:
         def gen():
             for i, n in enumerate(source):
-                if i < count:
-                    yield n
+                yield n
 
-        return SeqGen(gen)
+                if i == count - 1:
+                    break
+
+        if count > 0:
+            return SeqGen(gen)
+        return Seq()
 
     return _take
 
