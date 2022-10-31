@@ -932,7 +932,9 @@ def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
                 if i == count - 1:
                     break
 
-        return SeqGen(gen)
+        if count > 0:
+            return SeqGen(gen)
+        return Seq()
 
     return _take
 
