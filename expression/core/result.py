@@ -366,23 +366,17 @@ def default_with(
     return _default_with
 
 
+@curry_flip(1)
 def map(
-    mapper: Callable[[_TSource], _TResult]
-) -> Callable[[Result[_TSource, _TError]], Result[_TResult, _TError]]:
-    def _map(result: Result[_TSource, _TError]) -> Result[_TResult, _TError]:
-        return result.map(mapper)
-
-    return _map
+    result: Result[_TSource, _TError], mapper: Callable[[_TSource], _TResult]
+) -> Result[_TResult, _TError]:
+    return result.map(mapper)
 
 
 def bind(
-    mapper: Callable[[_TSource], Result[_TResult, Any]]
-) -> Callable[[Result[_TSource, _TError]], Result[_TResult, _TError]]:
-    def _bind(result: Result[_TSource, _TError]) -> Result[_TResult, _TError]:
-        return result.bind(mapper)
-
-    return _bind
-
+    result: Result[_TSource, _TError], mapper: Callable[[_TSource], Result[_TResult, Any]]
+) -> Result[_TResult, _TError]:
+    return result.bind(mapper)
 
 def dict(source: Result[_TSource, _TError]) -> Dict[str, Union[_TSource, _TError]]:
     return source.dict()

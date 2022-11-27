@@ -26,6 +26,7 @@ from typing import (
 from .curry import curry_flipped
 from typing_extensions import TypeGuard
 
+from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation
@@ -429,11 +430,9 @@ Since Nothing is a singleton it can be tested e.g using `is`:
     ...     return True
 """
 
-
-@curry_flipped(1)
+@curry_flip(1)
 def bind(
-    option: Option[_TSource],
-    mapper: Callable[[_TSource], Option[_TResult]],
+    option: Option[_TSource],mapper: Callable[[_TSource], Option[_TResult]]
 ) -> Option[_TResult]:
     """Bind option.
 
@@ -453,15 +452,14 @@ def bind(
     return option.bind(mapper)
 
 
-def default_value(value: _TSource) -> Callable[[Option[_TSource]], _TSource]:
+@curry_flip(1)
+def default_value(option: Option[_TSource], value: _TSource) -> _TSource:
     """Gets the value of the option if the option is Some, otherwise
     returns the specified default value.
     """
 
-    def _default_value(option: Option[_TSource]) -> _TSource:
-        return option.default_value(value)
+    return option.default_value(value)
 
-    return _default_value
 
 
 def default_with(
@@ -493,7 +491,6 @@ def map(
 ) -> Option[_TResult]:
     return option.map(mapper)
 
-
 def map2(
     mapper: Callable[[_T1, _T2], _TResult]
 ) -> Callable[[Option[_T1], Option[_T2]], Option[_TResult]]:
@@ -504,14 +501,10 @@ def map2(
 
 
 def or_else(
-    if_none: Option[_TSource],
-) -> Callable[[Option[_TSource]], Option[_TSource]]:
+    option: Option[_TSource], if_none: Option[_TSource],
+) -> Option[_TSource]:
     """Returns option if it is Some, otherwise returns `if_none`."""
-
-    def _or_else(option: Option[_TSource]) -> Option[_TSource]:
-        return option.or_else(if_none)
-
-    return _or_else
+    return option.or_else(if_none)
 
 
 def to_list(option: Option[_TSource]) -> List[_TSource]:

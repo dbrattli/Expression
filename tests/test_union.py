@@ -129,9 +129,8 @@ def test_union_maybe_match():
     match maybe:
         case Maybe(Maybe.NOTHING):
             assert False
-        case Maybe(value=value):
+        case Maybe(Maybe.JUST, value=value):
             assert value == 10
-
         case _:
             assert False
 
