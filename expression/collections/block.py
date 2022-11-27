@@ -311,14 +311,12 @@ class Block(
         """
         return Block(starmap(mapping)(self))
 
-    def sum(
-        self: Block[Union[_TSourceSum, Literal[0]]]
-    ) -> Union[_TSourceSum, Literal[0]]:
+    def sum(self: Block[_TSourceSum | Literal[0]]) -> _TSourceSum | Literal[0]:
         return builtins.sum(self._value)
 
     def sum_by(
         self, projection: Callable[[_TSource], _TSourceSum]
-    ) -> Union[_TSourceSum, Literal[0]]:
+    ) -> _TSourceSum | Literal[0]:
         return pipe(self, sum_by(projection))
 
     def mapi(self, mapping: Callable[[int, _TSource], _TResult]) -> Block[_TResult]:
@@ -600,13 +598,11 @@ def append(
     return _append
 
 
-@curry_flipped(1)
+@curry_flip(1)
 def choose(
-    chooser: Callable[[_TSource], Option[_TResult]]
-) -> Callable[[Block[_TSource]], Block[_TResult]]:
-    def _choose(source: Block[_TSource]) -> Block[_TResult]:
-        return source.choose(chooser)
-
+    source: Block[_TSource], chooser: Callable[[_TSource], Option[_TResult]]
+) -> Block[_TResult]:
+    return source.choose(chooser)
 
 
 @curry_flip(1)

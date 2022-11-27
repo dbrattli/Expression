@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-from .curry import curry_flipped
 from typing_extensions import TypeGuard
 
 from .curry import curry_flip
@@ -381,7 +380,7 @@ class Nothing_(Option[_TSource], EffectError):
 
         return Seq()
 
-    def dict(self) -> Union[_TSource, Dict[Any, Any]]:
+    def dict(self) -> _TSource | Dict[Any, Any]:
         return {}  # Pydantic cannot handle None or other types than Optional
 
     @property
@@ -430,9 +429,10 @@ Since Nothing is a singleton it can be tested e.g using `is`:
     ...     return True
 """
 
+
 @curry_flip(1)
 def bind(
-    option: Option[_TSource],mapper: Callable[[_TSource], Option[_TResult]]
+    option: Option[_TSource], mapper: Callable[[_TSource], Option[_TResult]]
 ) -> Option[_TResult]:
     """Bind option.
 
@@ -461,7 +461,6 @@ def default_value(option: Option[_TSource], value: _TSource) -> _TSource:
     return option.default_value(value)
 
 
-
 def default_with(
     getter: Callable[[], _TSource]
 ) -> Callable[[Option[_TSource]], _TSource]:
@@ -485,23 +484,23 @@ def is_some(option: Option[_TSource]) -> TypeGuard[Some[_TSource]]:
     return option.is_some()
 
 
-@curry_flipped(1)
+@curry_flip(1)
 def map(
     option: Option[_TSource], mapper: Callable[[_TSource], _TResult]
 ) -> Option[_TResult]:
     return option.map(mapper)
 
-def map2(
-    mapper: Callable[[_T1, _T2], _TResult]
-) -> Callable[[Option[_T1], Option[_T2]], Option[_TResult]]:
-    def _map2(opt1: Option[_T1], opt2: Option[_T2]) -> Option[_TResult]:
-        return opt1.map2(mapper, opt2)
 
-    return _map2
+@curry_flip(2)
+def map2(
+    opt1: Option[_T1], opt2: Option[_T2], mapper: Callable[[_T1, _T2], _TResult]
+) -> Option[_TResult]:
+    return opt1.map2(mapper, opt2)
 
 
 def or_else(
-    option: Option[_TSource], if_none: Option[_TSource],
+    option: Option[_TSource],
+    if_none: Option[_TSource],
 ) -> Option[_TSource]:
     """Returns option if it is Some, otherwise returns `if_none`."""
     return option.or_else(if_none)

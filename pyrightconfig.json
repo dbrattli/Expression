@@ -6,5 +6,6 @@
   "reportImportCycles": false,
   "reportMissingImports": false,
   "pythonVersion": "3.10",
-  "typeCheckingMode": "strict"
+  "typeCheckingMode": "strict",
+  "reportShadowedImports": "none"
 }

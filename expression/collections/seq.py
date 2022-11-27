@@ -44,7 +44,7 @@ from expression.core import (
     SupportsGreaterThan,
     SupportsLessThan,
     SupportsSum,
-    curry_flipped,
+    curry_flip,
     identity,
     pipe,
 )
@@ -426,7 +426,7 @@ def choose(
     return _choose
 
 
-@curry_flipped(1)
+@curry_flip(1)
 def collect(
     source: Iterable[_TSource],
     mapping: Callable[[_TSource], Iterable[_TResult]],
@@ -476,7 +476,7 @@ empty: Seq[Any] = Seq()
 """The empty sequence."""
 
 
-@curry_flipped(1)
+@curry_flip(1)
 def filter(
     source: Iterable[_TSource], predicate: Callable[[_TSource], bool]
 ) -> Iterable[_TSource]:

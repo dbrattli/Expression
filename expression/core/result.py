@@ -28,17 +28,15 @@ from typing import (
 
 from typing_extensions import TypeGuard
 
+from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation
 
 _TSource = TypeVar("_TSource")
+_TOther = TypeVar("_TOther")
 _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
-
-# Used for generic methods
-_TSourceM = TypeVar("_TSourceM")
-_TErrorM = TypeVar("_TErrorM")
 
 
 def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
@@ -99,6 +97,14 @@ class Result(
 
     @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def map2(
+        self,
+        other: Ok[_TOther, _TError] | Error[_TOther, _TError],
+        mapper: Callable[[_TSource, _TOther], _TResult],
+    ) -> Result[_TResult, _TError]:
         raise NotImplementedError
 
     @abstractmethod
@@ -183,6 +189,18 @@ class Ok(Result[_TSource, _TError]):
 
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
         return Ok(mapper(self._value))
+
+    def map2(
+        self,
+        other: Ok[_TOther, _TError] | Error[_TOther, _TError],
+        mapper: Callable[[_TSource, _TOther], _TResult],
+    ) -> Result[_TResult, _TError]:
+        # assert isinstance(other, (Ok, Error))
+        match other:
+            case Ok(value):
+                return Ok(mapper(self._value, value))
+            case Error(error):
+                return Error(error)
 
     def bind(
         self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
@@ -288,6 +306,13 @@ class Error(
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
         return Error(self._error)
 
+    def map2(
+        self,
+        other: Result[_TOther, _TError],
+        mapper: Callable[[_TSource, _TOther], _TResult],
+    ) -> Result[_TResult, _TError]:
+        return Error(self._error)
+
     def bind(
         self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
     ) -> Result[_TResult, _TError]:
@@ -373,10 +398,22 @@ def map(
     return result.map(mapper)
 
 
+@curry_flip(2)
+def map2(
+    x: Ok[_TSource, _TError] | Error[_TSource, _TError],
+    y: Ok[_TOther, _TError] | Error[_TOther, _TError],
+    mapper: Callable[[_TSource, _TOther], _TResult],
+) -> Result[_TResult, _TError]:
+    return x.map2(y, mapper)
+
+
+@curry_flip(1)
 def bind(
-    result: Result[_TSource, _TError], mapper: Callable[[_TSource], Result[_TResult, Any]]
+    result: Result[_TSource, _TError],
+    mapper: Callable[[_TSource], Result[_TResult, Any]],
 ) -> Result[_TResult, _TError]:
     return result.bind(mapper)
+
 
 def dict(source: Result[_TSource, _TError]) -> Dict[str, Union[_TSource, _TError]]:
     return source.dict()
