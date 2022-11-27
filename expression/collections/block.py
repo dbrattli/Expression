@@ -30,7 +30,6 @@ from typing import (
     Iterator,
     List,
     Literal,
-    Optional,
     Tuple,
     TypeVar,
     Union,
@@ -109,11 +108,11 @@ class Block(
         >>> ys = empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     """
 
-    __match_args__ = ("value",)
+    __match_args__ = ("_value",)
 
     __validators__: List[GenericValidator[Block[_TSource]]] = [_validate]
 
-    def __init__(self, value: Optional[Iterable[_TSource]] = None) -> None:
+    def __init__(self, value: Iterable[_TSource] = ()) -> None:
         # Use composition instead of inheritance since generic tuples
         # are not suppored by mypy.
         self._value: Tuple[_TSource, ...] = tuple(value) if value else tuple()
