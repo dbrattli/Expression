@@ -1,3 +1,4 @@
+from __future__ import annotations
 from functools import wraps
 from typing import Any, Callable, Optional, Type, TypeVar, Union, cast, overload
 
@@ -12,8 +13,8 @@ _TError_ = TypeVar("_TError_", bound=Exception)
 def catch(
     exception: Type[_TError_],
 ) -> Callable[
-    [Callable[..., Union[_TSource, Result[_TSource, _TError]]]],
-    Callable[..., Result[_TSource, Union[_TError, _TError_]]],
+    [Callable[..., _TSource | Result[_TSource, _TError]]],
+    Callable[..., Result[_TSource, _TError | _TError_]],
 ]:
     ...
 
@@ -29,7 +30,7 @@ def catch(  # type: ignore
     f: Optional[Callable[..., _TSource]] = None, *, exception: Type[_TError]
 ) -> Callable[
     [Callable[..., _TSource]],
-    Union[Callable[..., Result[_TSource, _TError]], Result[_TSource, _TError]],
+    Callable[..., Result[_TSource, _TError]] | Result[_TSource, _TError],
 ]:
     def decorator(
         fn: Callable[..., _TSource]

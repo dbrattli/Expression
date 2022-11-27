@@ -224,7 +224,7 @@ class Ok(Result[_TSource, _TError]):
 
         return True
 
-    def dict(self) -> Dict[str, Union[_TSource, _TError]]:
+    def dict(self) -> Dict[str, _TSource | _TError]:
         """Returns a json string representation of the ok value."""
         attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
         if attr and callable(attr):

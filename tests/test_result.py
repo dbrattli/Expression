@@ -363,7 +363,7 @@ class Model(BaseModel):
     three: Result[float, MyError] = Error(MyError(message="error"))
 
     class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], Union[Any, Any]]] = {
+        json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {
             Result: result.dict,
         }
 

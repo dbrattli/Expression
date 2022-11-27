@@ -32,7 +32,6 @@ from typing import (
     Literal,
     Tuple,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -1002,16 +1001,14 @@ def sort_with(
     return source.sort_with(func, reverse)
 
 
-def sum(
-    source: Block[Union[_TSourceSum, Literal[0]]]
-) -> Union[_TSourceSum, Literal[0]]:
+def sum(source: Block[_TSourceSum | Literal[0]]) -> _TSourceSum | Literal[0]:
     return builtins.sum(source)
 
 
 @curry_flip(1)
 def sum_by(
     source: Block[_TSource], projection: Callable[[_TSource], _TSourceSum]
-) -> Union[_TSourceSum, Literal[0]]:
+) -> _TSourceSum | Literal[0]:
     return builtins.sum(source.map(projection))
 
 
