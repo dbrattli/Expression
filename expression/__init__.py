@@ -13,7 +13,6 @@ from ._version import __version__
 from .core import (
     AsyncReplyChannel,
     Builder,
-    Case,
     Choice,
     Choice1of2,
     Choice1of3,
@@ -26,7 +25,6 @@ from .core import (
     Error,
     Failure,
     MailboxProcessor,
-    MatchMixin,
     Nothing,
     Nothing_,
     Ok,
@@ -42,30 +40,35 @@ from .core import (
     Try,
     compose,
     curry,
-    curry_flipped,
+    curry_flip,
     default_arg,
     downcast,
     failwith,
     flip,
     fst,
     identity,
-    match,
     option,
     pipe,
     pipe2,
     pipe3,
     result,
     snd,
+    tag,
     tailrec,
     tailrec_async,
     try_downcast,
     upcast,
 )
 
+curry_flipped = curry_flip
+"""Deprecated.
+
+Will be removed in next major version. Use curry_flip instead.
+"""
+
 __all__ = [
     "AsyncReplyChannel",
     "Builder",
-    "Case",
     "Choice",
     "Choice1of2",
     "Choice1of3",
@@ -78,6 +81,7 @@ __all__ = [
     "compose",
     "core",
     "curry",
+    "curry_flip",
     "curry_flipped",
     "default_arg",
     "downcast",
@@ -90,8 +94,6 @@ __all__ = [
     "fst",
     "identity",
     "MailboxProcessor",
-    "match",
-    "MatchMixin",
     "Nothing",
     "Nothing_",
     "Ok",
@@ -113,6 +115,7 @@ __all__ = [
     "tailrec",
     "tailrec_async",
     "Try",
+    "tag",
     "try_downcast",
     "upcast",
     "__version__",

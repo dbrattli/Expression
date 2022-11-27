@@ -3,11 +3,8 @@
     "expression",
     "tests"
   ],
-  "exclude": [
-    "expression/_version.py"
-  ],
   "reportImportCycles": false,
   "reportMissingImports": false,
-  "pythonVersion": "3.9",
+  "pythonVersion": "3.10",
   "typeCheckingMode": "strict"
 }

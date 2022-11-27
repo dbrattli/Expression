@@ -16,19 +16,19 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Generic,
     Iterable,
     Iterator,
     List,
-    Type,
     TypeVar,
     Union,
     cast,
     get_origin,
-    overload,
 )
 
+from typing_extensions import TypeGuard
+
 from .error import EffectError
-from .match import Case, SupportsMatch
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation
 
@@ -71,13 +71,31 @@ def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
 class Result(
     Iterable[_TSource],
     PipeMixin,
-    SupportsMatch[Union[_TSource, _TError]],
     SupportsValidation["Result[_TSource, _TError]"],
+    Generic[_TSource, _TError],
     ABC,
 ):
     """The result abstract base class."""
 
     __validators__: List[GenericValidator[Result[_TSource, _TError]]] = [_validate]
+
+    @abstractmethod
+    def default_value(self, value: _TSource) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
@@ -97,40 +115,14 @@ class Result(
     ) -> Result[_TResult, _TError]:
         raise NotImplementedError
 
-    @overload
-    def match(self, pattern: "Ok[_TSourceM, Any]") -> Iterable[_TSourceM]:
-        ...
-
-    @overload
-    def match(self, pattern: "Error[Any, _TErrorM]") -> Iterable[_TErrorM]:
-        ...
-
-    @overload
-    def match(self, pattern: "Case[Ok[_TSourceM, Any]]") -> Iterable[_TSourceM]:
-        ...
-
-    @overload
-    def match(self, pattern: "Case[Error[Any, _TErrorM]]") -> Iterable[_TErrorM]:
-        ...
-
-    @overload
-    def match(self, pattern: "Type[Result[_TSourceM, Any]]") -> Iterable[_TSourceM]:
-        ...
-
-    def match(self, pattern: Any) -> Any:
-        """Match result with pattern."""
-
-        case: Case[Iterable[Union[_TSource, _TError]]] = Case(self)
-        return case(pattern) if pattern else case
-
     @abstractmethod
-    def is_error(self) -> bool:
+    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
         """Returns `True` if the result is an `Error` value."""
 
         raise NotImplementedError
 
     @abstractmethod
-    def is_ok(self) -> bool:
+    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
 
         raise NotImplementedError
@@ -156,9 +148,31 @@ class Result(
     ) -> Iterator[GenericValidator[Result[_TSource, _TError]]]:
         yield from cls.__validators__
 
+    @abstractmethod
+    def __hash__(self) -> int:
+        raise NotImplementedError
 
-class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
+
+class Ok(Result[_TSource, _TError]):
     """The Ok result case class."""
+
+    __match_args__ = ("value",)
+
+    def default_value(self, value: _TSource) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        return self._value
+
+    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return self._value
 
     def __init__(self, value: _TSource) -> None:
         self._value = value
@@ -182,12 +196,12 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
         function, or Ok if the input is Ok."""
         return Ok(self._value)
 
-    def is_error(self) -> bool:
+    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
 
         return False
 
-    def is_ok(self) -> bool:
+    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
 
         return True
@@ -227,6 +241,9 @@ class Ok(Result[_TSource, _TError], SupportsMatch[_TSource]):
     def __str__(self):
         return f"Ok {self._value}"
 
+    def __hash__(self) -> int:
+        return hash(self._value)
+
 
 class ResultException(EffectError):
     """Makes the Error case a valid exception for effect handling. Do
@@ -236,12 +253,33 @@ class ResultException(EffectError):
         self.message = message
 
 
-class Error(ResultException, Result[_TSource, _TError]):
+class Error(
+    ResultException,
+    Result[_TSource, _TError],
+):
     """The Error result case class."""
+
+    __match_args__ = ("error",)
 
     def __init__(self, error: _TError) -> None:
         super().__init__(str(error))
         self._error = error
+
+    def default_value(self, value: _TSource) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the specified default value.
+        """
+        return value
+
+    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return getter(self._error)
 
     @property
     def error(self) -> _TError:
@@ -262,11 +300,11 @@ class Error(ResultException, Result[_TSource, _TError]):
         function, or Ok if the input is Ok."""
         return Error(mapper(self._error))
 
-    def is_error(self) -> bool:
+    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
         return True
 
-    def is_ok(self) -> bool:
+    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
         """Returns `True` if the result is an `Ok` value."""
         return False
 
@@ -279,19 +317,6 @@ class Error(ResultException, Result[_TSource, _TError]):
             error = self._error
 
         return {"error": error}
-
-    def __match__(self, pattern: Any) -> Iterable[_TError]:
-        if self is pattern or self == pattern:
-            return [self.error]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [self.error]
-        except TypeError:
-            pass
-
-        return []
 
     def __eq__(self, o: Any) -> bool:
         if isinstance(o, Error):
@@ -310,6 +335,35 @@ class Error(ResultException, Result[_TSource, _TError]):
 
     def __str__(self):
         return f"Error {self._error}"
+
+    def __hash__(self) -> int:
+        return hash(self._error)
+
+
+def default_value(value: _TSource) -> Callable[[Result[_TSource, Any]], _TSource]:
+    """Gets the value of the option if the option is Some, otherwise
+    returns the specified default value.
+    """
+
+    def _default_value(result: Result[_TSource, Any]) -> _TSource:
+        return result.default_value(value)
+
+    return _default_value
+
+
+def default_with(
+    getter: Callable[[_TError], _TSource]
+) -> Callable[[Result[_TSource, _TError]], _TSource]:
+    """Get with default value lazily.
+
+    Gets the value of the option if the option is Some, otherwise
+    returns the value produced by the getter
+    """
+
+    def _default_with(result: Result[_TSource, _TError]) -> _TSource:
+        return result.default_with(getter)
+
+    return _default_with
 
 
 def map(
@@ -338,6 +392,8 @@ __all__ = [
     "Result",
     "Ok",
     "Error",
+    "default_value",
+    "default_with",
     "map",
     "bind",
     "dict",

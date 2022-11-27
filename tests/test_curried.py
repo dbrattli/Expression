@@ -2,7 +2,7 @@ from typing import Callable, List
 
 import pytest
 
-from expression import curry, curry_flipped, pipe
+from expression import curry, curry_flip, pipe
 
 
 def test_curry_identity():
@@ -21,6 +21,15 @@ def test_curry_simple():
         return a + b
 
     assert add(3)(4) == 7
+
+
+def test_curry_simple_curry_2_of_2():
+    @curry(2)
+    def add(a: int, b: int) -> int:
+        """Add a + b"""
+        return a + b
+
+    assert add(3)(4)() == 7
 
 
 def test_curry_named():
@@ -78,8 +87,8 @@ def test_curry1of3_with_optional2():
     assert add(3)(4, c=9) == 16
 
 
-def test_curry_flipped_identity():
-    @curry_flipped(0)
+def test_curry_flip_identity():
+    @curry_flip(0)
     def add(a: int, b: int) -> int:
         """Add a + b"""
         return a + b
@@ -87,10 +96,10 @@ def test_curry_flipped_identity():
     assert add(3, 4) == 7
 
 
-def test_curry_flipped_1():
+def test_curry_flip_1():
     xs = [1, 2, 3]
 
-    @curry_flipped(1)
+    @curry_flip(1)
     def map(source: List[int], mapper: Callable[[int], int]):
         return [mapper(x) for x in source]
 
@@ -102,10 +111,10 @@ def test_curry_flipped_1():
     assert ys == [10, 20, 30]
 
 
-def test_curry_flipped_2():
+def test_curry_flip_2():
     xs = [1, 2, 3]
 
-    @curry_flipped(2)
+    @curry_flip(2)
     def map(a: int, source: List[int], mapper: Callable[[int], int]):
         return [mapper(x) + a for x in source]
 

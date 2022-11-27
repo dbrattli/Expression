@@ -5,7 +5,8 @@ from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel, parse_obj_as
 
-from expression import Error, Ok, Result, effect, match, result
+from expression import Error, Ok, Result, effect, result
+from expression.collections import Block
 from expression.extra.result import pipeline, sequence
 
 from .utils import CustomException
@@ -19,32 +20,31 @@ def test_result_ok():
     assert not xs.is_error()
     assert str(xs) == "Ok 42"
 
-    for x in xs.match(Ok[int, str]):
-        assert x == 42
-        break
-    else:
-        assert False
+    match xs:
+        case Ok(x):
+            assert x == 42
+
+        case _:
+            assert False
 
 
 def test_result_match_ok():
     xs: Result[int, str] = Ok(42)
 
-    with match(xs) as case:
-        for x in case(Ok[int, str]):
+    match xs:
+        case Ok(x):
             assert x == 42
-            break
-        else:
+        case _:
             assert False
 
 
 def test_result_match_error():
     xs: Result[int, str] = Error("err")
 
-    with match(xs) as case:
-        for err in case(Error[int, str]):
+    match xs:
+        case Error(err):
             assert err == "err"
-            break
-        else:
+        case _:
             assert False
 
 
@@ -62,11 +62,12 @@ def test_result_error():
     assert xs.is_error()
     assert str(xs) == f"Error {error}"
 
-    for _ in xs.match(Ok[str, Exception]):
-        assert False
+    match xs:
+        case Ok():
+            assert False
 
-    for ex in xs.match(Error[str, Exception]):
-        assert ex == error
+        case Error(ex):
+            assert ex == error
 
 
 def test_result_error_iterate():
@@ -106,11 +107,11 @@ def test_result_map_piped(x: int, y: int):
     mapper: Callable[[int], int] = lambda x: x + y
 
     ys = xs.pipe(result.map(mapper))  # NOTE: shows type error for mypy
-    for value in ys.match(Ok[int, Exception]):
-        assert value == mapper(x)
-        break
-    else:
-        assert False
+    match ys:
+        case Ok(value):
+            assert value == mapper(x)
+        case _:
+            assert False
 
 
 @given(st.integers(), st.integers())
@@ -119,11 +120,11 @@ def test_result_map_ok_fluent(x: int, y: int):
     mapper: Callable[[int], int] = lambda x: x + y
 
     ys = xs.map(mapper)
-    for value in ys.match(Ok[int, Exception]):
-        assert value == mapper(x)
-        break
-    else:
-        assert False
+    match ys:
+        case Ok(value):
+            assert value == mapper(x)
+        case _:
+            assert False
 
 
 @given(st.integers(), st.integers())
@@ -134,11 +135,11 @@ def test_result_ok_chained_map(x: int, y: int):
 
     ys = xs.map(mapper1).map(mapper2)
 
-    for value in ys.match(Ok[int, Exception]):
-        assert value == mapper2(mapper1(x))
-        break
-    else:
-        assert False
+    match ys:
+        case Ok(value):
+            assert value == mapper2(mapper1(x))
+        case _:
+            assert False
 
 
 @given(st.text(), st.integers())  # type: ignore
@@ -148,11 +149,11 @@ def test_result_map_error_piped(msg: str, y: int):
 
     ys = xs.pipe(result.map(mapper))
 
-    for err in ys.match(Error[int, str]):
-        assert err == msg
-        break
-    else:
-        assert False
+    match ys:
+        case Error(err):
+            assert err == msg
+        case _:
+            assert False
 
 
 @given(st.text(), st.integers())  # type: ignore
@@ -161,11 +162,11 @@ def test_result_map_error_fluent(msg: str, y: int):
     mapper: Callable[[int], int] = lambda x: x + y
 
     ys = xs.map(mapper)
-    for err in ys.match(Error[int, str]):
-        assert err == msg
-        break
-    else:
-        assert False
+    match ys:
+        case Error(err):
+            assert err == msg
+        case _:
+            assert False
 
 
 @given(st.text(), st.integers())  # type: ignore
@@ -175,11 +176,11 @@ def test_result_error_chained_map(msg: str, y: int):
     mapper2: Callable[[int], int] = lambda x: x * 10
 
     ys = xs.map(mapper1).map(mapper2)
-    for err in ys.match(Error[int, str]):
-        assert err == msg
-        break
-    else:
-        assert False
+    match ys:
+        case Error(err):
+            assert err == msg
+        case _:
+            assert False
 
 
 @given(st.integers(), st.integers())  # type: ignore
@@ -188,34 +189,37 @@ def test_result_bind_piped(x: int, y: int):
     mapper: Callable[[int], Result[int, str]] = lambda x: Ok(x + y)
 
     ys = xs.pipe(result.bind(mapper))
-    for value in ys.match(Ok[int, str]):
-        assert Ok(value) == mapper(x)
-        break
-    else:
-        assert False
+    match ys:
+        case Ok(value):
+            assert Ok(value) == mapper(x)
+        case _:
+            assert False
 
 
 @given(st.lists(st.integers()))  # type: ignore
 def test_result_traverse_ok(xs: List[int]):
-    ys: List[Result[int, str]] = [Ok(x) for x in xs]
+    ys: Block[Result[int, str]] = Block([Ok(x) for x in xs])
     zs = sequence(ys)
-    for value in zs.match(Ok[List[int], str]):
-        assert sum(value) == sum(xs)
-        break
-    else:
-        assert False
+    match zs:
+        case Ok(value):
+            assert sum(value) == sum(xs)
+        case _:
+            assert False
 
 
 @given(st.lists(st.integers(), min_size=5))  # type: ignore
 def test_result_traverse_error(xs: List[int]):
     error = "Do'h"
-    ys: List[Result[int, str]] = [
-        Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)
-    ]
+    ys: Block[Result[int, str]] = Block(
+        [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
+    )
 
     zs = sequence(ys)
-    for err in zs.match(Error[int, str]):
-        assert err == error
+    match zs:
+        case Error(err):
+            assert err == error
+        case _:
+            assert False
 
 
 def test_result_effect_zero():
@@ -246,11 +250,11 @@ def test_result_effect_return_ok():
         return x
 
     xs = fn()
-    for x in xs.match(Ok[int, Any]):
-        assert x == 42
-        break
-    else:
-        assert False
+    match xs:
+        case Ok(x):
+            assert x == 42
+        case _:
+            assert False
 
 
 def test_result_effect_yield_from_ok():
@@ -260,11 +264,11 @@ def test_result_effect_yield_from_ok():
         return x + 1
 
     xs = fn()
-    for x in xs.match(Ok[int, Any]):
-        assert x == 43
-        break
-    else:
-        assert False
+    match xs:
+        case Ok(x):
+            assert x == 43
+        case _:
+            assert False
 
 
 def test_result_effect_yield_from_error():
@@ -280,11 +284,11 @@ def test_result_effect_yield_from_error():
         return x + 1
 
     xs = fn()
-    for err in xs.match(Error[int, str]):
-        assert err == error
-        break
-    else:
-        assert False, "Should not happen"
+    match xs:
+        case Error(err):
+            assert err == error
+        case _:
+            assert False, "Should not happen"
 
 
 def test_result_effect_multiple_ok():
@@ -296,11 +300,11 @@ def test_result_effect_multiple_ok():
         return x + y
 
     xs = fn()
-    for value in xs.match(Ok[int, Any]):
-        assert value == 85
-        break
-    else:
-        assert False
+    match xs:
+        case Ok(value):
+            assert value == 85
+        case _:
+            assert False
 
 
 def test_result_effect_throws():
@@ -364,7 +368,7 @@ class Model(BaseModel):
         }
 
 
-def test_parse_frozenlist_works():
+def test_parse_block_works():
     obj = dict(one=dict(ok=42))
     model = Model.parse_obj(obj)
 
@@ -403,3 +407,33 @@ def test_error_from_dict_works():
     assert result
     assert isinstance(result, Error)
     assert result.error == MyError(message="got error")
+
+
+def test_error_default_value():
+    xs: Result[int, int] = Error(0)
+
+    zs = xs.default_value(42)
+
+    assert zs == 42
+
+
+def test_ok_default_value():
+    xs: Result[int, int] = Ok(42)
+    zs = xs.default_value(0)
+
+    assert zs == 42
+
+
+def test_error_default_with():
+    xs: Result[int, int] = Error(0)
+
+    zs = xs.default_with(lambda x: x + 42)
+
+    assert zs == 42
+
+
+def test_ok_default_with():
+    xs: Result[int, int] = Ok(42)
+    zs = xs.default_with(lambda x: 0)
+
+    assert zs == 42

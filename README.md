@@ -80,6 +80,7 @@ You can install the latest `expression` from PyPI by running `pip` (or
     should be hidden within the SDK.
 - Provide [type-hints](https://docs.python.org/3/library/typing.html) for all
   functions and methods.
+- Support PEP 634 and structural pattern matching.
 - Code must pass strict static type checking by
   [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
   Pylance is awesome, use it!
@@ -102,16 +103,20 @@ on-demand as we go along.
     programming in Python.
   - **Try** - a simpler result type that pins the error to an Exception.
 - **Collections** - immutable collections.
+  - **TypedArray** - a generic array type that abstracts the details of
+    `bytearray`, `array.array` and `list` modules.
   - **Sequence** - a better
     [itertools](https://docs.python.org/3/library/itertools.html) and
     fully compatible with Python iterables.
-  - **FrozenList** - a frozen and immutable list type.
+  - **Block** - a frozen and immutable list type.
   - **Map** - a frozen and immutable dictionary type.
   - **AsyncSeq** - Asynchronous iterables.
   - **AsyncObservable** - Asynchronous observables. Provided separately
     by [aioreactive](https://github.com/dbrattli/aioreactive).
 - **Data Modelling** - sum and product types
   - **TaggedUnion** - A tagged (discriminated) union type.
+- **Parser Combinators** - A recursive decent string parser combinator
+  library.
 - **Effects**: - lightweight computational expressions for Python. This
   is amazing stuff.
   - **option** - an optional world for working with optional values.
@@ -253,9 +258,9 @@ def keep_positive(a: int) -> Option[int]:
 ```python
 from expression import Option, Ok
 def exists(x : Option[int]) -> bool:
-    for value in x.match(Ok):
-        return True
-
+    match x:
+        case Some(_):
+            return True
     return False
 ```
 
@@ -357,153 +362,9 @@ zs = pipe(
 assert ys == zs
 ```
 
-### Pattern Matching
-
-Pattern matching is tricky for a language like Python. We are waiting for [PEP
-634](https://www.python.org/dev/peps/pep-0634/) and structural pattern matching
-for Python. But we need something that can by handled by static type checkers
-and will also decompose or unwrap inner values.
-
-What we want to achieve with pattern matching:
-
-- Check multiple cases with default handling if no match is found.
-- Only one case will ever match. This reduces the cognitive load on the
-  programmer.
-- Type safety. We need the code to pass static type checkers.
-- Decomposing of wrapped values, e.g., options, and results.
-- Case handling must be inline, i.e., we want to avoid lambdas which would make
-  things difficult, e.g., async code.
-- Pythonic. Is it possible to use something that still looks like Python code?
-
-The solution we propose is based on loops, singleton iterables and resource
-management. This lets us write our code inline, decompose, and unwrap inner
-values, and also effectively skip the cases that do not match.
-
-```python
-from expression import match
-
-with match("expression") as case:
-    if case("rxpy"):  # will not match
-        assert False
-
-    for value in case(str):  # will match
-        assert value == "expression"
-
-    for value in case(float):  # will not match
-        assert False
-
-    if case._:  # will run if any previous case does not match
-        assert False
-```
-
-Using `match` as a context manager will make sure that a case was actually
-found. You might need to have a default handler to avoid `MatchFailureError`.
-
-Test cases may be additionally be wrapped in a function to have a match
-expression that returns a value:
-
-```python
-def matcher(value) -> Option[int]:
-    with match(value) as case:
-        for value in case(Some[int]):
-            return Some(42)
-
-        if case._:
-            return Some(2)
-
-    return Nothing
-
-result = matcher(42).
-```
-
-Classes may also support `match` fluently, i.e:
-`xs.match(pattern)`. If you add generic types to the pattern then
-unwrapped values will get the right type without having to cast.
-
-```python
-    xs = Some(42)
-    ys = xs.map(lambda x: x + 1)
-
-    for value in ys.match(Some[int]):
-        assert value == 43
-        break
-    else:
-        assert False
-```
-
-Pattern matching can also be used with destructuring of iterables:
-
-```python
-xs: FrozenList[int] = empty.cons(42)
-for (head, *tail) in xs.match(FrozenList):
-    assert head == 42
-```
-
-Classes can support more advanced pattern matching and decompose inner values
-by subclassing or implementing the matching protocol.
-
-```python
-class SupportsMatch(Protocol[TSource]):
-    """Pattern matching protocol."""
-
-    @abstractmethod
-    def __match__(self, pattern: Any) -> Iterable[TSource]:
-        """Return a singleton iterable item (e.g., `[value]`) if pattern
-        matches, else an empty iterable (e.g. `[]`)."""
-        raise NotImplementedError
-```
-
-This significantly simplifies the decomposition and type handling
-compared to using `isinstance` directly. E.g code from
-[aioreactive](https://github.com/dbrattli/aioreactive/blob/master/aioreactive/combine.py#L64):
-
-```python
-if isinstance(msg, InnerObservableMsg):
-    msg = cast(InnerObservableMsg[TSource], msg)
-    xs: AsyncObservable[TSource] = msg.inner_observable
-    ...
-```
-
-Now becomes:
-
-```python
-with match(msg) as case:
-    for xs in case(InnerObservableMsg[TSource]):
-        ...
-```
-
-Note that the matching protocol may be implemented by both values and
-patterns. Patterns implementing the matching protocol effectively
-becomes active patterns.
-
-```python
-class ParseInteger_(SupportsMatch[int]):
-    """Active pattern for parsing integers."""
-
-    def __match__(self, pattern: Any) -> Iterable[int]:
-        """Match value with pattern."""
-
-        try:
-            number = int(pattern)
-        except ValueError:
-            return []
-        else:
-            return [number]
-
-ParseInteger = ParseInteger_()  # Pattern singleton instance
-
-text = "42"
-with match(text) as case:
-    for value in case(ParseInteger):
-        assert value == int(text)
-
-    if case._:
-        assert False
-```
-
 ## Tagged Unions
 
-Tagged Unions (aka discriminated unions) may looks similar to  normal Python Unions. But
+Tagged Unions (aka discriminated unions) may look similar to normal Python Unions. But
 they are [different](https://stackoverflow.com/a/61646841) in that the operands in a
 type union `(A | B)` are both types, while the cases in a tagged union type `U = A | B`
 are both constructors for the type U and are not types themselves. One consequence is
@@ -516,7 +377,7 @@ tagged union cases.
 
 ```python
 from dataclasses import dataclass
-from expression import TaggedUnion, Tag
+from expression import TaggedUnion, tag
 
 @dataclass
 class Rectangle:
@@ -528,8 +389,8 @@ class Circle:
     radius: float
 
 class Shape(TaggedUnion):
-    RECTANGLE = Tag[Rectangle]()
-    CIRCLE = Tag[Circle]()
+    RECTANGLE = tag(Rectangle)
+    CIRCLE = tag(Circle)
 
     @staticmethod
     def rectangle(width: float, length: float) -> Shape:
@@ -547,14 +408,10 @@ Now you may pattern match the shape to get back the actual value:
 
     shape = Shape.Rectangle(2.3, 3.3)
 
-    with match(shape) as case:
-        if case(Circle):
-            assert False
-
-        for rect in case(Shape.RECTANGLE(width=2.3)):
-            assert rect.length == 3.3
-
-        if case.default():
+    match shape:
+        case Shape(value=Rectangle(width=2.3)):
+            assert shape.value.width == 2.3
+        case _:
             assert False
 ```
 
@@ -576,10 +433,6 @@ such as `option.map` and the name `Option` for the type itself.
 >>> option
 <module 'expression.core.option' from '/Users/dbrattli/Developer/Github/Expression/expression/core/option.py'>
 ```
-
-F# pattern matching is awesome and the alternative we present here
-cannot be compared. But it helps us match and decompose without having
-to type-cast every time.
 
 ## Common Gotchas and Pitfalls
 

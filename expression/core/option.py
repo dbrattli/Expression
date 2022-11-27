@@ -21,12 +21,12 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    get_origin,
 )
 
 from .curry import curry_flipped
+from typing_extensions import TypeGuard
+
 from .error import EffectError
-from .match import MatchMixin, SupportsMatch
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation
 
@@ -58,21 +58,29 @@ def _validate(value: Any, field: ModelField) -> Option[Any]:
 
 class Option(
     Iterable[_TSource],
-    MatchMixin[_TSource],
     PipeMixin,
-    SupportsMatch[Union[_TSource, bool]],
-    SupportsValidation[_TSource],
+    SupportsValidation["Option[_TSource]"],
     ABC,
 ):
     """Option abstract base class."""
 
     __validators__: List[GenericValidator[Option[_TSource]]] = [_validate]
 
+    @abstractmethod
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
 
         Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value lazily.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
         """
         raise NotImplementedError
 
@@ -129,12 +137,12 @@ class Option(
         raise NotImplementedError
 
     @abstractmethod
-    def is_some(self) -> bool:
+    def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns true if the option is not Nothing."""
         raise NotImplementedError
 
     @abstractmethod
-    def is_none(self) -> bool:
+    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
         """Returns true if the option is Nothing."""
         raise NotImplementedError
 
@@ -174,12 +182,18 @@ class Option(
         return self.__str__()
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[GenericValidator[_TSource]]:
+    def __get_validators__(cls) -> Iterator[GenericValidator[Option[_TSource]]]:
         yield from cls.__validators__
+
+    @abstractmethod
+    def __hash__(self) -> int:
+        raise NotImplementedError
 
 
 class Some(Option[_TSource]):
     """The Some option case class."""
+
+    __match_args__ = ("value",)
 
     def __init__(self, value: _TSource) -> None:
         self._value = value
@@ -190,11 +204,19 @@ class Some(Option[_TSource]):
         """
         return self._value
 
-    def is_some(self) -> bool:
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return self._value
+
+    def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns `True`."""
         return True
 
-    def is_none(self) -> bool:
+    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
         """Returns `False`."""
         return False
 
@@ -263,19 +285,6 @@ class Some(Option[_TSource]):
         """
         return self._value
 
-    def __match__(self, pattern: Any) -> Iterable[_TSource]:
-        if self is pattern or self == pattern:
-            return [self.value]
-
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [self.value]
-        except TypeError:
-            pass
-
-        return []
-
     def __lt__(self, other: Any) -> bool:
         if isinstance(other, Some):
             return self._value < other._value  # type: ignore
@@ -291,6 +300,9 @@ class Some(Option[_TSource]):
 
     def __str__(self) -> str:
         return f"Some {self._value}"
+
+    def __hash__(self) -> int:
+        return hash(self._value)
 
 
 class Nothing_(Option[_TSource], EffectError):
@@ -308,11 +320,19 @@ class Nothing_(Option[_TSource], EffectError):
         """
         return value
 
-    def is_some(self) -> bool:
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+        """Get with default value.
+
+        Gets the value of the option if the option is Some, otherwise
+        returns the value produced by the getter
+        """
+        return getter()
+
+    def is_some(self) -> TypeGuard[Some[_TSource]]:
         """Returns `False`."""
         return False
 
-    def is_none(self) -> bool:
+    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
         """Returns `True`."""
         return True
 
@@ -372,12 +392,6 @@ class Nothing_(Option[_TSource], EffectError):
 
         raise ValueError("There is no value.")
 
-    def __match__(self, pattern: Any) -> Iterable[Any]:
-        if self is pattern:
-            return [True]
-
-        return []
-
     def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         """Return iterator for the `Nothing` case.
 
@@ -399,6 +413,9 @@ class Nothing_(Option[_TSource], EffectError):
 
     def __str__(self):
         return "Nothing"
+
+    def __hash__(self) -> int:
+        return 0
 
 
 # The singleton None class. We use the name 'Nothing' here instead of `None` to
@@ -447,11 +464,26 @@ def default_value(value: _TSource) -> Callable[[Option[_TSource]], _TSource]:
     return _default_value
 
 
-def is_none(option: Option[Any]) -> bool:
+def default_with(
+    getter: Callable[[], _TSource]
+) -> Callable[[Option[_TSource]], _TSource]:
+    """Get with default value lazily.
+
+    Gets the value of the option if the option is Some, otherwise
+    returns the value produced by the getter
+    """
+
+    def _default_with(option: Option[_TSource]) -> _TSource:
+        return option.default_with(getter)
+
+    return _default_with
+
+
+def is_none(option: Option[_TSource]) -> TypeGuard[Nothing_[_TSource]]:
     return option.is_none()
 
 
-def is_some(option: Option[Any]) -> bool:
+def is_some(option: Option[_TSource]) -> TypeGuard[Some[_TSource]]:
     return option.is_some()
 
 
@@ -474,7 +506,7 @@ def map2(
 def or_else(
     if_none: Option[_TSource],
 ) -> Callable[[Option[_TSource]], Option[_TSource]]:
-    """Returns option if it is Some, otherwise returns ifNone."""
+    """Returns option if it is Some, otherwise returns `if_none`."""
 
     def _or_else(option: Option[_TSource]) -> Option[_TSource]:
         return option.or_else(if_none)
@@ -522,7 +554,7 @@ def of_obj(value: Any) -> Option[Any]:
     return of_optional(value)
 
 
-def dict(value: Option[Any]) -> str:
+def dict(value: Option[_TSource]) -> Union[_TSource, Dict[Any, Any], None]:
     return value.dict()
 
 
@@ -544,6 +576,7 @@ __all__ = [
     "bind",
     "default_arg",
     "default_value",
+    "default_with",
     "map",
     "map2",
     "is_none",

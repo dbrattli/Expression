@@ -21,6 +21,6 @@ chapters:
     - file: reference/pipe
     - file: reference/curry
     - file: reference/mailbox
-    - file: reference/frozenlist
+    - file: reference/block
     - file: reference/seq
     - file: reference/map

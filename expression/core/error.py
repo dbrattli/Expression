@@ -1,4 +1,4 @@
-from typing import Any, NoReturn
+from typing import NoReturn
 
 
 class EffectError(Exception):
@@ -9,17 +9,9 @@ class EffectError(Exception):
     """
 
 
-class MatchFailureError(Exception):
-    """Pattern match failure error."""
-
-    def __init__(self, expr: Any):
-        msg = f"Incomplete pattern matches on this expression. {expr} did not match any cases."
-        super().__init__(msg)
-
-
 def failwith(message: str) -> NoReturn:
     """Raise exception with the given message string."""
     raise Exception(message)
 
 
-__all__ = ["EffectError", "failwith", "MatchFailureError"]
+__all__ = ["EffectError", "failwith"]

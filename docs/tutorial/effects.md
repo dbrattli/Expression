@@ -138,7 +138,7 @@ Effects are not the same as side-effects. Effects are just values with a context
 
 * Option
 * Result
-* FrozenList
+* Block
 * Observable
 * Async
 * AsyncObservable
@@ -150,22 +150,23 @@ Effects are not the same as side-effects. Effects are just values with a context
 Expression have a nice way of dealing with effects and lets you safely work with wrapped values wihout having to error check:
 
 ```python
-from expression import effect
-from expression.core import option, Option, Some, Nothing
+from expression import effect, Option, Some, Nothing
 
-def divide(a: float, divisor: float) -> Option[int]:
+
+def divide(a: float, divisor: float) -> Option[float]:
     try:
-        return Some(a/divisor)
+        return Some(a / divisor)
     except ZeroDivisionError:
         return Nothing
 
 
-@effect.option
-def comp(x):
-    result = yield from divide(42, x)
+@effect.option[float]()
+def comp(x: float):
+    result: float = yield from divide(42, x)
     result += 32
     print(f"The result is {result}")
     return result
+
 
 comp(42)
 ```

@@ -1,17 +1,20 @@
 """
 Collection abstractions.
 """
-from . import asyncseq, frozenlist, map, seq
-from .frozenlist import FrozenList
+from . import array, asyncseq, block, map, seq
+from .array import TypedArray
+from .block import Block
 from .map import Map
 from .seq import Seq
 
 __all__ = [
+    "array",
     "asyncseq",
-    "FrozenList",
-    "frozenlist",
+    "Block",
+    "block",
     "Map",
     "map",
     "Seq",
     "seq",
+    "TypedArray",
 ]

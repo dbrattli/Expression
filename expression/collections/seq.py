@@ -32,7 +32,6 @@ from typing import (
     Callable,
     Iterable,
     Iterator,
-    Optional,
     Tuple,
     TypeVar,
     cast,
@@ -40,7 +39,6 @@ from typing import (
 )
 
 from expression.core import (
-    Case,
     Option,
     PipeMixin,
     SupportsGreaterThan,
@@ -52,7 +50,7 @@ from expression.core import (
 )
 
 if TYPE_CHECKING:
-    from .frozenlist import FrozenList
+    from .block import Block
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -77,7 +75,9 @@ class Seq(Iterable[_TSource], PipeMixin):
         >>> ys = xs.map(lambda x: x + 1).filter(lambda x: x < 3)
     """
 
-    def __init__(self, iterable: Iterable[_TSource] = []) -> None:
+    __match_args__ = ("iterable",)
+
+    def __init__(self, iterable: Iterable[_TSource] = ()) -> None:
         self._value = iterable
 
     @classmethod
@@ -234,18 +234,6 @@ class Seq(Iterable[_TSource], PipeMixin):
         return Seq(mapi(mapping)(self))
 
     @overload
-    def match(self) -> Case[Iterable[_TSource]]:
-        ...
-
-    @overload
-    def match(self, pattern: Any) -> Iterable[Iterable[_TSource]]:
-        ...
-
-    def match(self, pattern: Optional[Any] = None) -> Any:
-        case: Case[Iterable[_TSource]] = Case(self)
-        return case(pattern) if pattern else case
-
-    @overload
     @staticmethod
     def range(stop: int) -> Iterable[int]:
         ...
@@ -312,7 +300,7 @@ class Seq(Iterable[_TSource], PipeMixin):
         """
         return Seq(pipe(self, take(count)))
 
-    def to_list(self) -> "FrozenList[_TSource]":
+    def to_list(self) -> "Block[_TSource]":
         return to_list(self)
 
     def dict(self) -> Iterable[_TSource]:
@@ -927,18 +915,22 @@ def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
     def _take(source: Iterable[_TSource]) -> Iterable[_TSource]:
         def gen():
             for i, n in enumerate(source):
-                if i < count:
-                    yield n
+                yield n
 
-        return SeqGen(gen)
+                if i == count - 1:
+                    break
+
+        if count > 0:
+            return SeqGen(gen)
+        return Seq()
 
     return _take
 
 
-def to_list(source: Iterable[_TSource]) -> "FrozenList[_TSource]":
-    from .frozenlist import FrozenList
+def to_list(source: Iterable[_TSource]) -> "Block[_TSource]":
+    from .block import Block
 
-    return FrozenList.of_seq(source)
+    return Block.of_seq(source)
 
 
 def unfold(

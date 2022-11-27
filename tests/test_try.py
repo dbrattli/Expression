@@ -1,6 +1,6 @@
 import pytest
 
-from expression import Failure, Success, Try, match
+from expression import Failure, Success, Try
 
 from .utils import CustomException
 
@@ -33,9 +33,8 @@ def test_try_match_failure():
     error = Exception("err")
     xs: Try[int] = Failure(error)
 
-    with match(xs) as case:
-        for err in case(Failure[int]):
+    match xs:
+        case Failure(err):
             assert err == error
-            break
-        else:
+        case _:
             assert False

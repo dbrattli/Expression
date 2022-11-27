@@ -4,7 +4,7 @@ from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
 from expression import pipe
-from expression.collections import FrozenList, Map, map
+from expression.collections import Block, Map, map
 
 
 def test_map_empty():
@@ -86,18 +86,18 @@ def test_map_to_seq_fluent(xs: Dict[str, int]):
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_to_list(xs: Dict[str, int]):
-    items = FrozenList(xs.items())
-    ys = map.of_frozenlist(items).to_seq()
+    items = Block(xs.items())
+    ys = map.of_block(items).to_seq()
 
     assert sorted(list(items)) == list(ys)
 
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_map(xs: Dict[str, int]):
-    items = FrozenList(xs.items())
+    items = Block(xs.items())
 
     mapper: Callable[[str, int], int] = lambda k, v: v * 20
-    ys = map.of_frozenlist(items).map(mapper)
+    ys = map.of_block(items).map(mapper)
 
     expected = [(k, mapper(k, v)) for k, v in sorted(list(items))]
     assert expected == list(ys.to_list())
@@ -113,7 +113,7 @@ def test_map_pipe_fluent():
 
 @given(st.dictionaries(keys=st.text(), values=st.integers()))
 def test_map_count(xs: Dict[str, int]):
-    ys = map.of(**xs)
+    ys: Map[str, int] = map.of(**xs)
 
     assert len(ys) == len(xs) == map.count(ys)
 

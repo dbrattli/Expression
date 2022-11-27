@@ -15,11 +15,10 @@ from .choice import (
     Choice3of3,
 )
 from .compose import compose
-from .curry import curry, curry_flipped
+from .curry import curry, curry_flip
 from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
-from .match import Case, MatchMixin, match
 from .misc import flip, fst, identity, snd
 from .option import Nothing, Nothing_, Option, Some, default_arg
 from .pipe import PipeMixin, pipe, pipe2, pipe3
@@ -34,13 +33,12 @@ from .typing import (
     try_downcast,
     upcast,
 )
-from .union import SingleCaseUnion, Tag, TaggedUnion
+from .union import SingleCaseUnion, Tag, TaggedUnion, tag
 
 __all__ = [
     "aiotools",
     "AsyncReplyChannel",
     "Builder",
-    "Case",
     "Choice",
     "Choice2",
     "Choice3",
@@ -51,10 +49,9 @@ __all__ = [
     "Choice3of3",
     "compose",
     "curry",
-    "curry_flipped",
+    "curry_flip",
     "default_arg",
     "downcast",
-    "MatchMixin",
     "EffectError",
     "Error",
     "Failure",
@@ -63,7 +60,6 @@ __all__ = [
     "fst",
     "identity",
     "MailboxProcessor",
-    "match",
     "Nothing",
     "Nothing_",
     "Ok",
@@ -90,6 +86,7 @@ __all__ = [
     "tailrec",
     "tailrec_async",
     "Try",
+    "tag",
     "try_downcast",
     "upcast",
 ]
