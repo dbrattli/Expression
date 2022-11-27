@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from functools import wraps
-from typing import Any, Callable, Optional, Type, TypeVar, Union, cast, overload
+from typing import Any, Callable, Optional, Type, TypeVar, cast, overload
 
 from expression.core import Error, Ok, Result
 

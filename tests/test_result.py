@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Type, Union
+from typing import Any, Callable, Dict, List, Type
 
 import pytest
 from hypothesis import given  # type: ignore
