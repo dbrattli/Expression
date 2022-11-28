@@ -400,9 +400,10 @@ def append(
     return _
 
 
+@curry_flip(1)
 def choose(
-    chooser: Callable[[_TSource], Option[_TResult]]
-) -> Callable[[Iterable[_TSource]], Iterable[_TResult]]:
+    source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_TResult]]
+) -> Iterable[_TResult]:
     """Choose items from the sequence.
 
     Applies the given function to each element of the list. Returns
@@ -417,13 +418,10 @@ def choose(
         function.
     """
 
-    def _choose(source: Iterable[_TSource]) -> Iterable[_TResult]:
-        def mapper(x: _TSource) -> Iterable[_TResult]:
-            return chooser(x).to_seq()
+    def mapper(x: _TSource) -> Iterable[_TResult]:
+        return chooser(x).to_seq()
 
-        return pipe(source, collect(mapper))
-
-    return _choose
+    return pipe(source, collect(mapper))
 
 
 @curry_flip(1)
@@ -498,9 +496,12 @@ def filter(
     return builtins.filter(predicate, source)
 
 
+@curry_flip(1)
 def fold(
-    folder: Callable[[_TState, _TSource], _TState], state: _TState
-) -> Callable[[Iterable[_TSource]], _TState]:
+    source: Iterable[_TSource],
+    folder: Callable[[_TState, _TSource], _TState],
+    state: _TState,
+) -> _TState:
     """Applies a function to each element of the collection,
     threading an accumulator argument through the computation. If
     the input function is f and the elements are i0...iN then
@@ -517,15 +518,7 @@ def fold(
         to each element of the sequence.
     """
 
-    def _fold(source: Iterable[_TSource]) -> _TState:
-        """Partially applied fold function.
-        Returns:
-            The state object after the folding function is applied
-            to each element of the sequence.
-        """
-        return functools.reduce(folder, source, state)
-
-    return _fold
+    return functools.reduce(folder, source, state)
 
 
 def fold_back(
@@ -605,7 +598,8 @@ infinite: Iterable[int] = init_infinite(identity)
 """An infinite iterable."""
 
 
-def iter(action: Callable[[_TSource], None]) -> Callable[[Iterable[_TSource]], None]:
+@curry_flip(1)
+def iter(source: Iterable[_TSource], action: Callable[[_TSource], None]) -> None:
     """Applies the given function to each element of the collection.
 
     Args:
@@ -615,21 +609,8 @@ def iter(action: Callable[[_TSource], None]) -> Callable[[Iterable[_TSource]], N
         A partially applied iter function.
     """
 
-    def _iter(source: Iterable[_TSource]) -> None:
-        """A partially applied iter function.
-
-        Note that this function is a pure side effect and returns nothing.
-
-        Args:
-            source: The input sequence to apply action to.
-
-        Returns:
-            None
-        """
-        for x in source:
-            action(x)
-
-    return _iter
+    for x in source:
+        action(x)
 
 
 def length(source: Seq[Any]) -> int:
@@ -637,9 +618,10 @@ def length(source: Seq[Any]) -> int:
     return builtins.sum(1 for _ in source)
 
 
+@curry_flip(1)
 def map(
-    mapper: Callable[[_TSource], _TResult]
-) -> Callable[[Iterable[_TSource]], Iterable[_TResult]]:
+    source: Iterable[_TSource], mapper: Callable[[_TSource], _TResult]
+) -> Iterable[_TResult]:
     """Map source sequence.
 
     Builds a new collection whose elements are the results of
@@ -653,22 +635,11 @@ def map(
         Partially applied map function.
     """
 
-    def _map(source: Iterable[_TSource]) -> Iterable[_TResult]:
-        """Partially applied map function.
+    def gen():
+        for x in source:
+            yield mapper(x)
 
-        Args:
-            source: The input sequence.
-        Returns:
-            The result sequence.
-        """
-
-        def gen():
-            for x in source:
-                yield mapper(x)
-
-        return SeqGen(gen)
-
-    return _map
+    return SeqGen(gen)
 
 
 @overload
@@ -726,9 +697,10 @@ def map3(
     return starmap(mapper)
 
 
+@curry_flip(1)
 def mapi(
-    mapping: Callable[[int, _TSource], _TResult]
-) -> Callable[[Iterable[_TSource]], Iterable[_TResult]]:
+    source: Iterable[_TSource], mapping: Callable[[int, _TSource], _TResult]
+) -> Iterable[_TResult]:
     """Map list with index.
 
     Builds a new collection whose elements are the results of
@@ -744,10 +716,7 @@ def mapi(
         The list of transformed elements.
     """
 
-    def _mapi(source: Iterable[_TSource]) -> Iterable[_TResult]:
-        return (*itertools.starmap(mapping, builtins.enumerate(source)),)
-
-    return _mapi
+    return (*itertools.starmap(mapping, builtins.enumerate(source)),)
 
 
 def max(source: Iterable[_TSupportsGreaterThan]) -> _TSupportsGreaterThan:
@@ -758,13 +727,11 @@ def max(source: Iterable[_TSupportsGreaterThan]) -> _TSupportsGreaterThan:
     return value
 
 
+@curry_flip(1)
 def max_by(
-    projection: Callable[[_TSource], _TSupportsGreaterThan]
-) -> Callable[[Iterable[_TSource]], _TSupportsGreaterThan]:
-    def _max_by(source: Iterable[_TSource]) -> _TSupportsGreaterThan:
-        return builtins.max(projection(x) for x in source)
-
-    return _max_by
+    source: Iterable[_TSource], projection: Callable[[_TSource], _TSupportsGreaterThan]
+) -> _TSupportsGreaterThan:
+    return builtins.max(projection(x) for x in source)
 
 
 def min(source: Iterable[_TSupportsLessThan]) -> _TSupportsLessThan:
@@ -774,13 +741,11 @@ def min(source: Iterable[_TSupportsLessThan]) -> _TSupportsLessThan:
     return builtins.min(source)
 
 
+@curry_flip(1)
 def min_by(
-    projection: Callable[[_TSource], _TSupportsLessThan]
-) -> Callable[[Iterable[_TSource]], _TSupportsLessThan]:
-    def _min_by(source: Iterable[_TSource]) -> _TSupportsLessThan:
-        return builtins.min(projection(x) for x in source)
-
-    return _min_by
+    source: Iterable[_TSource], projection: Callable[[_TSource], _TSupportsLessThan]
+) -> _TSupportsLessThan:
+    return builtins.min(projection(x) for x in source)
 
 
 def of(*args: _TSource) -> Seq[_TSource]:
@@ -822,9 +787,12 @@ def range(*args: int, **kw: int) -> Iterable[int]:
     return Seq(builtins.range(*args, **kw))
 
 
+@curry_flip(1)
 def scan(
-    scanner: Callable[[_TState, _TSource], _TState], state: _TState
-) -> Callable[[Iterable[_TSource]], Iterable[_TState]]:
+    source: Iterable[_TSource],
+    scanner: Callable[[_TState, _TSource], _TState],
+    state: _TState,
+) -> Iterable[_TState]:
     """Like fold, but computes on-demand and returns the sequence of
     intermediary and final results.
 
@@ -833,16 +801,7 @@ def scan(
         state: The initial state.
     """
 
-    def _scan(source: Iterable[_TSource]) -> Iterable[_TState]:
-        """Partially applied scan function.
-        Args:
-            source: The input sequence.
-        Returns:
-            The resulting sequence of computed states.
-        """
-        return itertools.accumulate(source, scanner, initial=state)
-
-    return _scan
+    return itertools.accumulate(source, scanner, initial=state)
 
 
 def singleton(item: _TSource) -> Seq[_TSource]:
@@ -857,7 +816,8 @@ def singleton(item: _TSource) -> Seq[_TSource]:
     return Seq([item])
 
 
-def skip(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
+@curry_flip(1)
+def skip(source: Iterable[_TSource], count: int) -> Iterable[_TSource]:
     """Returns a sequence that skips N elements of the underlying
     sequence and then yields the remaining elements of the sequence.
 
@@ -865,15 +825,12 @@ def skip(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
         count: The number of items to skip.
     """
 
-    def _skip(source: Iterable[_TSource]) -> Iterable[_TSource]:
-        def gen():
-            for i, n in enumerate(source):
-                if i >= count:
-                    yield n
+    def gen():
+        for i, n in enumerate(source):
+            if i >= count:
+                yield n
 
-        return SeqGen(gen)
-
-    return _skip
+    return SeqGen(gen)
 
 
 def sum(source: Iterable[_TSupportsSum]) -> _TSupportsSum:
@@ -882,16 +839,14 @@ def sum(source: Iterable[_TSupportsSum]) -> _TSupportsSum:
     return cast(_TSupportsSum, ret)
 
 
+@curry_flip(1)
 def sum_by(
-    projection: Callable[[_TSource], _TSupportsSum]
-) -> Callable[[Iterable[_TSource]], _TSupportsSum]:
+    source: Iterable[_TSource], projection: Callable[[_TSource], _TSupportsSum]
+) -> _TSupportsSum:
     """Returns the sum of the results generated by applying the
     function to each element of the sequence."""
 
-    def _(source: Iterable[_TSource]) -> _TSupportsSum:
-        return sum(projection(x) for x in source)
-
-    return _
+    return sum(projection(x) for x in source)
 
 
 def tail(source: Iterable[_TSource]) -> Iterable[_TSource]:
@@ -902,7 +857,8 @@ def tail(source: Iterable[_TSource]) -> Iterable[_TSource]:
     return proj(source)
 
 
-def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
+@curry_flip(1)
+def take(source: Iterable[_TSource], count: int) -> Iterable[_TSource]:
     """Returns the first N elements of the sequence.
 
     Args:
@@ -912,19 +868,16 @@ def take(count: int) -> Callable[[Iterable[_TSource]], Iterable[_TSource]]:
         The result sequence.
     """
 
-    def _take(source: Iterable[_TSource]) -> Iterable[_TSource]:
-        def gen():
-            for i, n in enumerate(source):
-                yield n
+    def gen():
+        for i, n in enumerate(source):
+            yield n
 
-                if i == count - 1:
-                    break
+            if i == count - 1:
+                break
 
-        if count > 0:
-            return SeqGen(gen)
-        return Seq()
-
-    return _take
+    if count > 0:
+        return SeqGen(gen)
+    return Seq()
 
 
 def to_list(source: Iterable[_TSource]) -> "Block[_TSource]":
@@ -933,9 +886,10 @@ def to_list(source: Iterable[_TSource]) -> "Block[_TSource]":
     return Block.of_seq(source)
 
 
+@curry_flip(1)
 def unfold(
-    generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]]
-) -> Callable[[_TState], Iterable[_TSource]]:
+    state: _TState, generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]]
+) -> Iterable[_TSource]:
     """Generates a list that contains the elements generated by the
     given computation. The given initial state argument is passed to
     the element generator.
@@ -950,26 +904,13 @@ def unfold(
         returns the result list.
     """
 
-    def _unfold(state: _TState) -> Iterable[_TSource]:
-        """Returns a list that contains the elements generated by the
-        given computation. The given initial state argument is passed to
-        the element generator.
+    while True:
+        result = generator(state)
+        if result.is_none():
+            break
 
-        Args:
-            state: The initial state.
-
-        Returns:
-            The result list.
-        """
-        while True:
-            result = generator(state)
-            if result.is_none():
-                break
-
-            item, state = result.value
-            yield item
-
-    return _unfold
+        item, state = result.value
+        yield item
 
 
 def zip(

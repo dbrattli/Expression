@@ -587,13 +587,9 @@ class Block(
         yield from cls.__validators__
 
 
-def append(
-    source: Block[_TSource],
-) -> Callable[[Block[_TSource]], Block[_TSource]]:
-    def _append(other: Block[_TSource]) -> Block[_TSource]:
-        return source.append(other)
-
-    return _append
+@curry_flip(1)
+def append(source: Block[_TSource], other: Block[_TSource]) -> Block[_TSource]:
+    return source.append(other)
 
 
 @curry_flip(1)
@@ -658,9 +654,12 @@ def filter(
     return source.filter(predicate)
 
 
+@curry_flip(1)
 def fold(
-    folder: Callable[[_TState, _TSource], _TState], state: _TState
-) -> Callable[[Block[_TSource]], _TState]:
+    source: Block[_TSource],
+    folder: Callable[[_TState, _TSource], _TState],
+    state: _TState,
+) -> _TState:
     """Applies a function to each element of the collection, threading
     an accumulator argument through the computation. Take the second
     argument, and apply the function to it and the first element of the
@@ -680,13 +679,11 @@ def fold(
         and returns the final state value.
     """
 
-    def _fold(source: Block[_TSource]) -> _TState:
-        return source.fold(folder, state)
-
-    return _fold
+    return source.fold(folder, state)
 
 
-def forall(predicate: Callable[[_TSource], bool]) -> Callable[[Block[_TSource]], bool]:
+@curry_flip(1)
+def forall(source: Block[_TSource], predicate: Callable[[_TSource], bool]) -> bool:
     """Tests if all elements of the collection satisfy the given
     predicate.
 
@@ -697,10 +694,7 @@ def forall(predicate: Callable[[_TSource], bool]) -> Callable[[Block[_TSource]],
         True if all of the elements satisfy the predicate.
     """
 
-    def _forall(source: Block[_TSource]) -> bool:
-        return source.forall(predicate)
-
-    return _forall
+    return source.forall(predicate)
 
 
 def head(source: Block[_TSource]) -> _TSource:
@@ -729,7 +723,8 @@ def indexed(source: Block[_TSource]) -> Block[Tuple[int, _TSource]]:
     return source.indexed()
 
 
-def item(index: int) -> Callable[[Block[_TSource]], _TSource]:
+@curry_flip(1)
+def item(source: Block[_TSource], index: int) -> _TSource:
     """Indexes into the list. The first element has index 0.
 
     Args:
@@ -739,10 +734,7 @@ def item(index: int) -> Callable[[Block[_TSource]], _TSource]:
         The value at the given index.
     """
 
-    def _item(source: Block[_TSource]) -> _TSource:
-        return source.item(index)
-
-    return _item
+    return source.item(index)
 
 
 def is_empty(source: Block[Any]) -> bool:
@@ -750,9 +742,10 @@ def is_empty(source: Block[Any]) -> bool:
     return source.is_empty()
 
 
+@curry_flip(1)
 def map(
-    mapper: Callable[[_TSource], _TResult]
-) -> Callable[[Block[_TSource]], Block[_TResult]]:
+    source: Block[_TSource], mapper: Callable[[_TSource], _TResult]
+) -> Block[_TResult]:
     """Map list.
 
     Builds a new collection whose elements are the results of applying
@@ -765,10 +758,7 @@ def map(
         The list of transformed elements.
     """
 
-    def _map(source: Block[_TSource]) -> Block[_TResult]:
-        return source.map(mapper)
-
-    return _map
+    return source.map(mapper)
 
 
 @curry_flip(1)
@@ -854,9 +844,10 @@ def map3(
     return starmap(mapper)
 
 
+@curry_flip(1)
 def mapi(
-    mapper: Callable[[int, _TSource], _TResult]
-) -> Callable[[Block[_TSource]], Block[_TResult]]:
+    source: Block[_TSource], mapper: Callable[[int, _TSource], _TResult]
+) -> Block[_TResult]:
     """Map list with index.
 
     Builds a new collection whose elements are the results of
@@ -872,10 +863,7 @@ def mapi(
         The list of transformed elements.
     """
 
-    def _mapi(source: Block[_TSource]) -> Block[_TResult]:
-        return source.mapi(mapper)
-
-    return _mapi
+    return source.mapi(mapper)
 
 
 def of(*args: _TSource) -> Block[_TSource]:
