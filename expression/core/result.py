@@ -195,7 +195,7 @@ class Ok(Result[_TSource, _TError]):
         other: Ok[_TOther, _TError] | Error[_TOther, _TError],
         mapper: Callable[[_TSource, _TOther], _TResult],
     ) -> Result[_TResult, _TError]:
-        return other.bind(lambda value: Ok(mapper(self._value, value)))
+        return other.map(lambda value: mapper(self._value, value))
 
     def bind(
         self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
