@@ -195,12 +195,7 @@ class Ok(Result[_TSource, _TError]):
         other: Ok[_TOther, _TError] | Error[_TOther, _TError],
         mapper: Callable[[_TSource, _TOther], _TResult],
     ) -> Result[_TResult, _TError]:
-        # assert isinstance(other, (Ok, Error))
-        match other:
-            case Ok(value):
-                return Ok(mapper(self._value, value))
-            case Error(error):
-                return Error(error)
+        return other.bind(lambda value: Ok(mapper(self._value, value)))
 
     def bind(
         self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
