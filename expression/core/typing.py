@@ -13,7 +13,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
     cast,
     get_origin,
 )
@@ -79,7 +78,7 @@ class SupportsValidation(Protocol[_T_co]):
     @classmethod
     def __get_validators__(
         cls,
-    ) -> Iterator[Union[Validator[_T_co], GenericValidator[_T_co]]]:
+    ) -> Iterator[Validator[_T_co] | GenericValidator[_T_co]]:
         """Yield an iterator of validators."""
         ...
 

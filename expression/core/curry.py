@@ -185,7 +185,7 @@ def curry_flip(
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """A flipped curry decorator.
 
-    Makes a function curried, but flips curried the arguments to become
+    Makes a function curried, but flips the curried arguments to become
     the last arguments. This is very nice when having e.g optional
     arguments after a source argument that will be piped.
 

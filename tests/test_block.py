@@ -35,7 +35,6 @@ def test_block_head_fluent():
 
 def test_block_head_match() -> None:
     xs: Block[int] = empty.cons(42)
-
     match xs:
         case Block([head, *_]):
             assert head == 42

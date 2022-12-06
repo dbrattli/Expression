@@ -19,7 +19,7 @@ repos:
   - hooks:
       - id: flake8
         exclude: ^docs/
-    repo: https://gitlab.com/pycqa/flake8
+    repo: https://github.com/PyCQA/flake8
     rev: 4.0.0
   - hooks:
       - id: pyright
@@ -28,7 +28,7 @@ repos:
         language: node
         pass_filenames: false
         types: [python]
-        additional_dependencies: ["pyright@1.1.275"]
+        additional_dependencies: ["pyright@1.1.281"]
     repo: local
   - hooks:
     - id: jb-to-sphinx

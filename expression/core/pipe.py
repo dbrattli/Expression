@@ -156,13 +156,15 @@ def pipe2(__values: Tuple[_A, _B]) -> Tuple[_A, _B]:
 
 
 @overload
-def pipe2(__values: Tuple[_A, _B], __fn1: Callable[[_A, _B], _C]) -> _C:
+def pipe2(__values: Tuple[_A, _B], __fn1: Callable[[_A], Callable[[_B], _C]]) -> _C:
     ...
 
 
 @overload
 def pipe2(
-    __values: Tuple[_A, _B], __fn1: Callable[[_A, _B], _C], __fn2: Callable[[_C], _D]
+    __values: Tuple[_A, _B],
+    __fn1: Callable[[_A], Callable[[_B], _C]],
+    __fn2: Callable[[_C], _D],
 ) -> _D:
     ...
 
@@ -170,7 +172,7 @@ def pipe2(
 @overload
 def pipe2(
     __values: Tuple[_A, _B],
-    __fn1: Callable[[_A, _B], _C],
+    __fn1: Callable[[_A], Callable[[_B], _C]],
     __fn2: Callable[[_C], _D],
     __fn3: Callable[[_D], _E],
 ) -> _E:
@@ -178,11 +180,15 @@ def pipe2(
 
 
 def pipe2(__values: Any, *fns: Any) -> Any:
-    return starpipe(__values, *fns)
+    return pipe(fns[0](__values[0])(__values[1]), *fns[1:]) if fns else __values
 
 
-def pipe3(args: Any, *fns: Any) -> Any:
-    return starpipe(args, *fns)
+def pipe3(__values: Any, *fns: Any) -> Any:
+    return (
+        pipe(fns[0](__values[0])(__values[1])(__values[2]), *fns[1:])
+        if fns
+        else __values
+    )
 
 
 def starpipe(args: Any, *fns: Callable[..., Any]):

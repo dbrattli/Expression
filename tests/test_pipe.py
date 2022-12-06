@@ -35,14 +35,14 @@ def test_pipe2_id(x: int, y: int):
 
 @given(st.integers(), st.integers())
 def test_pipe2_fn(x: int, y: int):
-    value = pipe2((x, y), lambda x, y: x + y)
+    value = pipe2((x, y), lambda x: lambda y: x + y)
     assert value == x + y
 
 
 @given(st.integers(), st.integers())
 def test_pipe2_fn_gn(x: int, y: int):
     gn: Callable[[int], int] = lambda g: g * y
-    fn: Callable[[int, int], int] = lambda x, y: x + y
+    fn: Callable[[int], Callable[[int], int]] = lambda x: lambda y: x + y
     value = pipe2((x, y), fn, gn)
 
-    assert value == gn(fn(x, y))
+    assert value == gn(fn(x)(y))

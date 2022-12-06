@@ -30,7 +30,7 @@ from typing import (
     cast,
 )
 
-from expression.core import Option, PipeMixin, SupportsLessThan, pipe
+from expression.core import Option, PipeMixin, SupportsLessThan, curry_flip, pipe
 
 from . import maptree, seq
 from .block import Block
@@ -270,7 +270,8 @@ class Map(Mapping[Key, Value], PipeMixin):
         return str(self)
 
 
-def add(key: Key, value: Value) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+@curry_flip(1)
+def add(table: Map[Key, Value], key: Key, value: Value) -> Map[Key, Value]:
     """Add key with value to map.
 
     Returns a new map with the binding added to the given map. If a
@@ -287,28 +288,13 @@ def add(key: Key, value: Value) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
         the output map.
     """
 
-    def _add(table: Map[Key, Value]) -> Map[Key, Value]:
-        """Add the partially applied key with value to map.
-
-        Returns a new map with the binding added to the given map. If a
-        binding with the given key already exists in the input map, the
-        existing binding is replaced by the new binding in the result
-        map.
-
-        Args:
-            table: The input table.
-
-        Returns:
-            The resulting map.
-        """
-        return table.add(key, value)
-
-    return _add
+    return table.add(key, value)
 
 
+@curry_flip(1)
 def change(
-    key: Key, fn: Callable[[Option[Value]], Option[Value]]
-) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+    table: Map[Key, Value], key: Key, fn: Callable[[Option[Value]], Option[Value]]
+) -> Map[Key, Value]:
     """Returns a new map with the value stored under key changed
     according to f.
 
@@ -321,17 +307,12 @@ def change(
         The input key.
     """
 
-    def _change(table: Map[Key, Value]) -> Map[Key, Value]:
-        return table.change(key, fn)
-
-    return _change
+    return table.change(key, fn)
 
 
-def contains_key(key: Key) -> Callable[[Map[Key, Any]], bool]:
-    def _contains_key(table: Map[Key, Any]) -> bool:
-        return table.contains_key(key)
-
-    return _contains_key
+@curry_flip(1)
+def contains_key(table: Map[Key, Any], key: Key) -> bool:
+    return table.contains_key(key)
 
 
 def count(table: Map[Any, Any]) -> int:
@@ -343,7 +324,8 @@ def create(ie: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_seq(ie))
 
 
-def find(key: Key) -> Callable[[Map[Key, Value]], Value]:
+@curry_flip(1)
+def find(table: Map[Key, Value], key: Key) -> Value:
     """Lookup an element in the map, raising KeyNotFoundException if no
     binding exists in the map
 
@@ -353,10 +335,7 @@ def find(key: Key) -> Callable[[Map[Key, Value]], Value]:
 
     """
 
-    def _find(table: Map[Key, Value]) -> Value:
-        return table[key]
-
-    return _find
+    return table[key]
 
 
 def is_empty(table: Map[Any, Any]) -> bool:
@@ -378,9 +357,10 @@ def iterate(action: Callable[[Key, Value], None]) -> Callable[[Map[Key, Value]],
     return _iterate
 
 
+@curry_flip(1)
 def try_pick(
-    chooser: Callable[[Key, Value], Option[Result]]
-) -> Callable[[Map[Key, Value]], Option[Result]]:
+    table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]
+) -> Option[Result]:
     """Searches the map looking for the first element where the given
     function returns a Some value.
 
@@ -392,27 +372,21 @@ def try_pick(
         and returns the first result.
     """
 
-    def _try_pick(table: Map[Key, Value]) -> Option[Result]:
-        return table.try_pick(chooser)
-
-    return _try_pick
+    return table.try_pick(chooser)
 
 
+@curry_flip(1)
 def pick(
-    chooser: Callable[[Key, Value], Option[Result]]
-) -> Callable[[Map[Key, Value]], Result]:
-    def _try_pick(table: Map[Key, Value]) -> Result:
-        for res in table.try_pick(chooser):
-            return res
-        else:
-            raise KeyError()
-
-    return _try_pick
+    table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]
+) -> Result:
+    for res in table.try_pick(chooser):
+        return res
+    else:
+        raise KeyError()
 
 
-def exists(
-    predicate: Callable[[Key, Value], bool]
-) -> Callable[[Map[Key, Value]], bool]:
+@curry_flip(1)
+def exists(table: Map[Key, Value], predicate: Callable[[Key, Value], bool]) -> bool:
     """Returns true if the given predicate returns true for one of the
     bindings in the map.
 
@@ -425,67 +399,55 @@ def exists(
         pairs.
     """
 
-    def _exists(table: Map[Key, Value]) -> bool:
-        return table.exists(predicate)
-
-    return _exists
+    return table.exists(predicate)
 
 
+@curry_flip(1)
 def filter(
-    predicate: Callable[[Key, Value], bool]
-) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
-    def _filter(table: Map[Key, Value]) -> Map[Key, Value]:
-        return table.filter(predicate)
-
-    return _filter
+    table: Map[Key, Value], predicate: Callable[[Key, Value], bool]
+) -> Map[Key, Value]:
+    return table.filter(predicate)
 
 
-def for_all(
-    predicate: Callable[[Key, Value], bool]
-) -> Callable[[Map[Key, Value]], bool]:
-    def _for_all(table: Map[Key, Value]) -> bool:
-        return table.for_all(predicate)
-
-    return _for_all
+@curry_flip(1)
+def for_all(table: Map[Key, Value], predicate: Callable[[Key, Value], bool]) -> bool:
+    return table.for_all(predicate)
 
 
+@curry_flip(1)
 def map(
-    mapping: Callable[[Key, Value], Result]
-) -> Callable[[Map[Key, Value]], Map[Key, Result]]:
-    def _map(table: Map[Key, Value]) -> Map[Key, Result]:
-        return table.map(mapping)
-
-    return _map
+    table: Map[Key, Value], mapping: Callable[[Key, Value], Result]
+) -> Map[Key, Result]:
+    return table.map(mapping)
 
 
+@curry_flip(1)
 def fold(
-    folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result
-) -> Callable[[Map[Key, Value]], Result]:
-    def _fold(table: Map[Key, Value]) -> Result:
-        return table.fold(folder, state)
+    table: Map[Key, Value],
+    folder: Callable[[Result, Tuple[Key, Value]], Result],
+    state: Result,
+) -> Result:
+    return table.fold(folder, state)
 
-    return _fold
 
-
+@curry_flip(1)
 def fold_back(
-    folder: Callable[[Tuple[Key, Value], Result], Result], table: Map[Key, Value]
-) -> Callable[[Result], Result]:
-    def _fold_back(state: Result) -> Result:
-        return table.fold_back(folder, state)
+    state: Result,
+    folder: Callable[[Tuple[Key, Value], Result], Result],
+    table: Map[Key, Value],
+) -> Result:
+    return table.fold_back(folder, state)
 
-    return _fold_back
 
-
+@curry_flip(1)
 def partition(
-    predicate: Callable[[Key, Value], bool]
-) -> Callable[[Map[Key, Value]], Tuple[Map[Key, Value], Map[Key, Value]]]:
-    def _partition(table: Map[Key, Value]) -> Tuple[Map[Key, Value], Map[Key, Value]]:
-        return table.partition(predicate)
-
-    return _partition
+    table: Map[Key, Value], predicate: Callable[[Key, Value], bool]
+) -> Tuple[Map[Key, Value], Map[Key, Value]]:
+    return table.partition(predicate)
 
 
-def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
+@curry_flip(1)
+def remove(table: Map[Key, Value], key: Key) -> Map[Key, Value]:
     """Removes an element from the domain of the map. No exception is
     raised if the element is not present.
 
@@ -497,10 +459,7 @@ def remove(key: Key) -> Callable[[Map[Key, Value]], Map[Key, Value]]:
         The resulting map.
     """
 
-    def _remove(table: Map[Key, Value]) -> Map[Key, Value]:
-        return table.remove(key)
-
-    return _remove
+    return table.remove(key)
 
 
 def of(**args: Value) -> Map[str, Value]:
@@ -528,7 +487,8 @@ def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
     return table.to_seq()
 
 
-def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
+@curry_flip(1)
+def try_find(table: Map[Key, Value], key: Key) -> Option[Value]:
     """Lookup an element in the map, returning a `Some` value if the
     element is in the domain of the map and `Nothing` if not.
 
@@ -540,19 +500,7 @@ def try_find(key: Key) -> Callable[[Map[Key, Value]], Option[Value]]:
         instance and returns the result.
     """
 
-    def _try_find(table: Map[Key, Value]) -> Option[Value]:
-        """Lookup an element in the map, returning a `Some` value if the
-        element is in the domain of the map and `Nothing` if not.
-
-        Args:
-            key: The input key.
-
-        Returns:
-            The found `Some` value or `Nothing`.
-        """
-        return table.try_find(key)
-
-    return _try_find
+    return table.try_find(key)
 
 
 empty: Map[Any, Any] = Map.empty()
