@@ -465,7 +465,6 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         return pipe(state, unfold(generator))
 
     def __eq__(self, o: Any) -> bool:
-        print("eq:", [self.value, o])
         if len(self) != len(o):
             return False
 
@@ -475,7 +474,6 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         return True
 
     def __len__(self) -> int:
-        print([self.value])
         return len(self.value)
 
     def __iter__(self) -> Iterator[_TSource]:
