@@ -126,6 +126,16 @@ def test_map_iterate(xs: Dict[str, int]):
     assert sorted(ys) == sorted(list(xs.keys()))
 
 
+def test_expression_issue_105():
+    m: Map[str, int] = Map.empty()
+    m = m.add("1", 1).add("2", 2).add("3", 3).add("4", 4)
+    m = m.change("2", lambda x: Some(0))  # <- works cause "2" is second added item
+    m = m.change("1", lambda x: Some(42))
+    m = m.change("3", lambda x: x)
+
+    assert m == Map.of_list([("1", 42), ("2", 0), ("3", 3), ("4", 4)])
+
+
 # @given(
 #     st.dictionaries(keys=st.text(), values=st.integers()),
 #     st.dictionaries(keys=st.text(), values=st.integers()),
@@ -134,15 +144,22 @@ def test_map_iterate(xs: Dict[str, int]):
 # )
 # def test_map_change(d_1: Dict[str, int], d_2: Dict[str, int], key_1: str, key_2: str):
 def test_map_change():
-    d_1 = {}
-    d_2 = {}
-    key_1 = "a"
-    key_2 = "b"
+    d_1 = {"a": 1, "b": 3}
+    d_2 = {"some": 0, "values": -1}
+    key_1 = "1"
+    key_2 = "2"
     m: Map[str, Dict[str, int]] = Map.empty()
-    m = m.add(key_1, d_1)
-    m = m.add(key_2, d_2)
+    m = (
+        m.add(key_1, d_1)
+        .add(key_2, d_2)
+        .add("3", {})
+        .add("4", {})
+        .add("5", {})
+        .add("6", {})
+        .add("7", {})
+    )
     m = m.change(key_2, lambda x: Some({**x.value, "other": 42}))
-    # m = m.change(key_1, lambda x: Some({**x.value, "some key": 5}))
+    m = m.change(key_1, lambda x: Some({**x.value, "some key": 5}))
 
     def verify(
         original: Dict[str, int], map_key: str, override_key: str, override_value: int
@@ -156,5 +173,5 @@ def test_map_change():
             else:
                 assert v == original[k]
 
-    # verify(d_1, key_1, "some key", 5)
+    verify(d_1, key_1, "some key", 5)
     verify(d_2, key_2, "other", 42)

@@ -312,7 +312,7 @@ def change(
         if isinstance(m2, MapTreeNode):
             mn = m2
             if k < mn.key:
-                rebalance(change(k, u, mn.left), mn.key, mn.value, mn.right)
+                return rebalance(change(k, u, mn.left), mn.key, mn.value, mn.right)
             elif k == mn.key:
                 for v in u(Some(mn.value)).to_list():
                     return Some(MapTreeNode(k, v, mn.left, mn.right, mn.height))
@@ -325,7 +325,7 @@ def change(
                         sk, sv, r_ = splice_out_successor(mn.right)
                         return mk(mn.left, sk, sv, r_)
             else:
-                rebalance(mn.left, mn.key, mn.value, change(k, u, mn.right))
+                return rebalance(mn.left, mn.key, mn.value, change(k, u, mn.right))
         else:
             if k < m2.key:
                 for v in u(Nothing).to_list():
