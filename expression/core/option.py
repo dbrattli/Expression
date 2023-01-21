@@ -174,6 +174,10 @@ class Option(
         raise NotImplementedError
 
     @abstractmethod
+    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
+        raise NotImplementedError
+
+    @abstractmethod
     def __lt__(self, other: Any) -> bool:
         raise NotImplementedError
 

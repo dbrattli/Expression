@@ -142,7 +142,7 @@ class Result(
         raise NotImplementedError
 
     @abstractmethod
-    def __iter__(self) -> Iterator[_TSource]:
+    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         raise NotImplementedError
 
     def __repr__(self) -> str:
@@ -343,7 +343,7 @@ class Error(
             return self.error == o.error  # type: ignore
         return False
 
-    def __iter__(self) -> Iterator[_TSource]:
+    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         """Return iterator for Error case."""
 
         # Raise class here so sub-classes like Failure works as well.
