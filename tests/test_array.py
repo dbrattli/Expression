@@ -268,7 +268,6 @@ def test_array_skip_last(xs: List[int], x: int):
 
 @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
 def test_array_index(xs: List[int], x: int):
-
     x = x % len(xs) if x > 0 else x
     expected = xs[x]
 
@@ -285,7 +284,6 @@ def test_array_index(xs: List[int], x: int):
 
 @given(st.lists(st.integers()))  # type: ignore
 def test_array_indexed(xs: List[int]):
-
     expected = list(enumerate(xs))
 
     ys: TypedArray[int] = array.of_seq(xs)

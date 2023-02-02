@@ -148,7 +148,7 @@ class MailboxProcessor(Generic[_Msg]):
             msg = self.messages.get()
             self.continuation, cont = None, self.continuation
 
-            if cont is not None:
+            if cont is not None:  # type: ignore
                 cont(msg)
 
     @staticmethod

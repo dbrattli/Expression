@@ -313,8 +313,8 @@ class Block(
         return builtins.sum(self._value)
 
     def sum_by(
-        self, projection: Callable[[_TSource], _TSourceSum]
-    ) -> _TSourceSum | Literal[0]:
+        self: Block[_TSourceSum], projection: Callable[[_TSourceSum], _TResult]
+    ) -> _TResult:
         return pipe(self, sum_by(projection))
 
     def mapi(self, mapping: Callable[[int, _TSource], _TResult]) -> Block[_TResult]:
@@ -565,7 +565,8 @@ class Block(
         ...
 
     def __getitem__(self, key: Any) -> Any:
-        return self._value[key]
+        ret: Any = self._value[key]
+        return ret
 
     def __iter__(self) -> Iterator[_TSource]:
         return iter(self._value)
@@ -995,9 +996,10 @@ def sum(source: Block[_TSourceSum | Literal[0]]) -> _TSourceSum | Literal[0]:
 
 @curry_flip(1)
 def sum_by(
-    source: Block[_TSource], projection: Callable[[_TSource], _TSourceSum]
-) -> _TSourceSum | Literal[0]:
-    return builtins.sum(source.map(projection))
+    source: Block[_TSourceSum], projection: Callable[[_TSourceSum], _TResult]
+) -> _TResult:
+    xs = source.map(projection)
+    return builtins.sum(xs)  # type: ignore
 
 
 def tail(source: Block[_TSource]) -> Block[_TSource]:

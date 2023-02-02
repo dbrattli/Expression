@@ -20,9 +20,9 @@ from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .misc import flip, fst, identity, snd
-from .option import Nothing, Nothing_, Option, Some, default_arg
+from .option import Nothing, Nothing_, Option, Some, default_arg, is_none, is_some
 from .pipe import PipeMixin, pipe, pipe2, pipe3
-from .result import Error, Ok, Result
+from .result import Error, Ok, Result, is_error, is_ok
 from .try_ import Failure, Success, Try
 from .typing import (
     SupportsGreaterThan,
@@ -59,6 +59,10 @@ __all__ = [
     "flip",
     "fst",
     "identity",
+    "is_error",
+    "is_none",
+    "is_ok",
+    "is_some",
     "MailboxProcessor",
     "Nothing",
     "Nothing_",

@@ -240,7 +240,6 @@ def test_block_slice(xs: List[int], x: int, y: int):
 
 @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
 def test_block_index(xs: List[int], x: int):
-
     x = x % len(xs) if x > 0 else x
     expected = xs[x]
 
@@ -257,7 +256,6 @@ def test_block_index(xs: List[int], x: int):
 
 @given(st.lists(st.integers()))  # type: ignore
 def test_block_indexed(xs: List[int]):
-
     expected = list(enumerate(xs))
 
     ys: Block[int] = block.of_seq(xs)
