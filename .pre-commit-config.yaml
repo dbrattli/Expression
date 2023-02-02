@@ -10,17 +10,17 @@ repos:
   - hooks:
       - id: isort
     repo: https://github.com/timothycrosley/isort
-    rev: 5.10.1
+    rev: 5.12.0
   - hooks:
       - id: black
         exclude: ^docs/
     repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 23.1.0
   - hooks:
       - id: flake8
         exclude: ^docs/
     repo: https://github.com/PyCQA/flake8
-    rev: 4.0.0
+    rev: 6.0.0
   - hooks:
       - id: pyright
         name: pyright
@@ -28,7 +28,7 @@ repos:
         language: node
         pass_filenames: false
         types: [python]
-        additional_dependencies: ["pyright@1.1.281"]
+        additional_dependencies: ["pyright@1.1.292"]
     repo: local
   - hooks:
     - id: jb-to-sphinx

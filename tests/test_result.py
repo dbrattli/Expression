@@ -322,7 +322,6 @@ def test_result_effect_throws():
 
 
 def test_pipeline_none():
-
     hn = pipeline()
 
     assert hn(42) == Ok(42)

@@ -102,8 +102,7 @@ class AsyncDisposable(ABC):
 
 class AsyncAnonymousDisposable(AsyncDisposable):
     def __init__(self, action: Callable[[], Awaitable[None]]) -> None:
-        if action is not None:
-            assert iscoroutinefunction(action)
+        assert iscoroutinefunction(action)
         self._is_disposed = False
         self._action = action
 
