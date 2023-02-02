@@ -3,7 +3,7 @@ from typing import Callable, Dict, ItemsView, Iterable, List, Tuple
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
-from expression import pipe, Some
+from expression import Some, pipe
 from expression.collections import Block, Map, map
 
 
