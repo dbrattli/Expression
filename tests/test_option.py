@@ -4,11 +4,11 @@ import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel
+from tests.utils import CustomException
 
 from expression import Nothing, Option, Some, effect, option, pipe, pipe2
 from expression.core.option import Nothing_
 from expression.extra.option import pipeline
-from tests.utils import CustomException
 
 
 def test_option_some():
@@ -467,7 +467,6 @@ def test_option_builder_throws():
 
 
 def test_pipeline_none():
-
     hn = pipeline()
 
     assert hn(42) == Some(42)

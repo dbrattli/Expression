@@ -52,7 +52,7 @@ profile = "black"
 line_length=88                 # corresponds to -w  flag
 multi_line_output=3            # corresponds to -m  flag
 include_trailing_comma=true    # corresponds to -tc flag
-skip_glob = '^((?!py$).)*$'    # isort all Python files
+src_paths = ["expression"]
 float_to_top=true
 
 [tool.pytest.ini_options]
