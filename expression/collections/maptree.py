@@ -309,7 +309,6 @@ def change(
     k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]
 ) -> MapTree[Key, Value]:
     for m2 in m.to_list():
-        print("m2", m2)
         if isinstance(m2, MapTreeNode):
             mn = m2
             if k < mn.key:
