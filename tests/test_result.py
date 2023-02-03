@@ -7,6 +7,7 @@ from pydantic import BaseModel, parse_obj_as
 
 from expression import Error, Ok, Result, effect, result
 from expression.collections import Block
+from expression.core.result import BaseResult
 from expression.extra.result import pipeline, sequence
 
 from .utils import CustomException
@@ -15,7 +16,7 @@ from .utils import CustomException
 def test_result_ok():
     xs: Result[int, str] = Ok(42)
 
-    assert isinstance(xs, Result)
+    assert isinstance(xs, BaseResult)
     assert xs.is_ok()
     assert not xs.is_error()
     assert str(xs) == "Ok 42"
@@ -57,7 +58,7 @@ def test_result_error():
     error = CustomException("d'oh!")
     xs: Result[str, Exception] = Error(error)
 
-    assert isinstance(xs, Result)
+    assert isinstance(xs, BaseResult)
     assert not xs.is_ok()
     assert xs.is_error()
     assert str(xs) == f"Error {error}"
@@ -371,7 +372,7 @@ def test_parse_block_works():
     obj = dict(one=dict(ok=42))
     model = Model.parse_obj(obj)
 
-    assert isinstance(model.one, Result)
+    assert isinstance(model.one, BaseResult)
     assert model.one == Ok(42)
     assert model.two == Error(MyError(message="error"))
     assert model.three == Error(MyError(message="error"))

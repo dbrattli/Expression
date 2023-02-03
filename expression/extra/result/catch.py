@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Any, Callable, Optional, Type, TypeVar, cast, overload
 
 from expression.core import Error, Ok, Result
+from expression.core.result import BaseResult
 
 _TSource = TypeVar("_TSource")
 _TError = TypeVar("_TError", bound=Exception)
@@ -43,7 +44,7 @@ def catch(  # type: ignore
             except exception as exn:
                 return Error(cast(_TError, exn))
             else:
-                if isinstance(out, Result):
+                if isinstance(out, BaseResult):
                     return cast(Result[_TSource, _TError], out)
 
                 return Ok(out)

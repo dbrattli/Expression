@@ -26,7 +26,7 @@ from typing import (
     get_origin,
 )
 
-from typing_extensions import TypeGuard
+from typing_extensions import TypeAlias, TypeGuard
 
 from .curry import curry_flip
 from .error import EffectError
@@ -40,7 +40,7 @@ _TError = TypeVar("_TError")
 
 
 def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
-    if isinstance(result, Result):
+    if isinstance(result, BaseResult):
         return cast(Result[Any, Any], result)
 
     if not isinstance(result, Dict):
@@ -66,10 +66,10 @@ def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
             raise ValueError("not a result")
 
 
-class Result(
+class BaseResult(
     Iterable[_TSource],
     PipeMixin,
-    SupportsValidation["Result[_TSource, _TError]"],
+    SupportsValidation["BaseResult[_TSource, _TError]"],
     Generic[_TSource, _TError],
     ABC,
 ):
@@ -151,7 +151,7 @@ class Result(
     @classmethod
     def __get_validators__(
         cls,
-    ) -> Iterator[GenericValidator[Result[_TSource, _TError]]]:
+    ) -> Iterator[GenericValidator[BaseResult[_TSource, _TError]]]:
         yield from cls.__validators__
 
     @abstractmethod
@@ -159,7 +159,7 @@ class Result(
         raise NotImplementedError
 
 
-class Ok(Result[_TSource, _TError]):
+class Ok(BaseResult[_TSource, _TError]):
     """The Ok result case class."""
 
     __match_args__ = ("value",)
@@ -268,7 +268,7 @@ class ResultException(EffectError):
 
 class Error(
     ResultException,
-    Result[_TSource, _TError],
+    BaseResult[_TSource, _TError],
 ):
     """The Error result case class."""
 
@@ -425,6 +425,8 @@ def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Error[_TSource, _TE
 
     return result.is_error()
 
+
+Result: TypeAlias = Union[Ok[_TSource, _TError], Error[_TSource, _TError]]
 
 __all__ = [
     "Result",

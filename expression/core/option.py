@@ -19,10 +19,11 @@ from typing import (
     List,
     Optional,
     TypeVar,
+    Union,
     cast,
 )
 
-from typing_extensions import TypeGuard
+from typing_extensions import TypeAlias, TypeGuard
 
 from .curry import curry_flip
 from .error import EffectError
@@ -40,7 +41,7 @@ _T2 = TypeVar("_T2")
 
 
 def _validate(value: Any, field: ModelField) -> Option[Any]:
-    if isinstance(value, Option):
+    if isinstance(value, BaseOption):
         return cast(Option[Any], value)
 
     if isinstance(value, Dict) and not value:
@@ -55,10 +56,10 @@ def _validate(value: Any, field: ModelField) -> Option[Any]:
     return Some(cast(Any, value))
 
 
-class Option(
+class BaseOption(
     Iterable[_TSource],
     PipeMixin,
-    SupportsValidation["Option[_TSource]"],
+    SupportsValidation["BaseOption[_TSource]"],
     ABC,
 ):
     """Option abstract base class."""
@@ -185,7 +186,7 @@ class Option(
         return self.__str__()
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[GenericValidator[Option[_TSource]]]:
+    def __get_validators__(cls) -> Iterator[GenericValidator[BaseOption[_TSource]]]:
         yield from cls.__validators__
 
     @abstractmethod
@@ -193,7 +194,7 @@ class Option(
         raise NotImplementedError
 
 
-class Some(Option[_TSource]):
+class Some(BaseOption[_TSource]):
     """The Some option case class."""
 
     __match_args__ = ("value",)
@@ -308,7 +309,7 @@ class Some(Option[_TSource]):
         return hash(self._value)
 
 
-class Nothing_(Option[_TSource], EffectError):
+class Nothing_(BaseOption[_TSource], EffectError):
     """The None option case class.
 
     Do not use. Use the singleton `Nothing` instead. Since Nothing is a
@@ -562,6 +563,8 @@ def default_arg(value: Option[_TSource], default_value: _TSource) -> _TSource:
     """
     return value.default_value(default_value)
 
+
+Option: TypeAlias = Union[Some[_TSource], Nothing_[_TSource]]
 
 __all__ = [
     "Option",
