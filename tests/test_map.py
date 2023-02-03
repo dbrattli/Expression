@@ -3,7 +3,7 @@ from typing import Callable, Dict, ItemsView, Iterable, List, Tuple
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
-from expression import pipe
+from expression import Some, pipe
 from expression.collections import Block, Map, map
 
 
@@ -123,3 +123,14 @@ def test_map_iterate(xs: Dict[str, int]):
     ys = [k for k in map.of(**xs)]
 
     assert sorted(ys) == sorted(list(xs.keys()))
+
+
+def test_map_change():
+    xs = (  # type: ignore
+        Map.empty()
+        .change(1, lambda _: Some(1))  # type: ignore
+        .change(2, lambda _: Some(2))  # type: ignore
+        .change(3, lambda _: Some(3))  # type: ignore
+    )  # type: ignore
+
+    assert xs == Map.of_seq([(1, 1), (2, 2), (3, 3)])
