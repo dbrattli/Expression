@@ -364,7 +364,7 @@ class Model(BaseModel):
 
     class Config:
         json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {
-            Result: result.dict,
+            BaseResult: result.dict,
         }
 
 
