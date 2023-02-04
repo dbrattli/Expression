@@ -136,12 +136,12 @@ class Option(
         raise NotImplementedError
 
     @abstractmethod
-    def is_some(self) -> TypeGuard[Some[_TSource]]:
+    def is_some(self) -> bool:
         """Returns true if the option is not Nothing."""
         raise NotImplementedError
 
     @abstractmethod
-    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
+    def is_none(self) -> bool:
         """Returns true if the option is Nothing."""
         raise NotImplementedError
 
@@ -156,7 +156,7 @@ class Option(
         return of_optional(value)
 
     @abstractmethod
-    def dict(self) -> Optional[_TSource]:
+    def dict(self) -> _TSource | Dict[str, Any]:
         """Returns a json string representation of the option."""
         raise NotImplementedError
 
@@ -171,6 +171,10 @@ class Option(
 
     @abstractmethod
     def __eq__(self, o: Any) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         raise NotImplementedError
 
     @abstractmethod
@@ -211,11 +215,11 @@ class Some(Option[_TSource]):
         """
         return self._value
 
-    def is_some(self) -> TypeGuard[Some[_TSource]]:
+    def is_some(self) -> bool:
         """Returns `True`."""
         return True
 
-    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
+    def is_none(self) -> bool:
         """Returns `False`."""
         return False
 
@@ -267,7 +271,7 @@ class Some(Option[_TSource]):
 
         return Seq.of(self._value)
 
-    def dict(self) -> Optional[_TSource]:
+    def dict(self) -> _TSource:
         attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
         if attr and callable(attr):
             value = attr()
@@ -327,11 +331,11 @@ class Nothing_(Option[_TSource], EffectError):
         """
         return getter()
 
-    def is_some(self) -> TypeGuard[Some[_TSource]]:
+    def is_some(self) -> bool:
         """Returns `False`."""
         return False
 
-    def is_none(self) -> TypeGuard[Nothing_[_TSource]]:
+    def is_none(self) -> bool:
         """Returns `True`."""
         return True
 
@@ -379,7 +383,7 @@ class Nothing_(Option[_TSource], EffectError):
 
         return Seq()
 
-    def dict(self) -> _TSource | Dict[Any, Any]:
+    def dict(self) -> Dict[str, Any]:
         return {}  # Pydantic cannot handle None or other types than Optional
 
     @property

@@ -122,13 +122,13 @@ class Result(
         raise NotImplementedError
 
     @abstractmethod
-    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
+    def is_error(self) -> bool:
         """Returns `True` if the result is an `Error` value."""
 
         raise NotImplementedError
 
     @abstractmethod
-    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
+    def is_ok(self) -> bool:
         """Returns `True` if the result is an `Ok` value."""
 
         raise NotImplementedError
@@ -142,7 +142,7 @@ class Result(
         raise NotImplementedError
 
     @abstractmethod
-    def __iter__(self) -> Iterator[_TSource]:
+    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         raise NotImplementedError
 
     def __repr__(self) -> str:
@@ -209,12 +209,12 @@ class Ok(Result[_TSource, _TError]):
         function, or Ok if the input is Ok."""
         return Ok(self._value)
 
-    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
+    def is_error(self) -> bool:
         """Returns `True` if the result is an `Ok` value."""
 
         return False
 
-    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
+    def is_ok(self) -> bool:
         """Returns `True` if the result is an `Ok` value."""
 
         return True
@@ -320,11 +320,11 @@ class Error(
         function, or Ok if the input is Ok."""
         return Error(mapper(self._error))
 
-    def is_error(self) -> TypeGuard[Error[_TSource, _TError]]:
+    def is_error(self) -> bool:
         """Returns `True` if the result is an `Ok` value."""
         return True
 
-    def is_ok(self) -> TypeGuard[Ok[_TSource, _TError]]:
+    def is_ok(self) -> bool:
         """Returns `True` if the result is an `Ok` value."""
         return False
 
@@ -343,7 +343,7 @@ class Error(
             return self.error == o.error  # type: ignore
         return False
 
-    def __iter__(self) -> Iterator[_TSource]:
+    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         """Return iterator for Error case."""
 
         # Raise class here so sub-classes like Failure works as well.
@@ -414,6 +414,18 @@ def dict(source: Result[_TSource, _TError]) -> Dict[str, Union[_TSource, _TError
     return source.dict()
 
 
+def is_ok(result: Result[_TSource, _TError]) -> TypeGuard[Ok[_TSource, _TError]]:
+    """Returns `True` if the result is an `Ok` value."""
+
+    return result.is_ok()
+
+
+def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Error[_TSource, _TError]]:
+    """Returns `True` if the result is an `Error` value."""
+
+    return result.is_error()
+
+
 __all__ = [
     "Result",
     "Ok",
@@ -423,4 +435,6 @@ __all__ = [
     "map",
     "bind",
     "dict",
+    "is_ok",
+    "is_error",
 ]

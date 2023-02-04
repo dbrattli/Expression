@@ -507,6 +507,7 @@ def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
 
 # Imperative left-to-right iterators.
 
+
 # collapseLHS:
 # a) Always returns either [] or a list starting with MapOne.
 # b) The "fringe" of the set stack is unchanged.

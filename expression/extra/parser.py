@@ -325,7 +325,6 @@ def parse_zero_or_more(
 
 def many(parser: Parser[_A]) -> Parser[Block[_A]]:
     def run(input: Remaining) -> ParseResult[Block[_A]]:
-
         # parse the input -- wrap in Success as it always succeeds
         ok = parse_zero_or_more(parser, input)
         return Ok[Tuple[Block[_A], Remaining], str](ok)

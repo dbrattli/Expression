@@ -3,7 +3,7 @@ from typing import Callable, Dict, ItemsView, Iterable, List, Tuple
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
-from expression import pipe
+from expression import Some, pipe
 from expression.collections import Block, Map, map
 from expression.core.option import Some
 
@@ -126,7 +126,17 @@ def test_map_iterate(xs: Dict[str, int]):
     assert sorted(ys) == sorted(list(xs.keys()))
 
 
-def test_expression_issue_105():
+def test_map_change_empty():
+    xs = (  # type: ignore
+        Map.empty()
+        .change(1, lambda _: Some(1))  # type: ignore
+        .change(2, lambda _: Some(2))  # type: ignore
+        .change(3, lambda _: Some(3))  # type: ignore
+    )  # type: ignore
+
+    assert xs == Map.of_seq([(1, 1), (2, 2), (3, 3)])
+
+def test_expression_change_non_empty():
     m: Map[str, int] = Map.empty()
     m = m.add("1", 1).add("2", 2).add("3", 3).add("4", 4)
     m = m.change("2", lambda x: Some(0))  # <- works cause "2" is second added item
@@ -135,14 +145,6 @@ def test_expression_issue_105():
 
     assert m == Map.of_list([("1", 42), ("2", 0), ("3", 3), ("4", 4)])
 
-
-# @given(
-#     st.dictionaries(keys=st.text(), values=st.integers()),
-#     st.dictionaries(keys=st.text(), values=st.integers()),
-#     st.text(),
-#     st.text(),
-# )
-# def test_map_change(d_1: Dict[str, int], d_2: Dict[str, int], key_1: str, key_2: str):
 def test_map_change():
     d_1 = {"a": 1, "b": 3}
     d_2 = {"some": 0, "values": -1}
