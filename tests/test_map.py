@@ -145,6 +145,7 @@ def test_expression_change_non_empty():
 
     assert m == Map.of_list([("1", 42), ("2", 0), ("3", 3), ("4", 4)])
 
+
 def test_map_change():
     d_1 = {"a": 1, "b": 3}
     d_2 = {"some": 0, "values": -1}
