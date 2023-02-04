@@ -136,6 +136,7 @@ def test_map_change_empty():
 
     assert xs == Map.of_seq([(1, 1), (2, 2), (3, 3)])
 
+
 def test_expression_change_non_empty():
     m: Map[str, int] = Map.empty()
     m = m.add("1", 1).add("2", 2).add("3", 3).add("4", 4)
