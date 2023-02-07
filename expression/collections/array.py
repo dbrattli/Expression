@@ -23,6 +23,7 @@ from typing import (
     Tuple,
     TypeVar,
     cast,
+    Union
 )
 
 from expression.core import (
@@ -44,7 +45,7 @@ _TState = TypeVar("_TState")
 _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
 
 _TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
-_Array = List[_TSource] | MutableSequence[_TSource]
+_Array = Union[List[_TSource], MutableSequence[_TSource]]
 
 
 class int8(int):
