@@ -35,7 +35,7 @@ pre-commit = "^2.20.0"
 autoflake = "^1.4"
 dunamai = "^1.12.0"
 hypothesis = "^6.54.2"
-jupyter-book = "^0.12.0"
+jupyter-book = "^0.15.0"
 sphinx-autodoc-typehints = "^1.17.0"
 pydantic = "^1.9.0"
 
