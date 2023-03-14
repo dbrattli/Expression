@@ -77,18 +77,18 @@ tests-no-zope = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy"
 
 [[package]]
 name = "autoflake"
-version = "1.7.7"
+version = "2.0.2"
 description = "Removes unused imports and unused variables"
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "autoflake-1.7.7-py3-none-any.whl", hash = "sha256:a9b43d08f8e455824e4f7b3f078399f59ba538ba53872f466c09e55c827773ef"},
-    {file = "autoflake-1.7.7.tar.gz", hash = "sha256:c8e4fc41aa3eae0f5c94b939e3a3d50923d7a9306786a6cbf4866a077b8f6832"},
+    {file = "autoflake-2.0.2-py3-none-any.whl", hash = "sha256:a82d8efdcbbb7129a8a23238c529fb9d9919c562e26bb7963ea6890fbfff7d02"},
+    {file = "autoflake-2.0.2.tar.gz", hash = "sha256:e0164421ff13f805f08a023e249d84200bd00463d213b490906bfefa67e83830"},
 ]
 
 [package.dependencies]
-pyflakes = ">=1.1.0"
+pyflakes = ">=3.0.0"
 tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
 
 [[package]]
@@ -2762,4 +2762,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = ">= 3.9, < 4"
-content-hash = "5a19c4d4b8313b960b5623fbe1026b04a4718a64e49fe98a4cd00c881ed971c4"
+content-hash = "d0a434a56b5e9a5e3257963a4622cef75bc7699b9204cdf618cf252fedfc9e28"
