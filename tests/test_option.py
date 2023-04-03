@@ -7,14 +7,14 @@ from pydantic import BaseModel
 from tests.utils import CustomException
 
 from expression import Nothing, Option, Some, effect, option, pipe, pipe2
-from expression.core.option import Nothing_
+from expression.core.option import BaseOption, Nothing_
 from expression.extra.option import pipeline
 
 
 def test_option_some():
     xs = Some(42)
 
-    assert isinstance(xs, Option)
+    assert isinstance(xs, BaseOption)
     assert pipe(xs, option.is_some) is True
     assert pipe(xs, option.is_none) is False
 
@@ -54,7 +54,7 @@ def test_option_some_iterate():
 def test_option_none():
     xs = Nothing
 
-    assert isinstance(xs, Option)
+    assert isinstance(xs, BaseOption)
     assert xs.pipe(option.is_some) is False
     assert xs.pipe(option.is_none) is True
 
@@ -502,7 +502,7 @@ class Model(BaseModel):
     three: Option[float] = Nothing
 
     class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {Option: option.dict}
+        json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {BaseOption: option.dict}
 
 
 def test_parse_option_works():

@@ -24,20 +24,20 @@ python = ">= 3.9, < 4"
 typing-extensions = "^4.1.1"
 
 [tool.poetry.dev-dependencies]
-pytest-asyncio = "^0.19.0"
+pytest-asyncio = "^0.21.0"
 pytest = "^7.2.0"
 coverage = "^6.4.3"
-black = "^22.3.0"
+black = "^23.0.0"
 isort = "^5.10.1"
-flake8 = "^5.0.4"
+flake8 = "^6.0.0"
 coveralls = "^3.3.1"
-pre-commit = "^2.20.0"
-autoflake = "^1.4"
+pre-commit = "^3.0.0"
+autoflake = "^2.0"
 dunamai = "^1.12.0"
 hypothesis = "^6.54.2"
-jupyter-book = "^0.12.0"
+jupyter-book = "^0.15.0"
 sphinx-autodoc-typehints = "^1.17.0"
-pydantic = "^1.9.0"
+pydantic = "^1.10.0"
 
 [tool.black]
 line-length = 88
