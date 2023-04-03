@@ -22,8 +22,8 @@ from typing import (
     Optional,
     Tuple,
     TypeVar,
+    Union,
     cast,
-    Union
 )
 
 from expression.core import (
