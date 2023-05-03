@@ -23,7 +23,18 @@ ArgsT = TypeVarTuple("ArgsT")
 OtherArgsT = TypeVarTuple("OtherArgsT")
 AnotherArgsT = TypeVarTuple("AnotherArgsT")
 
-__all__ = ["Var", "Seq", "Func", "Call", "func", "of_obj", "of_iterable", "call"]
+__all__ = [
+    "Var",
+    "Seq",
+    "Func",
+    "Call",
+    "func",
+    "result_func",
+    "of_obj",
+    "of_result",
+    "of_iterable",
+    "call",
+]
 
 
 class Apply(Generic[ValueT]):
@@ -425,8 +436,18 @@ def func(f: Callable[[Unpack[ArgsT]], ReturnT]) -> Func[Unpack[ArgsT], ReturnT]:
     return Func(Ok(f))
 
 
+def result_func(
+    f: Result[Callable[[Unpack[ArgsT]], ReturnT], Any]
+) -> Func[Unpack[ArgsT], ReturnT]:
+    return Func(f)
+
+
 def of_obj(value: ValueT) -> Var[ValueT]:
     return Var(Ok(value))
+
+
+def of_result(value: Result[ValueT, Any]) -> Var[ValueT]:
+    return Var(value)
 
 
 def of_iterable(*values: Unpack[ArgsT]) -> Seq[Unpack[ArgsT]]:
