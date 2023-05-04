@@ -225,6 +225,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 # [Unpack, Unpack]
                 # The pyright indicates an error,
                 # but the type inference is carried out normally.
+                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -266,6 +267,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 # [Unpack, Unpack]
                 # The pyright indicates an error,
                 # but the type inference is carried out normally.
+                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -291,6 +293,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 # [Unpack, Unpack]
                 # The pyright indicates an error,
                 # but the type inference is carried out normally.
+                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -312,6 +315,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             # [Unpack, Unpack]
             # The pyright indicates an error,
             # but the type inference is carried out normally.
+            # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
             return self * func(func_or_arg_or_args)  # type: ignore
         raise NotImplementedError
 
@@ -323,6 +327,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 # [Unpack, Unpack]
                 # The pyright indicates an error,
                 # but the type inference is carried out normally.
+                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -364,6 +369,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 # [Unpack, Unpack]
                 # The pyright indicates an error,
                 # but the type inference is carried out normally.
+                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -389,6 +395,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 # [Unpack, Unpack]
                 # The pyright indicates an error,
                 # but the type inference is carried out normally.
+                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -410,6 +417,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             # [Unpack, Unpack]
             # The pyright indicates an error,
             # but the type inference is carried out normally.
+            # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
             return func(func_or_arg_or_args) * self  # type: ignore
         raise NotImplementedError
 
@@ -546,9 +554,7 @@ def func(f: Callable[[Unpack[ArgsT]], ReturnT]) -> Func[Unpack[ArgsT], ReturnT]:
 
 
 @overload
-def func(
-    f: Option[Callable[[Unpack[ArgsT]], ReturnT]]
-) -> Func[Unpack[ArgsT], ReturnT]:
+def func(f: Option[Callable[[Unpack[ArgsT]], ReturnT]]) -> Func[Unpack[ArgsT], ReturnT]:
     ...
 
 
@@ -613,6 +619,7 @@ def _iter_unpack_tuples_0(
     other: tuple[Unpack[OtherArgsT]],
     # [Unpack, Unpack]
     # The pyright indicates an error, but the type inference is carried out normally.
+    # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
 ) -> tuple[Unpack[ArgsT], Unpack[OtherArgsT]]:  # type: ignore
     return (*value, *other)
 
@@ -647,6 +654,7 @@ def _iter_unpack_tuples_1(
     other: tuple[Unpack[OtherArgsT]],
     # [Unpack, Unpack]
     # The pyright indicates an error, but the type inference is carried out normally.
+    # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
 ) -> tuple[Unpack[OtherArgsT], Unpack[ArgsT]]:  # type: ignore
     return (*other, *value)
 
@@ -661,6 +669,7 @@ def _partial_0(
 def _partial_1(
     # [Unpack, Unpack]
     # The pyright indicates an error, but the type inference is carried out normally.
+    # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
     func: Callable[[Unpack[OtherArgsT], Unpack[AnotherArgsT]], ReturnT],  # type: ignore
     args: tuple[Unpack[OtherArgsT]],
 ) -> Callable[[Unpack[AnotherArgsT]], ReturnT]:
