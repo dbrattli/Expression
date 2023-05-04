@@ -447,7 +447,7 @@ class Func(
 
 class Call:
     def __mul__(self, func: Func[ReturnT]) -> Option[ReturnT]:
-        if func.value is Nothing:
+        if isinstance(func.value, Nothing_):
             return Nothing
         return Some(func.value.value())
 
