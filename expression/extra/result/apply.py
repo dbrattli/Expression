@@ -545,6 +545,14 @@ def func(
         Result[Callable[[Unpack[ArgsT]], ReturnT], Any],
     ]
 ) -> Func[Unpack[ArgsT], ReturnT]:
+    """convert function(or wrapped as Result) to Func
+
+    Args:
+        f: callable(without keyword parameters)
+
+    Returns:
+        wrapped function as Func
+    """
     if isinstance(f, Ok | Error):
         return Func(f)
     return Func(Ok(f))
@@ -561,12 +569,25 @@ def of_obj(value: ArgT) -> Var[ArgT]:
 
 
 def of_obj(value: Union[ArgT, Result[ValueT, Any]]) -> Union[Var[ArgT], Var[ValueT]]:
+    """convert a value(or wrapped as Result) to Var
+
+    Args:
+        value: some native value or Result[value, Any]
+
+    Returns:
+        wrapped value as Var
+    """
     if isinstance(value, Ok | Error):
         return Var(cast("Result[ValueT, Any]", value))
     return Var(Ok(value))
 
 
 def of_iterable(*values: Unpack[ArgsT]) -> Seq[Unpack[ArgsT]]:
+    """convert some values to Seq
+
+    Returns:
+        wrapped values as Seq
+    """
     return Seq(Ok(values))
 
 

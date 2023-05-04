@@ -564,6 +564,14 @@ def func(
         Option[Callable[[Unpack[ArgsT]], ReturnT]],
     ]
 ) -> Func[Unpack[ArgsT], ReturnT]:
+    """convert function(or wrapped as Option) to Func
+
+    Args:
+        f: callable(without keyword parameters)
+
+    Returns:
+        wrapped function as Func
+    """
     if isinstance(f, Some | Nothing_):
         return Func(f)
     return Func(Some(f))
@@ -580,12 +588,25 @@ def of_obj(value: ArgT) -> Var[ArgT]:
 
 
 def of_obj(value: Union[ArgT, Option[ValueT]]) -> Union[Var[ArgT], Var[ValueT]]:
+    """convert a value(or wrapped as Option) to Var
+
+    Args:
+        value: some native value or Option[value]
+
+    Returns:
+        wrapped value as Var
+    """
     if isinstance(value, Some | Nothing_):
         return Var(cast("Option[ValueT]", value))
     return Var(Some(value))
 
 
 def of_iterable(*values: Unpack[ArgsT]) -> Seq[Unpack[ArgsT]]:
+    """convert some values to Seq
+
+    Returns:
+        wrapped values as Seq
+    """
     return Seq(Some(values))
 
 
