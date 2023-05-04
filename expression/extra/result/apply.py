@@ -86,6 +86,7 @@ class Var(Apply[ValueT], Generic[ValueT]):
     ]:
         ...
 
+    # FIXME: error in pyright. but it works.
     def __mul__(  # type: ignore
         self: Var[ArgT],
         func_or_arg_or_args: Union[
@@ -148,6 +149,7 @@ class Var(Apply[ValueT], Generic[ValueT]):
     ]:
         ...
 
+    # FIXME: error in pyright. but it works.
     def __rmul__(  # type: ignore
         self: Var[ArgT],
         func_or_arg_or_args: Union[
@@ -180,6 +182,9 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
         self: Seq[Unpack[OtherArgsT]],
         func_or_arg_or_args: Union[
             Callable[
+                # [Unpack, Unpack]
+                # The pyright indicates an error,
+                # but the type inference is carried out normally.
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -218,6 +223,9 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             Var[ArgT],
             Seq[Unpack[AnotherArgsT]],
             Callable[
+                # [Unpack, Unpack]
+                # The pyright indicates an error,
+                # but the type inference is carried out normally.
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -240,6 +248,9 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             Var[ArgT],
             Seq[Unpack[AnotherArgsT]],
             Callable[
+                # [Unpack, Unpack]
+                # The pyright indicates an error,
+                # but the type inference is carried out normally.
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -250,7 +261,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
         Seq[Unpack[OtherArgsT], Unpack[AnotherArgsT]],
     ]:
         if isinstance(func_or_arg_or_args, Func):
-            return func_or_arg_or_args * self  # type: ignore
+            return func_or_arg_or_args * self
         if isinstance(func_or_arg_or_args, Var):
             return func_or_arg_or_args.__rmul__(self)
         if isinstance(func_or_arg_or_args, Seq):
@@ -266,6 +277,9 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
         self: Seq[Unpack[OtherArgsT]],
         func_or_arg_or_args: Union[
             Callable[
+                # [Unpack, Unpack]
+                # The pyright indicates an error,
+                # but the type inference is carried out normally.
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -296,6 +310,9 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             Var[ArgT],
             Seq[Unpack[AnotherArgsT]],
             Callable[
+                # [Unpack, Unpack]
+                # The pyright indicates an error,
+                # but the type inference is carried out normally.
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -314,6 +331,9 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             Var[ArgT],
             Seq[Unpack[AnotherArgsT]],
             Callable[
+                # [Unpack, Unpack]
+                # The pyright indicates an error,
+                # but the type inference is carried out normally.
                 [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
                 ReturnT,
             ],
@@ -378,6 +398,7 @@ class Func(
     ]:
         ...
 
+    # FIXME: error in pyright. but it works.
     def __mul__(  # type: ignore
         self: Union[
             Func[OtherReturnT],
@@ -411,6 +432,8 @@ class Func(
             return Func(
                 _self.value.map2(
                     caller_or_arg_or_args.value,
+                    # An error occurred in the pylance using more than one Unpack.
+                    # but the type inference is carried out normally.
                     _partial_1,  # type: ignore
                 ),
             )
@@ -471,8 +494,22 @@ def _safe(func: Callable[[], ReturnT]) -> Callable[[], Result[ReturnT, Exception
     return inner
 
 
-def _iter_tuple_0(value: ArgT, *values: Unpack[ArgsT]) -> tuple[ArgT, Unpack[ArgsT]]:
-    return (value, *values)
+@overload
+def _iter_tuple_0(value: ArgT, other_value: OtherArgT) -> tuple[ArgT, OtherArgT]:
+    ...
+
+
+@overload
+def _iter_tuple_0(
+    value: ArgT, other_value: OtherArgT, *values: Unpack[ArgsT]
+) -> tuple[ArgT, OtherArgT, Unpack[ArgsT]]:
+    ...
+
+
+def _iter_tuple_0(
+    value: ArgT, other_value: OtherArgT, *values: Unpack[ArgsT]
+) -> Union[tuple[ArgT, OtherArgT], tuple[ArgT, OtherArgT, Unpack[ArgsT]]]:
+    return (value, other_value, *values)
 
 
 def _iter_unpack_tuple_0(
@@ -485,12 +522,28 @@ def _iter_unpack_tuple_0(
 def _iter_unpack_tuples_0(
     value: tuple[Unpack[ArgsT]],
     other: tuple[Unpack[OtherArgsT]],
+    # [Unpack, Unpack]
+    # The pyright indicates an error, but the type inference is carried out normally.
 ) -> tuple[Unpack[ArgsT], Unpack[OtherArgsT]]:  # type: ignore
     return (*value, *other)
 
 
-def _iter_tuple_1(value: ArgT, *values: Unpack[ArgsT]) -> tuple[Unpack[ArgsT], ArgT]:
-    return (*values, value)
+@overload
+def _iter_tuple_1(value: ArgT, other_value: OtherArgT) -> tuple[OtherArgT, ArgT]:
+    ...
+
+
+@overload
+def _iter_tuple_1(
+    value: ArgT, other_value: OtherArgT, *values: Unpack[ArgsT]
+) -> tuple[OtherArgT, Unpack[ArgsT], ArgT]:
+    ...
+
+
+def _iter_tuple_1(
+    value: ArgT, other_value: OtherArgT, *values: Unpack[ArgsT]
+) -> tuple[OtherArgT, ArgT] | tuple[OtherArgT, Unpack[ArgsT], ArgT]:
+    return (other_value, *values, value)
 
 
 def _iter_unpack_tuple_1(
@@ -503,6 +556,8 @@ def _iter_unpack_tuple_1(
 def _iter_unpack_tuples_1(
     value: tuple[Unpack[ArgsT]],
     other: tuple[Unpack[OtherArgsT]],
+    # [Unpack, Unpack]
+    # The pyright indicates an error, but the type inference is carried out normally.
 ) -> tuple[Unpack[OtherArgsT], Unpack[ArgsT]]:  # type: ignore
     return (*other, *value)
 
@@ -515,6 +570,8 @@ def _partial_0(
 
 
 def _partial_1(
+    # [Unpack, Unpack]
+    # The pyright indicates an error, but the type inference is carried out normally.
     func: Callable[[Unpack[OtherArgsT], Unpack[AnotherArgsT]], ReturnT],  # type: ignore
     args: tuple[Unpack[OtherArgsT]],
 ) -> Callable[[Unpack[AnotherArgsT]], ReturnT]:
