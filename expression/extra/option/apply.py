@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar, Union, cast, overload
 
 from typing_extensions import TypeVarTuple, Unpack
 
-from expression.core.option import Nothing, Some
+from expression.core.option import Some, Nothing_, Nothing
 
 if TYPE_CHECKING:
     from expression.core.option import Option
@@ -29,7 +29,6 @@ __all__ = [
     "func",
     "optional_func",
     "of_obj",
-    "of_optional",
     "of_iterable",
     "call",
 ]
@@ -463,12 +462,20 @@ def optional_func(
     return Func(f)
 
 
-def of_obj(value: ValueT) -> Var[ValueT]:
+@overload
+def of_obj(value: Option[ValueT]) -> Var[ValueT]:
+    ...
+
+
+@overload
+def of_obj(value: ArgT) -> Var[ArgT]:
+    ...
+
+
+def of_obj(value: Union[ArgT, Option[ValueT]]) -> Union[Var[ArgT], Var[ValueT]]:
+    if isinstance(value, Some | Nothing_):
+        return Var(cast("Option[ValueT]", value))
     return Var(Some(value))
-
-
-def of_optional(value: Option[ValueT]) -> Var[ValueT]:
-    return Var(value)
 
 
 def of_iterable(*values: Unpack[ArgsT]) -> Seq[Unpack[ArgsT]]:

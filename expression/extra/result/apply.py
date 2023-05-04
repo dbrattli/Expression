@@ -30,7 +30,6 @@ __all__ = [
     "func",
     "result_func",
     "of_obj",
-    "of_result",
     "of_iterable",
     "call",
 ]
@@ -441,12 +440,20 @@ def result_func(
     return Func(f)
 
 
-def of_obj(value: ValueT) -> Var[ValueT]:
+@overload
+def of_obj(value: Result[ValueT, Any]) -> Var[ValueT]:
+    ...
+
+
+@overload
+def of_obj(value: ArgT) -> Var[ArgT]:
+    ...
+
+
+def of_obj(value: Union[ArgT, Result[ValueT, Any]]) -> Union[Var[ArgT], Var[ValueT]]:
+    if isinstance(value, Ok | Error):
+        return Var(cast("Result[ValueT, Any]", value))
     return Var(Ok(value))
-
-
-def of_result(value: Result[ValueT, Any]) -> Var[ValueT]:
-    return Var(value)
 
 
 def of_iterable(*values: Unpack[ArgsT]) -> Seq[Unpack[ArgsT]]:
