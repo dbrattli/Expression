@@ -36,11 +36,18 @@ __all__ = [
 
 
 class Apply(Generic[ValueT]):
+    """Base class to apply
+
+    Args:
+        value: Value wrapped as Result
+    """
+
     def __init__(self, value: Result[ValueT, Any]) -> None:
         self._value = value
 
     @property
     def value(self) -> Result[ValueT, Any]:
+        """wrapped value as Result"""
         return self._value
 
     def __repr__(self) -> str:
@@ -49,6 +56,26 @@ class Apply(Generic[ValueT]):
 
 
 class Var(Apply[ValueT], Generic[ValueT]):
+    """a Value wrapped as Result for use to apply
+
+    Example:
+        >>> from typing import Any
+        >>> from expression import Ok, Result
+        >>> from expression.extra.result.apply import Var, Func, call
+        >>>
+        >>>
+        >>> def func(a: int) -> int:
+        >>>     return a
+        >>>
+        >>>
+        >>> value: int = 1
+        >>> some_value: Result[int, Any] = Ok(1)
+        >>> wrapped: Var[int] = Var(some_value)
+        >>>
+        >>> new_func: Func[int] = func * wrapped
+        >>> assert new_func * call == Ok(value)
+    """
+
     @overload
     def __mul__(
         self: Var[ArgT],
@@ -177,6 +204,26 @@ class Var(Apply[ValueT], Generic[ValueT]):
 
 
 class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
+    """some Values wrapped as Result for use to apply
+
+    Example:
+        >>> from typing import Any
+        >>> from expression import Ok, Result
+        >>> from expression.extra.result.apply import Seq, Func, call
+        >>>
+        >>>
+        >>> def func(a: int, b: int, c: str) -> tuple[int, str]:
+        >>>     return (a + b, c)
+        >>>
+        >>>
+        >>> values: tuple[int, int, str] = (1, 1, "q")
+        >>> some_value: Result[tuple[int, int, str], Any] = Ok(values)
+        >>> wrapped: Seq[int, int, str] = Seq(some_value)
+        >>>
+        >>> new_func: Func[tuple[int, str]] = func * wrapped
+        >>> assert new_func * call == Ok(func(*values))
+    """
+
     @overload
     def __mul__(
         self: Seq[Unpack[OtherArgsT]],
@@ -360,6 +407,27 @@ class Func(
     Apply[Callable[[Unpack[ArgsT]], ReturnT]],
     Generic[Unpack[ArgsT], ReturnT],
 ):
+    """a function(without keyword parameters) wrapped as Result for use to apply
+
+    Example:
+        >>> from typing import Any
+        >>> from expression import Ok, Result
+        >>> from expression.extra.result.apply import Seq, Func, call
+        >>>
+        >>>
+        >>> def func(a: int, b: int, c: str) -> tuple[int, str]:
+        >>>     return (a + b, c)
+        >>>
+        >>>
+        >>> wrapped_func = Func(Ok(func))
+        >>> values: tuple[int, int, str] = (1, 1, "q")
+        >>> some_value: Result[tuple[int, int, str], Any] = Ok(values)
+        >>> wrapped: Seq[int, int, str] = Seq(some_value)
+        >>>
+        >>> new_func: Func[tuple[int, str]] = wrapped_func * wrapped
+        >>> assert new_func * call == Ok(func(*values))
+    """
+
     @overload
     def __mul__(
         self: Func[OtherReturnT],
@@ -449,6 +517,8 @@ class Func(
 
 
 class Call:
+    """call magic method '__call__' of wrapped function"""
+
     def __mul__(self, func: Func[ReturnT]) -> Result[ReturnT, Any]:
         return func.value.map(_safe).bind(_call)
 
