@@ -21,17 +21,7 @@ ArgsT = TypeVarTuple("ArgsT")
 OtherArgsT = TypeVarTuple("OtherArgsT")
 AnotherArgsT = TypeVarTuple("AnotherArgsT")
 
-__all__ = [
-    "Var",
-    "Seq",
-    "Func",
-    "Call",
-    "func",
-    "optional_func",
-    "of_obj",
-    "of_iterable",
-    "call",
-]
+__all__ = ["Var", "Seq", "Func", "Call", "func", "of_obj", "of_iterable", "call"]
 
 
 class Apply(Generic[ValueT]):
@@ -319,7 +309,10 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 self.value.map2(_iter_unpack_tuples_0, func_or_arg_or_args.value),
             )
         if callable(func_or_arg_or_args):
-            return self * func(func_or_arg_or_args)
+            # [Unpack, Unpack]
+            # The pyright indicates an error,
+            # but the type inference is carried out normally.
+            return self * func(func_or_arg_or_args)  # type: ignore
         raise NotImplementedError
 
     @overload
@@ -414,7 +407,10 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 self.value.map2(_iter_unpack_tuples_1, func_or_arg_or_args.value),
             )
         if callable(func_or_arg_or_args):
-            return func(func_or_arg_or_args) * self
+            # [Unpack, Unpack]
+            # The pyright indicates an error,
+            # but the type inference is carried out normally.
+            return func(func_or_arg_or_args) * self  # type: ignore
         raise NotImplementedError
 
 
@@ -544,14 +540,27 @@ class Call:
         return Some(func.value.value())
 
 
+@overload
 def func(f: Callable[[Unpack[ArgsT]], ReturnT]) -> Func[Unpack[ArgsT], ReturnT]:
-    return Func(Some(f))
+    ...
 
 
-def optional_func(
+@overload
+def func(
     f: Option[Callable[[Unpack[ArgsT]], ReturnT]]
 ) -> Func[Unpack[ArgsT], ReturnT]:
-    return Func(f)
+    ...
+
+
+def func(
+    f: Union[
+        Callable[[Unpack[ArgsT]], ReturnT],
+        Option[Callable[[Unpack[ArgsT]], ReturnT]],
+    ]
+) -> Func[Unpack[ArgsT], ReturnT]:
+    if isinstance(f, Some | Nothing_):
+        return Func(f)
+    return Func(Some(f))
 
 
 @overload

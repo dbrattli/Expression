@@ -22,17 +22,7 @@ ArgsT = TypeVarTuple("ArgsT")
 OtherArgsT = TypeVarTuple("OtherArgsT")
 AnotherArgsT = TypeVarTuple("AnotherArgsT")
 
-__all__ = [
-    "Var",
-    "Seq",
-    "Func",
-    "Call",
-    "func",
-    "result_func",
-    "of_obj",
-    "of_iterable",
-    "call",
-]
+__all__ = ["Var", "Seq", "Func", "Call", "func", "of_obj", "of_iterable", "call"]
 
 
 class Apply(Generic[ValueT]):
@@ -316,7 +306,10 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 self.value.map2(func_or_arg_or_args.value, _iter_unpack_tuples_0),
             )
         if callable(func_or_arg_or_args):
-            return self * func(func_or_arg_or_args)
+            # [Unpack, Unpack]
+            # The pyright indicates an error,
+            # but the type inference is carried out normally.
+            return self * func(func_or_arg_or_args)  # type: ignore
         raise NotImplementedError
 
     @overload
@@ -399,7 +392,10 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 self.value.map2(func_or_arg_or_args.value, _iter_unpack_tuples_1),
             )
         if callable(func_or_arg_or_args):
-            return func(func_or_arg_or_args) * self
+            # [Unpack, Unpack]
+            # The pyright indicates an error,
+            # but the type inference is carried out normally.
+            return func(func_or_arg_or_args) * self  # type: ignore
         raise NotImplementedError
 
 
@@ -523,14 +519,27 @@ class Call:
         return func.value.map(_safe).bind(_call)
 
 
+@overload
 def func(f: Callable[[Unpack[ArgsT]], ReturnT]) -> Func[Unpack[ArgsT], ReturnT]:
-    return Func(Ok(f))
+    ...
 
 
-def result_func(
+@overload
+def func(
     f: Result[Callable[[Unpack[ArgsT]], ReturnT], Any]
 ) -> Func[Unpack[ArgsT], ReturnT]:
-    return Func(f)
+    ...
+
+
+def func(
+    f: Union[
+        Callable[[Unpack[ArgsT]], ReturnT],
+        Result[Callable[[Unpack[ArgsT]], ReturnT], Any],
+    ]
+) -> Func[Unpack[ArgsT], ReturnT]:
+    if isinstance(f, Ok | Error):
+        return Func(f)
+    return Func(Ok(f))
 
 
 @overload
