@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar, Union, cast, overload
 
 from typing_extensions import TypeVarTuple, Unpack
 
-from expression.core.option import Some, Nothing_, Nothing
+from expression.core.option import Nothing, Nothing_, Some
 
 if TYPE_CHECKING:
     from expression.core.option import Option
