@@ -68,7 +68,8 @@ class Var(Apply[ValueT], Generic[ValueT]):
     def __mul__(
         self: Var[ArgT],
         func_or_arg_or_args: Union[
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT], Func[ArgT, Unpack[ArgsT], ReturnT]
+            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
+            Func[ArgT, Unpack[ArgsT], ReturnT],
         ],
     ) -> Func[Unpack[ArgsT], ReturnT]:
         ...
@@ -97,7 +98,9 @@ class Var(Apply[ValueT], Generic[ValueT]):
             Callable[[ArgT, Unpack[ArgsT]], ReturnT],
         ],
     ) -> Union[
-        Func[Unpack[ArgsT], ReturnT], Seq[ArgT, Unpack[ArgsT]], Seq[ArgT, OtherArgT]
+        Func[Unpack[ArgsT], ReturnT],
+        Seq[ArgT, Unpack[ArgsT]],
+        Seq[ArgT, OtherArgT],
     ]:
         ...
 
@@ -111,7 +114,9 @@ class Var(Apply[ValueT], Generic[ValueT]):
             Callable[[ArgT, Unpack[ArgsT]], ReturnT],
         ],
     ) -> Union[
-        Func[Unpack[ArgsT], ReturnT], Seq[ArgT, Unpack[ArgsT]], Seq[ArgT, OtherArgT]
+        Func[Unpack[ArgsT], ReturnT],
+        Seq[ArgT, Unpack[ArgsT]],
+        Seq[ArgT, OtherArgT],
     ]:
         if isinstance(func_or_arg_or_args, Func):
             return func_or_arg_or_args * self
@@ -134,7 +139,8 @@ class Var(Apply[ValueT], Generic[ValueT]):
     def __rmul__(
         self: Var[ArgT],
         func_or_arg_or_args: Union[
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT], Func[ArgT, Unpack[ArgsT], ReturnT]
+            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
+            Func[ArgT, Unpack[ArgsT], ReturnT],
         ],
     ) -> Func[Unpack[ArgsT], ReturnT]:
         ...
@@ -163,7 +169,9 @@ class Var(Apply[ValueT], Generic[ValueT]):
             Callable[[ArgT, Unpack[ArgsT]], ReturnT],
         ],
     ) -> Union[
-        Func[Unpack[ArgsT], ReturnT], Seq[Unpack[ArgsT], ArgT], Seq[OtherArgT, ArgT]
+        Func[Unpack[ArgsT], ReturnT],
+        Seq[Unpack[ArgsT], ArgT],
+        Seq[OtherArgT, ArgT],
     ]:
         ...
 
@@ -475,7 +483,10 @@ class Func(
             Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT],
         ],
         caller_or_arg_or_args: Union[
-            type[Call], Call, Var[ArgT], Seq[Unpack[OtherArgsT]]
+            type[Call],
+            Call,
+            Var[ArgT],
+            Seq[Unpack[OtherArgsT]],
         ],
     ) -> Union[
         Option[OtherReturnT],
@@ -492,7 +503,10 @@ class Func(
             Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT],
         ],
         caller_or_arg_or_args: Union[
-            type[Call], Call, Var[ArgT], Seq[Unpack[OtherArgsT]]
+            type[Call],
+            Call,
+            Var[ArgT],
+            Seq[Unpack[OtherArgsT]],
         ],
     ) -> Union[
         Option[OtherReturnT],
@@ -562,7 +576,7 @@ def func(
     f: Union[
         Callable[[Unpack[ArgsT]], ReturnT],
         Option[Callable[[Unpack[ArgsT]], ReturnT]],
-    ]
+    ],
 ) -> Func[Unpack[ArgsT], ReturnT]:
     """convert function(or wrapped as Option) to Func
 
@@ -617,13 +631,17 @@ def _iter_tuple_0(value: ArgT, other_value: OtherArgT) -> tuple[ArgT, OtherArgT]
 
 @overload
 def _iter_tuple_0(
-    value: ArgT, other_value: OtherArgT, *values: Unpack[ArgsT]
+    value: ArgT,
+    other_value: OtherArgT,
+    *values: Unpack[ArgsT],
 ) -> tuple[ArgT, OtherArgT, Unpack[ArgsT]]:
     ...
 
 
 def _iter_tuple_0(
-    value: ArgT, other_value: OtherArgT, *values: Unpack[ArgsT]
+    value: ArgT,
+    other_value: OtherArgT,
+    *values: Unpack[ArgsT],
 ) -> Union[tuple[ArgT, OtherArgT], tuple[ArgT, OtherArgT, Unpack[ArgsT]]]:
     return (value, other_value, *values)
 
@@ -652,13 +670,17 @@ def _iter_tuple_1(value: ArgT, other_value: OtherArgT) -> tuple[OtherArgT, ArgT]
 
 @overload
 def _iter_tuple_1(
-    value: ArgT, other_value: OtherArgT, *values: Unpack[ArgsT]
+    value: ArgT,
+    other_value: OtherArgT,
+    *values: Unpack[ArgsT],
 ) -> tuple[OtherArgT, Unpack[ArgsT], ArgT]:
     ...
 
 
 def _iter_tuple_1(
-    value: ArgT, other_value: OtherArgT, *values: Unpack[ArgsT]
+    value: ArgT,
+    other_value: OtherArgT,
+    *values: Unpack[ArgsT],
 ) -> tuple[OtherArgT, ArgT] | tuple[OtherArgT, Unpack[ArgsT], ArgT]:
     return (other_value, *values, value)
 
