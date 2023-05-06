@@ -303,7 +303,10 @@ def test_result_partial_func():
         result_apply.of_obj(value_1),
         result_apply.of_obj(value_2),
     )
-    partial_one_func = result_main.Func(Ok(partial(_func_three, value_0)))
+    _partial_one_func: Ok[Callable[[str, bytes], tuple[int, str, bytes]], Any] = Ok(
+        partial(_func_three, value_0),
+    )
+    partial_one_func = result_main.Func(_partial_one_func)
 
     result_0 = func * var_0 * var_1 * var_2 * result_apply.call
     result_1 = partial_one_func * var_1 * var_2 * result_apply.call
@@ -311,7 +314,10 @@ def test_result_partial_func():
 
     seq = result_apply.of_iterable(value_0, value_1)
     assert seq == var_0 * var_1
-    partial_two_func = result_main.Func(Ok(partial(_func_three, value_0, value_1)))
+    _partial_two_func: Ok[Callable[[bytes], tuple[int, str, bytes]], Any] = Ok(
+        partial(_func_three, value_0, value_1),
+    )
+    partial_two_func = result_main.Func(_partial_two_func)
 
     result_2 = func * seq * var_2 * result_apply.call
     result_3 = partial_two_func * var_2 * result_apply.call
