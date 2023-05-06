@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from functools import partial
 from inspect import isclass
-from typing import TYPE_CHECKING, Generic, Protocol, TypeVar, Union, cast, overload, Any
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, Union, cast, overload
 
 from typing_extensions import TypeVarTuple, Unpack
 
