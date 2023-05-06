@@ -85,13 +85,12 @@ def test_option_seq_func():
 
     seq = option_apply.of_iterable(*values)
     assert isinstance(seq, option_apply.Seq)
-    func_0 = _func_two * seq
-    func_1 = option_apply.func(_func_two) * seq
-    var_0, var_1 = func_0 * option_apply.call, func_1 * option_apply.call
 
-    for var in (var_0, var_1):
-        assert isinstance(var, BaseOption)
-        assert var.default_value(dummy) == output
+    func = option_apply.func(_func_two) * seq
+    var = func * option_apply.call
+
+    assert isinstance(var, BaseOption)
+    assert var.default_value(dummy) == output
 
 
 def test_option_func_arg_order():
@@ -101,10 +100,11 @@ def test_option_func_arg_order():
     assert dummy != output
 
     var_0, var_1 = option_apply.of_obj(value_0), option_apply.of_obj(value_1)
+    func = option_apply.func(_func_two)
 
-    result_0 = _func_two * var_0 * var_1 * option_apply.call
-    result_1 = var_0 * _func_two * var_1 * option_apply.call
-    result_2 = var_0 * var_1 * _func_two * option_apply.call
+    result_0 = func * var_0 * var_1 * option_apply.call
+    result_1 = var_0 * func * var_1 * option_apply.call
+    result_2 = var_0 * var_1 * func * option_apply.call
 
     for sub_result in result_0, result_1, result_2:
         assert isinstance(sub_result, BaseOption)
@@ -188,13 +188,12 @@ def test_result_seq_func():
 
     seq = result_apply.of_iterable(*values)
     assert isinstance(seq, result_apply.Seq)
-    func_0 = _func_two * seq
-    func_1 = result_apply.func(_func_two) * seq
-    var_0, var_1 = func_0 * result_apply.call, func_1 * result_apply.call
 
-    for var in (var_0, var_1):
-        assert isinstance(var, BaseResult)
-        assert var.default_value(dummy) == output
+    func = result_apply.func(_func_two) * seq
+    var = func * result_apply.call
+
+    assert isinstance(var, BaseResult)
+    assert var.default_value(dummy) == output
 
 
 def test_result_func_arg_order():
@@ -204,10 +203,11 @@ def test_result_func_arg_order():
     assert dummy != output
 
     var_0, var_1 = result_apply.of_obj(value_0), result_apply.of_obj(value_1)
+    func = result_apply.func(_func_two)
 
-    result_0 = _func_two * var_0 * var_1 * result_apply.call
-    result_1 = var_0 * _func_two * var_1 * result_apply.call
-    result_2 = var_0 * var_1 * _func_two * result_apply.call
+    result_0 = func * var_0 * var_1 * result_apply.call
+    result_1 = var_0 * func * var_1 * result_apply.call
+    result_2 = var_0 * var_1 * func * result_apply.call
 
     for sub_result in result_0, result_1, result_2:
         assert isinstance(sub_result, BaseResult)
