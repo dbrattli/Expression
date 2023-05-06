@@ -59,7 +59,7 @@ class Apply(Generic[ValueT]):
         )
 
 
-class Var(Apply[ValueT], Generic[ValueT]):
+class Var(Apply[ArgT], Generic[ArgT]):
     """a Value wrapped as Result for use to apply
 
     Example:
@@ -105,30 +105,14 @@ class Var(Apply[ValueT], Generic[ValueT]):
     ) -> Seq[ArgT, OtherArgT]:
         ...
 
-    @overload
-    def __mul__(
-        self: Var[ArgT],
-        func_or_arg_or_args: Union[
-            Func[ArgT, Unpack[ArgsT], ReturnT],
-            Seq[Unpack[ArgsT]],
-            Var[OtherArgT],
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
-        ],
-    ) -> Union[
-        Func[Unpack[ArgsT], ReturnT],
-        Seq[ArgT, Unpack[ArgsT]],
-        Seq[ArgT, OtherArgT],
-    ]:
-        ...
-
     # FIXME: error in pyright. but it works.
     def __mul__(  # type: ignore
         self: Var[ArgT],
         func_or_arg_or_args: Union[
+            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
             Func[ArgT, Unpack[ArgsT], ReturnT],
             Seq[Unpack[ArgsT]],
             Var[OtherArgT],
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
         ],
     ) -> Union[
         Func[Unpack[ArgsT], ReturnT],
@@ -173,30 +157,14 @@ class Var(Apply[ValueT], Generic[ValueT]):
     ) -> Seq[OtherArgT, ArgT]:
         ...
 
-    @overload
-    def __rmul__(
-        self: Var[ArgT],
-        func_or_arg_or_args: Union[
-            Func[ArgT, Unpack[ArgsT], ReturnT],
-            Seq[Unpack[ArgsT]],
-            Var[OtherArgT],
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
-        ],
-    ) -> Union[
-        Func[Unpack[ArgsT], ReturnT],
-        Seq[Unpack[ArgsT], ArgT],
-        Seq[OtherArgT, ArgT],
-    ]:
-        ...
-
     # FIXME: error in pyright. but it works.
     def __rmul__(  # type: ignore
         self: Var[ArgT],
         func_or_arg_or_args: Union[
+            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
             Func[ArgT, Unpack[ArgsT], ReturnT],
             Seq[Unpack[ArgsT]],
             Var[OtherArgT],
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
         ],
     ) -> Union[
         Func[Unpack[ArgsT], ReturnT],
@@ -387,41 +355,30 @@ class Func(
 
     @overload
     def __mul__(
-        self: Union[
-            Func[OtherReturnT],
-            Func[ArgT, Unpack[OtherArgsT], OtherReturnT],
-            Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT],
-        ],
-        caller_or_arg_or_args: Union[
-            type[Call],
-            Call,
-            Var[ArgT],
-            Seq[Unpack[OtherArgsT]],
-        ],
-    ) -> Union[
-        Result[OtherReturnT, Any],
-        Func[Unpack[OtherArgsT], OtherReturnT],
-        Func[Unpack[AnotherArgsT], OtherReturnT],
-    ]:
+        self: Func[Unpack[ArgsT], ReturnT],
+        caller_or_arg_or_args: Seq[Unpack[ArgsT]],
+    ) -> Func[ReturnT]:
         ...
 
-    # FIXME: error in pyright. but it works.
-    def __mul__(  # type: ignore
+    def __mul__(
         self: Union[
             Func[OtherReturnT],
             Func[ArgT, Unpack[OtherArgsT], OtherReturnT],
             Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT],
+            Func[Unpack[ArgsT], ReturnT],
         ],
         caller_or_arg_or_args: Union[
             type[Call],
             Call,
             Var[ArgT],
             Seq[Unpack[OtherArgsT]],
+            Seq[Unpack[ArgsT]],
         ],
     ) -> Union[
         Result[OtherReturnT, Any],
         Func[Unpack[OtherArgsT], OtherReturnT],
         Func[Unpack[AnotherArgsT], OtherReturnT],
+        Func[ReturnT],
     ]:
         if isinstance(caller_or_arg_or_args, Call):
             _self = cast("Func[OtherReturnT]", self)
@@ -439,8 +396,12 @@ class Func(
                 "Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT]",
                 self,
             )
+            _caller_or_arg_or_args = cast(
+                "Seq[Unpack[OtherArgsT]]",
+                caller_or_arg_or_args,
+            )
             return Func(
-                _self.value.map2(caller_or_arg_or_args.value, _partial_1),
+                _self.value.map2(_caller_or_arg_or_args.value, _partial_1),
             )
         if isclass(caller_or_arg_or_args) and issubclass(
             caller_or_arg_or_args,
@@ -451,6 +412,12 @@ class Func(
         raise NotImplementedError
 
     __rmul__ = __mul__
+
+    def __call__(
+        self: Func[Unpack[ArgsT], ReturnT],
+        *args: Unpack[ArgsT],
+    ) -> Result[ReturnT, Any]:
+        return self * of_iterable(*args) * call
 
 
 class Call:

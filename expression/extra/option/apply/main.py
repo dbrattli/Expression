@@ -57,7 +57,7 @@ class Apply(Generic[ValueT]):
         )
 
 
-class Var(Apply[ValueT], Generic[ValueT]):
+class Var(Apply[ArgT], Generic[ArgT]):
     """a Value wrapped as Option for use to apply
 
     Example:
@@ -354,41 +354,30 @@ class Func(
 
     @overload
     def __mul__(
-        self: Union[
-            Func[OtherReturnT],
-            Func[ArgT, Unpack[OtherArgsT], OtherReturnT],
-            Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT],
-        ],
-        caller_or_arg_or_args: Union[
-            type[Call],
-            Call,
-            Var[ArgT],
-            Seq[Unpack[OtherArgsT]],
-        ],
-    ) -> Union[
-        Option[OtherReturnT],
-        Func[Unpack[OtherArgsT], OtherReturnT],
-        Func[Unpack[AnotherArgsT], OtherReturnT],
-    ]:
+        self: Func[Unpack[ArgsT], ReturnT],
+        caller_or_arg_or_args: Seq[Unpack[ArgsT]],
+    ) -> Func[ReturnT]:
         ...
 
-    # FIXME: error in pyright. but it works.
-    def __mul__(  # type: ignore
+    def __mul__(
         self: Union[
             Func[OtherReturnT],
             Func[ArgT, Unpack[OtherArgsT], OtherReturnT],
             Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT],
+            Func[Unpack[ArgsT], ReturnT],
         ],
         caller_or_arg_or_args: Union[
             type[Call],
             Call,
             Var[ArgT],
             Seq[Unpack[OtherArgsT]],
+            Seq[Unpack[ArgsT]],
         ],
     ) -> Union[
         Option[OtherReturnT],
         Func[Unpack[OtherArgsT], OtherReturnT],
         Func[Unpack[AnotherArgsT], OtherReturnT],
+        Func[ReturnT],
     ]:
         if isinstance(caller_or_arg_or_args, Call):
             _self = cast("Func[OtherReturnT]", self)
@@ -406,8 +395,12 @@ class Func(
                 "Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT]",
                 self,
             )
+            _caller_or_arg_or_args = cast(
+                "Seq[Unpack[OtherArgsT]]",
+                caller_or_arg_or_args,
+            )
             return Func(
-                _self.value.map2(_partial_1, caller_or_arg_or_args.value),
+                _self.value.map2(_partial_1, _caller_or_arg_or_args.value),
             )
         if isclass(caller_or_arg_or_args) and issubclass(
             caller_or_arg_or_args,
