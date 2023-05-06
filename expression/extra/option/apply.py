@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from functools import partial
 from inspect import isclass
-from typing import TYPE_CHECKING, Generic, Protocol, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Generic, Protocol, TypeVar, Union, cast, overload, Any
 
 from typing_extensions import TypeVarTuple, Unpack
 
@@ -50,6 +50,11 @@ class Apply(Generic[ValueT]):
     def __repr__(self) -> str:
         name = type(self).__name__
         return f"<{name}: {repr(self.value)}>"
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Apply) and (
+            self.value == other.value  # type: ignore[reportUnknownMemberType]
+        )
 
 
 class Var(Apply[ValueT], Generic[ValueT]):
