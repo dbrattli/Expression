@@ -266,6 +266,30 @@ def test_result_partial_func():
     assert result_2 == result_3
 
 
+def test_option_func_call():
+    func = option_apply.func(_func_one)
+    value = 1
+    var = option_apply.of_obj(value)
+    assert func(value) == func * var * option_apply.call
+
+    func = option_apply.func(_func_two)
+    values = 1, "q"
+    seq = option_apply.of_iterable(*values)
+    assert func(*values) == func * seq * option_apply.call
+
+
+def test_result_func_call():
+    func = result_apply.func(_func_one)
+    value = 1
+    var = result_apply.of_obj(value)
+    assert func(value) == func * var * result_apply.call
+
+    func = result_apply.func(_func_two)
+    values = 1, "q"
+    seq = result_apply.of_iterable(*values)
+    assert func(*values) == func * seq * result_apply.call
+
+
 def _func_zero() -> str:
     return RESULT
 
