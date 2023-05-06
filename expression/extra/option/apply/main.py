@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import partial
-from inspect import isclass
+from inspect import Parameter, isclass, signature
 from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, Union, cast, overload
 
 from typing_extensions import TypeVarTuple, Unpack
@@ -331,6 +331,13 @@ class Func(
         >>> assert new_func * call == Some(test_func(*values))
     """
 
+    def __init__(self, value: Option[Callable[[Unpack[ArgsT]], ReturnT]]) -> None:
+        if isinstance(value, Nothing_) or not (params := _keyword_params(value.value)):
+            super().__init__(value)
+            return
+        error_msg = "func has keyword params: \n" + "\n".join(map(str, params.values()))
+        raise TypeError(error_msg)
+
     @overload
     def __mul__(
         self: Func[OtherReturnT],
@@ -581,6 +588,29 @@ def _partial_1(
     args: tuple[Unpack[OtherArgsT]],
 ) -> Callable[[Unpack[AnotherArgsT]], ReturnT]:
     return partial(func, *args)
+
+
+def _keyword_params(func: Callable[..., Any]) -> dict[str, Parameter]:
+    params = signature(func).parameters
+
+    has_slash = False
+    positional = {
+        Parameter.POSITIONAL_ONLY,
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.VAR_POSITIONAL,
+    }
+    keyword_params: dict[str, Parameter] = {}
+    for name, param in params.items():
+        if param.kind == param.POSITIONAL_ONLY:
+            has_slash = True
+        if has_slash:
+            if param.kind != param.POSITIONAL_ONLY:
+                keyword_params[name] = param
+            continue
+        if param.kind not in positional:
+            keyword_params[name] = param
+
+    return keyword_params
 
 
 call = Call()
