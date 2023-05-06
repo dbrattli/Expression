@@ -3,16 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from functools import partial
 from inspect import isclass
-from typing import (
-    TYPE_CHECKING,
-    Generic,
-    Protocol,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-    runtime_checkable,
-)
+from typing import TYPE_CHECKING, Generic, Protocol, TypeVar, Union, cast, overload
 
 from typing_extensions import TypeVarTuple, Unpack
 
@@ -21,24 +12,24 @@ from expression.core.option import Nothing, Nothing_, Some
 if TYPE_CHECKING:
     from expression.core.option import Option
 
+    _ArgsT = TypeVarTuple("_ArgsT")
+    _ReturnT_co = TypeVar("_ReturnT_co", covariant=True)
+
+    class _Callable(Protocol, Generic[Unpack[_ArgsT], _ReturnT_co]):
+        def __call__(self, *args: Unpack[_ArgsT]) -> _ReturnT_co:
+            ...
+
 
 ArgT = TypeVar("ArgT")
 OtherArgT = TypeVar("OtherArgT")
 ValueT = TypeVar("ValueT")
 ReturnT = TypeVar("ReturnT")
-ReturnT_co = TypeVar("ReturnT_co", covariant=True)
 OtherReturnT = TypeVar("OtherReturnT")
 ArgsT = TypeVarTuple("ArgsT")
 OtherArgsT = TypeVarTuple("OtherArgsT")
 AnotherArgsT = TypeVarTuple("AnotherArgsT")
 
 __all__ = ["Var", "Seq", "Func", "Call", "func", "of_obj", "of_iterable", "call"]
-
-
-@runtime_checkable
-class _Callable(Protocol, Generic[Unpack[ArgsT], ReturnT_co]):
-    def __call__(self, *args: Unpack[ArgsT]) -> ReturnT_co:
-        ...
 
 
 class Apply(Generic[ValueT]):
