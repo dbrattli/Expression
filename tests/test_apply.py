@@ -227,19 +227,17 @@ def test_option_partial_func():
     )
     partial_one_func = option_apply.Func(Some(partial(_func_three, value_0)))
 
-    assert (
-        func * var_0 * var_1 * var_2 * option_apply.call
-        == partial_one_func * var_1 * var_2 * option_apply.call
-    )
+    result_0 = func * var_0 * var_1 * var_2 * option_apply.call
+    result_1 = partial_one_func * var_1 * var_2 * option_apply.call
+    assert result_0 == result_1
 
     seq = option_apply.of_iterable(value_0, value_1)
     assert seq == var_0 * var_1
     partial_two_func = option_apply.Func(Some(partial(_func_three, value_0, value_1)))
 
-    assert (
-        func * seq * var_2 * option_apply.call
-        == partial_two_func * var_2 * option_apply.call
-    )
+    result_2 = func * seq * var_2 * option_apply.call
+    result_3 = partial_two_func * var_2 * option_apply.call
+    assert result_2 == result_3
 
 
 def test_result_partial_func():
