@@ -320,7 +320,7 @@ class Func(
         >>> values: tuple[int, int, str] = (1, 1, "q")
         >>> some_value: Option[tuple[int, int, str]] = Some(values)
         >>> wrapped_seq: Seq[int, int, str] = Seq(some_value)
-        >>> wrapped_func: Func[int, int, str, tuple[int, str]] = func(test_func)
+        >>> wrapped_func: Func[int, int, str, tuple[int, str]] = Func(Some(test_func))
         >>>
         >>> new_func: Func[tuple[int, str]] = wrapped_func * wrapped_seq
         >>> assert new_func * call == Some(test_func(*values))
