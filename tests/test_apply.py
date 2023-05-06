@@ -1,4 +1,6 @@
-from expression import option, pipe, result
+from functools import partial
+
+from expression import Ok, Some, option, pipe, result
 from expression.core.option import BaseOption
 from expression.core.result import BaseResult
 from expression.extra.option import apply as option_apply
@@ -214,6 +216,58 @@ def test_result_func_arg_order():
         assert sub_result.default_value(dummy) == output
 
 
+def test_option_partial_func():
+    value_0, value_1, value_2 = 0, "q", b"w"
+    func = option_apply.func(_func_three)
+
+    var_0, var_1, var_2 = (
+        option_apply.of_obj(value_0),
+        option_apply.of_obj(value_1),
+        option_apply.of_obj(value_2),
+    )
+    partial_one_func = option_apply.Func(Some(partial(_func_three, value_0)))
+
+    assert (
+        func * var_0 * var_1 * var_2 * option_apply.call
+        == partial_one_func * var_1 * var_2 * option_apply.call
+    )
+
+    seq = option_apply.of_iterable(value_0, value_1)
+    assert seq == var_0 * var_1
+    partial_two_func = option_apply.Func(Some(partial(_func_three, value_0, value_1)))
+
+    assert (
+        func * seq * var_2 * option_apply.call
+        == partial_two_func * var_2 * option_apply.call
+    )
+
+
+def test_result_partial_func():
+    value_0, value_1, value_2 = 0, "q", b"w"
+    func = result_apply.func(_func_three)
+
+    var_0, var_1, var_2 = (
+        result_apply.of_obj(value_0),
+        result_apply.of_obj(value_1),
+        result_apply.of_obj(value_2),
+    )
+    partial_one_func = result_apply.Func(Ok(partial(_func_three, value_0)))
+
+    assert (
+        func * var_0 * var_1 * var_2 * result_apply.call
+        == partial_one_func * var_1 * var_2 * result_apply.call
+    )
+
+    seq = result_apply.of_iterable(value_0, value_1)
+    assert seq == var_0 * var_1
+    partial_two_func = result_apply.Func(Ok(partial(_func_three, value_0, value_1)))
+
+    assert (
+        func * seq * var_2 * result_apply.call
+        == partial_two_func * var_2 * result_apply.call
+    )
+
+
 def _func_zero() -> str:
     return RESULT
 
@@ -228,3 +282,7 @@ def _func_two(a: int, b: str) -> tuple[int, str]:
 
 def _other_func_two(a: int, b: str) -> tuple[int, str]:
     return (a, b)
+
+
+def _func_three(a: int, b: str, c: bytes) -> tuple[int, str, bytes]:
+    return (a, b, c)
