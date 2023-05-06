@@ -412,6 +412,12 @@ class Func(
 
     __rmul__ = __mul__
 
+    def __call__(
+        self: Func[Unpack[ArgsT], ReturnT],
+        *args: Unpack[ArgsT],
+    ) -> Option[ReturnT]:
+        return self * of_iterable(*args) * call
+
 
 class Call:
     """call magic method '__call__' of wrapped function
