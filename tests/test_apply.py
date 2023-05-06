@@ -1,4 +1,9 @@
+from __future__ import annotations
+
 from functools import partial
+from typing import TYPE_CHECKING, Any
+
+import pytest
 
 from expression import Ok, Some, option, pipe, result
 from expression.core.option import BaseOption
@@ -8,8 +13,55 @@ from expression.extra.option.apply import main as option_main
 from expression.extra.result import apply as result_apply
 from expression.extra.result.apply import main as result_main
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 RESULT = "result"
 DUMMY = "dummy"
+
+
+def _no_params() -> tuple[()]:
+    return ()
+
+
+def _only_positional(a: int, b: str, /) -> tuple[int, str]:
+    return (a, b)
+
+
+def _slash_and_keyword(a: int, b: str, /, c: bytes) -> tuple[int, str, bytes]:
+    return (a, b, c)
+
+
+def _asterisk_and_keyword(a: int, b: str, *, c: bytes) -> tuple[int, str, bytes]:
+    return (a, b, c)
+
+
+def _args(*args: int) -> tuple[int, ...]:
+    return args
+
+
+def _kwargs(**kwargs: int) -> dict[str, int]:
+    return kwargs
+
+
+def _args_and_kwargs(
+    *args: int,
+    **kwargs: int,
+) -> tuple[tuple[int, ...], dict[str, int]]:
+    return (args, kwargs)
+
+
+ONLY_POSITIONAL_FUNCS = (
+    _no_params,
+    _only_positional,
+    _args,
+)
+WITH_KEYWORD_FUNCS = (
+    _slash_and_keyword,
+    _asterisk_and_keyword,
+    _kwargs,
+    _args_and_kwargs,
+)
 
 
 def test_option_var():
@@ -288,6 +340,18 @@ def test_result_func_call():
     values = 1, "q"
     seq = result_apply.of_iterable(*values)
     assert func(*values) == func * seq * result_apply.call
+
+
+@pytest.mark.parametrize("func", ONLY_POSITIONAL_FUNCS)
+def test_create_func_object(func: Callable[..., Any]):
+    option_apply.func(func)
+    result_apply.func(func)
+
+
+@pytest.mark.parametrize("func", WITH_KEYWORD_FUNCS)
+def test_error_create_func_object(func: Callable[..., Any]):
+    pytest.raises(TypeError, option_apply.func, func)
+    pytest.raises(TypeError, result_apply.func, func)
 
 
 def _func_zero() -> str:
