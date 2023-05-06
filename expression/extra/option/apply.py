@@ -3,7 +3,16 @@ from __future__ import annotations
 from collections.abc import Callable
 from functools import partial
 from inspect import isclass
-from typing import TYPE_CHECKING, Generic, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    Protocol,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+    runtime_checkable,
+)
 
 from typing_extensions import TypeVarTuple, Unpack
 
@@ -12,16 +21,24 @@ from expression.core.option import Nothing, Nothing_, Some
 if TYPE_CHECKING:
     from expression.core.option import Option
 
+
 ArgT = TypeVar("ArgT")
 OtherArgT = TypeVar("OtherArgT")
 ValueT = TypeVar("ValueT")
 ReturnT = TypeVar("ReturnT")
+ReturnT_co = TypeVar("ReturnT_co", covariant=True)
 OtherReturnT = TypeVar("OtherReturnT")
 ArgsT = TypeVarTuple("ArgsT")
 OtherArgsT = TypeVarTuple("OtherArgsT")
 AnotherArgsT = TypeVarTuple("AnotherArgsT")
 
 __all__ = ["Var", "Seq", "Func", "Call", "func", "of_obj", "of_iterable", "call"]
+
+
+@runtime_checkable
+class _Callable(Protocol, Generic[Unpack[ArgsT], ReturnT_co]):
+    def __call__(self, *args: Unpack[ArgsT]) -> ReturnT_co:
+        ...
 
 
 class Apply(Generic[ValueT]):
@@ -49,18 +66,19 @@ class Var(Apply[ValueT], Generic[ValueT]):
 
     Example:
         >>> from expression import Some, Option
-        >>> from expression.extra.option.apply import Var, Func, call
+        >>> from expression.extra.option.apply import Var, Func, call, func
         >>>
         >>>
-        >>> def func(a: int) -> int:
+        >>> def test_func(a: int) -> int:
         >>>     return a
         >>>
         >>>
         >>> value: int = 1
         >>> some_value: Option[int] = Some(1)
-        >>> wrapped: Var[int] = Var(some_value)
+        >>> wrapped_var: Var[int] = Var(some_value)
+        >>> wrapped_func: Func[int, int] = func(test_func)
         >>>
-        >>> new_func: Func[int] = func * wrapped
+        >>> new_func: Func[int] = wrapped_func * wrapped_var
         >>> assert new_func * call == Some(value)
     """
 
@@ -88,30 +106,14 @@ class Var(Apply[ValueT], Generic[ValueT]):
     ) -> Seq[ArgT, OtherArgT]:
         ...
 
-    @overload
-    def __mul__(
-        self: Var[ArgT],
-        func_or_arg_or_args: Union[
-            Func[ArgT, Unpack[ArgsT], ReturnT],
-            Seq[Unpack[ArgsT]],
-            Var[OtherArgT],
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
-        ],
-    ) -> Union[
-        Func[Unpack[ArgsT], ReturnT],
-        Seq[ArgT, Unpack[ArgsT]],
-        Seq[ArgT, OtherArgT],
-    ]:
-        ...
-
     # FIXME: error in pyright. but it works.
     def __mul__(  # type: ignore
         self: Var[ArgT],
         func_or_arg_or_args: Union[
+            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
             Func[ArgT, Unpack[ArgsT], ReturnT],
             Seq[Unpack[ArgsT]],
             Var[OtherArgT],
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
         ],
     ) -> Union[
         Func[Unpack[ArgsT], ReturnT],
@@ -159,22 +161,6 @@ class Var(Apply[ValueT], Generic[ValueT]):
     ) -> Seq[OtherArgT, ArgT]:
         ...
 
-    @overload
-    def __rmul__(
-        self: Var[ArgT],
-        func_or_arg_or_args: Union[
-            Func[ArgT, Unpack[ArgsT], ReturnT],
-            Seq[Unpack[ArgsT]],
-            Var[OtherArgT],
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
-        ],
-    ) -> Union[
-        Func[Unpack[ArgsT], ReturnT],
-        Seq[Unpack[ArgsT], ArgT],
-        Seq[OtherArgT, ArgT],
-    ]:
-        ...
-
     # FIXME: error in pyright. but it works.
     def __rmul__(  # type: ignore
         self: Var[ArgT],
@@ -210,38 +196,28 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
 
     Example:
         >>> from expression import Some, Option
-        >>> from expression.extra.option.apply import Seq, Func, call
+        >>> from expression.extra.option.apply import Seq, Func, call, func
         >>>
         >>>
-        >>> def func(a: int, b: int, c: str) -> tuple[int, str]:
+        >>> def test_func(a: int, b: int, c: str) -> tuple[int, str]:
         >>>     return (a + b, c)
         >>>
         >>>
         >>> values: tuple[int, int, str] = (1, 1, "q")
         >>> some_value: Option[tuple[int, int, str]] = Some(values)
-        >>> wrapped: Seq[int, int, str] = Seq(some_value)
+        >>> wrapped_seq: Seq[int, int, str] = Seq(some_value)
+        >>> wrapped_func: Func[int, int, str, tuple[int, str]] = func(test_func)
         >>>
-        >>> new_func: Func[tuple[int, str]] = func * wrapped
-        >>> assert new_func * call == Some(func(*values))
+        >>> new_func: Func[tuple[int, str]] = wrapped_func * wrapped_seq
+        >>> assert new_func * call == Some(test_func(*values))
     """
 
     @overload
     def __mul__(
         self: Seq[Unpack[OtherArgsT]],
         func_or_arg_or_args: Union[
-            Callable[
-                # [Unpack, Unpack]
-                # The pyright indicates an error,
-                # but the type inference is carried out normally.
-                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-                [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
-                ReturnT,
-            ],
-            Func[
-                Unpack[OtherArgsT],
-                Unpack[AnotherArgsT],
-                ReturnT,
-            ],
+            _Callable[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
+            Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
         ],
     ) -> Func[Unpack[AnotherArgsT], ReturnT]:
         ...
@@ -260,51 +236,13 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
     ) -> Seq[Unpack[OtherArgsT], Unpack[AnotherArgsT]]:
         ...
 
-    @overload
     def __mul__(
         self: Seq[Unpack[OtherArgsT]],
         func_or_arg_or_args: Union[
-            Func[
-                Unpack[OtherArgsT],
-                Unpack[AnotherArgsT],
-                ReturnT,
-            ],
+            _Callable[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
+            Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
             Var[ArgT],
             Seq[Unpack[AnotherArgsT]],
-            Callable[
-                # [Unpack, Unpack]
-                # The pyright indicates an error,
-                # but the type inference is carried out normally.
-                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-                [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
-                ReturnT,
-            ],
-        ],
-    ) -> Union[
-        Func[Unpack[AnotherArgsT], ReturnT],
-        Seq[Unpack[OtherArgsT], ArgT],
-        Seq[Unpack[OtherArgsT], Unpack[AnotherArgsT]],
-    ]:
-        ...
-
-    def __mul__(
-        self: Seq[Unpack[OtherArgsT]],
-        func_or_arg_or_args: Union[
-            Func[
-                Unpack[OtherArgsT],
-                Unpack[AnotherArgsT],
-                ReturnT,
-            ],
-            Var[ArgT],
-            Seq[Unpack[AnotherArgsT]],
-            Callable[
-                # [Unpack, Unpack]
-                # The pyright indicates an error,
-                # but the type inference is carried out normally.
-                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-                [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
-                ReturnT,
-            ],
         ],
     ) -> Union[
         Func[Unpack[AnotherArgsT], ReturnT],
@@ -320,30 +258,15 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 self.value.map2(_iter_unpack_tuples_0, func_or_arg_or_args.value),
             )
         if callable(func_or_arg_or_args):
-            # [Unpack, Unpack]
-            # The pyright indicates an error,
-            # but the type inference is carried out normally.
-            # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-            return self * func(func_or_arg_or_args)  # type: ignore
+            return self * func(func_or_arg_or_args)
         raise NotImplementedError
 
     @overload
     def __rmul__(
         self: Seq[Unpack[OtherArgsT]],
         func_or_arg_or_args: Union[
-            Callable[
-                # [Unpack, Unpack]
-                # The pyright indicates an error,
-                # but the type inference is carried out normally.
-                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-                [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
-                ReturnT,
-            ],
-            Func[
-                Unpack[OtherArgsT],
-                Unpack[AnotherArgsT],
-                ReturnT,
-            ],
+            _Callable[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
+            Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
         ],
     ) -> Func[Unpack[AnotherArgsT], ReturnT]:
         ...
@@ -362,51 +285,13 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
     ) -> Seq[Unpack[AnotherArgsT], Unpack[OtherArgsT]]:
         ...
 
-    @overload
     def __rmul__(
         self: Seq[Unpack[OtherArgsT]],
         func_or_arg_or_args: Union[
-            Func[
-                Unpack[OtherArgsT],
-                Unpack[AnotherArgsT],
-                ReturnT,
-            ],
+            _Callable[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
+            Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
             Var[ArgT],
             Seq[Unpack[AnotherArgsT]],
-            Callable[
-                # [Unpack, Unpack]
-                # The pyright indicates an error,
-                # but the type inference is carried out normally.
-                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-                [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
-                ReturnT,
-            ],
-        ],
-    ) -> Union[
-        Func[Unpack[AnotherArgsT], ReturnT],
-        Seq[ArgT, Unpack[OtherArgsT]],
-        Seq[Unpack[AnotherArgsT], Unpack[OtherArgsT]],
-    ]:
-        ...
-
-    def __rmul__(
-        self: Seq[Unpack[OtherArgsT]],
-        func_or_arg_or_args: Union[
-            Func[
-                Unpack[OtherArgsT],
-                Unpack[AnotherArgsT],
-                ReturnT,
-            ],
-            Var[ArgT],
-            Seq[Unpack[AnotherArgsT]],
-            Callable[
-                # [Unpack, Unpack]
-                # The pyright indicates an error,
-                # but the type inference is carried out normally.
-                # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-                [Unpack[OtherArgsT], Unpack[AnotherArgsT]],  # type: ignore
-                ReturnT,
-            ],
         ],
     ) -> Union[
         Func[Unpack[AnotherArgsT], ReturnT],
@@ -422,11 +307,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
                 self.value.map2(_iter_unpack_tuples_1, func_or_arg_or_args.value),
             )
         if callable(func_or_arg_or_args):
-            # [Unpack, Unpack]
-            # The pyright indicates an error,
-            # but the type inference is carried out normally.
-            # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-            return func(func_or_arg_or_args) * self  # type: ignore
+            return func(func_or_arg_or_args) * self
         raise NotImplementedError
 
 
@@ -438,20 +319,20 @@ class Func(
 
     Example:
         >>> from expression import Some, Option
-        >>> from expression.extra.option.apply import Seq, Func, call
+        >>> from expression.extra.option.apply import Seq, Func, call, func
         >>>
         >>>
-        >>> def func(a: int, b: int, c: str) -> tuple[int, str]:
+        >>> def test_func(a: int, b: int, c: str) -> tuple[int, str]:
         >>>     return (a + b, c)
         >>>
         >>>
-        >>> wrapped_func = Func(Some(func))
         >>> values: tuple[int, int, str] = (1, 1, "q")
         >>> some_value: Option[tuple[int, int, str]] = Some(values)
-        >>> wrapped: Seq[int, int, str] = Seq(some_value)
+        >>> wrapped_seq: Seq[int, int, str] = Seq(some_value)
+        >>> wrapped_func: Func[int, int, str, tuple[int, str]] = func(test_func)
         >>>
-        >>> new_func: Func[tuple[int, str]] = wrapped_func * wrapped
-        >>> assert new_func * call == Some(func(*values))
+        >>> new_func: Func[tuple[int, str]] = wrapped_func * wrapped_seq
+        >>> assert new_func * call == Some(test_func(*values))
     """
 
     @overload
@@ -530,12 +411,7 @@ class Func(
                 self,
             )
             return Func(
-                _self.value.map2(
-                    # An error occurred in the pylance using more than one Unpack.
-                    # but the type inference is carried out normally.
-                    _partial_1,  # type: ignore
-                    caller_or_arg_or_args.value,
-                ),
+                _self.value.map2(_partial_1, caller_or_arg_or_args.value),
             )
         if isclass(caller_or_arg_or_args) and issubclass(
             caller_or_arg_or_args,
@@ -653,13 +529,11 @@ def _iter_unpack_tuple_0(
     return (value, *other)
 
 
-def _iter_unpack_tuples_0(
-    value: tuple[Unpack[ArgsT]],
-    other: tuple[Unpack[OtherArgsT]],
-    # [Unpack, Unpack]
-    # The pyright indicates an error, but the type inference is carried out normally.
-    # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-) -> tuple[Unpack[ArgsT], Unpack[OtherArgsT]]:  # type: ignore
+# I believe the pyright
+def _iter_unpack_tuples_0(  # noqa: ANN202
+    value: tuple[Unpack[ArgsT]],  # type: ignore[reportInvalidTypeVarUse]
+    other: tuple[Unpack[OtherArgsT]],  # type: ignore[reportInvalidTypeVarUse]
+):
     return (*value, *other)
 
 
@@ -692,28 +566,23 @@ def _iter_unpack_tuple_1(
     return (*other, value)
 
 
-def _iter_unpack_tuples_1(
-    value: tuple[Unpack[ArgsT]],
-    other: tuple[Unpack[OtherArgsT]],
-    # [Unpack, Unpack]
-    # The pyright indicates an error, but the type inference is carried out normally.
-    # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-) -> tuple[Unpack[OtherArgsT], Unpack[ArgsT]]:  # type: ignore
+# I believe the pyright
+def _iter_unpack_tuples_1(  # noqa: ANN202
+    value: tuple[Unpack[ArgsT]],  # type: ignore[reportInvalidTypeVarUse]
+    other: tuple[Unpack[OtherArgsT]],  # type: ignore[reportInvalidTypeVarUse]
+):
     return (*other, *value)
 
 
 def _partial_0(
-    func: Callable[[ArgT, Unpack[ArgsT]], ReturnT],
+    func: _Callable[ArgT, Unpack[ArgsT], ReturnT],
     arg: ArgT,
 ) -> Callable[[Unpack[ArgsT]], ReturnT]:
     return partial(func, arg)
 
 
 def _partial_1(
-    # [Unpack, Unpack]
-    # The pyright indicates an error, but the type inference is carried out normally.
-    # https://peps.python.org/pep-0646/#multiple-type-variable-tuples-not-allowed
-    func: Callable[[Unpack[OtherArgsT], Unpack[AnotherArgsT]], ReturnT],  # type: ignore
+    func: _Callable[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
     args: tuple[Unpack[OtherArgsT]],
 ) -> Callable[[Unpack[AnotherArgsT]], ReturnT]:
     return partial(func, *args)
