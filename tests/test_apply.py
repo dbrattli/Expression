@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import re
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
-from expression import Ok, Some, option, pipe, result
+from expression import Error, Ok, Some, option, pipe, result
 from expression.core.option import BaseOption
 from expression.core.result import BaseResult
 from expression.extra.option import apply as option_apply
@@ -348,6 +349,38 @@ def test_result_func_call():
     assert func(*values) == func * seq * result_apply.call
 
 
+def test_option_func_mod():
+    func = option_apply.func(_func_one)
+    value = 1
+    var = option_apply.of_obj(value)
+    result = func * var * option_apply.call
+    assert result == func % var
+    assert func(value) == func % var
+
+    func = option_apply.func(_func_two)
+    values = 1, "q"
+    seq = option_apply.of_iterable(*values)
+    result = func * seq * option_apply.call
+    assert result == func % seq
+    assert func(*values) == func % seq
+
+
+def test_result_func_mod():
+    func = result_apply.func(_func_one)
+    value = 1
+    var = result_apply.of_obj(value)
+    result = func * var * result_apply.call
+    assert result == func % var
+    assert func(value) == func % var
+
+    func = result_apply.func(_func_two)
+    values = 1, "q"
+    seq = result_apply.of_iterable(*values)
+    result = func * seq * result_apply.call
+    assert result == func % seq
+    assert func(*values) == func % seq
+
+
 @pytest.mark.parametrize("func", ONLY_POSITIONAL_FUNCS)
 def test_create_func_object(func: Callable[..., Any]):
     option_apply.func(func)
@@ -358,6 +391,27 @@ def test_create_func_object(func: Callable[..., Any]):
 def test_error_create_func_object(func: Callable[..., Any]):
     pytest.raises(TypeError, option_apply.func, func)
     pytest.raises(TypeError, result_apply.func, func)
+
+
+def test_error_func_mod():
+    value = 1
+    try:
+        _func_two(value)  # type: ignore
+    except Exception as exc:  # noqa: BLE001
+        error_msg = str(exc)
+    else:
+        error_msg = "It was intended that an error would occur, but it did not."
+        raise RuntimeError(error_msg)
+
+    error_msg = re.escape(error_msg)
+    with pytest.raises(TypeError, match=error_msg):
+        option_apply.func(_func_two) % option_apply.of_obj(value)  # type: ignore
+
+    result = result_apply.func(_func_two) % result_apply.of_obj(value)  # type: ignore
+    assert isinstance(result, Error)
+    result = cast(Error[Any, Any], result)
+    with pytest.raises(TypeError, match=error_msg):
+        raise result.error
 
 
 def _func_zero() -> str:
