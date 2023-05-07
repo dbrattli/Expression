@@ -419,6 +419,28 @@ class Func(
 
     __rmul__ = __mul__
 
+    @overload
+    def __mod__(
+        self: Func[ArgT, OtherReturnT],
+        arg_or_args: Var[ArgT],
+    ) -> Option[OtherReturnT]:
+        ...
+
+    @overload
+    def __mod__(
+        self: Func[Unpack[ArgsT], ReturnT],
+        arg_or_args: Seq[Unpack[ArgsT]],
+    ) -> Option[ReturnT]:
+        ...
+
+    def __mod__(
+        self: Union[Func[ArgT, OtherReturnT], Func[Unpack[ArgsT], ReturnT]],
+        arg_or_args: Union[Var[ArgT], Seq[Unpack[ArgsT]]],
+    ) -> Union[Option[OtherReturnT], Option[ReturnT]]:
+        return self * arg_or_args * call  # type: ignore
+
+    __rmod__ = __mod__
+
     def __call__(
         self: Func[Unpack[ArgsT], ReturnT],
         *args: Unpack[ArgsT],
