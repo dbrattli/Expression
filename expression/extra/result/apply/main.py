@@ -105,7 +105,8 @@ class Var(Apply[ArgT], Generic[ArgT]):
     ) -> Seq[ArgT, OtherArgT]:
         ...
 
-    # FIXME: error in pyright. but it works.
+    # FIXME: not yet supported
+    # https://peps.python.org/pep-0646/#variance-type-constraints-and-type-bounds-not-yet-supported
     def __mul__(  # type: ignore
         self: Var[ArgT],
         func_or_arg_or_args: Union[
@@ -157,7 +158,8 @@ class Var(Apply[ArgT], Generic[ArgT]):
     ) -> Seq[OtherArgT, ArgT]:
         ...
 
-    # FIXME: error in pyright. but it works.
+    # FIXME: not yet supported
+    # https://peps.python.org/pep-0646/#variance-type-constraints-and-type-bounds-not-yet-supported
     def __rmul__(  # type: ignore
         self: Var[ArgT],
         func_or_arg_or_args: Union[
