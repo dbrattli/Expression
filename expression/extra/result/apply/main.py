@@ -251,7 +251,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             return func_or_arg_or_args.__rmul__(self)
         if isinstance(func_or_arg_or_args, Seq):
             return Seq(
-                self.value.map2(func_or_arg_or_args.value, _iter_unpack_tuples_0),
+                self.value.map2(func_or_arg_or_args.value, lambda xs, ys: (*xs, *ys)),
             )
         if callable(func_or_arg_or_args):
             return self * func(func_or_arg_or_args)
@@ -300,7 +300,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             return func_or_arg_or_args.__mul__(self)
         if isinstance(func_or_arg_or_args, Seq):
             return Seq(
-                self.value.map2(func_or_arg_or_args.value, _iter_unpack_tuples_1),
+                self.value.map2(func_or_arg_or_args.value, lambda xs, ys: (*ys, *xs)),
             )
         if callable(func_or_arg_or_args):
             return func(func_or_arg_or_args) * self
@@ -563,14 +563,6 @@ def _iter_unpack_tuple_0(
     return (value, *other)
 
 
-# I believe the pyright
-def _iter_unpack_tuples_0(  # noqa: ANN202
-    value: tuple[Unpack[ArgsT]],  # type: ignore[reportInvalidTypeVarUse]
-    other: tuple[Unpack[OtherArgsT]],  # type: ignore[reportInvalidTypeVarUse]
-):
-    return (*value, *other)
-
-
 @overload
 def _iter_tuple_1(value: ArgT, other_value: OtherArgT) -> tuple[OtherArgT, ArgT]:
     ...
@@ -598,14 +590,6 @@ def _iter_unpack_tuple_1(
     other: tuple[Unpack[ArgsT]],
 ) -> tuple[Unpack[ArgsT], ArgT]:
     return (*other, value)
-
-
-# I believe the pyright
-def _iter_unpack_tuples_1(  # noqa: ANN202
-    value: tuple[Unpack[ArgsT]],  # type: ignore[reportInvalidTypeVarUse]
-    other: tuple[Unpack[OtherArgsT]],  # type: ignore[reportInvalidTypeVarUse]
-):
-    return (*other, *value)
 
 
 def _partial_0(

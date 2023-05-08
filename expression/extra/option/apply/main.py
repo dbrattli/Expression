@@ -251,7 +251,7 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             return func_or_arg_or_args.__rmul__(self)
         if isinstance(func_or_arg_or_args, Seq):
             return Seq(
-                self.value.map2(_iter_unpack_tuples_0, func_or_arg_or_args.value),
+                self.value.map2(lambda xs, ys: (*xs, *ys), func_or_arg_or_args.value),
             )
         if callable(func_or_arg_or_args):
             return self * func(func_or_arg_or_args)
@@ -300,7 +300,9 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             return func_or_arg_or_args.__mul__(self)
         if isinstance(func_or_arg_or_args, Seq):
             return Seq(
-                self.value.map2(_iter_unpack_tuples_1, func_or_arg_or_args.value),
+                self.value.map2(_combine, func_or_arg_or_args.value)
+                .map(_switch)
+                .map(lambda tup: (*tup[0], *tup[1])),
             )
         if callable(func_or_arg_or_args):
             return func(func_or_arg_or_args) * self
@@ -553,14 +555,6 @@ def _iter_unpack_tuple_0(
     return (value, *other)
 
 
-# I believe the pyright
-def _iter_unpack_tuples_0(  # noqa: ANN202
-    value: tuple[Unpack[ArgsT]],  # type: ignore[reportInvalidTypeVarUse]
-    other: tuple[Unpack[OtherArgsT]],  # type: ignore[reportInvalidTypeVarUse]
-):
-    return (*value, *other)
-
-
 @overload
 def _iter_tuple_1(value: ArgT, other_value: OtherArgT) -> tuple[OtherArgT, ArgT]:
     ...
@@ -590,14 +584,6 @@ def _iter_unpack_tuple_1(
     return (*other, value)
 
 
-# I believe the pyright
-def _iter_unpack_tuples_1(  # noqa: ANN202
-    value: tuple[Unpack[ArgsT]],  # type: ignore[reportInvalidTypeVarUse]
-    other: tuple[Unpack[OtherArgsT]],  # type: ignore[reportInvalidTypeVarUse]
-):
-    return (*other, *value)
-
-
 def _partial_0(
     func: _Callable[ArgT, Unpack[ArgsT], ReturnT],
     arg: ArgT,
@@ -610,6 +596,14 @@ def _partial_1(
     args: tuple[Unpack[OtherArgsT]],
 ) -> Callable[[Unpack[AnotherArgsT]], ReturnT]:
     return partial(func, *args)
+
+
+def _switch(value: tuple[ArgT, OtherArgT]) -> tuple[OtherArgT, ArgT]:
+    return (value[1], value[0])
+
+
+def _combine(x: ArgT, y: OtherArgT) -> tuple[ArgT, OtherArgT]:
+    return x, y
 
 
 def _keyword_params(func: Callable[..., Any]) -> dict[str, Parameter]:
