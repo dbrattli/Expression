@@ -183,6 +183,18 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
             return func(func_or_arg_or_args) * self
         raise NotImplementedError
 
+    def __mod__(
+        self,
+        f: Union[Callable[[Unpack[ArgsT]], ReturnT], Func[Unpack[ArgsT], ReturnT]],
+    ) -> Result[ReturnT, Any]:
+        if isinstance(f, Func):
+            return f % self
+        if callable(f):
+            return func(f) % self
+        raise NotImplementedError
+
+    __rmod__ = __mod__
+
 
 class Func(
     Apply[Callable[[Unpack[ArgsT]], ReturnT]],
@@ -280,7 +292,9 @@ class Func(
     __rmul__ = __mul__
 
     def __mod__(self, arg_or_args: Seq[Unpack[ArgsT]]) -> Result[ReturnT, Any]:
-        return self * arg_or_args * call
+        if isinstance(arg_or_args, Seq):  # type: ignore[reportUnnecessaryIsInstance]
+            return self * arg_or_args * call
+        raise NotImplementedError
 
     __rmod__ = __mod__
 

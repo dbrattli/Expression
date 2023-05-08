@@ -348,13 +348,14 @@ def test_result_func_call():
     assert func(*values) == func * seq * result_apply.call
 
 
-def test_option_func_mod():
+def test_option_mod():
     func = option_apply.func(_func_one)
     value = 1
     var = option_apply.of_obj(value)
     result = func * var * option_apply.call
     assert result == func % var
     assert func(value) == func % var
+    assert result == _func_one % var
 
     func = option_apply.func(_func_two)
     values = 1, "q"
@@ -362,15 +363,17 @@ def test_option_func_mod():
     result = func * seq * option_apply.call
     assert result == func % seq
     assert func(*values) == func % seq
+    assert result == _func_two % seq
 
 
-def test_result_func_mod():
+def test_result_mod():
     func = result_apply.func(_func_one)
     value = 1
     var = result_apply.of_obj(value)
     result = func * var * result_apply.call
     assert result == func % var
     assert func(value) == func % var
+    assert result == _func_one % var
 
     func = result_apply.func(_func_two)
     values = 1, "q"
@@ -378,6 +381,7 @@ def test_result_func_mod():
     result = func * seq * result_apply.call
     assert result == func % seq
     assert func(*values) == func % seq
+    assert result == _func_two % seq
 
 
 @pytest.mark.parametrize("func", ONLY_POSITIONAL_FUNCS)
