@@ -69,10 +69,10 @@ def test_option_var():
     value = 1
     var = option_apply.of_obj(value)
 
-    assert isinstance(var, option_main.Var)
+    assert isinstance(var, option_main.Seq)
     assert pipe(var.value, option.is_some) is True
     assert pipe(var.value, option.is_none) is False
-    assert var.value.default_value(0) == value
+    assert var.value.default_value((0,)) == (value,)
 
 
 def test_option_seq():
@@ -124,14 +124,12 @@ def test_option_var_func():
     assert dummy != output
 
     var = option_apply.of_obj(value)
-    assert isinstance(var, option_main.Var)
-    func_0 = _func_one * var
-    func_1 = option_apply.func(_func_one) * var
-    var_0, var_1 = func_0 * option_apply.call, func_1 * option_apply.call
+    assert isinstance(var, option_main.Seq)
+    func = option_apply.func(_func_one) * var
+    result = func * option_apply.call
 
-    for var in (var_0, var_1):
-        assert isinstance(var, BaseOption)
-        assert var.default_value(dummy) == output
+    assert isinstance(result, BaseOption)
+    assert result.default_value(dummy) == output
 
 
 def test_option_seq_func():
@@ -172,10 +170,10 @@ def test_result_var():
     value = 1
     var = result_apply.of_obj(value)
 
-    assert isinstance(var, result_main.Var)
+    assert isinstance(var, result_main.Seq)
     assert pipe(var.value, result.is_ok) is True
     assert pipe(var.value, result.is_error) is False
-    assert var.value.default_value(0) == value
+    assert var.value.default_value((0,)) == (value,)
 
 
 def test_result_seq():
@@ -227,7 +225,8 @@ def test_result_var_func():
     assert dummy != output
 
     var = result_apply.of_obj(value)
-    assert isinstance(var, result_main.Var)
+    assert isinstance(var, result_main.Seq)
+    var.__mul__(_func_one)
     func_0 = _func_one * var
     func_1 = result_apply.func(_func_one) * var
     var_0, var_1 = func_0 * result_apply.call, func_1 * result_apply.call
