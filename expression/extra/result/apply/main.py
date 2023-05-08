@@ -31,7 +31,7 @@ OtherArgsT = TypeVarTuple("OtherArgsT")
 AnotherArgsT = TypeVarTuple("AnotherArgsT")
 ErrorT = TypeVar("ErrorT", bound=Exception)
 
-__all__ = ["Var", "Seq", "Func", "Call", "func", "of_obj", "of_iterable", "call"]
+__all__ = ["Seq", "Func", "Call", "func", "of_obj", "of_iterable", "call"]
 
 
 class Apply(Generic[ValueT]):
@@ -59,135 +59,6 @@ class Apply(Generic[ValueT]):
         )
 
 
-class Var(Apply[ArgT], Generic[ArgT]):
-    """a Value wrapped as Result for use to apply
-
-    Example:
-        >>> from typing import Any
-        >>> from expression import Ok, Result
-        >>> from expression.extra.result.apply import Var, Func, call, func
-        >>>
-        >>>
-        >>> def test_func(a: int) -> int:
-        >>>     return a
-        >>>
-        >>>
-        >>> value: int = 1
-        >>> some_value: Result[int, Any] = Ok(1)
-        >>> wrapped_var: Var[int] = Var(some_value)
-        >>> wrapped_func: Func[int, int] = func(test_func)
-        >>>
-        >>> new_func: Func[int] = wrapped_func * wrapped_var
-        >>> assert new_func * call == Ok(value)
-    """
-
-    @overload
-    def __mul__(
-        self,
-        func_or_arg_or_args: Union[
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
-            Func[ArgT, Unpack[ArgsT], ReturnT],
-        ],
-    ) -> Func[Unpack[ArgsT], ReturnT]:
-        ...
-
-    @overload
-    def __mul__(
-        self,
-        func_or_arg_or_args: Seq[Unpack[ArgsT]],
-    ) -> Seq[ArgT, Unpack[ArgsT]]:
-        ...
-
-    @overload
-    def __mul__(
-        self,
-        func_or_arg_or_args: Var[OtherArgT],
-    ) -> Seq[ArgT, OtherArgT]:
-        ...
-
-    # FIXME: not yet supported
-    # https://peps.python.org/pep-0646/#variance-type-constraints-and-type-bounds-not-yet-supported
-    def __mul__(  # type: ignore
-        self,
-        func_or_arg_or_args: Union[
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
-            Func[ArgT, Unpack[ArgsT], ReturnT],
-            Seq[Unpack[ArgsT]],
-            Var[OtherArgT],
-        ],
-    ) -> Union[
-        Func[Unpack[ArgsT], ReturnT],
-        Seq[ArgT, Unpack[ArgsT]],
-        Seq[ArgT, OtherArgT],
-    ]:
-        if isinstance(func_or_arg_or_args, Func):
-            return func_or_arg_or_args * self
-        if isinstance(func_or_arg_or_args, Var):
-            return Seq(
-                self.value.map2(func_or_arg_or_args.value, _iter_tuple_0),
-            )
-        if isinstance(func_or_arg_or_args, Seq):
-            return Seq(
-                self.value.map2(func_or_arg_or_args.value, _iter_unpack_tuple_0),
-            )
-        if callable(func_or_arg_or_args):
-            return self * func(func_or_arg_or_args)
-        raise NotImplementedError
-
-    @overload
-    def __rmul__(
-        self,
-        func_or_arg_or_args: Union[
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
-            Func[ArgT, Unpack[ArgsT], ReturnT],
-        ],
-    ) -> Func[Unpack[ArgsT], ReturnT]:
-        ...
-
-    @overload
-    def __rmul__(
-        self,
-        func_or_arg_or_args: Seq[Unpack[ArgsT]],
-    ) -> Seq[Unpack[ArgsT], ArgT]:
-        ...
-
-    @overload
-    def __rmul__(
-        self,
-        func_or_arg_or_args: Var[OtherArgT],
-    ) -> Seq[OtherArgT, ArgT]:
-        ...
-
-    # FIXME: not yet supported
-    # https://peps.python.org/pep-0646/#variance-type-constraints-and-type-bounds-not-yet-supported
-    def __rmul__(  # type: ignore
-        self,
-        func_or_arg_or_args: Union[
-            Callable[[ArgT, Unpack[ArgsT]], ReturnT],
-            Func[ArgT, Unpack[ArgsT], ReturnT],
-            Seq[Unpack[ArgsT]],
-            Var[OtherArgT],
-        ],
-    ) -> Union[
-        Func[Unpack[ArgsT], ReturnT],
-        Seq[Unpack[ArgsT], ArgT],
-        Seq[OtherArgT, ArgT],
-    ]:
-        if isinstance(func_or_arg_or_args, Func):
-            return func_or_arg_or_args * self
-        if isinstance(func_or_arg_or_args, Var):
-            return Seq(
-                self.value.map2(func_or_arg_or_args.value, _iter_tuple_1),
-            )
-        if isinstance(func_or_arg_or_args, Seq):
-            return Seq(
-                self.value.map2(func_or_arg_or_args.value, _iter_unpack_tuple_1),
-            )
-        if callable(func_or_arg_or_args):
-            return func(func_or_arg_or_args) * self
-        raise NotImplementedError
-
-
 class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
     """some Values wrapped as Result for use to apply
 
@@ -213,6 +84,13 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
     @overload
     def __mul__(
         self,
+        func_or_arg_or_args: Seq[Unpack[OtherArgsT]],
+    ) -> Seq[Unpack[ArgsT], Unpack[OtherArgsT]]:
+        ...
+
+    @overload
+    def __mul__(
+        self,
         func_or_arg_or_args: Union[
             _Callable[Unpack[ArgsT], Unpack[OtherArgsT], ReturnT],
             Func[Unpack[ArgsT], Unpack[OtherArgsT], ReturnT],
@@ -223,34 +101,29 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
     @overload
     def __mul__(
         self,
-        func_or_arg_or_args: Var[ArgT],
-    ) -> Seq[Unpack[ArgsT], ArgT]:
-        ...
-
-    @overload
-    def __mul__(
-        self,
-        func_or_arg_or_args: Seq[Unpack[OtherArgsT]],
-    ) -> Seq[Unpack[ArgsT], Unpack[OtherArgsT]]:
+        func_or_arg_or_args: Union[
+            _Callable[Unpack[ArgsT], ReturnT],
+            Func[Unpack[ArgsT], ReturnT],
+        ],
+    ) -> Func[ReturnT]:
         ...
 
     def __mul__(
         self,
         func_or_arg_or_args: Union[
+            Seq[Unpack[OtherArgsT]],
             _Callable[Unpack[ArgsT], Unpack[OtherArgsT], ReturnT],
             Func[Unpack[ArgsT], Unpack[OtherArgsT], ReturnT],
-            Var[ArgT],
-            Seq[Unpack[OtherArgsT]],
+            _Callable[Unpack[ArgsT], ReturnT],
+            Func[Unpack[ArgsT], ReturnT],
         ],
     ) -> Union[
-        Func[Unpack[OtherArgsT], ReturnT],
-        Seq[Unpack[ArgsT], ArgT],
         Seq[Unpack[ArgsT], Unpack[OtherArgsT]],
+        Func[Unpack[OtherArgsT], ReturnT],
+        Func[ReturnT],
     ]:
         if isinstance(func_or_arg_or_args, Func):
             return func_or_arg_or_args * self
-        if isinstance(func_or_arg_or_args, Var):
-            return func_or_arg_or_args.__rmul__(self)
         if isinstance(func_or_arg_or_args, Seq):
             return Seq(
                 self.value.map2(func_or_arg_or_args.value, lambda xs, ys: (*xs, *ys)),
@@ -262,6 +135,13 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
     @overload
     def __rmul__(
         self,
+        func_or_arg_or_args: Seq[Unpack[OtherArgsT]],
+    ) -> Seq[Unpack[OtherArgsT], Unpack[ArgsT]]:
+        ...
+
+    @overload
+    def __rmul__(
+        self,
         func_or_arg_or_args: Union[
             _Callable[Unpack[ArgsT], Unpack[OtherArgsT], ReturnT],
             Func[Unpack[ArgsT], Unpack[OtherArgsT], ReturnT],
@@ -272,34 +152,29 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
     @overload
     def __rmul__(
         self,
-        func_or_arg_or_args: Var[ArgT],
-    ) -> Seq[ArgT, Unpack[ArgsT]]:
-        ...
-
-    @overload
-    def __rmul__(
-        self,
-        func_or_arg_or_args: Seq[Unpack[OtherArgsT]],
-    ) -> Seq[Unpack[OtherArgsT], Unpack[ArgsT]]:
+        func_or_arg_or_args: Union[
+            _Callable[Unpack[ArgsT], ReturnT],
+            Func[Unpack[ArgsT], ReturnT],
+        ],
+    ) -> Func[ReturnT]:
         ...
 
     def __rmul__(
         self,
         func_or_arg_or_args: Union[
+            Seq[Unpack[OtherArgsT]],
             _Callable[Unpack[ArgsT], Unpack[OtherArgsT], ReturnT],
             Func[Unpack[ArgsT], Unpack[OtherArgsT], ReturnT],
-            Var[ArgT],
-            Seq[Unpack[OtherArgsT]],
+            _Callable[Unpack[ArgsT], ReturnT],
+            Func[Unpack[ArgsT], ReturnT],
         ],
     ) -> Union[
-        Func[Unpack[OtherArgsT], ReturnT],
-        Seq[ArgT, Unpack[ArgsT]],
         Seq[Unpack[OtherArgsT], Unpack[ArgsT]],
+        Func[Unpack[OtherArgsT], ReturnT],
+        Func[ReturnT],
     ]:
         if isinstance(func_or_arg_or_args, Func):
             return func_or_arg_or_args * self
-        if isinstance(func_or_arg_or_args, Var):
-            return func_or_arg_or_args.__mul__(self)
         if isinstance(func_or_arg_or_args, Seq):
             return Seq(
                 self.value.map2(func_or_arg_or_args.value, lambda xs, ys: (*ys, *xs)),
@@ -350,13 +225,6 @@ class Func(
 
     @overload
     def __mul__(
-        self: Func[ArgT, Unpack[OtherArgsT], OtherReturnT],
-        caller_or_arg_or_args: Var[ArgT],
-    ) -> Func[Unpack[OtherArgsT], OtherReturnT]:
-        ...
-
-    @overload
-    def __mul__(
         self: Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT],
         caller_or_arg_or_args: Seq[Unpack[OtherArgsT]],
     ) -> Func[Unpack[AnotherArgsT], OtherReturnT]:
@@ -372,34 +240,23 @@ class Func(
     def __mul__(
         self: Union[
             Func[OtherReturnT],
-            Func[ArgT, Unpack[OtherArgsT], OtherReturnT],
             Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT],
             Func[Unpack[ArgsT], ReturnT],
         ],
         caller_or_arg_or_args: Union[
             type[Call],
             Call,
-            Var[ArgT],
             Seq[Unpack[OtherArgsT]],
             Seq[Unpack[ArgsT]],
         ],
     ) -> Union[
         Result[OtherReturnT, Any],
-        Func[Unpack[OtherArgsT], OtherReturnT],
         Func[Unpack[AnotherArgsT], OtherReturnT],
         Func[ReturnT],
     ]:
         if isinstance(caller_or_arg_or_args, Call):
             _self = cast("Func[OtherReturnT]", self)
             return caller_or_arg_or_args * _self
-        if isinstance(caller_or_arg_or_args, Var):
-            _self = cast(
-                "Func[ArgT, Unpack[OtherArgsT], OtherReturnT]",
-                self,
-            )
-            return Func(
-                _self.value.map2(caller_or_arg_or_args.value, _partial_0),
-            )
         if isinstance(caller_or_arg_or_args, Seq):
             _self = cast(
                 "Func[Unpack[OtherArgsT], Unpack[AnotherArgsT], OtherReturnT]",
@@ -422,32 +279,12 @@ class Func(
 
     __rmul__ = __mul__
 
-    @overload
-    def __mod__(
-        self: Func[ArgT, OtherReturnT],
-        arg_or_args: Var[ArgT],
-    ) -> Result[OtherReturnT, Any]:
-        ...
-
-    @overload
-    def __mod__(
-        self: Func[Unpack[ArgsT], ReturnT],
-        arg_or_args: Seq[Unpack[ArgsT]],
-    ) -> Result[ReturnT, Any]:
-        ...
-
-    def __mod__(
-        self: Union[Func[ArgT, OtherReturnT], Func[Unpack[ArgsT], ReturnT]],
-        arg_or_args: Union[Var[ArgT], Seq[Unpack[ArgsT]]],
-    ) -> Union[Result[OtherReturnT, Any], Result[ReturnT, Any]]:
-        return self * arg_or_args * call  # type: ignore
+    def __mod__(self, arg_or_args: Seq[Unpack[ArgsT]]) -> Result[ReturnT, Any]:
+        return self * arg_or_args * call
 
     __rmod__ = __mod__
 
-    def __call__(
-        self: Func[Unpack[ArgsT], ReturnT],
-        *args: Unpack[ArgsT],
-    ) -> Result[ReturnT, Any]:
+    def __call__(self, *args: Unpack[ArgsT]) -> Result[ReturnT, Any]:
         return self * of_iterable(*args) * call
 
 
@@ -490,16 +327,16 @@ def func(
 
 
 @overload
-def of_obj(value: Result[ValueT, Any]) -> Var[ValueT]:
+def of_obj(value: Result[ValueT, Any]) -> Seq[ValueT]:
     ...
 
 
 @overload
-def of_obj(value: ArgT) -> Var[ArgT]:
+def of_obj(value: ArgT) -> Seq[ArgT]:
     ...
 
 
-def of_obj(value: Union[ArgT, Result[ValueT, Any]]) -> Union[Var[ArgT], Var[ValueT]]:
+def of_obj(value: Union[ArgT, Result[ValueT, Any]]) -> Union[Seq[ArgT], Seq[ValueT]]:
     """convert a value(or wrapped as Result) to Var
 
     Args:
@@ -509,8 +346,8 @@ def of_obj(value: Union[ArgT, Result[ValueT, Any]]) -> Union[Var[ArgT], Var[Valu
         wrapped value as Var
     """
     if isinstance(value, Ok | Error):
-        return Var(cast("Result[ValueT, Any]", value))
-    return Var(Ok(value))
+        return Seq(cast("Result[ValueT, Any]", value).map(_tup_0))
+    return Seq(Ok((value,)))
 
 
 def of_iterable(*values: Unpack[ArgsT]) -> Seq[Unpack[ArgsT]]:
@@ -536,76 +373,15 @@ def _base_safe(
     return inner
 
 
-@overload
-def _iter_tuple_0(value: ArgT, other_value: OtherArgT) -> tuple[ArgT, OtherArgT]:
-    ...
-
-
-@overload
-def _iter_tuple_0(
-    value: ArgT,
-    other_value: OtherArgT,
-    *values: Unpack[ArgsT],
-) -> tuple[ArgT, OtherArgT, Unpack[ArgsT]]:
-    ...
-
-
-def _iter_tuple_0(
-    value: ArgT,
-    other_value: OtherArgT,
-    *values: Unpack[ArgsT],
-) -> Union[tuple[ArgT, OtherArgT], tuple[ArgT, OtherArgT, Unpack[ArgsT]]]:
-    return (value, other_value, *values)
-
-
-def _iter_unpack_tuple_0(
-    value: ArgT,
-    other: tuple[Unpack[ArgsT]],
-) -> tuple[ArgT, Unpack[ArgsT]]:
-    return (value, *other)
-
-
-@overload
-def _iter_tuple_1(value: ArgT, other_value: OtherArgT) -> tuple[OtherArgT, ArgT]:
-    ...
-
-
-@overload
-def _iter_tuple_1(
-    value: ArgT,
-    other_value: OtherArgT,
-    *values: Unpack[ArgsT],
-) -> tuple[OtherArgT, Unpack[ArgsT], ArgT]:
-    ...
-
-
-def _iter_tuple_1(
-    value: ArgT,
-    other_value: OtherArgT,
-    *values: Unpack[ArgsT],
-) -> tuple[OtherArgT, ArgT] | tuple[OtherArgT, Unpack[ArgsT], ArgT]:
-    return (other_value, *values, value)
-
-
-def _iter_unpack_tuple_1(
-    value: ArgT,
-    other: tuple[Unpack[ArgsT]],
-) -> tuple[Unpack[ArgsT], ArgT]:
-    return (*other, value)
-
-
-def _partial_0(
-    func: _Callable[ArgT, Unpack[ArgsT], ReturnT],
-    arg: ArgT,
-) -> Callable[[Unpack[ArgsT]], ReturnT]:
-    return partial(func, arg)
-
-
 def _partial_1(
     func: _Callable[Unpack[OtherArgsT], Unpack[AnotherArgsT], ReturnT],
     args: tuple[Unpack[OtherArgsT]],
 ) -> Callable[[Unpack[AnotherArgsT]], ReturnT]:
     return partial(func, *args)
+
+
+def _tup_0(x: ArgT) -> tuple[ArgT]:
+    return (x,)
 
 
 def _keyword_params(func: Callable[..., Any]) -> dict[str, Parameter]:
