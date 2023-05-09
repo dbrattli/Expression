@@ -289,9 +289,20 @@ class Func(
 
     __rmul__ = __mul__
 
-    def __mod__(self, arg_or_args: Seq[Unpack[ArgsT]]) -> Option[ReturnT]:
-        if isinstance(arg_or_args, Seq):  # type: ignore[reportUnnecessaryIsInstance]
+    def __mod__(
+        self,
+        arg_or_args: Union[
+            Seq[Unpack[ArgsT]],
+            Option[tuple[Unpack[ArgsT]]],
+            tuple[Unpack[ArgsT]],
+        ],
+    ) -> Option[ReturnT]:
+        if isinstance(arg_or_args, Seq):
             return self * arg_or_args * call
+        if isinstance(arg_or_args, Some | Nothing_):
+            return self * Seq(arg_or_args) * call
+        if isinstance(arg_or_args, tuple):  # type: ignore[reportUnnecessaryIsInstance]
+            return self * Seq(Some(arg_or_args)) * call
         raise NotImplementedError
 
     __rmod__ = __mod__
