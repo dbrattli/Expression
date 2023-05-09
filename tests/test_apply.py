@@ -353,21 +353,20 @@ def test_option_mod():
     value = 1
     var = option_apply.of_obj(value)
     result = func * var * option_apply.call
-    assert (
-        result
-        == func % var
-        == _func_one % var
-        == func % (value,)
-        == func % Some((value,))
-    )
+    assert result == func % var
+    assert result == _func_one % var
+    assert result == func % (value,)
+    assert result == func % Some((value,))
 
     func = option_apply.func(_func_two)
     values = 1, "q"
     seq = option_apply.of_iterable(*values)
     result = func * seq * option_apply.call
-    assert (
-        result == func % seq == _func_two % seq == func % values == func % Some(values)
-    )
+    assert result == func % seq
+    assert result == _func_two % seq
+    assert result == func % seq
+    assert result == func % values
+    assert result == func % Some(values)
 
 
 def test_result_mod():
@@ -375,19 +374,21 @@ def test_result_mod():
     value = 1
     var = result_apply.of_obj(value)
     result = func * var * result_apply.call
-    assert (
-        result
-        == func % var
-        == _func_one % var
-        == func % (value,)
-        == func % Ok((value,))
-    )
+    assert result == func % var
+    assert result == _func_one % var
+    assert result == func % var
+    assert result == func % (value,)
+    assert result == func % Ok((value,))
 
     func = result_apply.func(_func_two)
     values = 1, "q"
     seq = result_apply.of_iterable(*values)
     result = func * seq * result_apply.call
-    assert result == func % seq == _func_two % seq == func % values == func % Ok(values)
+    assert result == func % seq
+    assert result == _func_two % seq
+    assert result == func % seq
+    assert result == func % values
+    assert result == func % Ok(values)
 
 
 @pytest.mark.parametrize("func", ONLY_POSITIONAL_FUNCS)
