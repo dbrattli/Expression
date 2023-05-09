@@ -63,22 +63,58 @@ class Seq(Apply[tuple[Unpack[ArgsT]]], Generic[Unpack[ArgsT]]):
     """some Values wrapped as Result for use to apply
 
     Example:
-        >>> from typing import Any
-        >>> from expression import Ok, Result
-        >>> from expression.extra.result.apply import Seq, Func, call, func
+        >>> from expression import Ok
+        >>> from expression.extra.result.apply import call, func, of_iterable, of_obj
+        >>>
+        >>> ### declare
+        >>> values = (1, "q", b"w")
+        >>> seq_0 = of_iterable(*values)
+        >>> seq_1 = of_obj(values[0]) * of_obj(values[1]) * of_obj(values[2])
+        >>> seq_2 = (
+        >>>     of_iterable(values[0])
+        >>>     * of_iterable(values[1])
+        >>>     * of_iterable(values[2])
+        >>> )
+        >>> assert seq_0 == seq_1 == seq_2
+        >>> assert seq_0 * of_obj(1) != of_obj(1) * seq_0
+        >>> assert seq_0 * of_iterable(1, 2) != of_iterable(1, 2) * seq_0
+        >>>
+        >>> ### declare as result
+        >>> seq_3 = (
+        >>>     of_obj(Ok(values[0]))
+        >>>     * of_obj(Ok(values[1]))
+        >>>     * of_obj(Ok(values[2]))
+        >>> )
+        >>> assert seq_0 == seq_3
         >>>
         >>>
-        >>> def test_func(a: int, b: int, c: str) -> tuple[int, str]:
-        >>>     return (a + b, c)
+        >>> ### with function
+        >>> @func
+        >>> def test_func(a: int, b: str, c: bytes) -> tuple[int, str, bytes]:
+        >>>     return (a, b, c)
+        >>> # or
+        >>> # test_func = func(test_func)
         >>>
         >>>
-        >>> values: tuple[int, int, str] = (1, 1, "q")
-        >>> some_value: Result[tuple[int, int, str], Any] = Ok(values)
-        >>> wrapped_seq: Seq[int, int, str] = Seq(some_value)
-        >>> wrapped_func: Func[int, int, str, tuple[int, str]] = func(test_func)
+        >>> left, right = of_obj(values[0]), of_iterable(*values[1:])
+        >>> lr_seq = left * right
+        >>> res_0 = test_func * left * right * call
+        >>> res_1 = left * test_func * right * call
+        >>> res_2 = left * right * test_func * call
+        >>> res_3 = lr_seq * test_func * call
+        >>> res_4 = test_func * lr_seq * call
+        >>> res_5 = test_func % lr_seq
+        >>> res_6 = lr_seq % test_func
+        >>> assert res_0 == res_1 == res_2 == res_3 == res_4 == res_5 == res_6
         >>>
-        >>> new_func: Func[tuple[int, str]] = wrapped_func * wrapped_seq
-        >>> assert new_func * call == Ok(test_func(*values))
+        >>>
+        >>> ### only __mod__
+        >>> def other_test_func(a: int, b: str, c: bytes) -> tuple[int, str, bytes]:
+        >>>     return (a, b, c)
+        >>>
+        >>>
+        >>> another_test_func = func(other_test_func)
+        >>> assert other_test_func % lr_seq == another_test_func % lr_seq
     """
 
     @overload
@@ -203,22 +239,61 @@ class Func(
     """a function(without keyword parameters) wrapped as Result for use to apply
 
     Example:
-        >>> from typing import Any
-        >>> from expression import Ok, Result
-        >>> from expression.extra.result.apply import Seq, Func, call
+        >>> from expression import Ok
+        >>> from expression.extra.result.apply import call, func, of_iterable, of_obj
         >>>
         >>>
-        >>> def test_func(a: int, b: int, c: str) -> tuple[int, str]:
-        >>>     return (a + b, c)
+        >>> ### declare
+        >>> def test_func_0(a: int, b: str, c: bytes) -> tuple[int, str, bytes]:
+        >>>     return (a, b, c)
         >>>
         >>>
-        >>> values: tuple[int, int, str] = (1, 1, "q")
-        >>> some_value: Result[tuple[int, int, str], Any] = Ok(values)
-        >>> wrapped_seq: Seq[int, int, str] = Seq(some_value)
-        >>> wrapped_func: Func[int, int, str, tuple[int, str]] = Func(Ok(test_func))
+        >>> @func
+        >>> def test_func_1(a: int, b: str, c: bytes) -> tuple[int, str, bytes]:
+        >>>     return (a, b, c)
         >>>
-        >>> new_func: Func[tuple[int, str]] = wrapped_func * wrapped_seq
-        >>> assert new_func * call == Ok(test_func(*values))
+        >>>
+        >>> test_func_2 = func(test_func_0)
+        >>>
+        >>> ### __call__
+        >>> values = (1, "q", b"w")
+        >>> seq = of_iterable(*values)
+        >>> assert (
+        >>>     Ok(test_func_0(*values))
+        >>>     == test_func_1(*values)
+        >>>     == test_func_2(*values)
+        >>>     == test_func_1 * seq * call
+        >>>     == seq * test_func_1 * call
+        >>>     == test_func_1 % seq
+        >>>     == seq % test_func_1
+        >>>     == test_func_2 * seq * call
+        >>>     == seq * test_func_2 * call
+        >>>     == test_func_2 % seq
+        >>>     == seq % test_func_2
+        >>> )
+        >>>
+        >>>
+        >>> ### with seq
+        >>>
+        >>> values = (1, "q", b"w")
+        >>> left, right = of_obj(values[0]), of_iterable(*values[1:])
+        >>> lr_seq = left * right
+        >>> res_0 = test_func_1 * left * right * call
+        >>> res_1 = left * test_func_1 * right * call
+        >>> res_2 = left * right * test_func_1 * call
+        >>> res_3 = lr_seq * test_func_1 * call
+        >>> res_4 = test_func_1 * lr_seq * call
+        >>> res_5 = test_func_1 % lr_seq
+        >>> res_6 = lr_seq % test_func_1
+        >>> assert res_0 == res_1 == res_2 == res_3 == res_4 == res_5 == res_6
+        >>>
+        >>>
+        >>> ### only __mod__
+        >>> assert (
+        >>>     test_func_1 % values
+        >>>     == test_func_1 % Ok(values)
+        >>>     == test_func_1 % lr_seq
+        >>> )
     """
 
     def __init__(self, value: Result[Callable[[Unpack[ArgsT]], ReturnT], Any]) -> None:
