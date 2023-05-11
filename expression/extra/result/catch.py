@@ -1,60 +1,132 @@
 from __future__ import annotations
 
-from functools import wraps
-from typing import Any, Callable, Optional, Type, TypeVar, cast, overload
+from inspect import signature
+from typing import Callable, Generic, ParamSpec, TypeVar, Union, overload
 
-from expression.core import Error, Ok, Result
-from expression.core.result import BaseResult
+from expression import Error, Ok, Result
 
-_TSource = TypeVar("_TSource")
-_TError = TypeVar("_TError", bound=Exception)
-_TError_ = TypeVar("_TError_", bound=Exception)
+ParamT = ParamSpec("ParamT")
+ValueT = TypeVar("ValueT")
+ErrorT = TypeVar("ErrorT", bound=Exception)
+OtherErrorT = TypeVar("OtherErrorT", bound=Exception)
+AnotherErrorT = TypeVar("AnotherErrorT", bound=Exception)
+
+
+class Catch(Generic[ErrorT]):
+    def __init__(self, error: Union[type[ErrorT], tuple[type[ErrorT], ...]]) -> None:
+        if isinstance(error, tuple):
+            self.error = error
+        else:
+            self.error = (error,)
+
+    def __repr__(self) -> str:
+        return f"<Catch: ..., [{self.error_string}]>"
+
+    @property
+    def error_string(self) -> str:
+        return ",".join(x.__name__ for x in self.error)
+
+    def combine(self, catch: Catch[OtherErrorT]) -> Catch[Union[ErrorT, OtherErrorT]]:
+        return Catch((*self.error, *catch.error))
+
+    @overload
+    def __call__(  # type: ignore
+        self, func: Callable[ParamT, Result[ValueT, OtherErrorT]]
+    ) -> Callable[ParamT, Result[ValueT, Union[ErrorT, OtherErrorT]]]:
+        ...
+
+    @overload
+    def __call__(
+        self, func: Callable[ParamT, ValueT]
+    ) -> Callable[ParamT, Result[ValueT, ErrorT]]:
+        ...
+
+    def __call__(
+        self,
+        func: Union[
+            Callable[ParamT, ValueT],
+            Callable[ParamT, Result[ValueT, OtherErrorT]],
+        ],
+    ) -> Union[
+        Callable[ParamT, Result[ValueT, ErrorT]],
+        Callable[ParamT, Result[ValueT, Union[ErrorT, OtherErrorT]]],
+    ]:
+        if isinstance(func, Catched):
+            return func.combine(self)
+        return Catched(func, catch=self)  # type: ignore
+
+
+class Catched(Generic[ParamT, ValueT, ErrorT]):
+    def __init__(self, func: Callable[ParamT, ValueT], catch: Catch[ErrorT]) -> None:
+        self.func = func
+        self.catch = catch
+
+    def combine(
+        self, catch: Catch[OtherErrorT]
+    ) -> Catched[ParamT, ValueT, Union[ErrorT, OtherErrorT]]:
+        new_catch = self.catch.combine(catch)
+        return Catched(self.func, catch=new_catch)
+
+    def __call__(
+        self, *args: ParamT.args, **kwargs: ParamT.kwargs
+    ) -> Result[ValueT, ErrorT]:
+        try:
+            out = self.func(*args, **kwargs)
+        except self.catch.error as exc:
+            return Error(exc)  # type: ignore
+
+        if isinstance(out, (Ok, Error)):
+            return out  # type: ignore
+        return Ok(out)
+
+    def __repr__(self) -> str:
+        return f"<Catched: {signature(self.func)!s}, [{self.catch.error_string}]>"
 
 
 @overload
 def catch(
-    exception: Type[_TError_],
-) -> Callable[
-    [Callable[..., _TSource | Result[_TSource, _TError]]],
-    Callable[..., Result[_TSource, _TError | _TError_]],
-]:
+    func: None = ...,
+    *,
+    exception: type[ErrorT],
+) -> Catch[ErrorT]:
     ...
 
 
 @overload
-def catch(
-    f: Callable[..., _TSource], *, exception: Type[_TError]
-) -> Callable[..., Result[_TSource, _TError]]:
-    ...
-
-
 def catch(  # type: ignore
-    f: Optional[Callable[..., _TSource]] = None, *, exception: Type[_TError]
-) -> Callable[
-    [Callable[..., _TSource]],
-    Callable[..., Result[_TSource, _TError]] | Result[_TSource, _TError],
+    func: Callable[ParamT, Result[ValueT, OtherErrorT]],
+    *,
+    exception: type[ErrorT],
+) -> Callable[ParamT, Result[ValueT, Union[ErrorT, OtherErrorT]]]:
+    ...
+
+
+@overload
+def catch(
+    func: Callable[ParamT, ValueT],
+    *,
+    exception: type[ErrorT],
+) -> Callable[ParamT, Result[ValueT, ErrorT]]:
+    ...
+
+
+def catch(
+    func: Union[
+        None,
+        Callable[ParamT, ValueT],
+        Callable[ParamT, Result[ValueT, OtherErrorT]],
+    ] = None,
+    *,
+    exception: type[ErrorT],
+) -> Union[
+    Catch[ErrorT],
+    Callable[ParamT, Result[ValueT, ErrorT]],
+    Callable[ParamT, Result[ValueT, Union[ErrorT, OtherErrorT]]],
 ]:
-    def decorator(
-        fn: Callable[..., _TSource]
-    ) -> Callable[..., Result[_TSource, _TError]]:
-        @wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Result[_TSource, _TError]:
-            try:
-                out = fn(*args, **kwargs)
-            except exception as exn:
-                return Error(cast(_TError, exn))
-            else:
-                if isinstance(out, BaseResult):
-                    return cast(Result[_TSource, _TError], out)
-
-                return Ok(out)
-
-        return wrapper
-
-    if f is not None:
-        return decorator(f)
-
-    return decorator
+    func_catch = Catch(exception)
+    if func is None:
+        return func_catch
+    return func_catch(func)  # type: ignore
 
 
 __all__ = ["catch"]
