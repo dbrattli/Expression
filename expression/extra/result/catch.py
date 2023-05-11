@@ -52,7 +52,7 @@ class _Catch(Generic[ErrorT]):
         Callable[ParamT, Result[ValueT, Union[ErrorT, OtherErrorT]]],
     ]:
         if isinstance(func, _Catched):
-            return func.combine(self)
+            return func.combine(self)  # type: ignore
         return _Catched(func, catch=self)  # type: ignore
 
 
