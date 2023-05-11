@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from inspect import signature
-from typing import Callable, Generic, ParamSpec, TypeVar, Union, overload
+from typing import Callable, Generic, ParamSpec, TypeVar, Union, final, overload
 
 from expression import Error, Ok, Result
 
@@ -12,6 +12,7 @@ OtherErrorT = TypeVar("OtherErrorT", bound=Exception)
 AnotherErrorT = TypeVar("AnotherErrorT", bound=Exception)
 
 
+@final
 class _Catch(Generic[ErrorT]):
     def __init__(self, error: Union[type[ErrorT], tuple[type[ErrorT], ...]]) -> None:
         if isinstance(error, tuple):
@@ -56,6 +57,7 @@ class _Catch(Generic[ErrorT]):
         return _Catched(func, catch=self)  # type: ignore
 
 
+@final
 class _Catched(Generic[ParamT, ValueT, ErrorT]):
     def __init__(self, func: Callable[ParamT, ValueT], catch: _Catch[ErrorT]) -> None:
         self.func = func
