@@ -12,7 +12,7 @@ OtherErrorT = TypeVar("OtherErrorT", bound=Exception)
 AnotherErrorT = TypeVar("AnotherErrorT", bound=Exception)
 
 
-class Catch(Generic[ErrorT]):
+class _Catch(Generic[ErrorT]):
     def __init__(self, error: Union[type[ErrorT], tuple[type[ErrorT], ...]]) -> None:
         if isinstance(error, tuple):
             self.error = error
@@ -26,8 +26,8 @@ class Catch(Generic[ErrorT]):
     def error_string(self) -> str:
         return ",".join(x.__name__ for x in self.error)
 
-    def combine(self, catch: Catch[OtherErrorT]) -> Catch[Union[ErrorT, OtherErrorT]]:
-        return Catch((*self.error, *catch.error))
+    def combine(self, catch: _Catch[OtherErrorT]) -> _Catch[Union[ErrorT, OtherErrorT]]:
+        return _Catch((*self.error, *catch.error))
 
     @overload
     def __call__(  # type: ignore
@@ -51,21 +51,21 @@ class Catch(Generic[ErrorT]):
         Callable[ParamT, Result[ValueT, ErrorT]],
         Callable[ParamT, Result[ValueT, Union[ErrorT, OtherErrorT]]],
     ]:
-        if isinstance(func, Catched):
+        if isinstance(func, _Catched):
             return func.combine(self)
-        return Catched(func, catch=self)  # type: ignore
+        return _Catched(func, catch=self)  # type: ignore
 
 
-class Catched(Generic[ParamT, ValueT, ErrorT]):
-    def __init__(self, func: Callable[ParamT, ValueT], catch: Catch[ErrorT]) -> None:
+class _Catched(Generic[ParamT, ValueT, ErrorT]):
+    def __init__(self, func: Callable[ParamT, ValueT], catch: _Catch[ErrorT]) -> None:
         self.func = func
         self.catch = catch
 
     def combine(
-        self, catch: Catch[OtherErrorT]
-    ) -> Catched[ParamT, ValueT, Union[ErrorT, OtherErrorT]]:
+        self, catch: _Catch[OtherErrorT]
+    ) -> _Catched[ParamT, ValueT, Union[ErrorT, OtherErrorT]]:
         new_catch = self.catch.combine(catch)
-        return Catched(self.func, catch=new_catch)
+        return _Catched(self.func, catch=new_catch)
 
     def __call__(
         self, *args: ParamT.args, **kwargs: ParamT.kwargs
@@ -88,7 +88,7 @@ def catch(
     func: None = ...,
     *,
     exception: type[ErrorT],
-) -> Catch[ErrorT]:
+) -> _Catch[ErrorT]:
     ...
 
 
@@ -119,11 +119,11 @@ def catch(
     *,
     exception: type[ErrorT],
 ) -> Union[
-    Catch[ErrorT],
+    _Catch[ErrorT],
     Callable[ParamT, Result[ValueT, ErrorT]],
     Callable[ParamT, Result[ValueT, Union[ErrorT, OtherErrorT]]],
 ]:
-    func_catch = Catch(exception)
+    func_catch = _Catch(exception)
     if func is None:
         return func_catch
     return func_catch(func)  # type: ignore
