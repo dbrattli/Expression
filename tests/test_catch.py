@@ -79,7 +79,8 @@ def test_catch_with_effect_error():
     @catch(exception=TypeError)
     @effect.try_[int]()
     def fn(a: int) -> Generator[int, Any, int]:
-        b: int = yield from Error(ValueError("failure"))
+        error: Error[int, ValueError] = Error(ValueError("failure"))
+        b: int = yield from error
         return a + b
 
     result = fn(1)
