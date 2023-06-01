@@ -333,8 +333,8 @@ let compose (f: 'a -> 'b) (g: 'b -> 'c) : 'a -> 'c =
 
 ```python
 # Python
-let compose(f: Callable[[A], B], g: Callable[[B], C]) -> Callable[[A], C]:
-    lambda x: g(f(x))
+define compose(f: Callable[[A], B], g: Callable[[B], C]) -> Callable[[A], C]:
+    return lambda x: g(f(x))
 ```
 
 ```{code-cell} python
