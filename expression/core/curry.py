@@ -182,7 +182,7 @@ def curry_flip(
 
 def curry_flip(
     num_args: _Arity,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[..., Any]:
     """A flipped curry decorator.
 
     Makes a function curried, but flips the curried arguments to become

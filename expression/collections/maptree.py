@@ -24,7 +24,7 @@ Do not use directly. Use the `map` module instead.
 """
 import builtins
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar, cast
+from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar
 
 from expression.core import Nothing, Option, Some, SupportsLessThan, failwith, pipe
 
@@ -60,11 +60,10 @@ def is_empty(m: MapTree[Any, Any]):
     return m.is_none()
 
 
-def size_aux(acc: int, m: MapTree[Any, Any]) -> int:
+def size_aux(acc: int, m: MapTree[Key, Value]) -> int:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
-            mn = cast(MapTreeNode[Key, Value], m2)
-            return size_aux(size_aux(acc + 1, mn.left), mn.right)
+            return size_aux(size_aux(acc + 1, m2.left), m2.right)
         else:
             return acc + 1
     else:
@@ -75,11 +74,10 @@ def size(x: MapTree[Any, Any]):
     return size_aux(0, x)
 
 
-def height(m: MapTree[Any, Any]) -> int:
+def height(m: MapTree[Key, Value]) -> int:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
-            mn = cast(MapTreeNode[Key, Value], m2)
-            return mn.height
+            return m2.height
         else:
             return 1
     else:
@@ -350,10 +348,10 @@ def change(
             return m
 
 
-def mem(k: Key, m: MapTree[Key, Any]) -> bool:
+def mem(k: Key, m: MapTree[Key, Value]) -> bool:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
-            mn = cast(MapTreeNode[Key, Value], m2)
+            mn = m2
             if k < mn.key:
                 return mem(k, mn.left)
             else:

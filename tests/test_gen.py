@@ -107,7 +107,7 @@ def test_generator_with_yield_assignment_and_return():
 
 
 def test_generator_with_yield_from():
-    def fn():
+    def fn() -> Generator[int, None, None]:
         yield from [42]
 
     gen = fn()
@@ -119,7 +119,7 @@ def test_generator_with_yield_from_gen():
     def gn():
         yield 42
 
-    def fn():
+    def fn() -> Generator[int, None, None]:
         yield from gn()
 
     gen = fn()

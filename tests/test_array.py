@@ -52,7 +52,8 @@ def test_array_map_str_to_uint8():
     xs = array.of_seq(["1", "2", "3"])
     assert len(xs) == 3
 
-    ys: TypedArray[array.uint8] = pipe(xs, array.map(array.uint8))
+    mapper: Callable[[str], array.uint8] = array.uint8  # type: ignore
+    ys: TypedArray[array.uint8] = pipe(xs, array.map(mapper))
     assert len(ys) == 3
     assert ys.typecode == array.TypeCode.Uint8
     assert ys == TypedArray([1, 2, 3], typecode=array.TypeCode.Uint8)
@@ -62,7 +63,8 @@ def test_array_map_str_to_uint16():
     xs = array.of_seq(["1", "2", "3"])
     assert len(xs) == 3
 
-    ys: TypedArray[array.uint16] = pipe(xs, array.map(array.uint16))
+    mapper: Callable[[str], array.uint16] = array.uint16  # type: ignore
+    ys: TypedArray[array.uint16] = pipe(xs, array.map(mapper))
     assert len(ys) == 3
     assert ys.typecode == array.TypeCode.Uint16
     assert ys == TypedArray([1, 2, 3], typecode=array.TypeCode.Uint16)
@@ -72,7 +74,8 @@ def test_array_map_str_to_uint32():
     xs = array.of_seq(["1", "2", "3"])
     assert len(xs) == 3
 
-    ys: TypedArray[array.uint32] = pipe(xs, array.map(array.uint32))
+    mapper: Callable[[str], array.uint32] = array.uint32  # type: ignore
+    ys: TypedArray[array.uint32] = pipe(xs, array.map(mapper))
     assert len(ys) == 3
     assert ys.typecode == array.TypeCode.Uint32
     assert ys == TypedArray([1, 2, 3], typecode=array.TypeCode.Uint32)
@@ -82,14 +85,16 @@ def test_array_map_str_to_float32():
     xs = array.of_seq(["1", "2", "3"])
     assert len(xs) == 3
 
-    ys: TypedArray[array.float32] = pipe(xs, array.map(array.float32))
+    mapper: Callable[[str], array.float32] = array.float32  # type: ignore
+    ys: TypedArray[array.float32] = pipe(xs, array.map(mapper))
     assert len(ys) == 3
     assert ys.typecode == array.TypeCode.Float
     assert ys == TypedArray([1, 2, 3], typecode=array.TypeCode.Float)
 
 
 def test_array_filter_preserves_type():
-    xs = array.of_seq([1, 2, 3]).pipe(array.map(array.int16))
+    mapper: Callable[[int], array.int16] = array.int16  # type: ignore
+    xs: TypedArray[array.int16] = array.of_seq([1, 2, 3]).pipe(array.map(mapper))
     assert len(xs) == 3
 
     ys: TypedArray[array.int16] = pipe(xs, array.filter(lambda x: x < 2))

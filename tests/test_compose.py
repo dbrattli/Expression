@@ -82,18 +82,18 @@ def test_compose_left_identity(x: int):
 @given(st.integers(), st.integers(), st.integers())  # type: ignore
 def test_compose_associative(x: int, y: int, z: int):
     """Rearranging the parentheses in an expression will not change the result."""
-    fn: Func = lambda a: a + x
-    gn: Func = lambda b: b - y
-    hn: Func = lambda c: c * z
+    fn: Func = lambda a: a + x  # noqa
+    gn: Func = lambda b: b - y  # noqa
+    hn: Func = lambda c: c * z  # noqa
 
     cn = compose(fn, gn, hn)
-    cn_: Func = lambda x: hn(gn(fn(x)))
+    cn_: Func = lambda x: hn(gn(fn(x)))  # noqa
 
     rn = compose(fn, compose(gn, hn))
     # right associative
-    rn_: Func = lambda x: (lambda b: hn(gn(b)))(fn(x))  # type: ignore
-    ln = compose(compose(fn, gn), hn)
+    rn_: Func = lambda x: (lambda b: hn(gn(b)))(fn(x))  # type: ignore # noqa
+    ln: Func = compose(compose(fn, gn), hn)
     # left associative
-    ln_: Func = lambda x: hn((lambda b: gn(fn(b)))(x))  # type: ignore
+    ln_: Func = lambda x: hn((lambda b: gn(fn(b)))(x))  # type: ignore # noqa
 
     assert cn(x) == cn_(x) == rn(x) == rn_(x) == ln(x) == ln_(x)
