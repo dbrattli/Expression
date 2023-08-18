@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Dict, Generator, Type
 
 import pytest
 from hypothesis import given  # type: ignore
@@ -26,7 +26,7 @@ def test_option_some_match():
         case Some(x):
             assert x == 42
 
-        case _:
+        case _:  # type: ignore
             assert False
 
 
@@ -63,7 +63,7 @@ def test_option_none_match():
     xs = Nothing
 
     match xs:
-        case Some():
+        case Some():  # type: ignore
             assert False
 
         case x if x is Nothing:
@@ -359,7 +359,7 @@ def test_option_builder_yield_value_async():
 
 def test_option_builder_yield_some_wrapped():
     @effect.option[Option[int]]()
-    def fn():
+    def fn() -> Generator[Option[int], Option[int], Option[int]]:
         x: Option[int] = yield Some(42)
         return x
 
@@ -373,7 +373,7 @@ def test_option_builder_yield_some_wrapped():
 
 def test_option_builder_return_some():
     @effect.option[int]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x: int = yield 42
         return x
 
@@ -401,7 +401,7 @@ def test_option_builder_return_nothing_wrapped():
 
 def test_option_builder_yield_from_some():
     @effect.option[int]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x = yield from Some(42)
         return x + 1
 
@@ -415,7 +415,7 @@ def test_option_builder_yield_from_some():
 
 def test_option_builder_yield_from_none():
     @effect.option[int]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x: int
         x = yield from Nothing
         return x
@@ -426,7 +426,7 @@ def test_option_builder_yield_from_none():
 
 def test_option_builder_multiple_some():
     @effect.option[int]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x: int = yield 42
         y = yield from Some(43)
 
@@ -442,7 +442,7 @@ def test_option_builder_multiple_some():
 
 def test_option_builder_none_short_circuits():
     @effect.option[int]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x: int = yield from Nothing
         y = yield from Some(43)
 

@@ -212,7 +212,7 @@ class Map(Mapping[Key, Value], PipeMixin):
         """
         return of_seq(sequence)
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore
         def combine_hash(x: int, y: int) -> int:
             return (x << 1) + y + 631
 

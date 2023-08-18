@@ -1,17 +1,7 @@
 from __future__ import annotations
 
 import string
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    List,
-    Optional,
-    Tuple,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import Any, Callable, Generic, Optional, Tuple, TypeVar, cast, overload
 
 from expression.collections import Block, block
 from expression.core import Error, Nothing, Ok, Option, Result, Some, curry, fst, pipe
@@ -70,7 +60,8 @@ class Parser(Generic[_A]):
         return or_else(self)(parser2)
 
     def map(self, mapper: Callable[[_A], _B]) -> Parser[_B]:
-        return pipe(self, map(mapper))
+        mapped = map(mapper)
+        return pipe(self, mapped)
 
     @overload
     def starmap(
@@ -96,7 +87,8 @@ class Parser(Generic[_A]):
         return ignore(self)
 
     def bind(self, binder: Callable[[_A], Parser[_B]]) -> Parser[_B]:
-        return pipe(self, bind(binder))
+        bound = bind(binder)
+        return pipe(self, bound)
 
     def between(self, p2: Parser[_A], p3: Parser[Any]) -> Parser[_A]:
         return between(p2)(p3)(self)
@@ -151,11 +143,7 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[Tuple[_A, _B]]:
                     case Error(error):
                         return Error(error)
                     case Ok((value2, remaining2)):
-                        return Ok(((cast(_A, value1), cast(_B, value2)), remaining2))
-                    case _:
-                        return Error("parser error")
-            case _:
-                return Error[Tuple[Tuple[_A, _B], Remaining], str]("parser error")
+                        return Ok(((value1, value2), remaining2))
 
     return Parser(run, f"and_then({p2}, {p1}")
 
@@ -202,14 +190,12 @@ def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
         match result:
             case Ok((value, remaining)):
                 # if success, return the value transformed by f
-                new_value = mapper(cast(_A, value))
+                new_value = mapper(value)
                 return Ok[Tuple[_B, Remaining], str]((new_value, remaining))
 
             case Error(error):
                 # if failed, return the error
                 return Error[Tuple[_B, Remaining], str](error)
-            case _:
-                return Error[Tuple[_B, Remaining], str]("parser error")
 
     return Parser(run, f"map(A => B, {parser})")
 
@@ -289,8 +275,10 @@ def sequence(parser_list: Block[Parser[_A]]) -> Parser[Block[_A]]:
         case block.empty:
             return preturn(block.empty)
         case Block([head, *tail]):  # type: ignore
-            tail_ = sequence(Block(cast(List[Parser[_A]], tail)))
-            return cons_p(cast(Parser[_A], head))(tail_)
+            tail_ = sequence(Block(tail))
+            return cons_p(head)(tail_)
+        case _:
+            raise ValueError("invalid parser list")
 
 
 def pstring(string_input: str) -> Parser[str]:
@@ -317,7 +305,7 @@ def parse_zero_or_more(
             subsequent_values, remaining_input = parse_zero_or_more(
                 parser, input_after_first_parse
             )
-            values = subsequent_values.cons(cast(_A, first_value))
+            values = subsequent_values.cons(first_value)
             return values, remaining_input
         case _:
             return (block.empty, input)
@@ -343,14 +331,11 @@ def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
                 subsequent_values, remaining_input = parse_zero_or_more(
                     parser, input_after_first_parse
                 )
-                values = subsequent_values.cons(cast(_A, first_value))
+                values = subsequent_values.cons(first_value)
                 return Ok[Tuple[Block[_A], Remaining], str]((values, remaining_input))
 
             case Error(err):
                 return Error(err)  # failed
-
-            case _:
-                return Error("parser error")
 
     return Parser(run, f"many({parser})")
 
@@ -540,11 +525,11 @@ def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
         result1 = p.run(input)
         match result1:
             case Ok((value1, remaning_input)):
-                p2 = f(cast(_A, value1))
+                p2 = f(value1)
                 return p2.run(remaning_input)
             case Error(err):
                 return Error(err)  # failed
-            case _:
+            case _:  # type: ignore
                 return Error("parser error")
 
     return Parser(run, f"bind(A => Parser[B], {p}")
