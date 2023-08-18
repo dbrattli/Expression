@@ -77,7 +77,7 @@ def test_union_no_match_value():
     shape = Shape.rectangle(2.3, 3.3)
 
     match shape:
-        case Shape(Rectangle(width=12.3)):
+        case Shape(Rectangle(width=12.3)):  # type: ignore
             assert False
         case _:
             assert True
@@ -253,7 +253,7 @@ def test_single_case_union_match():
     match email:
         case EmailAddress():
             assert True
-        case _:
+        case _:  # type: ignore
             assert False
 
 
@@ -264,7 +264,7 @@ def test_single_case_union_match_value():
     match email:
         case EmailAddress(value=value):
             assert value == addr
-        case _:
+        case _:  # type: ignore
             assert False
 
 

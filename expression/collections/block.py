@@ -509,7 +509,7 @@ class Block(
         empty.
         """
         if self._value:
-            value = cast("_TSource", self._value[0])
+            value = self._value[0]
             return Some(value)
 
         return Nothing

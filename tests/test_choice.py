@@ -10,7 +10,7 @@ def test_choice_choice1of2():
     match xs:
         case Choice1of2(x):
             assert x == 42
-        case _:
+        case _:  # type: ignore
             assert False
 
 
@@ -23,5 +23,5 @@ def test_choice_choice2of2():
     match xs:
         case Choice2of2(x):
             assert x == "test"
-        case _:
+        case _:  # type: ignore
             assert False

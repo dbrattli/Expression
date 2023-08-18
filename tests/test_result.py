@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Type
+from typing import Any, Callable, Dict, Generator, List, Type
 
 import pytest
 from hypothesis import given  # type: ignore
@@ -25,7 +25,7 @@ def test_result_ok():
         case Ok(x):
             assert x == 42
 
-        case _:
+        case _:  # type: ignore
             assert False
 
 
@@ -35,7 +35,7 @@ def test_result_match_ok():
     match xs:
         case Ok(x):
             assert x == 42
-        case _:
+        case _:  # type: ignore
             assert False
 
 
@@ -45,7 +45,7 @@ def test_result_match_error():
     match xs:
         case Error(err):
             assert err == "err"
-        case _:
+        case _:  # type: ignore
             assert False
 
 
@@ -64,7 +64,7 @@ def test_result_error():
     assert str(xs) == f"Error {error}"
 
     match xs:
-        case Ok():
+        case Ok():  # type: ignore
             assert False
 
         case Error(ex):
@@ -246,7 +246,7 @@ def test_result_effect_yield_ok():
 
 def test_result_effect_return_ok():
     @effect.result[int, Exception]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x: int = yield 42
         return x
 
@@ -260,7 +260,7 @@ def test_result_effect_return_ok():
 
 def test_result_effect_yield_from_ok():
     @effect.result[int, Exception]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x = yield from Ok(42)
         return x + 1
 
@@ -279,7 +279,7 @@ def test_result_effect_yield_from_error():
         return Error(error)
 
     @effect.result[int, Exception]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         xs = mayfail()
         x: int = yield from xs
         return x + 1
@@ -294,7 +294,7 @@ def test_result_effect_yield_from_error():
 
 def test_result_effect_multiple_ok():
     @effect.result[int, Exception]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         x: int = yield 42
         y = yield from Ok(43)
 
@@ -312,7 +312,7 @@ def test_result_effect_throws():
     error = CustomException("this happend!")
 
     @effect.result[int, Exception]()
-    def fn():
+    def fn() -> Generator[int, int, int]:
         _ = yield from Ok(42)
         raise error
 

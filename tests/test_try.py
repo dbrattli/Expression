@@ -36,5 +36,5 @@ def test_try_match_failure():
     match xs:
         case Failure(err):
             assert err == error
-        case _:
+        case _:  # type: ignore
             assert False

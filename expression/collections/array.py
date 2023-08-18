@@ -404,7 +404,10 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         return sum(self)
 
     def sum_by(self, projection: Callable[[_TSource], _TSourceSum]) -> int:
-        return pipe(self, sum_by(projection))
+        return pipe(
+            self,
+            sum_by(projection),  # type: ignore
+        )
 
     def tail(self) -> TypedArray[_TSource]:
         """Return tail of List."""
@@ -480,7 +483,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
     def __iter__(self) -> Iterator[_TSource]:
         return iter(self.value)
 
-    def __setitem__(self, key: int, value: _TSource) -> None:
+    def __setitem__(self, key: int, value: Any) -> None:
         self.value[key] = value
 
     def __getitem__(self, key: Any) -> Any:
