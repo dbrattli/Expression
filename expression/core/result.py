@@ -27,6 +27,9 @@ from typing import (
 )
 
 from typing_extensions import TypeAlias, TypeGuard
+from pydantic import GetCoreSchemaHandler
+
+from pydantic_core import CoreSchema, core_schema
 
 from .curry import curry_flip
 from .error import EffectError
@@ -149,10 +152,10 @@ class BaseResult(
         return str(self)
 
     @classmethod
-    def __get_validators__(
-        cls,
-    ) -> Iterator[GenericValidator[BaseResult[_TSource, _TError]]]:
-        yield from cls.__validators__
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
 
     @abstractmethod
     def __hash__(self) -> int:

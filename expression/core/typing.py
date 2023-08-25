@@ -16,6 +16,9 @@ from typing import (
     cast,
     get_origin,
 )
+from pydantic import GetCoreSchemaHandler
+
+from pydantic_core import CoreSchema
 
 _T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
@@ -72,14 +75,13 @@ GenericValidator = Callable[[Any, ModelField], _T]
 
 
 class SupportsValidation(Protocol[_T_co]):
-    """A type that implements __get_validators__ to be used with
-    pydantic."""
+    """A type that implements __get_pydantic_core_schema__ to be used
+    with pydantic."""
 
     @classmethod
-    def __get_validators__(
-        cls,
-    ) -> Iterator[Validator[_T_co] | GenericValidator[_T_co]]:
-        """Yield an iterator of validators."""
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
         ...
 
 

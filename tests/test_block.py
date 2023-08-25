@@ -1,10 +1,11 @@
 import functools
 from builtins import list as list
+from json import JSONEncoder
 from typing import Any, Callable, Dict, List, Tuple, Type
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from expression import Nothing, Option, Some, pipe
 from expression.collections import Block, block
@@ -408,17 +409,19 @@ def test_block_monad_law_associativity_iterable(xs: List[int]):
 
 
 class Model(BaseModel):
+    model_config = ConfigDict(json_encoders={Block: block.dict})
+
     one: Block[int]
     two: Block[str] = block.empty
     three: Block[float] = block.empty
 
-    class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], List[Any]]] = {Block: block.dict}
+    # class Config:
+    #    json_encoders: Dict[Type[Any], Callable[[Any], List[Any]]] = {Block: block.dict}
 
 
 def test_parse_block_works():
     obj = dict(one=[1, 2, 3], two=[])
-    model = Model.parse_obj(obj)
+    model = Model.model_validate(obj)
     assert isinstance(model.one, Block)
     assert model.one == Block([1, 2, 3])
     assert model.two == Block.empty()
@@ -430,7 +433,7 @@ def test_serialize_block_works():
     model = Model(one=Block([1, 2, 3]), two=Block.empty())
 
     # act
-    json = model.json()
+    json = model.module_dump_json()
 
     # assert
     model_ = Model.parse_raw(json)

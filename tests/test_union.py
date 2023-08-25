@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, Tuple, TypeVar, final
 
-from pydantic import parse_obj_as
+from pydantic import model_validate_as
 
 from expression import SingleCaseUnion, Tag, TaggedUnion, tag
 
@@ -287,7 +287,7 @@ def test_union_to_dict_works():
 
 def test_union_from_dict_works():
     obj = dict(tag="JUST", value=10)
-    maybe = parse_obj_as(Maybe[int], obj)
+    maybe = model_validate_as(Maybe[int], obj)
 
     assert maybe
     assert maybe.value == 10
@@ -302,7 +302,7 @@ def test_nested_union_to_dict_works():
 def test_nested_union_from_dict_works():
     obj = dict(tag="JUST", value=dict(tag="JUST", value=10))
 
-    maybe = parse_obj_as(Maybe[Maybe[int]], obj)
+    maybe = model_validate_as(Maybe[Maybe[int]], obj)
     assert maybe
     assert maybe.value
     assert maybe.value.value == 10

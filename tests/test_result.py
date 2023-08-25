@@ -1,9 +1,9 @@
-from typing import Any, Callable, Dict, Generator, List, Type
+from typing import Callable, Generator, List
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, ConfigDict
 
 from expression import Error, Ok, Result, effect, result
 from expression.collections import Block
@@ -358,19 +358,21 @@ class MyError(BaseModel):
 
 
 class Model(BaseModel):
+    model_config = ConfigDict(json_encoders={BaseResult: result.dict})
+
     one: Result[int, MyError]
     two: Result[str, MyError] = Error(MyError(message="error"))
     three: Result[float, MyError] = Error(MyError(message="error"))
 
-    class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {
-            BaseResult: result.dict,
-        }
+    # class Config:
+    #    json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {
+    #        BaseResult: result.dict,
+    #    }
 
 
 def test_parse_block_works():
     obj = dict(one=dict(ok=42))
-    model = Model.parse_obj(obj)
+    model = Model.model_validate(obj)
 
     assert isinstance(model.one, BaseResult)
     assert model.one == Ok(42)
@@ -393,7 +395,7 @@ def test_error_to_dict_works():
 
 def test_ok_from_from_dict_works():
     obj = dict(ok=10)
-    result = parse_obj_as(Result[int, MyError], obj)
+    result = model_validate_as(Result[int, MyError], obj)
 
     assert result
     assert isinstance(result, Ok)
@@ -402,7 +404,7 @@ def test_ok_from_from_dict_works():
 
 def test_error_from_dict_works():
     obj = dict(error=dict(message="got error"))
-    result = parse_obj_as(Result[int, MyError], obj)
+    result = model_validate_as(Result[int, MyError], obj)
 
     assert result
     assert isinstance(result, Error)

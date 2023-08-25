@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Generator, Type
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from tests.utils import CustomException
 
 from expression import Nothing, Option, Some, effect, option, pipe, pipe2
@@ -497,17 +497,18 @@ def test_pipeline_error():
 
 
 class Model(BaseModel):
+    model_config = ConfigDict(json_encoders={BaseOption: option.dict})
     one: Option[int]
     two: Option[str] = Nothing
     three: Option[float] = Nothing
 
-    class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {BaseOption: option.dict}
+    # class Config:
+    #    json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {BaseOption: option.dict}
 
 
 def test_parse_option_works():
     obj = dict(one=10)
-    model = Model.parse_obj(obj)
+    model = Model.model_validate(obj)
 
     assert model.one.is_some()
     assert model.one.value == 10
@@ -517,7 +518,7 @@ def test_parse_option_works():
 
 def test_serialize_option_works():
     model = Model(one=Some(10), two=Nothing)
-    json = model.json()
+    json = model.model_dump_json()
     model_ = Model.parse_raw(json)
 
     assert model_.one.is_some()
