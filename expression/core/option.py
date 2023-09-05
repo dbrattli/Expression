@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, TypeGuard, TypeVar, 
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
+from .result import Error, Ok, Result
 from .typing import GenericValidator, ModelField, SupportsValidation
 
 
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
+_TError = TypeVar("_TError")
 
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
@@ -150,6 +152,26 @@ class BaseOption(
         """Convert optional value to an option."""
         return of_optional(value)
 
+    @classmethod
+    def of_result(cls, result: Result[_TSource, _TError]) -> Option[_TSource]:
+        """Convert result to an option."""
+        return of_result(result)
+
+    @abstractmethod
+    def to_optional(self) -> Optional[_TSource]:
+        """Convert option to an optional."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_result(self, error: _TError) -> Result[_TSource, _TError]:
+        """Convert option to a result."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_result_with(self, error: Callable[[], _TError]) -> Result[_TSource, _TError]:
+        """Convert option to a result."""
+        raise NotImplementedError
+
     @abstractmethod
     def dict(self) -> _TSource | builtins.dict[str, Any]:
         """Returns a json string representation of the option."""
@@ -271,6 +293,18 @@ class Some(BaseOption[_TSource]):
 
         return Seq.of(self._value)
 
+    def to_optional(self) -> Optional[_TSource]:
+        """Convert option to an optional."""
+        return self._value
+
+    def to_result(self, error: _TError) -> Result[_TSource, _TError]:
+        """Convert option to a result."""
+        return Ok(self._value)
+
+    def to_result_with(self, error: Callable[[], _TError]) -> Result[_TSource, _TError]:
+        """Convert option to a result."""
+        return Ok(self._value)
+
     def dict(self) -> _TSource:
         attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
         if attr and callable(attr):
@@ -384,6 +418,18 @@ class Nothing_(BaseOption[_TSource], EffectError):
         from expression.collections.seq import Seq
 
         return Seq()
+
+    def to_optional(self) -> Optional[_TSource]:
+        """Convert option to an optional."""
+        return None
+
+    def to_result(self, error: _TError) -> Result[_TSource, _TError]:
+        """Convert option to a result."""
+        return Error(error)
+
+    def to_result_with(self, error: Callable[[], _TError]) -> Result[_TSource, _TError]:
+        """Convert option to a result."""
+        return Error(error())
 
     def dict(self) -> builtins.dict[str, Any]:
         return {}  # Pydantic cannot handle None or other types than Optional
@@ -518,11 +564,20 @@ def to_seq(option: Option[_TSource]) -> Seq[_TSource]:
     return option.to_seq()
 
 
+def to_optional(value: Option[_TSource]) -> Optional[_TSource]:
+    """Convert an option value to an optional.
+
+    Args:
+        value: The input option value.
+
+    Return:
+        The result optional.
+    """
+    return value.to_optional()
+
+
 def of_optional(value: _TSource | None) -> Option[_TSource]:
     """Convert an optional value to an option.
-
-    Convert a value that could be `None` into an `Option` value. Same as
-    `of_obj` but with typed values.
 
     Args:
         value: The input optional value.
@@ -548,6 +603,24 @@ def of_obj(value: Any) -> Option[Any]:
         The result option.
     """
     return of_optional(value)
+
+
+def of_result(result: Result[_TSource, _TError]) -> Option[_TSource]:
+    match result:
+        case Ok(value):
+            return Some(value)
+        case _:
+            return Nothing
+
+
+def to_result(value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
+    return value.to_result(error)
+
+
+def to_result_with(
+    value: Option[_TSource], error: Callable[[], _TError]
+) -> Result[_TSource, _TError]:
+    return value.to_result_with(error)
 
 
 def dict(value: Option[_TSource]) -> _TSource | builtins.dict[Any, Any] | None:
@@ -583,6 +656,9 @@ __all__ = [
     "to_list",
     "dict",
     "to_seq",
+    "to_optional",
     "of_optional",
+    "to_result",
+    "of_result",
     "of_obj",
 ]

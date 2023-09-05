@@ -6,7 +6,18 @@ from hypothesis import strategies as st
 from pydantic import BaseModel
 from tests.utils import CustomException
 
-from expression import Nothing, Option, Some, effect, option, pipe, pipe2
+from expression import (
+    Error,
+    Nothing,
+    Ok,
+    Option,
+    Result,
+    Some,
+    effect,
+    option,
+    pipe,
+    pipe2,
+)
 from expression.core.option import BaseOption, Nothing_
 from expression.extra.option import pipeline
 
@@ -319,6 +330,50 @@ def test_option_of_object_none():
 def test_option_of_object_value():
     xs = option.of_obj(42)
     assert xs.is_some()
+
+
+def test_option_of_result_ok():
+    result: Result[int, Any] = Ok(42)
+    xs = option.of_result(result)
+    assert xs.is_some()
+
+
+def test_option_of_result_error():
+    xs: Option[int] = option.of_result(Error("oops"))
+    assert xs.is_none()
+
+
+def test_option_to_result_ok():
+    xs = option.to_result(Some(42), "oops")
+    assert xs == Ok(42)
+
+
+def test_option_to_result_error():
+    xs = option.to_result(Nothing, "oops")
+    assert xs == Error("oops")
+
+
+def test_option_to_result_with_ok():
+    def raise_error() -> Any:
+        raise Exception("Should not be called")
+
+    xs = option.to_result_with(Some(42), error=raise_error)
+    assert xs == Ok(42)
+
+
+def test_option_to_result_with_error():
+    xs = option.to_result_with(Nothing, error=lambda: "oops")
+    assert xs == Error("oops")
+
+
+def test_option_to_optional_some():
+    xs = option.to_optional(Some(1))
+    assert xs == 1
+
+
+def test_option_to_optional_nothing():
+    xs = option.to_optional(Nothing)
+    assert xs is None
 
 
 def test_option_builder_zero():
