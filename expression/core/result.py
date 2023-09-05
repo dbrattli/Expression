@@ -24,6 +24,7 @@ from typing import (
     get_origin,
 )
 
+from . import option
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
@@ -78,7 +79,7 @@ class BaseResult(
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
 
-        Gets the value of the option if the option is Some, otherwise
+        Gets the value of the result if the result is Ok, otherwise
         returns the specified default value.
         """
         raise NotImplementedError
@@ -87,7 +88,7 @@ class BaseResult(
     def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
         """Get with default value lazily.
 
-        Gets the value of the option if the option is Some, otherwise
+        Gets the value of the result if the result is Ok, otherwise
         returns the value produced by the getter
         """
         raise NotImplementedError
@@ -135,6 +136,30 @@ class BaseResult(
     def dict(self) -> builtins.dict[str, _TSource | _TError]:
         """Return a json serializable representation of the result."""
         raise NotImplementedError
+
+    @abstractmethod
+    def swap(self) -> Result[_TError, _TResult]:
+        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_option(self) -> option.Option[_TSource]:
+        """Convert result to an option."""
+        raise NotImplementedError
+
+    @classmethod
+    def of_option(
+        cls, value: option.Option[_TSource], error: _TError
+    ) -> Result[_TSource, _TError]:
+        """Convert option to a result."""
+        return of_option(value, error)
+
+    @classmethod
+    def of_option_with(
+        cls, value: option.Option[_TSource], error: Callable[[], _TError]
+    ) -> Result[_TSource, _TError]:
+        """Convert option to a result."""
+        return of_option_with(value, error)
 
     def __eq__(self, o: Any) -> bool:
         raise NotImplementedError
@@ -227,6 +252,14 @@ class Ok(BaseResult[_TSource, _TError]):
             value = self._value
 
         return {"ok": value}
+
+    def swap(self) -> Result[_TError, _TSource]:
+        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok"""
+        return Error(self._value)
+
+    def to_option(self) -> option.Option[_TSource]:
+        """Convert result to an option."""
+        return option.Some(self._value)
 
     def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
@@ -342,6 +375,14 @@ class Error(
 
         return {"error": error}
 
+    def swap(self) -> Result[_TError, _TSource]:
+        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok"""
+        return Ok(self._error)
+
+    def to_option(self) -> option.Option[_TSource]:
+        """Convert result to an option."""
+        return option.Nothing
+
     def __eq__(self, o: Any) -> bool:
         if isinstance(o, Error):
             return self.error == o.error  # type: ignore
@@ -366,7 +407,7 @@ class Error(
 def default_value(value: _TSource) -> Callable[[Result[_TSource, Any]], _TSource]:
     """Get the value or default value.
 
-    Gets the value of the option if the option is Some, otherwise
+    Gets the value of the result if the result is Ok, otherwise
     returns the specified default value.
     """
 
@@ -429,6 +470,31 @@ def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Error[_TSource, _TE
     return result.is_error()
 
 
+def swap(result: Result[_TSource, _TError]) -> Result[_TError, _TSource]:
+    """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok"""
+    return result.swap()
+
+
+def to_option(result: Result[_TSource, _TError]) -> option.Option[_TSource]:
+    match result:
+        case Ok(value):
+            return option.Some(value)
+        case _:
+            return option.Nothing
+
+
+def of_option(
+    value: option.Option[_TSource], error: _TError
+) -> Result[_TSource, _TError]:
+    return value.to_result(error)
+
+
+def of_option_with(
+    value: option.Option[_TSource], error: Callable[[], _TError]
+) -> Result[_TSource, _TError]:
+    return value.to_result_with(error)
+
+
 Result: TypeAlias = Ok[_TSource, _TError] | Error[_TSource, _TError]
 
 __all__ = [
@@ -442,4 +508,7 @@ __all__ = [
     "dict",
     "is_ok",
     "is_error",
+    "to_option",
+    "of_option",
+    "of_option_with",
 ]

@@ -5,7 +5,7 @@ from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel, parse_obj_as
 
-from expression import Error, Ok, Result, effect, result
+from expression import Error, Nothing, Ok, Option, Result, Some, effect, result
 from expression.collections import Block
 from expression.core.result import BaseResult
 from expression.extra.result import pipeline, sequence
@@ -437,3 +437,49 @@ def test_ok_default_with():
     zs = xs.default_with(lambda x: 0)
 
     assert zs == 42
+
+
+def test_result_to_option_ok():
+    Ok(42).to_option()
+    res: Result[int, Any] = Ok(42)
+    xs = result.to_option(res)
+    assert xs.is_some()
+
+
+def test_result_to_option_error():
+    xs: Option[Any] = result.to_option(Error("oops"))
+    assert xs.is_none()
+
+
+def test_result_of_option_ok():
+    xs = result.of_option(Some(42), "oops")
+    assert xs == Ok(42)
+
+
+def test_result_of_option_error():
+    xs = result.of_option(Nothing, "oops")
+    assert xs == Error("oops")
+
+
+def test_result_of_option_with_ok():
+    xs = result.of_option_with(
+        Some(42), error=lambda: exec('raise(Exception("Should not be called"))')
+    )
+    assert xs == Ok(42)
+
+
+def test_result_of_option_with_error():
+    xs = result.of_option_with(Nothing, error=lambda: "oops")
+    assert xs == Error("oops")
+
+
+def test_result_swap_with_ok():
+    ok: Result[int, str] = Ok(1)
+    xs = result.swap(ok)
+    assert xs == Error(1)
+
+
+def test_result_swap_with_error():
+    error: Result[str, int] = Error(1)
+    xs = result.swap(error)
+    assert xs == Ok(1)
