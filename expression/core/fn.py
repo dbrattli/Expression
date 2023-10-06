@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import Awaitable, Callable, Generic, TypeVar, Union
+from typing import Awaitable, Callable, Generic, TypeVar, Union, cast
 
 from typing_extensions import ParamSpec
 
@@ -34,6 +34,8 @@ def tailrec(fn: Callable[_P, TailCallResult[_TResult, _P]]) -> Callable[_P, _TRe
 
     def trampoline(bouncer: TailCallResult[_TResult, _P]) -> _TResult:
         while isinstance(bouncer, TailCall):
+            bouncer = cast(TailCall[_P], bouncer)
+
             args, kw = bouncer.args, bouncer.kw
             bouncer = fn(*args, **kw)
 
@@ -53,6 +55,7 @@ def tailrec_async(
 
     async def trampoline(bouncer: TailCallResult[_TResult, _P]) -> _TResult:
         while isinstance(bouncer, TailCall):
+            bouncer = cast(TailCall[_P], bouncer)
             args, kw = bouncer.args, bouncer.kw
             bouncer = await fn(*args, **kw)
 

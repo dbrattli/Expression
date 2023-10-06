@@ -75,9 +75,7 @@ class Parser(Generic[_A]):
     ) -> Parser[_E]:
         ...
 
-    def starmap(
-        self: Parser[Tuple[Any, ...]], mapper: Callable[..., Any]
-    ) -> Parser[Any]:
+    def starmap(self: Parser[Any], mapper: Callable[..., Any]) -> Parser[Any]:
         return pipe(self, starmap(mapper))
 
     def opt(self) -> Parser[Option[_A]]:
@@ -217,7 +215,7 @@ def starmap(
 
 
 @curry(1)
-def starmap(mapper: Callable[..., Any], parser: Parser[Tuple[Any, ...]]) -> Parser[Any]:
+def starmap(mapper: Callable[..., Any], parser: Parser[Any]) -> Parser[Any]:
     def mapper_(values: Tuple[Any, ...]) -> Any:
         return mapper(*values)
 

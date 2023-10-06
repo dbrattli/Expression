@@ -292,9 +292,7 @@ class Block(
     ) -> Block[_TResult]:
         ...
 
-    def starmap(
-        self: Block[Tuple[Any, ...]], mapping: Callable[..., Any]
-    ) -> Block[Any]:
+    def starmap(self: Block[Any], mapping: Callable[..., Any]) -> Block[Any]:
         """Starmap source sequence.
 
         Unpack arguments grouped as tuple elements. Builds a new collection
@@ -811,9 +809,7 @@ def starmap(
     ...
 
 
-def starmap(
-    mapper: Callable[..., Any]
-) -> Callable[[Block[Tuple[Any, ...]]], Block[Any]]:
+def starmap(mapper: Callable[..., Any]) -> Callable[[Block[Any]], Block[Any]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
