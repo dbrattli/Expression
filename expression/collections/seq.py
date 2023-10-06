@@ -200,7 +200,7 @@ class Seq(Iterable[_TSource], PipeMixin):
     ) -> Seq[_TResult]:
         ...
 
-    def starmap(self: Seq[Tuple[Any, ...]], mapping: Callable[..., Any]) -> Seq[Any]:
+    def starmap(self: Seq[Any], mapping: Callable[..., Any]) -> Seq[Any]:
         """Starmap source sequence.
 
         Unpack arguments grouped as tuple elements. Builds a new collection
@@ -663,9 +663,7 @@ def starmap(
     ...
 
 
-def starmap(
-    mapper: Callable[..., Any]
-) -> Callable[[Iterable[Tuple[Any, ...]]], Iterable[Any]]:
+def starmap(mapper: Callable[..., Any]) -> Callable[[Iterable[Any]], Iterable[Any]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
