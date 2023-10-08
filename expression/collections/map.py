@@ -16,25 +16,15 @@
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 from __future__ import annotations
 
-from typing import (
-    Any,
-    Callable,
-    ItemsView,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    TypeVar,
-    cast,
-)
+from collections.abc import Callable, ItemsView, Iterable, Iterator, Mapping
+from typing import Any, TypeVar, cast
 
 from expression.core import Option, PipeMixin, SupportsLessThan, curry_flip, pipe
 
 from . import maptree, seq
 from .block import Block
 from .maptree import MapTree
+
 
 Key = TypeVar("Key", bound=SupportsLessThan)
 Value = TypeVar("Value")
@@ -51,14 +41,14 @@ T6 = TypeVar("T6")
 class Map(Mapping[Key, Value], PipeMixin):
     """The immutable map class."""
 
-    def __init__(self, __tree: Optional[MapTree[Key, Value]] = None) -> None:
+    def __init__(self, __tree: MapTree[Key, Value] | None = None) -> None:
         self._tree: MapTree[Key, Value] = __tree if __tree else maptree.empty
 
     def add(self, key: Key, value: Value) -> Map[Key, Value]:
         return Map(maptree.add(key, value, self._tree))
 
     @staticmethod
-    def create(ie: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
+    def create(ie: Iterable[tuple[Key, Value]]) -> Map[Key, Value]:
         return create(ie)
 
     def contains_key(self, key: Key) -> bool:
@@ -83,7 +73,9 @@ class Map(Mapping[Key, Value], PipeMixin):
         return Map(maptree.filter(predicate, self._tree))
 
     def for_all(self, predicate: Callable[[Key, Value], bool]) -> bool:
-        """Returns true if the given predicate returns true for all of
+        """Test all elements in map.
+
+        Returns true if the given predicate returns true for all of
         the bindings in the map.
 
         Args:
@@ -102,17 +94,19 @@ class Map(Mapping[Key, Value], PipeMixin):
     #         return Map<'Key, 'Result>(comparer, maptree.map f tree)
 
     def fold(
-        self, folder: Callable[[Result, Tuple[Key, Value]], Result], state: Result
+        self, folder: Callable[[Result, tuple[Key, Value]], Result], state: Result
     ) -> Result:
         return maptree.fold(folder, state, self._tree)
 
     def fold_back(
-        self, folder: Callable[[Tuple[Key, Value], Result], Result], state: Result
+        self, folder: Callable[[tuple[Key, Value], Result], Result], state: Result
     ) -> Result:
         return maptree.fold_back(folder, self._tree, state)
 
     def map(self, mapping: Callable[[Key, Value], Result]) -> Map[Key, Result]:
-        """Builds a new collection whose elements are the results of
+        """Map the mapping.
+
+        Builds a new collection whose elements are the results of
         applying the given function to each of the elements of the
         collection. The key passed to the function indicates the key of
         element being transformed.
@@ -127,7 +121,7 @@ class Map(Mapping[Key, Value], PipeMixin):
 
     def partition(
         self, predicate: Callable[[Key, Value], bool]
-    ) -> Tuple[Map[Key, Value], Map[Key, Value]]:
+    ) -> tuple[Map[Key, Value], Map[Key, Value]]:
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
 
@@ -152,10 +146,10 @@ class Map(Mapping[Key, Value], PipeMixin):
     def remove(self, key: Key) -> Map[Key, Value]:
         return Map(maptree.remove(key, self._tree))
 
-    def to_list(self) -> Block[Tuple[Key, Value]]:
+    def to_list(self) -> Block[tuple[Key, Value]]:
         return maptree.to_list(self._tree)
 
-    def to_seq(self) -> Iterable[Tuple[Key, Value]]:
+    def to_seq(self) -> Iterable[tuple[Key, Value]]:
         """Convert to sequence.
 
         Returns:
@@ -163,7 +157,7 @@ class Map(Mapping[Key, Value], PipeMixin):
         """
         return maptree.to_seq(self._tree)
 
-    def try_get_value(self, key: Key, value: List[Value]):
+    def try_get_value(self, key: Key, value: list[Value]):
         for v in maptree.try_find(key, self._tree).to_list():
             value.append(v)
             return True
@@ -183,25 +177,25 @@ class Map(Mapping[Key, Value], PipeMixin):
         return Map(maptree.of_seq(args.items()))
 
     @staticmethod
-    def of_block(lst: Block[Tuple[Key, Value]]) -> Map[Key, Value]:
+    def of_block(lst: Block[tuple[Key, Value]]) -> Map[Key, Value]:
         """Generate map from list.
 
         Returns:
             The new map.
         """
-        return of_block((lst))
+        return of_block(lst)
 
     @staticmethod
-    def of_list(lst: List[Tuple[Key, Value]]) -> Map[Key, Value]:
+    def of_list(lst: list[tuple[Key, Value]]) -> Map[Key, Value]:
         """Generate map from list.
 
         Returns:
             The new map.
         """
-        return of_list((lst))
+        return of_list(lst)
 
     @staticmethod
-    def of_seq(sequence: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
+    def of_seq(sequence: Iterable[tuple[Key, Value]]) -> Map[Key, Value]:
         """Generate map from sequence.
 
         Generates a new map from an iterable of key/value tuples. This
@@ -241,7 +235,7 @@ class Map(Mapping[Key, Value], PipeMixin):
             return False
 
         other = cast(Map[Any, Any], o)
-        iterator: Iterator[Tuple[Any, Any]] = iter(other.to_seq())
+        iterator: Iterator[tuple[Any, Any]] = iter(other.to_seq())
 
         for kv in self.to_seq():
             try:
@@ -257,7 +251,7 @@ class Map(Mapping[Key, Value], PipeMixin):
         return not maptree.is_empty(self._tree)
 
     def __str__(self) -> str:
-        def to_str(item: Tuple[Key, Value]) -> str:
+        def to_str(item: tuple[Key, Value]) -> str:
             key, value = item
             if isinstance(key, str):
                 return f'("{key}", {value})'
@@ -280,6 +274,7 @@ def add(table: Map[Key, Value], key: Key, value: Value) -> Map[Key, Value]:
     map.
 
     Args:
+        table: The input map.
         key: The input key.
         value: The input value.
 
@@ -287,7 +282,6 @@ def add(table: Map[Key, Value], key: Key, value: Value) -> Map[Key, Value]:
         A partially applied add function that takes the input map and returns
         the output map.
     """
-
     return table.add(key, value)
 
 
@@ -295,7 +289,9 @@ def add(table: Map[Key, Value], key: Key, value: Value) -> Map[Key, Value]:
 def change(
     table: Map[Key, Value], key: Key, fn: Callable[[Option[Value]], Option[Value]]
 ) -> Map[Key, Value]:
-    """Returns a new map with the value stored under key changed
+    """Change element in map.
+
+    Returns a new map with the value stored under key changed
     according to f.
 
     Args:
@@ -306,7 +302,6 @@ def change(
     Returns:
         The input key.
     """
-
     return table.change(key, fn)
 
 
@@ -320,21 +315,22 @@ def count(table: Map[Any, Any]) -> int:
     return len(table)
 
 
-def create(ie: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
+def create(ie: Iterable[tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_seq(ie))
 
 
 @curry_flip(1)
 def find(table: Map[Key, Value], key: Key) -> Value:
-    """Lookup an element in the map, raising KeyNotFoundException if no
-    binding exists in the map
+    """Find element with key in map.
+
+    Lookup an element in the map, raising KeyNotFoundException if no
+    binding exists in the map.
 
     Args:
         key: The key to find.
         table: The map to find the key in.
 
     """
-
     return table[key]
 
 
@@ -361,17 +357,20 @@ def iterate(action: Callable[[Key, Value], None]) -> Callable[[Map[Key, Value]],
 def try_pick(
     table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]
 ) -> Option[Result]:
-    """Searches the map looking for the first element where the given
+    """Pick element in map.
+
+    Searches the map looking for the first element where the given
     function returns a Some value.
 
     Args:
+        table: The input map.
         chooser: The function to generate options from the key/value
             pairs.
+
     Returns:
         Partially applied `try_pick` function that takes the input map
         and returns the first result.
     """
-
     return table.try_pick(chooser)
 
 
@@ -387,10 +386,13 @@ def pick(
 
 @curry_flip(1)
 def exists(table: Map[Key, Value], predicate: Callable[[Key, Value], bool]) -> bool:
-    """Returns true if the given predicate returns true for one of the
+    """Test if element exists in map.
+
+    Returns true if the given predicate returns true for one of the
     bindings in the map.
 
     Args:
+        table: The input map.
         predicate: The function to test the input elements.
 
     Returns:
@@ -398,7 +400,6 @@ def exists(table: Map[Key, Value], predicate: Callable[[Key, Value], bool]) -> b
         true if the predicate returns true for one of the key/value
         pairs.
     """
-
     return table.exists(predicate)
 
 
@@ -424,7 +425,7 @@ def map(
 @curry_flip(1)
 def fold(
     table: Map[Key, Value],
-    folder: Callable[[Result, Tuple[Key, Value]], Result],
+    folder: Callable[[Result, tuple[Key, Value]], Result],
     state: Result,
 ) -> Result:
     return table.fold(folder, state)
@@ -433,7 +434,7 @@ def fold(
 @curry_flip(1)
 def fold_back(
     state: Result,
-    folder: Callable[[Tuple[Key, Value], Result], Result],
+    folder: Callable[[tuple[Key, Value], Result], Result],
     table: Map[Key, Value],
 ) -> Result:
     return table.fold_back(folder, state)
@@ -442,13 +443,15 @@ def fold_back(
 @curry_flip(1)
 def partition(
     table: Map[Key, Value], predicate: Callable[[Key, Value], bool]
-) -> Tuple[Map[Key, Value], Map[Key, Value]]:
+) -> tuple[Map[Key, Value], Map[Key, Value]]:
     return table.partition(predicate)
 
 
 @curry_flip(1)
 def remove(table: Map[Key, Value], key: Key) -> Map[Key, Value]:
-    """Removes an element from the domain of the map. No exception is
+    """Remove element from map.
+
+    Removes an element from the domain of the map. No exception is
     raised if the element is not present.
 
     Args:
@@ -458,7 +461,6 @@ def remove(table: Map[Key, Value], key: Key) -> Map[Key, Value]:
     Returns:
         The resulting map.
     """
-
     return table.remove(key)
 
 
@@ -467,39 +469,41 @@ def of(**args: Value) -> Map[str, Value]:
     return Map(maptree.of_seq(args.items()))
 
 
-def of_block(elements: Block[Tuple[Key, Value]]) -> Map[Key, Value]:
+def of_block(elements: Block[tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_list(elements))
 
 
-def of_list(elements: List[Tuple[Key, Value]]) -> Map[Key, Value]:
+def of_list(elements: list[tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_list(Block(elements)))
 
 
-def of_seq(elements: Iterable[Tuple[Key, Value]]) -> Map[Key, Value]:
+def of_seq(elements: Iterable[tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_seq(elements))
 
 
-def to_list(table: Map[Key, Value]) -> Block[Tuple[Key, Value]]:
+def to_list(table: Map[Key, Value]) -> Block[tuple[Key, Value]]:
     return table.to_list()
 
 
-def to_seq(table: Map[Key, Value]) -> Iterable[Tuple[Key, Value]]:
+def to_seq(table: Map[Key, Value]) -> Iterable[tuple[Key, Value]]:
     return table.to_seq()
 
 
 @curry_flip(1)
 def try_find(table: Map[Key, Value], key: Key) -> Option[Value]:
-    """Lookup an element in the map, returning a `Some` value if the
+    """Try to find element with key in map.
+
+    Lookup an element in the map, returning a `Some` value if the
     element is in the domain of the map and `Nothing` if not.
 
     Args:
+        table: The input map.
         key: The input key.
 
     Returns:
         A partially applied `try_find` function that takes a map
         instance and returns the result.
     """
-
     return table.try_find(key)
 
 

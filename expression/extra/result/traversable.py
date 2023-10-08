@@ -1,9 +1,11 @@
 """Data structures that can be traversed from left to right, performing an action on each element."""
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from expression import effect
 from expression.collections import Block, block, seq
 from expression.core import Ok, Result, identity, pipe
+
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -20,8 +22,10 @@ def traverse(
 
     @effect.result[Block[_TResult], _TError]()
     def folder(head: _TSource, tail: Result[Block[_TResult], _TError]) -> Any:
-        """Same as:
-        >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail)))
+        """Fold back function.
+
+        Same as:
+        >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail))).
         """
         h: _TResult = yield from fn(head)
         t: Block[_TResult] = yield from tail
@@ -37,7 +41,9 @@ def traverse(
 
 
 def sequence(lst: Block[Result[_TSource, _TError]]) -> Result[Block[_TSource], _TError]:
-    """Execute a sequence of result returning commands and collect the
-    sequence of their response."""
+    """Sequence block.
 
+    Execute a sequence of result returning commands and collect the
+    sequence of their response.
+    """
     return traverse(identity, lst)

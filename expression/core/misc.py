@@ -1,4 +1,6 @@
-from typing import Any, Callable, Tuple, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
+
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")
@@ -14,7 +16,7 @@ def identity(value: _A) -> _A:
     return value
 
 
-def starid(*value: Any) -> Tuple[Any, ...]:
+def starid(*value: Any) -> tuple[Any, ...]:
     return value
 
 
@@ -31,16 +33,14 @@ def flip(fn: Callable[[_A, _B], _TResult]) -> Callable[[_B, _A], _TResult]:
     return _flip
 
 
-def snd(value: Tuple[Any, _TSource]) -> _TSource:
+def snd(value: tuple[Any, _TSource]) -> _TSource:
     """Return second argument of the tuple."""
-
     _, b = value
     return b
 
 
-def fst(value: Tuple[_TSource, Any]) -> _TSource:
+def fst(value: tuple[_TSource, Any]) -> _TSource:
     """Return first argument of the tuple."""
-
     a, _ = value
     return a
 

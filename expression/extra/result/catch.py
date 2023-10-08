@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, Type, TypeVar, cast, overload
+from typing import Any, TypeVar, cast, overload
 
 from expression.core import Error, Ok, Result
 from expression.core.result import BaseResult
+
 
 _TSource = TypeVar("_TSource")
 _TError = TypeVar("_TError", bound=Exception)
@@ -13,7 +15,7 @@ _TError_ = TypeVar("_TError_", bound=Exception)
 
 @overload
 def catch(
-    exception: Type[_TError_],
+    exception: type[_TError_],
 ) -> Callable[
     [Callable[..., _TSource | Result[_TSource, _TError]]],
     Callable[..., Result[_TSource, _TError | _TError_]],
@@ -23,13 +25,13 @@ def catch(
 
 @overload
 def catch(
-    f: Callable[..., _TSource], *, exception: Type[_TError]
+    f: Callable[..., _TSource], *, exception: type[_TError]
 ) -> Callable[..., Result[_TSource, _TError]]:
     ...
 
 
 def catch(  # type: ignore
-    f: Optional[Callable[..., _TSource]] = None, *, exception: Type[_TError]
+    f: Callable[..., _TSource] | None = None, *, exception: type[_TError]
 ) -> Callable[
     [Callable[..., _TSource]],
     Callable[..., Result[_TSource, _TError]] | Result[_TSource, _TError],

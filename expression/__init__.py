@@ -1,4 +1,5 @@
-"""
+"""Expression library.
+
 Expression aims to be a solid, type-safe, pragmatic, and high
 performance library for practical functional programming in Python 3.9+.
 By pragmatic we mean that the goal of the library is to use simple
@@ -63,6 +64,7 @@ from .core import (
     try_downcast,
     upcast,
 )
+
 
 curry_flipped = curry_flip
 """Deprecated.

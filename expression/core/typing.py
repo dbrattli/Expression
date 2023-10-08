@@ -1,21 +1,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Protocol,
-    Tuple,
-    Type,
-    TypeVar,
-    cast,
-    get_origin,
-)
+from collections.abc import Callable, Iterable, Iterator
+from typing import Any, Protocol, TypeVar, cast, get_origin
+
 
 _T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
@@ -53,17 +41,17 @@ class SupportsMatch(Protocol[_T_co]):
         """Match pattern with value.
 
         Return a singleton iterable item (e.g `[ value ]`) if pattern
-        matches value, else an empty iterable (e.g. `[]`)."""
-
+        matches value, else an empty iterable (e.g. `[]`).
+        """
         raise NotImplementedError
 
 
 class ModelField:
     """Type mock to avoid taking a hard dependency on pydantic."""
 
-    sub_fields: List[ModelField]
+    sub_fields: list[ModelField]
 
-    def validate(self, value: Any, values: Dict[str, str], loc: str) -> Tuple[Any, Any]:
+    def validate(self, value: Any, values: dict[str, str], loc: str) -> tuple[Any, Any]:
         ...
 
 
@@ -72,8 +60,10 @@ GenericValidator = Callable[[Any, ModelField], _T]
 
 
 class SupportsValidation(Protocol[_T_co]):
-    """A type that implements __get_validators__ to be used with
-    pydantic."""
+    """A type that supports valication.
+
+    A type that implements __get_validators__ to be used with pydantic.
+    """
 
     @classmethod
     def __get_validators__(
@@ -83,7 +73,7 @@ class SupportsValidation(Protocol[_T_co]):
         ...
 
 
-def upcast(type: Type[_Base], expr: _Base) -> _Base:
+def upcast(type: type[_Base], expr: _Base) -> _Base:
     """Upcast expression from a `Derived` to `Base`.
 
     Note: F# `:>` or `upcast`.
@@ -91,8 +81,8 @@ def upcast(type: Type[_Base], expr: _Base) -> _Base:
     return expr
 
 
-def downcast(type: Type[_Derived], expr: Any) -> _Derived:
-    """Downcast expression `Derived` to `Base`
+def downcast(type: type[_Derived], expr: Any) -> _Derived:
+    """Downcast expression `Derived` to `Base`.
 
     Checks at compile time that the type of expression Base is a
     supertype of Derived, and checks at runtime that Base is in fact an
@@ -106,7 +96,7 @@ def downcast(type: Type[_Derived], expr: Any) -> _Derived:
     return expr
 
 
-def try_downcast(type_: Type[_Derived], expr: Any) -> Optional[_Derived]:
+def try_downcast(type_: type[_Derived], expr: Any) -> _Derived | None:
     """Downcast expression `Base` to `Derived`.
 
     Check that the `Derived` type is a supertype of `Base`.
@@ -116,7 +106,7 @@ def try_downcast(type_: Type[_Derived], expr: Any) -> Optional[_Derived]:
     Returns:
         None if `Derived` is not a supertype of `Base`.
     """
-    origin: Optional[Type[_Derived]] = get_origin(type_) or type_
+    origin: type[_Derived] | None = get_origin(type_) or type_
     if origin is not None and isinstance(expr, origin):
         derived = cast(_Derived, expr)
         return derived

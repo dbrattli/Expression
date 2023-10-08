@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from threading import RLock
-from typing import Callable, Dict, List, Optional
 
 from .disposable import Disposable
 from .error import ObjectDisposedException
 
 
 class CancellationToken:
-    """A `CancellationToken` enables cooperative cancellation between
+    """CancellationToken class.
+
+    A `CancellationToken` enables cooperative cancellation between
     threads, thread pool work items, or Task objects. You create a
     cancellation token by instantiating a `CancellationTokenSource`
     object, which manages cancellation tokens retrieved from its
@@ -19,14 +21,17 @@ class CancellationToken:
     `CancellationTokenSource.cancel`, the `is_cancellation_requested`
     property on every copy of the cancellation token is set to true. The
     objects that receive the notification can respond in whatever manner
-    is appropriate."""
+    is appropriate.
+    """
 
     def __init__(
-        self, cancelled: bool = True, source: Optional[CancellationTokenSource] = None
+        self, cancelled: bool = True, source: CancellationTokenSource | None = None
     ) -> None:
-        """Should not be used directly. Create cancellation tokens using
-        the `CancellationTokenSource` instead."""
+        """The init function.
 
+        Should not be used directly. Create cancellation tokens using
+        the `CancellationTokenSource` instead.
+        """
         self._cancelled = cancelled
         self._source = (
             CancellationTokenSource.cancelled_source() if source is None else source
@@ -56,7 +61,7 @@ class CancellationTokenSource(Disposable):
     def __init__(self):
         self._is_disposed = False
         self._lock = RLock()
-        self._listeners: Dict[int, Callable[[], None]] = dict()
+        self._listeners: dict[int, Callable[[], None]] = dict()
         self._id = 0
 
     @property
@@ -72,8 +77,7 @@ class CancellationTokenSource(Disposable):
 
     def dispose(self) -> None:
         """Performs the task of cleaning up resources."""
-
-        listeners: List[Callable[[], None]] = []
+        listeners: list[Callable[[], None]] = []
         with self._lock:
             if not self._is_disposed:
                 self._is_disposed = True

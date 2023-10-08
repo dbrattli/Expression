@@ -1,16 +1,10 @@
 import builtins
 import itertools
-from typing import (
-    Any,
-    AsyncIterable,
-    AsyncIterator,
-    Callable,
-    Optional,
-    TypeVar,
-    overload,
-)
+from collections.abc import AsyncIterable, AsyncIterator, Callable
+from typing import Any, TypeVar, overload
 
 from expression.core import pipe
+
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
@@ -67,7 +61,7 @@ async def empty() -> AsyncIterable[Any]:
         yield
 
 
-async def repeat(value: TSource, times: Optional[int] = None) -> AsyncIterable[TSource]:
+async def repeat(value: TSource, times: int | None = None) -> AsyncIterable[TSource]:
     for value in itertools.repeat(value, times):  # type: ignore
         yield value
 

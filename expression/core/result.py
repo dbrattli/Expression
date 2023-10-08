@@ -10,28 +10,25 @@ the Result type to Exception.
 """
 from __future__ import annotations
 
+import builtins
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Generator, Iterable, Iterator
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Generator,
+    ClassVar,
     Generic,
-    Iterable,
-    Iterator,
-    List,
+    TypeAlias,
+    TypeGuard,
     TypeVar,
-    Union,
     cast,
     get_origin,
 )
-
-from typing_extensions import TypeAlias, TypeGuard
 
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation
+
 
 _TSource = TypeVar("_TSource")
 _TOther = TypeVar("_TOther")
@@ -43,7 +40,7 @@ def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
     if isinstance(result, BaseResult):
         return cast(Result[Any, Any], result)
 
-    if not isinstance(result, Dict):
+    if not isinstance(result, builtins.dict):
         raise ValueError("not result type")
 
     try:
@@ -75,7 +72,7 @@ class BaseResult(
 ):
     """The result abstract base class."""
 
-    __validators__: List[GenericValidator[Result[_TSource, _TError]]] = [_validate]
+    __validators__: ClassVar = [_validate]
 
     @abstractmethod
     def default_value(self, value: _TSource) -> _TSource:
@@ -111,8 +108,11 @@ class BaseResult(
     def map_error(
         self, mapper: Callable[[_TError], _TResult]
     ) -> Result[_TSource, _TResult]:
-        """Return a result of the error value after applying the mapping
-        function, or Ok if the input is Ok."""
+        """Map error.
+
+        Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -124,18 +124,16 @@ class BaseResult(
     @abstractmethod
     def is_error(self) -> bool:
         """Returns `True` if the result is an `Error` value."""
-
         raise NotImplementedError
 
     @abstractmethod
     def is_ok(self) -> bool:
-        """Returns `True` if the result is an `Ok` value."""
-
+        """Return `True` if the result is an `Ok` value."""
         raise NotImplementedError
 
     @abstractmethod
-    def dict(self) -> Dict[str, Union[_TSource, _TError]]:
-        """Returns a json serializable representation of the result."""
+    def dict(self) -> builtins.dict[str, _TSource | _TError]:
+        """Return a json serializable representation of the result."""
         raise NotImplementedError
 
     def __eq__(self, o: Any) -> bool:
@@ -205,21 +203,22 @@ class Ok(BaseResult[_TSource, _TError]):
     def map_error(
         self, mapper: Callable[[_TError], _TResult]
     ) -> Result[_TSource, _TResult]:
-        """Return a result of the error value after applying the mapping
-        function, or Ok if the input is Ok."""
+        """Map error.
+
+        Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.
+        """
         return Ok(self._value)
 
     def is_error(self) -> bool:
         """Returns `True` if the result is an `Ok` value."""
-
         return False
 
     def is_ok(self) -> bool:
         """Returns `True` if the result is an `Ok` value."""
-
         return True
 
-    def dict(self) -> Dict[str, _TSource | _TError]:
+    def dict(self) -> builtins.dict[str, _TSource | _TError]:
         """Returns a json string representation of the ok value."""
         attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
         if attr and callable(attr):
@@ -259,8 +258,10 @@ class Ok(BaseResult[_TSource, _TError]):
 
 
 class ResultException(EffectError):
-    """Makes the Error case a valid exception for effect handling. Do
-    not use directly."""
+    """Makes the Error case a valid exception for effect handling.
+
+    Do not use directly.
+    """
 
     def __init__(self, message: str):
         self.message = message
@@ -316,8 +317,11 @@ class Error(
     def map_error(
         self, mapper: Callable[[_TError], _TResult]
     ) -> Result[_TSource, _TResult]:
-        """Return a result of the error value after applying the mapping
-        function, or Ok if the input is Ok."""
+        """Map error.
+
+        Return a result of the error value after applying the mapping
+        function, or Ok if the input is Ok.
+        """
         return Error(mapper(self._error))
 
     def is_error(self) -> bool:
@@ -328,7 +332,7 @@ class Error(
         """Returns `True` if the result is an `Ok` value."""
         return False
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> builtins.dict[str, Any]:
         """Returns a json serializable representation of the error value."""
         attr = getattr(self._error, "dict") or getattr(self._error, "dict")
         if callable(attr):
@@ -345,7 +349,6 @@ class Error(
 
     def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         """Return iterator for Error case."""
-
         # Raise class here so sub-classes like Failure works as well.
         raise self.__class__(self._error)
 
@@ -361,7 +364,9 @@ class Error(
 
 
 def default_value(value: _TSource) -> Callable[[Result[_TSource, Any]], _TSource]:
-    """Gets the value of the option if the option is Some, otherwise
+    """Get the value or default value.
+
+    Gets the value of the option if the option is Some, otherwise
     returns the specified default value.
     """
 
@@ -410,23 +415,21 @@ def bind(
     return result.bind(mapper)
 
 
-def dict(source: Result[_TSource, _TError]) -> Dict[str, Union[_TSource, _TError]]:
+def dict(source: Result[_TSource, _TError]) -> builtins.dict[str, _TSource | _TError]:
     return source.dict()
 
 
 def is_ok(result: Result[_TSource, _TError]) -> TypeGuard[Ok[_TSource, _TError]]:
     """Returns `True` if the result is an `Ok` value."""
-
     return result.is_ok()
 
 
 def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Error[_TSource, _TError]]:
     """Returns `True` if the result is an `Error` value."""
-
     return result.is_error()
 
 
-Result: TypeAlias = Union[Ok[_TSource, _TError], Error[_TSource, _TError]]
+Result: TypeAlias = Ok[_TSource, _TError] | Error[_TSource, _TError]
 
 __all__ = [
     "Result",

@@ -1,20 +1,12 @@
 from abc import ABC
+from collections.abc import Callable, Generator
 from functools import wraps
-from typing import (
-    Any,
-    Callable,
-    Generator,
-    Generic,
-    List,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Generic, TypeVar, cast
 
 from typing_extensions import ParamSpec
 
 from .error import EffectError
+
 
 _TInner = TypeVar("_TInner")
 _TOuter = TypeVar("_TOuter")
@@ -38,8 +30,11 @@ class Builder(Generic[_TInner, _TOuter], ABC):
         raise NotImplementedError("Builder does not implement a combine method")
 
     def zero(self) -> _TOuter:
-        """Called if the effect raises StopIteration without a value,
-        i.e returns None"""
+        """Zero effect.
+
+        Called if the effect raises StopIteration without a value, i.e
+        returns None.
+        """
         raise NotImplementedError("Builder does not implement a zero method")
 
     def delay(self, fn: Callable[[], _TOuter]) -> _TOuter:
@@ -53,8 +48,8 @@ class Builder(Generic[_TInner, _TOuter], ABC):
     def _send(
         self,
         gen: Generator[Any, Any, Any],
-        done: List[bool],
-        value: Optional[_TInner] = None,
+        done: list[bool],
+        value: _TInner | None = None,
     ) -> _TOuter:
         try:
             yielded = gen.send(value)
@@ -78,10 +73,8 @@ class Builder(Generic[_TInner, _TOuter], ABC):
         self,
         fn: Callable[
             _P,
-            Union[
-                Generator[Optional[_TInner], _TInner, Optional[_TInner]],
-                Generator[Optional[_TInner], None, Optional[_TInner]],
-            ],
+            Generator[_TInner | None, _TInner, _TInner | None]
+            | Generator[_TInner | None, None, _TInner | None],
         ],
     ) -> Callable[_P, _TOuter]:
         """Option builder.
@@ -101,9 +94,9 @@ class Builder(Generic[_TInner, _TOuter], ABC):
         @wraps(fn)
         def wrapper(*args: _P.args, **kw: _P.kwargs) -> _TOuter:
             gen = fn(*args, **kw)
-            done: List[bool] = []
+            done: list[bool] = []
 
-            result: Optional[_TOuter] = None
+            result: _TOuter | None = None
 
             def binder(value: Any) -> _TOuter:
                 ret = self._send(gen, done, value)
