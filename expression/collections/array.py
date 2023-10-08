@@ -11,20 +11,9 @@ from __future__ import annotations
 import array
 import builtins
 import functools
+from collections.abc import Callable, Iterable, Iterator, MutableSequence
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    List,
-    MutableSequence,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, TypeVar, cast
 
 from expression.core import (
     Nothing,
@@ -39,13 +28,15 @@ from expression.core import (
 
 from . import seq
 
+
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
 _TState = TypeVar("_TState")
+
 _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
 
 _TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
-_Array = Union[List[_TSource], MutableSequence[_TSource]]
+_Array = list[_TSourceSum] | MutableSequence[_TSourceSum]
 
 
 class int8(int):
@@ -109,7 +100,7 @@ class TypeCode(Enum):
 
 
 def array_from_typecode(
-    type_code: TypeCode, initializer: Optional[Iterable[Any]]
+    type_code: TypeCode, initializer: Iterable[Any] | None
 ) -> _Array[Any]:
     arr: _Array[Any] = list(initializer if initializer else [])
     if type_code == TypeCode.Byte:
@@ -138,8 +129,8 @@ def array_from_typecode(
 
 
 def array_from_initializer(
-    initializer: Optional[Iterable[Any]] = None,
-) -> Tuple[_Array[Any], TypeCode]:
+    initializer: Iterable[Any] | None = None,
+) -> tuple[_Array[Any], TypeCode]:
     # Use list as the default array
     arr: _Array[Any] = list(initializer if initializer else [])
     type_code = TypeCode.Any
@@ -179,7 +170,7 @@ def array_from_initializer(
         elif isinstance(arr0, float32):
             arr = array.array("f", arr)
             type_code = TypeCode.Float
-        elif isinstance(arr0, (float64, double)):
+        elif isinstance(arr0, float64 | double):
             arr = array.array("d", arr)
             type_code = TypeCode.Double
 
@@ -194,8 +185,8 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
 
     def __init__(
         self,
-        initializer: Optional[Iterable[_TSource]] = None,
-        typecode: Optional[TypeCode] = None,
+        initializer: Iterable[_TSource] | None = None,
+        typecode: TypeCode | None = None,
     ) -> None:
         if typecode:
             arr = array_from_typecode(typecode, initializer)
@@ -243,14 +234,12 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
 
     def is_empty(self) -> bool:
         """Return `True` if list is empty."""
-
         return not self.value
 
     @property
     @classmethod
     def empty(cls) -> TypedArray[Any]:
         """Returns empty array."""
-
         return TypedArray()
 
     def filter(self, predicate: Callable[[_TSource], bool]) -> TypedArray[_TSource]:
@@ -273,7 +262,9 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
     def fold(
         self, folder: Callable[[_TState, _TSource], _TState], state: _TState
     ) -> _TState:
-        """Applies a function to each element of the array,
+        """Fold array.
+
+        Applies a function to each element of the array,
         threading an accumulator argument through the computation. Take
         the second argument, and apply the function to it and the first
         element of the list. Then feed this result into the function
@@ -294,7 +285,9 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         return functools.reduce(folder, self, state)
 
     def forall(self, predicate: Callable[[_TSource], bool]) -> bool:
-        """Tests if all elements of the collection satisfy the given
+        """Test all elements.
+
+        Tests if all elements of the collection satisfy the given
         predicate.
 
         Args:
@@ -317,12 +310,13 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         Raises:
             ValueError: Thrown when the list is empty.
         """
-
         head, *_ = self
         return head
 
-    def indexed(self, start: int = 0) -> TypedArray[Tuple[int, _TSource]]:
-        """Returns a new array whose elements are the corresponding
+    def indexed(self, start: int = 0) -> TypedArray[tuple[int, _TSource]]:
+        """Index array elements.
+
+        Returns a new array whose elements are the corresponding
         elements of the input array paired with the index (from `start`)
         of each element.
 
@@ -411,7 +405,6 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
 
     def tail(self) -> TypedArray[_TSource]:
         """Return tail of List."""
-
         _, *tail = self.value
         return TypedArray(tail)
 
@@ -427,7 +420,9 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         return TypedArray(self.value[:count])
 
     def take_last(self, count: int) -> TypedArray[_TSource]:
-        """Returns a specified number of contiguous elements from the
+        """Take last elements.
+
+        Returns a specified number of contiguous elements from the
         end of the list.
 
         Args:
@@ -439,7 +434,9 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         return TypedArray(self.value[-count:])
 
     def try_head(self) -> Option[_TSource]:
-        """Returns the first element of the list, or None if the list is
+        """Try to return first element.
+
+        Returns the first element of the list, or None if the list is
         empty.
         """
         if self.value:
@@ -450,9 +447,11 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
 
     @staticmethod
     def unfold(
-        generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]], state: _TState
+        generator: Callable[[_TState], Option[tuple[_TSource, _TState]]], state: _TState
     ) -> TypedArray[_TSource]:
-        """Returns a list that contains the elements generated by the
+        """Unfold array.
+
+        Returns a list that contains the elements generated by the
         given computation. The given initial state argument is passed to
         the element generator.
 
@@ -465,7 +464,6 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         Returns:
             The result list.
         """
-
         return pipe(state, unfold(generator))
 
     def __eq__(self, o: Any) -> bool:
@@ -509,12 +507,12 @@ def map(
     the given function to each of the elements of the array.
 
     Args:
+        source: The source array to map.
         mapper: The function to transform elements from the input array.
 
     Returns:
         A new array of transformed elements.
     """
-
     return source.map(mapper)
 
 
@@ -526,16 +524,18 @@ def empty() -> TypedArray[Any]:
 def filter(
     source: TypedArray[_TSource], predicate: Callable[[_TSource], bool]
 ) -> TypedArray[_TSource]:
-    """Returns a new array containing only the elements of the
-    array for which the given predicate returns `True`
+    """Filter array.
+
+    Returns a new array containing only the elements of the
+    array for which the given predicate returns `True`.
 
     Args:
+        source: The source array to filter.
         predicate: The function to test the input elements.
 
     Returns:
         Partially applied filter function.
     """
-
     return source.filter(predicate)
 
 
@@ -545,7 +545,9 @@ def fold(
     folder: Callable[[_TState, _TSource], _TState],
     state: _TState,
 ) -> _TState:
-    """Applies a function to each element of the collection, threading
+    """Fold the array.
+
+    Applies a function to each element of the collection, threading
     an accumulator argument through the computation. Take the second
     argument, and apply the function to it and the first element of the
     list. Then feed this result into the function along with the second
@@ -554,6 +556,7 @@ def fold(
     iN.
 
     Args:
+        source: The source array to fold.
         folder: The function to update the state given the input
             elements.
 
@@ -563,7 +566,6 @@ def fold(
         Partially applied fold function that takes the source list
         and returns the final state value.
     """
-
     return source.fold(folder, state)
 
 
@@ -571,7 +573,7 @@ def fold(
 def indexed(
     source: TypedArray[_TSource],
     start: int = 0,
-) -> TypedArray[Tuple[int, _TSource]]:
+) -> TypedArray[tuple[int, _TSource]]:
     return source.indexed()
 
 
@@ -618,30 +620,32 @@ def sum_by(
 
 @curry_flip(1)
 def take(source: TypedArray[_TSource], count: int) -> TypedArray[_TSource]:
-    """Returns the first N elements of the array.
+    """Return the first N elements of the array.
 
     Args:
+        source: The source array to take from.
         count: The number of items to take.
 
     Returns:
         The result array.
     """
-
     return source.take(count)
 
 
 @curry_flip(1)
 def take_last(source: TypedArray[_TSource], count: int) -> TypedArray[_TSource]:
-    """Returns a specified number of contiguous elements from the end of
+    """Take last elements.
+
+    Returns a specified number of contiguous elements from the end of
     the list.
 
     Args:
+        source: The source array to take from.
         count: The number of items to take.
 
     Returns:
         The result list.
     """
-
     return source.take_last(count)
 
 
@@ -661,22 +665,23 @@ def try_head(source: TypedArray[_TSource]) -> Option[_TSource]:
 
 @curry_flip(1)
 def unfold(
-    state: _TState, generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]]
+    state: _TState, generator: Callable[[_TState], Option[tuple[_TSource, _TState]]]
 ) -> TypedArray[_TSource]:
-    """Returns a list that contains the elements generated by the
+    """Unfold array.
+
+    Returns a list that contains the elements generated by the
     given computation. The given initial state argument is passed to
     the element generator.
 
     Args:
+        state: The initial state.
         generator: A function that takes in the current state and
             returns an option tuple of the next element of the list
             and the next state value.
-        state: The initial state.
 
     Returns:
         The result list.
     """
-
     xs = pipe(state, seq.unfold(generator))
     return TypedArray(xs)
 

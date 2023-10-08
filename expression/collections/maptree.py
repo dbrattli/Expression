@@ -15,21 +15,22 @@
 # - MIT License
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 
-"""
-The maptree module.
+"""The maptree module.
 
 Contains the internal tree implementation of the `map`.
 
 Do not use directly. Use the `map` module instead.
 """
 import builtins
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Iterable, Iterator, Tuple, TypeVar
+from typing import Any, Generic, TypeVar
 
 from expression.core import Nothing, Option, Some, SupportsLessThan, failwith, pipe
 
 from . import block, seq
 from .block import Block
+
 
 Key = TypeVar("Key", bound=SupportsLessThan)
 Value = TypeVar("Value")
@@ -196,8 +197,8 @@ def partition1(
     predicate: Callable[[Key, Value], bool],
     k: Key,
     v: Value,
-    acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]],
-) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+    acc: tuple[MapTree[Key, Value], MapTree[Key, Value]],
+) -> tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     acc1, acc2 = acc
     if predicate(k, v):
         a: MapTree[Key, Value] = add(k, v, acc1)
@@ -209,8 +210,8 @@ def partition1(
 def partition_aux(
     predicate: Callable[[Key, Value], bool],
     m: MapTree[Key, Value],
-    acc: Tuple[MapTree[Key, Value], MapTree[Key, Value]],
-) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+    acc: tuple[MapTree[Key, Value], MapTree[Key, Value]],
+) -> tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     for m2 in m:
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -225,7 +226,7 @@ def partition_aux(
 
 def partition(
     predicate: Callable[[Key, Value], bool], m: MapTree[Key, Value]
-) -> Tuple[MapTree[Key, Value], MapTree[Key, Value]]:
+) -> tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     return partition_aux(predicate, m, (empty, empty))
 
 
@@ -263,7 +264,7 @@ def filter(
 
 def splice_out_successor(
     m: MapTree[Key, Value]
-) -> Tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
+) -> tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -434,7 +435,7 @@ def map(
 
 
 def fold_back(
-    f: Callable[[Tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result
+    f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result
 ) -> Result:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
@@ -449,7 +450,7 @@ def fold_back(
 
 
 def fold(
-    f: Callable[[Result, Tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]
+    f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]
 ) -> Result:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
@@ -463,10 +464,10 @@ def fold(
         return x
 
 
-def to_list(m: MapTree[Key, Value]) -> Block[Tuple[Key, Value]]:
+def to_list(m: MapTree[Key, Value]) -> Block[tuple[Key, Value]]:
     def loop(
-        m: MapTree[Key, Value], acc: Block[Tuple[Key, Value]]
-    ) -> Block[Tuple[Key, Value]]:
+        m: MapTree[Key, Value], acc: Block[tuple[Key, Value]]
+    ) -> Block[tuple[Key, Value]]:
         for m2 in m.to_list():
             if isinstance(m2, MapTreeNode):
                 mn = m2
@@ -479,8 +480,8 @@ def to_list(m: MapTree[Key, Value]) -> Block[Tuple[Key, Value]]:
     return loop(m, block.empty)
 
 
-def of_list(xs: Block[Tuple[Key, Value]]) -> MapTree[Key, Value]:
-    def folder(acc: MapTree[Key, Value], kv: Tuple[Key, Value]):
+def of_list(xs: Block[tuple[Key, Value]]) -> MapTree[Key, Value]:
+    def folder(acc: MapTree[Key, Value], kv: tuple[Key, Value]):
         k, v = kv
         return add(k, v, acc)
 
@@ -488,7 +489,7 @@ def of_list(xs: Block[Tuple[Key, Value]]) -> MapTree[Key, Value]:
 
 
 def mk_from_iterator(
-    acc: MapTree[Key, Value], e: Iterator[Tuple[Key, Value]]
+    acc: MapTree[Key, Value], e: Iterator[tuple[Key, Value]]
 ) -> MapTree[Key, Value]:
     try:
         (x, y) = next(e)
@@ -498,7 +499,7 @@ def mk_from_iterator(
         return mk_from_iterator(add(x, y, acc), e)
 
 
-def of_seq(xs: Iterable[Tuple[Key, Value]]) -> MapTree[Key, Value]:
+def of_seq(xs: Iterable[tuple[Key, Value]]) -> MapTree[Key, Value]:
     ie = builtins.iter(xs)
     return mk_from_iterator(empty, ie)
 
@@ -524,11 +525,11 @@ def collapseLHS(stack: Block[MapTree[Key, Value]]) -> Block[MapTree[Key, Value]]
         return collapseLHS(rest)
 
 
-class MkIterator(Iterator[Tuple[Key, Value]]):
+class MkIterator(Iterator[tuple[Key, Value]]):
     def __init__(self, m: MapTree[Key, Value]) -> None:
         self.stack = collapseLHS(block.singleton(m))
 
-    def __next__(self) -> Tuple[Key, Value]:
+    def __next__(self) -> tuple[Key, Value]:
         if not self.stack:
             raise StopIteration
 
@@ -553,14 +554,14 @@ def already_finished():
     failwith("enumeration already finished")
 
 
-def mk_iterator(m: MapTree[Key, Value]) -> Iterator[Tuple[Key, Value]]:
+def mk_iterator(m: MapTree[Key, Value]) -> Iterator[tuple[Key, Value]]:
     return MkIterator(m)
 
 
-def to_seq(s: MapTree[Key, Value]) -> Iterable[Tuple[Key, Value]]:
+def to_seq(s: MapTree[Key, Value]) -> Iterable[tuple[Key, Value]]:
     it = mk_iterator(s)
 
-    def folder(it: Iterator[Tuple[Key, Value]]):
+    def folder(it: Iterator[tuple[Key, Value]]):
         try:
             current = next(it)
         except StopIteration:

@@ -1,6 +1,8 @@
-from typing import Any, Callable, Literal, Tuple, TypeVar, overload
+from collections.abc import Callable
+from typing import Any, Concatenate, Literal, TypeVar, overload
 
-from typing_extensions import Concatenate, ParamSpec
+from typing_extensions import ParamSpec
+
 
 _P = ParamSpec("_P")
 _A = TypeVar("_A")
@@ -13,7 +15,7 @@ _Arity = Literal[0, 1, 2, 3, 4]
 
 
 def _curry(
-    args: Tuple[Any, ...], arity: int, fun: Callable[..., Any]
+    args: tuple[Any, ...], arity: int, fun: Callable[..., Any]
 ) -> Callable[..., Any]:
     def wrapper(*args_: Any, **kw: Any) -> Any:
         if arity == 1:

@@ -9,9 +9,11 @@ by itself.
 """
 import asyncio
 from asyncio import Future
-from typing import Any, Awaitable, Callable, Optional, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import Any, TypeVar
 
 from expression.system import CancellationToken, OperationCanceledError
+
 
 _TSource = TypeVar("_TSource")
 
@@ -27,7 +29,9 @@ Callbacks = Callable[
 
 
 def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
-    """Creates an asynchronous computation that captures the current
+    """Create async computation from continuations.
+
+    Creates an asynchronous computation that captures the current
     success, exception and cancellation continuations. The callback must
     eventually call exactly one of the given continuations.
 
@@ -54,11 +58,11 @@ def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
     return future
 
 
-def start(
-    computation: Awaitable[Any], token: Optional[CancellationToken] = None
-) -> None:
-    """Starts the asynchronous computation in the event loop. Do not
-    await its result.
+def start(computation: Awaitable[Any], token: CancellationToken | None = None) -> None:
+    """Start computation.
+
+    Starts the asynchronous computation in the event loop. Do not await
+    its result.
 
     If no cancellation token is provided then the default cancellation
     token is used.
@@ -78,10 +82,13 @@ def start(
 
 
 def start_immediate(
-    computation: Awaitable[Any], token: Optional[CancellationToken] = None
+    computation: Awaitable[Any], token: CancellationToken | None = None
 ) -> None:
-    """Runs an asynchronous computation, starting immediately on the
-    current operating system thread."""
+    """Start computation immediately.
+
+    Runs an asynchronous computation, starting immediately on the
+    current operating system thread.
+    """
 
     async def runner() -> Any:
         return await computation
@@ -111,23 +118,29 @@ async def singleton(value: _TSource) -> _TSource:
 
 
 async def sleep(msecs: int) -> None:
-    """Creates an asynchronous computation that will sleep for the given
+    """Sleep.
+
+    Creates an asynchronous computation that will sleep for the given
     time. This is scheduled using a System.Threading.Timer object. The
     operation will not block operating system threads for the duration
-    of the wait."""
+    of the wait.
+    """
     await asyncio.sleep(msecs / 1000.0)
 
 
 async def empty() -> None:
-    """Async no-op"""
+    """Async no-op."""
 
 
 def from_result(result: _TSource) -> Awaitable[_TSource]:
-    """Creates a async operation that's completed successfully with the
-    specified result."""
+    """Awaitable from result.
+
+    Creates a async operation that's completed successfully with the
+    specified result.
+    """
 
     async def from_result(result: _TSource) -> _TSource:
-        """Async return value"""
+        """Async return value."""
         return result
 
     return from_result(result)

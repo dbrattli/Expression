@@ -1,5 +1,7 @@
-"""The `Try` type  is a simpler `Result` type that pins the error type
-to Exception.
+"""Try result class.
+
+The `Try` type  is a simpler `Result` type that pins the error type to
+Exception.
 
 Everything else is the same as `Result`, just simpler to use.
 """
@@ -7,6 +9,7 @@ Everything else is the same as `Result`, just simpler to use.
 from typing import TypeVar
 
 from .result import Error, Ok, Result
+
 
 _TSource = TypeVar("_TSource")
 

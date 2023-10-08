@@ -1,6 +1,4 @@
-"""
-Core abstractions such as pipes, options and results.
-"""
+"""Core abstractions such as pipes, options and results."""
 
 from . import aiotools, option, result
 from .builder import Builder
@@ -34,6 +32,7 @@ from .typing import (
     upcast,
 )
 from .union import SingleCaseUnion, Tag, TaggedUnion, tag
+
 
 __all__ = [
     "aiotools",

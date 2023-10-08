@@ -7,6 +7,7 @@ number of choices. Usually you would most likely want to use the
 from abc import ABC
 from typing import Any, Generic, TypeVar
 
+
 _TSource = TypeVar("_TSource")
 _A = TypeVar("_A")
 _B = TypeVar("_B")

@@ -1,7 +1,9 @@
+from collections.abc import Callable
 from functools import reduce
-from typing import Any, Callable, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 from expression.core.result import Ok, Result
+
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")
@@ -78,7 +80,7 @@ def pipeline(
 def pipeline(
     *fns: Callable[[Any], Result[Any, Any]]
 ) -> Callable[[Any], Result[Any, Any]]:
-    """pipeline multiple result returning functions left to right.
+    """Pipeline multiple result returning functions left to right.
 
     A pipeline kleisli (>=>) composes zero or more functions into a
     functional composition. The functions are composed left to right. A

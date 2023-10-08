@@ -1,7 +1,9 @@
-from typing import Any, Callable, Iterable, TypeVar
+from collections.abc import Callable, Iterable
+from typing import Any, TypeVar
 
 from expression.collections import seq
 from expression.core import Builder
+
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")

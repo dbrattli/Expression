@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import functools
-from typing import Awaitable, Callable, Generic, TypeVar, Union, cast
+from collections.abc import Awaitable, Callable
+from typing import Generic, TypeVar, cast
 
 from typing_extensions import ParamSpec
+
 
 _TResult = TypeVar("_TResult")
 _P = ParamSpec("_P")
@@ -21,7 +23,7 @@ class TailCall(Generic[_P]):
         self.kw = kw
 
 
-TailCallResult = Union[_TResult, TailCall[_P]]
+TailCallResult = _TResult | TailCall[_P]
 
 
 def tailrec(fn: Callable[_P, TailCallResult[_TResult, _P]]) -> Callable[_P, _TResult]:

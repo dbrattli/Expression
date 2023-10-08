@@ -1,8 +1,10 @@
-from typing import Any, Callable, Generator, Optional, TypeVar, Union
+from collections.abc import Callable, Generator
+from typing import Any, TypeVar
 
 from typing_extensions import ParamSpec
 
 from expression.core import Builder, Ok, Result, pipe, result
+
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -36,10 +38,8 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         self,  # Ignored self parameter
         fn: Callable[
             _P,
-            Union[
-                Generator[Optional[_TSource], _TSource, Optional[_TSource]],
-                Generator[Optional[_TSource], None, Optional[_TSource]],
-            ],
+            Generator[_TSource | None, _TSource, _TSource | None]
+            | Generator[_TSource | None, None, _TSource | None],
         ],
     ) -> Callable[_P, Result[_TSource, _TError]]:
         return super().__call__(fn)

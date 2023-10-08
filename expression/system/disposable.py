@@ -2,16 +2,19 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from asyncio import iscoroutinefunction
+from collections.abc import Awaitable, Callable
 from threading import RLock
 from types import TracebackType
-from typing import Awaitable, Callable, Optional, Type
 
 from .error import ObjectDisposedException
 
 
 class Disposable(ABC):
-    """A disposable class with a context manager. Must implement the
-    dispose method. Will dispose on exit."""
+    """The disposable class.
+
+    A disposable class with a context manager. Must implement the
+    dispose method. Will dispose on exit.
+    """
 
     @abstractmethod
     def dispose(self) -> None:
@@ -23,19 +26,20 @@ class Disposable(ABC):
 
     def __exit__(
         self,
-        exctype: Optional[Type[BaseException]],
-        excinst: Optional[BaseException],
-        exctb: Optional[TracebackType],
+        exctype: type[BaseException] | None,
+        excinst: BaseException | None,
+        exctb: TracebackType | None,
     ):
         """Exit context management."""
-
         self.dispose()
         return False
 
     @staticmethod
     def create(action: Callable[[], None]):
-        """Create disposable from action. Will call action when
-        disposed."""
+        """Create disposable.
+
+        Create disposable from action. Will call action when disposed.
+        """
         return AnonymousDisposable(action)
 
 
@@ -47,7 +51,6 @@ class AnonymousDisposable(Disposable):
 
     def dispose(self) -> None:
         """Performs the task of cleaning up resources."""
-
         dispose = False
         with self._lock:
             if not self._is_disposed:
@@ -64,8 +67,11 @@ class AnonymousDisposable(Disposable):
 
 
 class AsyncDisposable(ABC):
-    """A disposable class with a context manager. Must implement the
-    `dispose_async` method. Will dispose on exit."""
+    """The async disposable.
+
+    A disposable class with a context manager. Must implement the
+    `dispose_async` method. Will dispose on exit.
+    """
 
     @abstractmethod
     async def dispose_async(self) -> None:
@@ -77,9 +83,9 @@ class AsyncDisposable(ABC):
 
     async def __aexit__(
         self,
-        exctype: Optional[Type[BaseException]],
-        excinst: Optional[BaseException],
-        exctb: Optional[TracebackType],
+        exctype: type[BaseException] | None,
+        excinst: BaseException | None,
+        exctb: TracebackType | None,
     ) -> None:
         """Exit context management."""
         await self.dispose_async()

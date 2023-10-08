@@ -7,31 +7,19 @@ the only argument.
 """
 from __future__ import annotations
 
+import builtins
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
-
-from typing_extensions import TypeAlias, TypeGuard
+from collections.abc import Callable, Generator, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, TypeGuard, TypeVar, cast
 
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
 from .typing import GenericValidator, ModelField, SupportsValidation
 
+
 if TYPE_CHECKING:
-    from ..collections.seq import Seq
+    from expression.collections.seq import Seq
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -44,7 +32,7 @@ def _validate(value: Any, field: ModelField) -> Option[Any]:
     if isinstance(value, BaseOption):
         return cast(Option[Any], value)
 
-    if isinstance(value, Dict) and not value:
+    if isinstance(value, builtins.dict) and not value:
         return Nothing
 
     if field.sub_fields:
@@ -64,7 +52,7 @@ class BaseOption(
 ):
     """Option abstract base class."""
 
-    __validators__: List[GenericValidator[Option[_TSource]]] = [_validate]
+    __validators__: ClassVar = [_validate]
 
     @abstractmethod
     def default_value(self, value: _TSource) -> _TSource:
@@ -118,18 +106,24 @@ class BaseOption(
 
     @abstractmethod
     def or_else_with(self, if_none: Callable[[], Option[_TSource]]) -> Option[_TSource]:
-        """Returns option if it is Some,
-        otherwise evaluates the given function and returns the result."""
+        """Or-else-with.
+
+        Returns option if it is Some,
+        otherwise evaluates the given function and returns the result.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def filter(self, predicate: Callable[[_TSource], bool]) -> Option[_TSource]:
-        """Returns the input if the predicate evaluates to true,
-        otherwise returns `Nothing`"""
+        """Filter option.
+
+        Returns the input if the predicate evaluates to true, otherwise
+        returns `Nothing`.
+        """
         raise NotImplementedError
 
     @abstractmethod
-    def to_list(self) -> List[_TSource]:
+    def to_list(self) -> list[_TSource]:
         raise NotImplementedError
 
     @abstractmethod
@@ -152,12 +146,12 @@ class BaseOption(
         return of_optional(value)
 
     @classmethod
-    def of_optional(cls, value: Optional[_TSource]) -> Option[_TSource]:
+    def of_optional(cls, value: _TSource | None) -> Option[_TSource]:
         """Convert optional value to an option."""
         return of_optional(value)
 
     @abstractmethod
-    def dict(self) -> _TSource | Dict[str, Any]:
+    def dict(self) -> _TSource | builtins.dict[str, Any]:
         """Returns a json string representation of the option."""
         raise NotImplementedError
 
@@ -203,7 +197,9 @@ class Some(BaseOption[_TSource]):
         self._value = value
 
     def default_value(self, value: _TSource) -> _TSource:
-        """Gets the value of the option if the option is Some, otherwise
+        """Get value or default value.
+
+        Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
         """
         return self._value
@@ -259,11 +255,14 @@ class Some(BaseOption[_TSource]):
         return self
 
     def filter(self, predicate: Callable[[_TSource], bool]) -> Option[_TSource]:
-        """Returns the input if the predicate evaluates to true,
-        otherwise returns `Nothing`"""
+        """Filter option.
+
+        Returns the input if the predicate evaluates to true,
+        otherwise returns `Nothing`.
+        """
         return self if predicate(self._value) else Nothing
 
-    def to_list(self) -> List[_TSource]:
+    def to_list(self) -> list[_TSource]:
         return [self._value]
 
     def to_seq(self) -> Seq[_TSource]:
@@ -319,7 +318,9 @@ class Nothing_(BaseOption[_TSource], EffectError):
     """
 
     def default_value(self, value: _TSource) -> _TSource:
-        """Gets the value of the option if the option is Some, otherwise
+        """Get value or default value.
+
+        Gets the value of the option if the option is Some, otherwise
         returns the specified default value.
         """
         return value
@@ -375,7 +376,7 @@ class Nothing_(BaseOption[_TSource], EffectError):
     def filter(self, predicate: Callable[[_TSource], bool]) -> Option[_TSource]:
         return Nothing
 
-    def to_list(self) -> List[_TSource]:
+    def to_list(self) -> list[_TSource]:
         return []
 
     def to_seq(self) -> Seq[_TSource]:
@@ -384,7 +385,7 @@ class Nothing_(BaseOption[_TSource], EffectError):
 
         return Seq()
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> builtins.dict[str, Any]:
         return {}  # Pydantic cannot handle None or other types than Optional
 
     @property
@@ -393,7 +394,6 @@ class Nothing_(BaseOption[_TSource], EffectError):
 
         A `ValueError` is raised if the option is `Nothing`.
         """
-
         raise ValueError("There is no value.")
 
     def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
@@ -402,7 +402,6 @@ class Nothing_(BaseOption[_TSource], EffectError):
         We basically want to return nothing, but we have to return
         something to signal fail.
         """
-
         raise Nothing
         while False:
             yield
@@ -444,6 +443,7 @@ def bind(
     `Some`. If the value is `Nothing` then `Nothing` is returned.
 
     Args:
+        option: Source option to bind.
         mapper: A function that takes the value of type _TSource from
             an option and transforms it into an option containing a
             value of type TResult.
@@ -452,16 +452,16 @@ def bind(
         A partially applied function that takes an option and returns an
         option of the output type of the mapper.
     """
-
     return option.bind(mapper)
 
 
 @curry_flip(1)
 def default_value(option: Option[_TSource], value: _TSource) -> _TSource:
-    """Gets the value of the option if the option is Some, otherwise
+    """Get value or default value.
+
+    Gets the value of the option if the option is Some, otherwise
     returns the specified default value.
     """
-
     return option.default_value(value)
 
 
@@ -510,7 +510,7 @@ def or_else(
     return option.or_else(if_none)
 
 
-def to_list(option: Option[_TSource]) -> List[_TSource]:
+def to_list(option: Option[_TSource]) -> list[_TSource]:
     return option.to_list()
 
 
@@ -518,7 +518,7 @@ def to_seq(option: Option[_TSource]) -> Seq[_TSource]:
     return option.to_seq()
 
 
-def of_optional(value: Optional[_TSource]) -> Option[_TSource]:
+def of_optional(value: _TSource | None) -> Option[_TSource]:
     """Convert an optional value to an option.
 
     Convert a value that could be `None` into an `Option` value. Same as
@@ -550,7 +550,7 @@ def of_obj(value: Any) -> Option[Any]:
     return of_optional(value)
 
 
-def dict(value: Option[_TSource]) -> _TSource | Dict[Any, Any] | None:
+def dict(value: Option[_TSource]) -> _TSource | builtins.dict[Any, Any] | None:
     return value.dict()
 
 
@@ -564,7 +564,7 @@ def default_arg(value: Option[_TSource], default_value: _TSource) -> _TSource:
     return value.default_value(default_value)
 
 
-Option: TypeAlias = Union[Some[_TSource], Nothing_[_TSource]]
+Option: TypeAlias = Some[_TSource] | Nothing_[_TSource]
 
 __all__ = [
     "Option",

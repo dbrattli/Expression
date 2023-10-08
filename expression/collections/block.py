@@ -22,19 +22,8 @@ from __future__ import annotations
 import builtins
 import functools
 import itertools
-from collections.abc import Collection
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    List,
-    Literal,
-    Tuple,
-    TypeVar,
-    cast,
-    overload,
-)
+from collections.abc import Callable, Collection, Iterable, Iterator
+from typing import Any, ClassVar, Literal, TypeVar, cast, overload
 
 from expression.core import (
     Nothing,
@@ -49,6 +38,7 @@ from expression.core import (
 from expression.core.typing import GenericValidator, ModelField, SupportsValidation
 
 from . import seq
+
 
 _TSource = TypeVar("_TSource")
 _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
@@ -66,15 +56,15 @@ def _validate(value: Any, field: ModelField) -> Block[Any]:
     if isinstance(value, Block):
         return cast(Block[Any], value)
 
-    if not isinstance(value, List):
+    if not isinstance(value, list):
         raise ValueError("not a list")
 
-    value_ = cast(List[Any], value)
+    value_ = cast(list[Any], value)
 
     if field.sub_fields:
         sub_field = field.sub_fields[0]
 
-        value__: List[Any] = []
+        value__: list[Any] = []
         for item in value_:
             val, error = sub_field.validate(item, {}, loc="Block")
             if error:
@@ -109,16 +99,15 @@ class Block(
 
     __match_args__ = ("_value",)
 
-    __validators__: List[GenericValidator[Block[_TSource]]] = [_validate]
+    __validators__: ClassVar = [_validate]
 
     def __init__(self, value: Iterable[_TSource] = ()) -> None:
         # Use composition instead of inheritance since generic tuples
         # are not suppored by mypy.
-        self._value: Tuple[_TSource, ...] = tuple(value) if value else tuple()
+        self._value: tuple[_TSource, ...] = tuple(value) if value else tuple()
 
     def append(self, other: Block[_TSource]) -> Block[_TSource]:
         """Append other block to end of the block."""
-
         return Block(self._value + other._value)
 
     def choose(
@@ -152,13 +141,11 @@ class Block(
 
     def cons(self, element: _TSource) -> Block[_TSource]:
         """Add element to front of list."""
-
-        return Block((element,) + self._value)  # NOTE: Faster than (element, *self)
+        return Block((element, *self._value))  # NOTE: Faster than (element, *self)
 
     @staticmethod
     def empty() -> Block[Any]:
         """Returns empty list."""
-
         return Block()
 
     def filter(self, predicate: Callable[[_TSource], bool]) -> Block[_TSource]:
@@ -179,7 +166,9 @@ class Block(
     def fold(
         self, folder: Callable[[_TState, _TSource], _TState], state: _TState
     ) -> _TState:
-        """Applies a function to each element of the collection,
+        """Fold block.
+
+        Applies a function to each element of the collection,
         threading an accumulator argument through the computation. Take
         the second argument, and apply the function to it and the first
         element of the list. Then feed this result into the function
@@ -200,7 +189,9 @@ class Block(
         return functools.reduce(folder, self, state)
 
     def forall(self, predicate: Callable[[_TSource], bool]) -> bool:
-        """Tests if all elements of the collection satisfy the given
+        """For all elements in block.
+
+        Tests if all elements of the collection satisfy the given
         predicate.
 
         Args:
@@ -223,12 +214,13 @@ class Block(
         Raises:
             ValueError: Thrown when the list is empty.
         """
-
         head, *_ = self
         return head
 
-    def indexed(self, start: int = 0) -> Block[Tuple[int, _TSource]]:
-        """Returns a new list whose elements are the corresponding
+    def indexed(self, start: int = 0) -> Block[tuple[int, _TSource]]:
+        """Index elements in block.
+
+        Returns a new list whose elements are the corresponding
         elements of the input list paired with the index (from `start`)
         of each element.
 
@@ -253,7 +245,6 @@ class Block(
 
     def is_empty(self) -> bool:
         """Return `True` if list is empty."""
-
         return not bool(self)
 
     def map(self, mapping: Callable[[_TSource], _TResult]) -> Block[_TResult]:
@@ -274,20 +265,20 @@ class Block(
 
     @overload
     def starmap(
-        self: Block[Tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]
+        self: Block[tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]
     ) -> Block[_TResult]:
         ...
 
     @overload
     def starmap(
-        self: Block[Tuple[_T1, _T2, _T3]],
+        self: Block[tuple[_T1, _T2, _T3]],
         mapping: Callable[[_T1, _T2, _T3], _TResult],
     ) -> Block[_TResult]:
         ...
 
     @overload
     def starmap(
-        self: Block[Tuple[_T1, _T2, _T3, _T4]],
+        self: Block[tuple[_T1, _T2, _T3, _T4]],
         mapping: Callable[[_T1, _T2, _T3, _T4], _TResult],
     ) -> Block[_TResult]:
         ...
@@ -348,7 +339,7 @@ class Block(
 
     def partition(
         self, predicate: Callable[[_TSource], bool]
-    ) -> Tuple[Block[_TSource], Block[_TSource]]:
+    ) -> tuple[Block[_TSource], Block[_TSource]]:
         """Partition block.
 
         Splits the collection into two collections, containing the
@@ -364,8 +355,8 @@ class Block(
             evaluated to true and a list containing the elements for
             which the predicate evaluated to false.
         """
-        list1: List[_TSource] = []
-        list2: List[_TSource] = []
+        list1: list[_TSource] = []
+        list2: list[_TSource] = []
 
         for item in self._value:
             if predicate(item):
@@ -397,7 +388,9 @@ class Block(
         self,
         reduction: Callable[[_TSource, _TSource], _TSource],
     ) -> _TSource:
-        """Apply a function to each element of the collection, threading an
+        """Reduce block.
+
+        Apply a function to each element of the collection, threading an
         accumulator argument through the computation. Apply the function to
         the first two elements of the list. Then feed this result into the
         function along with the third element and so on. Return the final
@@ -433,7 +426,6 @@ class Block(
 
     def tail(self) -> Block[_TSource]:
         """Return tail of List."""
-
         _, *tail = self._value
         return Block(tail)
 
@@ -480,7 +472,9 @@ class Block(
         return Block(self._value[:count])
 
     def take_last(self, count: int) -> Block[_TSource]:
-        """Returns a specified number of contiguous elements from the
+        """Take last elements from block.
+
+        Returns a specified number of contiguous elements from the
         end of the list.
 
         Args:
@@ -491,7 +485,7 @@ class Block(
         """
         return Block(self._value[-count:])
 
-    def dict(self) -> List[_TSource]:
+    def dict(self) -> list[_TSource]:
         """Returns a json serializable representation of the list."""
 
         def to_obj(value: Any) -> Any:
@@ -503,7 +497,9 @@ class Block(
         return [to_obj(value) for value in self._value]
 
     def try_head(self) -> Option[_TSource]:
-        """Returns the first element of the list, or None if the list is
+        """Try to get head of block.
+
+        Returns the first element of the list, or None if the list is
         empty.
         """
         if self._value:
@@ -514,9 +510,11 @@ class Block(
 
     @staticmethod
     def unfold(
-        generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]], state: _TState
+        generator: Callable[[_TState], Option[tuple[_TSource, _TState]]], state: _TState
     ) -> Block[_TSource]:
-        """Returns a list that contains the elements generated by the
+        """Unfold block.
+
+        Returns a list that contains the elements generated by the
         given computation. The given initial state argument is passed to
         the element generator.
 
@@ -529,11 +527,12 @@ class Block(
         Returns:
             The result list.
         """
-
         return pipe(state, unfold(generator))
 
-    def zip(self, other: Block[_TResult]) -> Block[Tuple[_TSource, _TResult]]:
-        """Combines the two lists into a list of pairs. The two lists
+    def zip(self, other: Block[_TResult]) -> Block[tuple[_TSource, _TResult]]:
+        """Zip block.
+
+        Combines the two lists into a list of pairs. The two lists
         must have equal lengths. .
 
         Args:
@@ -602,7 +601,9 @@ def choose(
 def collect(
     source: Block[_TSource], mapping: Callable[[_TSource], Block[_TResult]]
 ) -> Block[_TResult]:
-    """For each element of the list, applies the given function.
+    """Collect block.
+
+    For each element of the list, applies the given function.
     Concatenates all the results and return the combined list.
 
     Args:
@@ -614,12 +615,11 @@ def collect(
         A partially applied collect function that takes the source
         list and returns the concatenation of the transformed sublists.
     """
-
     return source.collect(mapping)
 
 
 def concat(sources: Iterable[Block[_TSource]]) -> Block[_TSource]:
-    """Concatenate sequence of Block's"""
+    """Concatenate sequence of Block's."""
 
     def reducer(t: Block[_TSource], s: Block[_TSource]) -> Block[_TSource]:
         return t.append(s)
@@ -640,16 +640,18 @@ empty: Block[Any] = nil
 def filter(
     source: Block[_TSource], predicate: Callable[[_TSource], bool]
 ) -> Block[_TSource]:
-    """Returns a new collection containing only the elements of the
-    collection for which the given predicate returns `True`
+    """Filter elements in block.
+
+    Returns a new collection containing only the elements of the
+    collection for which the given predicate returns `True`.
 
     Args:
+        source: The input block to filter.
         predicate: The function to test the input elements.
 
     Returns:
         Partially applied filter function.
     """
-
     return source.filter(predicate)
 
 
@@ -659,7 +661,9 @@ def fold(
     folder: Callable[[_TState, _TSource], _TState],
     state: _TState,
 ) -> _TState:
-    """Applies a function to each element of the collection, threading
+    """Fold elements in block.
+
+    Applies a function to each element of the collection, threading
     an accumulator argument through the computation. Take the second
     argument, and apply the function to it and the first element of the
     list. Then feed this result into the function along with the second
@@ -668,6 +672,7 @@ def fold(
     iN.
 
     Args:
+        source: The input block to fold.
         folder: The function to update the state given the input
             elements.
 
@@ -677,22 +682,23 @@ def fold(
         Partially applied fold function that takes the source list
         and returns the final state value.
     """
-
     return source.fold(folder, state)
 
 
 @curry_flip(1)
 def forall(source: Block[_TSource], predicate: Callable[[_TSource], bool]) -> bool:
-    """Tests if all elements of the collection satisfy the given
+    """For all elements in block.
+
+    Tests if all elements of the collection satisfy the given
     predicate.
 
     Args:
+        source: The input block to test.
         predicate: The function to test the input elements.
 
     Returns:
         True if all of the elements satisfy the predicate.
     """
-
     return source.forall(predicate)
 
 
@@ -711,8 +717,10 @@ def head(source: Block[_TSource]) -> _TSource:
     return source.head()
 
 
-def indexed(source: Block[_TSource]) -> Block[Tuple[int, _TSource]]:
-    """Returns a new list whose elements are the corresponding
+def indexed(source: Block[_TSource]) -> Block[tuple[int, _TSource]]:
+    """Index elements in block.
+
+    Returns a new list whose elements are the corresponding
     elements of the input list paired with the index (from 0)
     of each element.
 
@@ -727,12 +735,12 @@ def item(source: Block[_TSource], index: int) -> _TSource:
     """Indexes into the list. The first element has index 0.
 
     Args:
+        source: The input block list.
         index: The index to retrieve.
 
     Returns:
         The value at the given index.
     """
-
     return source.item(index)
 
 
@@ -751,12 +759,12 @@ def map(
     the given function to each of the elements of the collection.
 
     Args:
+        source: The input list (curried flipped).
         mapper: The function to transform elements from the input list.
 
     Returns:
         The list of transformed elements.
     """
-
     return source.map(mapper)
 
 
@@ -765,7 +773,9 @@ def reduce(
     source: Block[_TSource],
     reduction: Callable[[_TSource, _TSource], _TSource],
 ) -> _TSource:
-    """Apply a function to each element of the collection, threading an
+    """Reduce elements in block.
+
+    Apply a function to each element of the collection, threading an
     accumulator argument through the computation. Apply the function to
     the first two elements of the list. Then feed this result into the
     function along with the third element and so on. Return the final
@@ -781,7 +791,6 @@ def reduce(
         Partially applied reduce function that takes the source block
         and returns the final state value.
     """
-
     if source.is_empty():
         raise ValueError("Collection was empty")
 
@@ -791,21 +800,21 @@ def reduce(
 @overload
 def starmap(
     mapper: Callable[[_T1, _T2], _TResult]
-) -> Callable[[Block[Tuple[_T1, _T2]]], Block[_TResult]]:
+) -> Callable[[Block[tuple[_T1, _T2]]], Block[_TResult]]:
     ...
 
 
 @overload
 def starmap(
     mapper: Callable[[_T1, _T2, _T3], _TResult]
-) -> Callable[[Block[Tuple[_T1, _T2, _T3]]], Block[_TResult]]:
+) -> Callable[[Block[tuple[_T1, _T2, _T3]]], Block[_TResult]]:
     ...
 
 
 @overload
 def starmap(
     mapper: Callable[[_T1, _T2, _T3, _T4], _TResult]
-) -> Callable[[Block[Tuple[_T1, _T2, _T3, _T4]]], Block[_TResult]]:
+) -> Callable[[Block[tuple[_T1, _T2, _T3, _T4]]], Block[_TResult]]:
     ...
 
 
@@ -817,13 +826,13 @@ def starmap(mapper: Callable[..., Any]) -> Callable[[Block[Any]], Block[Any]]:
     unpacked arguments to each of the elements of the collection.
 
     Args:
-        mapping: A function to transform items from the input sequence.
+        mapper: A function to transform items from the input sequence.
 
     Returns:
         Partially applied map function.
     """
 
-    def mapper_(args: Tuple[Any, ...]) -> Any:
+    def mapper_(args: tuple[Any, ...]) -> Any:
         return mapper(*args)
 
     return map(mapper_)
@@ -831,13 +840,13 @@ def starmap(mapper: Callable[..., Any]) -> Callable[[Block[Any]], Block[Any]]:
 
 def map2(
     mapper: Callable[[_T1, _T2], _TResult]
-) -> Callable[[Block[Tuple[_T1, _T2]]], Block[_TResult]]:
+) -> Callable[[Block[tuple[_T1, _T2]]], Block[_TResult]]:
     return starmap(mapper)
 
 
 def map3(
     mapper: Callable[[_T1, _T2, _T3], _TResult]
-) -> Callable[[Block[Tuple[_T1, _T2, _T3]]], Block[_TResult]]:
+) -> Callable[[Block[tuple[_T1, _T2, _T3]]], Block[_TResult]]:
     return starmap(mapper)
 
 
@@ -853,13 +862,13 @@ def mapi(
     the index (from 0) of element being transformed.
 
     Args:
-        mapping: The function to transform elements and their
+        source: The source block to map
+        mapper: The function to transform elements and their
             indices.
 
     Returns:
         The list of transformed elements.
     """
-
     return source.mapi(mapper)
 
 
@@ -882,7 +891,7 @@ def of_option(option: Option[_TSource]) -> Block[_TSource]:
 @curry_flip(1)
 def partition(
     source: Block[_TSource], predicate: Callable[[_TSource], bool]
-) -> Tuple[Block[_TSource], Block[_TSource]]:
+) -> tuple[Block[_TSource], Block[_TSource]]:
     """Partition block.
 
     Splits the collection into two collections, containing the
@@ -930,12 +939,12 @@ def skip(source: Block[_TSource], count: int) -> Block[_TSource]:
     """Returns the list after removing the first N elements.
 
     Args:
+        source: Source block to skip elements from.
         count: The number of elements to skip.
 
     Returns:
         The list after removing the first N elements.
     """
-
     return source.skip(count)
 
 
@@ -944,12 +953,12 @@ def skip_last(source: Block[_TSource], count: int) -> Block[_TSource]:
     """Returns the list after removing the last N elements.
 
     Args:
+        source: The source block to skip from.
         count: The number of elements to skip.
 
     Returns:
         The list after removing the last N elements.
     """
-
     return source.skip_last(count)
 
 
@@ -958,9 +967,10 @@ def sort(
     source: Block[_TSourceSortable],
     reverse: bool = False,
 ) -> Block[_TSourceSortable]:
-    """Returns a new sorted collection
+    """Returns a new sorted collection.
 
     Args:
+        source: The source block to sort.
         reverse: Sort in reversed order.
 
     Returns:
@@ -976,13 +986,13 @@ def sort_with(
     """Returns a new collection sorted using "func" key function.
 
     Args:
+        source: The source block to sort.
         func: The function to extract a comparison key from each element in list.
         reverse: Sort in reversed order.
 
     Returns:
         Partially applied sort function.
     """
-
     return source.sort_with(func, reverse)
 
 
@@ -1007,6 +1017,7 @@ def take(source: Block[_TSource], count: int) -> Block[_TSource]:
     """Returns the first N elements of the list.
 
     Args:
+        source: The input blcok to take elements from.
         count: The number of items to take.
 
     Returns:
@@ -1017,20 +1028,22 @@ def take(source: Block[_TSource], count: int) -> Block[_TSource]:
 
 @curry_flip(1)
 def take_last(source: Block[_TSource], count: int) -> Block[_TSource]:
-    """Returns a specified number of contiguous elements from the end of
+    """Take last elements from block.
+
+    Returns a specified number of contiguous elements from the end of
     the list.
 
     Args:
+        source: The input block to take elements from.
         count: The number of items to take.
 
     Returns:
         The result list.
     """
-
     return source.take_last(count)
 
 
-def dict(source: Block[_TSource]) -> List[_TSource]:
+def dict(source: Block[_TSource]) -> list[_TSource]:
     return source.dict()
 
 
@@ -1050,9 +1063,11 @@ def try_head(source: Block[_TSource]) -> Option[_TSource]:
 
 @curry_flip(1)
 def unfold(
-    state: _TState, generator: Callable[[_TState], Option[Tuple[_TSource, _TState]]]
+    state: _TState, generator: Callable[[_TState], Option[tuple[_TSource, _TState]]]
 ) -> Block[_TSource]:
-    """Returns a list that contains the elements generated by the
+    """Unfold block.
+
+    Returns a list that contains the elements generated by the
     given computation. The given initial state argument is passed to
     the element generator.
 
@@ -1065,7 +1080,6 @@ def unfold(
     Returns:
         The result list.
     """
-
     xs = pipe(state, seq.unfold(generator))
     return Block(xs)
 
@@ -1074,11 +1088,14 @@ def unfold(
 def zip(
     source: Block[_TSource],
     other: Block[_TResult],
-) -> Block[Tuple[_TSource, _TResult]]:
-    """Combines the two lists into a list of pairs. The two lists
+) -> Block[tuple[_TSource, _TResult]]:
+    """Zip block with other.
+
+    Combines the two lists into a list of pairs. The two lists
     must have equal lengths.
 
     Args:
+        source: The input block to zip with other.
         other: The second input list.
 
     Returns:
@@ -1086,7 +1103,6 @@ def zip(
         returns s single list containing pairs of matching elements from
         the input lists.
     """
-
     return source.zip(other)
 
 
