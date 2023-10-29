@@ -15,12 +15,12 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, TypeGuard, TypeVar, 
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
-from .result import Error, Ok, Result
 from .typing import GenericValidator, ModelField, SupportsValidation
 
 
 if TYPE_CHECKING:
     from expression.collections.seq import Seq
+    from expression.core.result import Result
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -158,7 +158,7 @@ class BaseOption(
         return of_result(result)
 
     @abstractmethod
-    def to_optional(self) -> Optional[_TSource]:
+    def to_optional(self) -> _TSource | None:
         """Convert option to an optional."""
         raise NotImplementedError
 
@@ -293,16 +293,20 @@ class Some(BaseOption[_TSource]):
 
         return Seq.of(self._value)
 
-    def to_optional(self) -> Optional[_TSource]:
+    def to_optional(self) -> _TSource | None:
         """Convert option to an optional."""
         return self._value
 
     def to_result(self, error: _TError) -> Result[_TSource, _TError]:
         """Convert option to a result."""
+        from expression.core.result import Ok
+
         return Ok(self._value)
 
     def to_result_with(self, error: Callable[[], _TError]) -> Result[_TSource, _TError]:
         """Convert option to a result."""
+        from expression.core.result import Ok
+
         return Ok(self._value)
 
     def dict(self) -> _TSource:
@@ -419,16 +423,20 @@ class Nothing_(BaseOption[_TSource], EffectError):
 
         return Seq()
 
-    def to_optional(self) -> Optional[_TSource]:
+    def to_optional(self) -> _TSource | None:
         """Convert option to an optional."""
         return None
 
     def to_result(self, error: _TError) -> Result[_TSource, _TError]:
         """Convert option to a result."""
+        from expression.core.result import Error
+
         return Error(error)
 
     def to_result_with(self, error: Callable[[], _TError]) -> Result[_TSource, _TError]:
         """Convert option to a result."""
+        from expression.core.result import Error
+
         return Error(error())
 
     def dict(self) -> builtins.dict[str, Any]:
@@ -564,7 +572,7 @@ def to_seq(option: Option[_TSource]) -> Seq[_TSource]:
     return option.to_seq()
 
 
-def to_optional(value: Option[_TSource]) -> Optional[_TSource]:
+def to_optional(value: Option[_TSource]) -> _TSource | None:
     """Convert an option value to an optional.
 
     Args:
@@ -606,6 +614,8 @@ def of_obj(value: Any) -> Option[Any]:
 
 
 def of_result(result: Result[_TSource, _TError]) -> Option[_TSource]:
+    from expression.core.result import Ok
+
     match result:
         case Ok(value):
             return Some(value)

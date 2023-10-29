@@ -14,6 +14,7 @@ import builtins
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterable, Iterator
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
     Generic,
@@ -24,7 +25,10 @@ from typing import (
     get_origin,
 )
 
-from . import option
+
+if TYPE_CHECKING:
+    from expression.core.option import Option
+
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
@@ -139,24 +143,24 @@ class BaseResult(
 
     @abstractmethod
     def swap(self) -> Result[_TError, _TResult]:
-        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok"""
+        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
         raise NotImplementedError
 
     @abstractmethod
-    def to_option(self) -> option.Option[_TSource]:
+    def to_option(self) -> Option[_TSource]:
         """Convert result to an option."""
         raise NotImplementedError
 
     @classmethod
     def of_option(
-        cls, value: option.Option[_TSource], error: _TError
+        cls, value: Option[_TSource], error: _TError
     ) -> Result[_TSource, _TError]:
         """Convert option to a result."""
         return of_option(value, error)
 
     @classmethod
     def of_option_with(
-        cls, value: option.Option[_TSource], error: Callable[[], _TError]
+        cls, value: Option[_TSource], error: Callable[[], _TError]
     ) -> Result[_TSource, _TError]:
         """Convert option to a result."""
         return of_option_with(value, error)
@@ -254,12 +258,14 @@ class Ok(BaseResult[_TSource, _TError]):
         return {"ok": value}
 
     def swap(self) -> Result[_TError, _TSource]:
-        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok"""
+        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
         return Error(self._value)
 
-    def to_option(self) -> option.Option[_TSource]:
+    def to_option(self) -> Option[_TSource]:
         """Convert result to an option."""
-        return option.Some(self._value)
+        from expression.core.option import Some
+
+        return Some(self._value)
 
     def __match__(self, pattern: Any) -> Iterable[_TSource]:
         if self is pattern or self == pattern:
@@ -376,12 +382,14 @@ class Error(
         return {"error": error}
 
     def swap(self) -> Result[_TError, _TSource]:
-        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok"""
+        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
         return Ok(self._error)
 
-    def to_option(self) -> option.Option[_TSource]:
+    def to_option(self) -> Option[_TSource]:
         """Convert result to an option."""
-        return option.Nothing
+        from expression.core.option import Nothing
+
+        return Nothing
 
     def __eq__(self, o: Any) -> bool:
         if isinstance(o, Error):
@@ -471,26 +479,26 @@ def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Error[_TSource, _TE
 
 
 def swap(result: Result[_TSource, _TError]) -> Result[_TError, _TSource]:
-    """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok"""
+    """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
     return result.swap()
 
 
-def to_option(result: Result[_TSource, _TError]) -> option.Option[_TSource]:
+def to_option(result: Result[_TSource, _TError]) -> Option[_TSource]:
+    from expression.core.option import Nothing, Some
+
     match result:
         case Ok(value):
-            return option.Some(value)
+            return Some(value)
         case _:
-            return option.Nothing
+            return Nothing
 
 
-def of_option(
-    value: option.Option[_TSource], error: _TError
-) -> Result[_TSource, _TError]:
+def of_option(value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
     return value.to_result(error)
 
 
 def of_option_with(
-    value: option.Option[_TSource], error: Callable[[], _TError]
+    value: Option[_TSource], error: Callable[[], _TError]
 ) -> Result[_TSource, _TError]:
     return value.to_result_with(error)
 
