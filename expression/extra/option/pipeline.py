@@ -26,9 +26,7 @@ def pipeline(__fn: Callable[[_A], Option[_B]]) -> Callable[[_A], Option[_B]]:
 
 
 @overload
-def pipeline(
-    __fn1: Callable[[_A], Option[_B]], __fn2: Callable[[_B], Option[_C]]
-) -> Callable[[_A], Option[_C]]:
+def pipeline(__fn1: Callable[[_A], Option[_B]], __fn2: Callable[[_B], Option[_C]]) -> Callable[[_A], Option[_C]]:
     ...
 
 
@@ -91,9 +89,7 @@ def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]
         The composed functions.
     """
 
-    def reducer(
-        acc: Callable[[Any], Option[Any]], fn: Callable[[Any], Option[Any]]
-    ) -> Callable[[Any], Option[Any]]:
+    def reducer(acc: Callable[[Any], Option[Any]], fn: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:
         def gn(x: Any) -> Option[Any]:
             return acc(x).bind(fn)
 

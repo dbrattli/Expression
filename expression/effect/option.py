@@ -12,9 +12,7 @@ _P = ParamSpec("_P")
 
 
 class OptionBuilder(Builder[_TSource, Option[Any]]):
-    def bind(
-        self, xs: Option[_TSource], fn: Callable[[_TSource], Option[_TResult]]
-    ) -> Option[_TResult]:
+    def bind(self, xs: Option[_TSource], fn: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
         return option.bind(fn)(xs)
 
     def return_(self, x: _TSource) -> Option[_TSource]:
@@ -33,8 +31,7 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         self,  # Ignored self parameter
         fn: Callable[
             _P,
-            Generator[_TSource | None, _TSource, _TSource | None]
-            | Generator[_TSource | None, None, _TSource | None],
+            Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
         ],
     ) -> Callable[_P, Option[_TSource]]:
         return super().__call__(fn)

@@ -79,9 +79,7 @@ class BaseOption(
         raise NotImplementedError
 
     @abstractmethod
-    def map2(
-        self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]
-    ) -> Option[_TResult]:
+    def map2(self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
         raise NotImplementedError
 
     @abstractmethod
@@ -245,9 +243,7 @@ class Some(BaseOption[_TSource]):
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Option[_TResult]:
         return Some(mapper(self._value))
 
-    def map2(
-        self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]
-    ) -> Option[_TResult]:
+    def map2(self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
         if isinstance(other, Some):
             return Some(mapper(self._value, other.value))
         return Nothing
@@ -382,9 +378,7 @@ class Nothing_(BaseOption[_TSource], EffectError):
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Option[_TResult]:
         return Nothing
 
-    def map2(
-        self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]
-    ) -> Option[_TResult]:
+    def map2(self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
         return Nothing
 
     def bind(self, mapper: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
@@ -488,9 +482,7 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 
 
 @curry_flip(1)
-def bind(
-    option: Option[_TSource], mapper: Callable[[_TSource], Option[_TResult]]
-) -> Option[_TResult]:
+def bind(option: Option[_TSource], mapper: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
     """Bind option.
 
     Applies and returns the result of the mapper if the value is
@@ -519,9 +511,7 @@ def default_value(option: Option[_TSource], value: _TSource) -> _TSource:
     return option.default_value(value)
 
 
-def default_with(
-    getter: Callable[[], _TSource]
-) -> Callable[[Option[_TSource]], _TSource]:
+def default_with(getter: Callable[[], _TSource]) -> Callable[[Option[_TSource]], _TSource]:
     """Get with default value lazily.
 
     Gets the value of the option if the option is Some, otherwise
@@ -543,16 +533,12 @@ def is_some(option: Option[_TSource]) -> TypeGuard[Some[_TSource]]:
 
 
 @curry_flip(1)
-def map(
-    option: Option[_TSource], mapper: Callable[[_TSource], _TResult]
-) -> Option[_TResult]:
+def map(option: Option[_TSource], mapper: Callable[[_TSource], _TResult]) -> Option[_TResult]:
     return option.map(mapper)
 
 
 @curry_flip(2)
-def map2(
-    opt1: Option[_T1], opt2: Option[_T2], mapper: Callable[[_T1, _T2], _TResult]
-) -> Option[_TResult]:
+def map2(opt1: Option[_T1], opt2: Option[_T2], mapper: Callable[[_T1, _T2], _TResult]) -> Option[_TResult]:
     return opt1.map2(mapper, opt2)
 
 
@@ -627,9 +613,7 @@ def to_result(value: Option[_TSource], error: _TError) -> Result[_TSource, _TErr
     return value.to_result(error)
 
 
-def to_result_with(
-    value: Option[_TSource], error: Callable[[], _TError]
-) -> Result[_TSource, _TError]:
+def to_result_with(value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
     return value.to_result_with(error)
 
 

@@ -24,9 +24,7 @@ def catch(
 
 
 @overload
-def catch(
-    f: Callable[..., _TSource], *, exception: type[_TError]
-) -> Callable[..., Result[_TSource, _TError]]:
+def catch(f: Callable[..., _TSource], *, exception: type[_TError]) -> Callable[..., Result[_TSource, _TError]]:
     ...
 
 
@@ -36,9 +34,7 @@ def catch(  # type: ignore
     [Callable[..., _TSource]],
     Callable[..., Result[_TSource, _TError]] | Result[_TSource, _TError],
 ]:
-    def decorator(
-        fn: Callable[..., _TSource]
-    ) -> Callable[..., Result[_TSource, _TError]]:
+    def decorator(fn: Callable[..., _TSource]) -> Callable[..., Result[_TSource, _TError]]:
         @wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Result[_TSource, _TError]:
             try:

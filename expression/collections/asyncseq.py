@@ -86,9 +86,7 @@ async def range(*args: int, **kw: int) -> AsyncIterable[int]:
         yield value
 
 
-def filter(
-    predicate: Callable[[TSource], bool]
-) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+def filter(predicate: Callable[[TSource], bool]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
     async def _filter(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
         async for value in source:
             if predicate(value):
@@ -97,9 +95,7 @@ def filter(
     return _filter
 
 
-def map(
-    mapper: Callable[[TSource], TResult]
-) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
+def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     async def _map(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
         async for value in source:
             yield mapper(value)

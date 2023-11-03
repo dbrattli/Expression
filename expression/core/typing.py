@@ -90,9 +90,7 @@ def downcast(type: type[_Derived], expr: Any) -> _Derived:
 
     Note: F# `:?>` or `downcast`.
     """
-    assert isinstance(
-        expr, type
-    ), f"The type of expression {expr} is not a supertype of {type}"
+    assert isinstance(expr, type), f"The type of expression {expr} is not a supertype of {type}"
     return expr
 
 
