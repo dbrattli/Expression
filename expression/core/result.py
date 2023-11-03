@@ -138,7 +138,7 @@ class BaseResult(
         raise NotImplementedError
 
     @abstractmethod
-    def swap(self) -> Result[_TError, _TResult]:
+    def swap(self) -> Result[_TError, _TSource]:
         """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
         raise NotImplementedError
 
