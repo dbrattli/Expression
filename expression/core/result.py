@@ -110,9 +110,7 @@ class BaseResult(
         raise NotImplementedError
 
     @abstractmethod
-    def map_error(
-        self, mapper: Callable[[_TError], _TResult]
-    ) -> Result[_TSource, _TResult]:
+    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
         """Map error.
 
         Return a result of the error value after applying the mapping
@@ -121,9 +119,7 @@ class BaseResult(
         raise NotImplementedError
 
     @abstractmethod
-    def bind(
-        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
-    ) -> Result[_TResult, _TError]:
+    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
         raise NotImplementedError
 
     @abstractmethod
@@ -152,16 +148,12 @@ class BaseResult(
         raise NotImplementedError
 
     @classmethod
-    def of_option(
-        cls, value: Option[_TSource], error: _TError
-    ) -> Result[_TSource, _TError]:
+    def of_option(cls, value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
         """Convert option to a result."""
         return of_option(value, error)
 
     @classmethod
-    def of_option_with(
-        cls, value: Option[_TSource], error: Callable[[], _TError]
-    ) -> Result[_TSource, _TError]:
+    def of_option_with(cls, value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
         """Convert option to a result."""
         return of_option_with(value, error)
 
@@ -224,14 +216,10 @@ class Ok(BaseResult[_TSource, _TError]):
     ) -> Result[_TResult, _TError]:
         return other.map(lambda value: mapper(self._value, value))
 
-    def bind(
-        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
-    ) -> Result[_TResult, _TError]:
+    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
         return mapper(self._value)
 
-    def map_error(
-        self, mapper: Callable[[_TError], _TResult]
-    ) -> Result[_TSource, _TResult]:
+    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
         """Map error.
 
         Return a result of the error value after applying the mapping
@@ -348,14 +336,10 @@ class Error(
     ) -> Result[_TResult, _TError]:
         return Error(self._error)
 
-    def bind(
-        self, mapper: Callable[[_TSource], Result[_TResult, _TError]]
-    ) -> Result[_TResult, _TError]:
+    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
         return Error(self._error)
 
-    def map_error(
-        self, mapper: Callable[[_TError], _TResult]
-    ) -> Result[_TSource, _TResult]:
+    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
         """Map error.
 
         Return a result of the error value after applying the mapping
@@ -425,9 +409,7 @@ def default_value(value: _TSource) -> Callable[[Result[_TSource, Any]], _TSource
     return _default_value
 
 
-def default_with(
-    getter: Callable[[_TError], _TSource]
-) -> Callable[[Result[_TSource, _TError]], _TSource]:
+def default_with(getter: Callable[[_TError], _TSource]) -> Callable[[Result[_TSource, _TError]], _TSource]:
     """Get with default value lazily.
 
     Gets the value of the option if the option is Some, otherwise
@@ -441,9 +423,7 @@ def default_with(
 
 
 @curry_flip(1)
-def map(
-    result: Result[_TSource, _TError], mapper: Callable[[_TSource], _TResult]
-) -> Result[_TResult, _TError]:
+def map(result: Result[_TSource, _TError], mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
     return result.map(mapper)
 
 
@@ -497,9 +477,7 @@ def of_option(value: Option[_TSource], error: _TError) -> Result[_TSource, _TErr
     return value.to_result(error)
 
 
-def of_option_with(
-    value: Option[_TSource], error: Callable[[], _TError]
-) -> Result[_TSource, _TError]:
+def of_option_with(value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
     return value.to_result_with(error)
 
 

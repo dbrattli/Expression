@@ -54,9 +54,7 @@ class Map(Mapping[Key, Value], PipeMixin):
     def contains_key(self, key: Key) -> bool:
         return maptree.mem(key, self._tree)
 
-    def change(
-        self, key: Key, f: Callable[[Option[Value]], Option[Value]]
-    ) -> Map[Key, Value]:
+    def change(self, key: Key, f: Callable[[Option[Value]], Option[Value]]) -> Map[Key, Value]:
         return Map(maptree.change(key, f, self._tree))
 
     @staticmethod
@@ -93,14 +91,10 @@ class Map(Mapping[Key, Value], PipeMixin):
     #     def MapRange (f:'Value->'Result) =
     #         return Map<'Key, 'Result>(comparer, maptree.map f tree)
 
-    def fold(
-        self, folder: Callable[[Result, tuple[Key, Value]], Result], state: Result
-    ) -> Result:
+    def fold(self, folder: Callable[[Result, tuple[Key, Value]], Result], state: Result) -> Result:
         return maptree.fold(folder, state, self._tree)
 
-    def fold_back(
-        self, folder: Callable[[tuple[Key, Value], Result], Result], state: Result
-    ) -> Result:
+    def fold_back(self, folder: Callable[[tuple[Key, Value], Result], Result], state: Result) -> Result:
         return maptree.fold_back(folder, self._tree, state)
 
     def map(self, mapping: Callable[[Key, Value], Result]) -> Map[Key, Result]:
@@ -119,9 +113,7 @@ class Map(Mapping[Key, Value], PipeMixin):
         """
         return Map(maptree.map(mapping, self._tree))
 
-    def partition(
-        self, predicate: Callable[[Key, Value], bool]
-    ) -> tuple[Map[Key, Value], Map[Key, Value]]:
+    def partition(self, predicate: Callable[[Key, Value], bool]) -> tuple[Map[Key, Value], Map[Key, Value]]:
         r1, r2 = maptree.partition(predicate, self._tree)
         return Map(r1), Map(r2)
 
@@ -167,9 +159,7 @@ class Map(Mapping[Key, Value], PipeMixin):
     def try_find(self, key: Key) -> Option[Value]:
         return maptree.try_find(key, self._tree)
 
-    def try_pick(
-        self, chooser: Callable[[Key, Value], Option[Result]]
-    ) -> Option[Result]:
+    def try_pick(self, chooser: Callable[[Key, Value], Option[Result]]) -> Option[Result]:
         return maptree.try_pick(chooser, self._tree)
 
     @staticmethod
@@ -286,9 +276,7 @@ def add(table: Map[Key, Value], key: Key, value: Value) -> Map[Key, Value]:
 
 
 @curry_flip(1)
-def change(
-    table: Map[Key, Value], key: Key, fn: Callable[[Option[Value]], Option[Value]]
-) -> Map[Key, Value]:
+def change(table: Map[Key, Value], key: Key, fn: Callable[[Option[Value]], Option[Value]]) -> Map[Key, Value]:
     """Change element in map.
 
     Returns a new map with the value stored under key changed
@@ -354,9 +342,7 @@ def iterate(action: Callable[[Key, Value], None]) -> Callable[[Map[Key, Value]],
 
 
 @curry_flip(1)
-def try_pick(
-    table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]
-) -> Option[Result]:
+def try_pick(table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]) -> Option[Result]:
     """Pick element in map.
 
     Searches the map looking for the first element where the given
@@ -375,9 +361,7 @@ def try_pick(
 
 
 @curry_flip(1)
-def pick(
-    table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]
-) -> Result:
+def pick(table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]) -> Result:
     for res in table.try_pick(chooser):
         return res
     else:
@@ -404,9 +388,7 @@ def exists(table: Map[Key, Value], predicate: Callable[[Key, Value], bool]) -> b
 
 
 @curry_flip(1)
-def filter(
-    table: Map[Key, Value], predicate: Callable[[Key, Value], bool]
-) -> Map[Key, Value]:
+def filter(table: Map[Key, Value], predicate: Callable[[Key, Value], bool]) -> Map[Key, Value]:
     return table.filter(predicate)
 
 
@@ -416,9 +398,7 @@ def for_all(table: Map[Key, Value], predicate: Callable[[Key, Value], bool]) -> 
 
 
 @curry_flip(1)
-def map(
-    table: Map[Key, Value], mapping: Callable[[Key, Value], Result]
-) -> Map[Key, Result]:
+def map(table: Map[Key, Value], mapping: Callable[[Key, Value], Result]) -> Map[Key, Result]:
     return table.map(mapping)
 
 

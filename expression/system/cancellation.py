@@ -24,18 +24,14 @@ class CancellationToken:
     is appropriate.
     """
 
-    def __init__(
-        self, cancelled: bool = True, source: CancellationTokenSource | None = None
-    ) -> None:
+    def __init__(self, cancelled: bool = True, source: CancellationTokenSource | None = None) -> None:
         """The init function.
 
         Should not be used directly. Create cancellation tokens using
         the `CancellationTokenSource` instead.
         """
         self._cancelled = cancelled
-        self._source = (
-            CancellationTokenSource.cancelled_source() if source is None else source
-        )
+        self._source = CancellationTokenSource.cancelled_source() if source is None else source
 
     @property
     def is_cancellation_requested(self) -> bool:

@@ -10,9 +10,7 @@ _TResult = TypeVar("_TResult")
 
 
 class SeqBuilder(Builder[_TSource, Iterable[Any]]):
-    def bind(
-        self, xs: Iterable[_TSource], fn: Callable[[_TSource], Iterable[_TResult]]
-    ) -> Iterable[_TResult]:
+    def bind(self, xs: Iterable[_TSource], fn: Callable[[_TSource], Iterable[_TResult]]) -> Iterable[_TResult]:
         for x in xs:
             return fn(x)
         return []
@@ -23,9 +21,7 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
     def return_from(self, xs: Iterable[_TSource]) -> Iterable[_TSource]:
         return xs
 
-    def combine(
-        self, xs: Iterable[_TSource], ys: Iterable[_TSource]
-    ) -> Iterable[_TSource]:
+    def combine(self, xs: Iterable[_TSource], ys: Iterable[_TSource]) -> Iterable[_TSource]:
         ret = seq.concat(xs, ys)
         return ret
 

@@ -73,8 +73,7 @@ class Builder(Generic[_TInner, _TOuter], ABC):
         self,
         fn: Callable[
             _P,
-            Generator[_TInner | None, _TInner, _TInner | None]
-            | Generator[_TInner | None, None, _TInner | None],
+            Generator[_TInner | None, _TInner, _TInner | None] | Generator[_TInner | None, None, _TInner | None],
         ],
     ) -> Callable[_P, _TOuter]:
         """Option builder.

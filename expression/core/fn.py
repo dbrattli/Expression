@@ -50,9 +50,7 @@ def tailrec(fn: Callable[_P, TailCallResult[_TResult, _P]]) -> Callable[_P, _TRe
     return wrapper
 
 
-def tailrec_async(
-    fn: Callable[_P, Awaitable[TailCallResult[_TResult, _P]]]
-) -> Callable[_P, Awaitable[_TResult]]:
+def tailrec_async(fn: Callable[_P, Awaitable[TailCallResult[_TResult, _P]]]) -> Callable[_P, Awaitable[_TResult]]:
     """Tail call recursive async function decorator."""
 
     async def trampoline(bouncer: TailCallResult[_TResult, _P]) -> _TResult:

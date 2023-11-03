@@ -53,9 +53,7 @@ def tag(tag: int | None = None) -> Tag[None]:
     return Tag(tag)
 
 
-class TypedTaggedUnion(
-    SupportsValidation["TypedTaggedUnion[_T]"], Generic[_T], PipeMixin, ABC
-):
+class TypedTaggedUnion(SupportsValidation["TypedTaggedUnion[_T]"], Generic[_T], PipeMixin, ABC):
     """A discriminated (tagged) union.
 
     Takes a value, and an optional tag that may be used for matching.
@@ -68,19 +66,13 @@ class TypedTaggedUnion(
         self.tag = tag
 
         if not hasattr(self.__class__, "_tags"):
-            tags = {
-                tag.tag: name
-                for (name, tag) in self.__class__.__dict__.items()
-                if isinstance(tag, Tag)
-            }
+            tags = {tag.tag: name for (name, tag) in self.__class__.__dict__.items() if isinstance(tag, Tag)}
             setattr(self.__class__, "_tags", tags)
 
         self.name = getattr(self.__class__, "_tags")[tag.tag]
 
     def dict(self) -> Any:
-        tags: dict[str, Any] = {
-            k: v for (k, v) in self.__class__.__dict__.items() if v is self.tag
-        }
+        tags: dict[str, Any] = {k: v for (k, v) in self.__class__.__dict__.items() if v is self.tag}
         if self.value and hasattr(self.value, "dict"):
             value: Any = self.value.dict()  # type: ignore
         else:
@@ -99,9 +91,7 @@ class TypedTaggedUnion(
             if isinstance(union, TypedTaggedUnion):
                 return cast(TypedTaggedUnion[_T], union)
 
-            tags: dict[str, Any] = {
-                k: v for (k, v) in cls.__dict__.items() if k == union["tag"]
-            }
+            tags: dict[str, Any] = {k: v for (k, v) in cls.__dict__.items() if k == union["tag"]}
             if field.sub_fields:
                 sub_field = field.sub_fields[0]
                 value, error = sub_field.validate(union["value"], {}, loc=union["tag"])

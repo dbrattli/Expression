@@ -14,9 +14,7 @@ _E = TypeVar("_E")
 _Arity = Literal[0, 1, 2, 3, 4]
 
 
-def _curry(
-    args: tuple[Any, ...], arity: int, fun: Callable[..., Any]
-) -> Callable[..., Any]:
+def _curry(args: tuple[Any, ...], arity: int, fun: Callable[..., Any]) -> Callable[..., Any]:
     def wrapper(*args_: Any, **kw: Any) -> Any:
         if arity == 1:
             return fun(*args, *args_, **kw)

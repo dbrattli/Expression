@@ -31,9 +31,7 @@ def compose(__fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> Callable[[_
 
 
 @overload
-def compose(
-    __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C], __fn3: Callable[[_C], _D]
-) -> Callable[[_A], _D]:
+def compose(__fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C], __fn3: Callable[[_C], _D]) -> Callable[[_A], _D]:
     ...
 
 

@@ -184,11 +184,7 @@ def pipe2(__values: Any, *fns: Any) -> Any:
 
 
 def pipe3(__values: Any, *fns: Any) -> Any:
-    return (
-        pipe(fns[0](__values[0])(__values[1])(__values[2]), *fns[1:])
-        if fns
-        else __values
-    )
+    return pipe(fns[0](__values[0])(__values[1])(__values[2]), *fns[1:]) if fns else __values
 
 
 def starpipe(args: Any, *fns: Callable[..., Any]):

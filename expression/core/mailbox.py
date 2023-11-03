@@ -63,9 +63,7 @@ class MailboxProcessor(Generic[_Msg]):
         self.messages.put(msg)
         self.loop.call_soon_threadsafe(self.__process_events)
 
-    def post_and_async_reply(
-        self, build_message: Callable[[AsyncReplyChannel[_Reply]], _Msg]
-    ) -> Awaitable[_Reply]:
+    def post_and_async_reply(self, build_message: Callable[[AsyncReplyChannel[_Reply]], _Msg]) -> Awaitable[_Reply]:
         """Post with async reply.
 
         Post a message asynchronously to the mailbox processor and wait

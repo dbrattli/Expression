@@ -88,23 +88,17 @@ def height(m: MapTree[Key, Value]) -> int:
 TOLERANCE = 2
 
 
-def mk(
-    left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Value]
-) -> MapTree[Key, Value]:
+def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Value]) -> MapTree[Key, Value]:
     hl = height(left)
     hr = height(right)
     m = hr if hl < hr else hl
     if m == 0:  # m=0 ~ is_empty(l) and is_empty(r)
         return Some(MapTreeLeaf(key, value))
     else:
-        return Some(
-            MapTreeNode(key, value, left, right, m + 1)
-        )  # new map is higher by 1 than the highest
+        return Some(MapTreeNode(key, value, left, right, m + 1))  # new map is higher by 1 than the highest
 
 
-def rebalance(
-    t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
-) -> MapTree[Key, Value]:
+def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]) -> MapTree[Key, Value]:
     t1h = height(t1)
     t2h = height(t2)
     if t2h > t1h + TOLERANCE:  # right is heavier than left
@@ -230,9 +224,7 @@ def partition(
     return partition_aux(predicate, m, (empty, empty))
 
 
-def filter1(
-    predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]
-) -> MapTree[Key, Value]:
+def filter1(predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]) -> MapTree[Key, Value]:
     if predicate(k, v):
         return add(k, v, acc)
     else:
@@ -256,15 +248,11 @@ def filter_aux(
         return acc
 
 
-def filter(
-    f: Callable[[Key, Value], bool], m: MapTree[Key, Value]
-) -> MapTree[Key, Value]:
+def filter(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
     return filter_aux(f, m, empty)
 
 
-def splice_out_successor(
-    m: MapTree[Key, Value]
-) -> tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
+def splice_out_successor(m: MapTree[Key, Value]) -> tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -304,9 +292,7 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
         return empty
 
 
-def change(
-    k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]
-) -> MapTree[Key, Value]:
+def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -375,9 +361,7 @@ def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
             fn(m2.key, m2.value)
 
 
-def try_pick(
-    f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]
-) -> Option[Result]:
+def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) -> Option[Result]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -418,9 +402,7 @@ def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
         return True
 
 
-def map(
-    f: Callable[[Key, Value], Result], m: MapTree[Key, Value]
-) -> MapTree[Key, Result]:
+def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -434,9 +416,7 @@ def map(
         return empty
 
 
-def fold_back(
-    f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result
-) -> Result:
+def fold_back(f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result) -> Result:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -449,9 +429,7 @@ def fold_back(
         return x
 
 
-def fold(
-    f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]
-) -> Result:
+def fold(f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]) -> Result:
     for m2 in m.to_list():
         if isinstance(m2, MapTreeNode):
             mn = m2
@@ -465,9 +443,7 @@ def fold(
 
 
 def to_list(m: MapTree[Key, Value]) -> Block[tuple[Key, Value]]:
-    def loop(
-        m: MapTree[Key, Value], acc: Block[tuple[Key, Value]]
-    ) -> Block[tuple[Key, Value]]:
+    def loop(m: MapTree[Key, Value], acc: Block[tuple[Key, Value]]) -> Block[tuple[Key, Value]]:
         for m2 in m.to_list():
             if isinstance(m2, MapTreeNode):
                 mn = m2
@@ -488,9 +464,7 @@ def of_list(xs: Block[tuple[Key, Value]]) -> MapTree[Key, Value]:
     return xs.fold(folder, empty)
 
 
-def mk_from_iterator(
-    acc: MapTree[Key, Value], e: Iterator[tuple[Key, Value]]
-) -> MapTree[Key, Value]:
+def mk_from_iterator(acc: MapTree[Key, Value], e: Iterator[tuple[Key, Value]]) -> MapTree[Key, Value]:
     try:
         (x, y) = next(e)
     except StopIteration:
@@ -536,9 +510,7 @@ class MkIterator(Iterator[tuple[Key, Value]]):
         rest = self.stack.tail()
         for m in self.stack.head():
             if isinstance(m, MapTreeNode):
-                failwith(
-                    "Please report error: Map iterator, unexpected stack for next()"
-                )
+                failwith("Please report error: Map iterator, unexpected stack for next()")
             else:
                 self.stack = collapseLHS(rest)
                 return m.key, m.value

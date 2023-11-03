@@ -26,9 +26,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
     def return_from(self, xs: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
         return xs
 
-    def combine(
-        self, xs: Result[_TSource, _TError], ys: Result[_TSource, _TError]
-    ) -> Result[_TSource, _TError]:
+    def combine(self, xs: Result[_TSource, _TError], ys: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
         return xs.bind(lambda _: ys)
 
     def zero(self) -> Result[_TSource, _TError]:
@@ -38,8 +36,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         self,  # Ignored self parameter
         fn: Callable[
             _P,
-            Generator[_TSource | None, _TSource, _TSource | None]
-            | Generator[_TSource | None, None, _TSource | None],
+            Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
         ],
     ) -> Callable[_P, Result[_TSource, _TError]]:
         return super().__call__(fn)

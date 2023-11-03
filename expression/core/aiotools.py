@@ -81,9 +81,7 @@ def start(computation: Awaitable[Any], token: CancellationToken | None = None) -
     return None
 
 
-def start_immediate(
-    computation: Awaitable[Any], token: CancellationToken | None = None
-) -> None:
+def start_immediate(computation: Awaitable[Any], token: CancellationToken | None = None) -> None:
     """Start computation immediately.
 
     Runs an asynchronous computation, starting immediately on the

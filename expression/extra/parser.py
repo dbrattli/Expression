@@ -23,9 +23,7 @@ class Parser(Generic[_A]):
 
     __slots__ = ["_name", "_run"]
 
-    def __init__(
-        self, run: Callable[[Remaining], ParseResult[_A]], name: str | None = None
-    ) -> None:
+    def __init__(self, run: Callable[[Remaining], ParseResult[_A]], name: str | None = None) -> None:
         self._run = run
         self._name = name or "parser"
 
@@ -66,15 +64,11 @@ class Parser(Generic[_A]):
         return pipe(self, mapped)
 
     @overload
-    def starmap(
-        self: Parser[tuple[_B, _C]], mapper: Callable[[_B, _C], _D]
-    ) -> Parser[_D]:
+    def starmap(self: Parser[tuple[_B, _C]], mapper: Callable[[_B, _C], _D]) -> Parser[_D]:
         ...
 
     @overload
-    def starmap(
-        self: Parser[tuple[_B, _C, _D]], mapper: Callable[[_B, _C, _D], _E]
-    ) -> Parser[_E]:
+    def starmap(self: Parser[tuple[_B, _C, _D]], mapper: Callable[[_B, _C, _D], _E]) -> Parser[_E]:
         ...
 
     def starmap(self: Parser[Any], mapper: Callable[..., Any]) -> Parser[Any]:
@@ -204,17 +198,13 @@ def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
 
 @curry(1)
 @overload
-def starmap(
-    mapper: Callable[[_A, _B], _C], parser: Parser[tuple[_A, _B]]
-) -> Parser[_C]:
+def starmap(mapper: Callable[[_A, _B], _C], parser: Parser[tuple[_A, _B]]) -> Parser[_C]:
     ...
 
 
 @curry(1)
 @overload
-def starmap(
-    mapper: Callable[[_A, _B, _C], _D], parser: Parser[tuple[_A, _B, _C]]
-) -> Parser[_D]:
+def starmap(mapper: Callable[[_A, _B, _C], _D], parser: Parser[tuple[_A, _B, _C]]) -> Parser[_D]:
     ...
 
 
@@ -257,9 +247,7 @@ def apply(f_p: Parser[Callable[[_A], _B]], x_p: Parser[_A]) -> Parser[_B]:
 
 
 @curry(2)
-def lift2(
-    fn: Callable[[_A], Callable[[_B], _C]], xP: Parser[_A], yP: Parser[_B]
-) -> Parser[_C]:
+def lift2(fn: Callable[[_A], Callable[[_B], _C]], xP: Parser[_A], yP: Parser[_B]) -> Parser[_C]:
     return apply(apply(preturn(fn), xP), yP)
 
 
@@ -293,9 +281,7 @@ def pstring(string_input: str) -> Parser[str]:
     )
 
 
-def parse_zero_or_more(
-    parser: Parser[_A], input: Remaining
-) -> tuple[Block[_A], Remaining]:
+def parse_zero_or_more(parser: Parser[_A], input: Remaining) -> tuple[Block[_A], Remaining]:
     # run parser with the input
     first_result = parser.run(input)
 
@@ -304,9 +290,7 @@ def parse_zero_or_more(
         case Ok((first_value, input_after_first_parse)):
             # if parse succeeds, call recursively
             # to get the subsequent values
-            subsequent_values, remaining_input = parse_zero_or_more(
-                parser, input_after_first_parse
-            )
+            subsequent_values, remaining_input = parse_zero_or_more(parser, input_after_first_parse)
             values = subsequent_values.cons(first_value)
             return values, remaining_input
         case _:
@@ -330,9 +314,7 @@ def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
         match firstResult:
             case Ok((first_value, input_after_first_parse)):
                 # if first found, look for zeroOrMore now
-                subsequent_values, remaining_input = parse_zero_or_more(
-                    parser, input_after_first_parse
-                )
+                subsequent_values, remaining_input = parse_zero_or_more(parser, input_after_first_parse)
                 values = subsequent_values.cons(first_value)
                 return Ok[tuple[Block[_A], Remaining], str]((values, remaining_input))
 
@@ -451,9 +433,7 @@ pint = _pint()
 
 def _pfloat() -> Parser[float]:
     # helper
-    def result_to_float(
-        sd: tuple[Option[str], Block[str]], digits2: Option[Block[str]]
-    ) -> float:
+    def result_to_float(sd: tuple[Option[str], Block[str]], digits2: Option[Block[str]]) -> float:
         # ignore int overflow for now
         sign, digits1 = sd
         if digits2.is_some():
