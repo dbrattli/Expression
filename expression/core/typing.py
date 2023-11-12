@@ -60,7 +60,7 @@ GenericValidator = Callable[[Any, ModelField], _T]
 
 
 class SupportsValidation(Protocol[_T_co]):
-    """A type that supports valication.
+    """A type that supports validation.
 
     A type that implements __get_validators__ to be used with pydantic.
     """
