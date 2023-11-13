@@ -26,6 +26,7 @@ from expression.core import (
     Some,
     SupportsLessThan,
     SupportsSum,
+    curry,
     curry_flip,
     pipe,
 )
@@ -79,18 +80,16 @@ class NonEmptyBlock(
 ):
     """Immutable list type guaranteed to have at least one element."""
 
-    __match_args__ = ("_head", "_tail")
+    __match_args__ = "_block"
 
     __validators__: ClassVar = [_validate]
 
     def __init__(self, head: _TSource, tail: Iterable[_TSource] = ()) -> None:
-        self._head = head
-        self._tail = Block(tail)
-        self._value = Block(itertools.chain([head], self._tail))
+        self._block = Block(itertools.chain([head], tail))
 
     def append(self, other: Iterable[_TSource]) -> NonEmptyBlock[_TSource]:
         """Append other block to end of the block."""
-        return NonEmptyBlock(self._head, iter(itertools.chain(self._tail, other)))
+        return NonEmptyBlock(self.head(), iter(itertools.chain(self.tail(), other)))
 
     def choose(self, chooser: Callable[[_TSource], Option[_TResult]]) -> Block[_TResult]:
         """Choose items from the list.
@@ -106,11 +105,11 @@ class NonEmptyBlock(
             The list comprising the values selected from the chooser
             function.
         """
-        return self._value.choose(chooser)
+        return self._block.choose(chooser)
 
     def collect(self, mapping: Callable[[_TSource], NonEmptyBlock[_TResult]]) -> NonEmptyBlock[_TResult]:
-        mapped_head = mapping(self._head)
-        mapped_tail = builtins.map(mapping, self._tail)
+        mapped_head = mapping(self.head())
+        mapped_tail = builtins.map(mapping, self.tail())
         xs = (y for x in mapped_tail for y in x)
         return NonEmptyBlock(mapped_head.head(), itertools.chain(mapped_head.tail(), xs))
 
@@ -131,7 +130,7 @@ class NonEmptyBlock(
             A list containing only the elements that satisfy the
             predicate.
         """
-        return self._value.filter(predicate)
+        return self._block.filter(predicate)
 
     def fold(self, folder: Callable[[_TState, _TSource], _TState], state: _TState) -> _TState:
         """Fold block.
@@ -179,7 +178,7 @@ class NonEmptyBlock(
         Returns:
             The first element of the list.
         """
-        return self._head
+        return self._block[0]
 
     def indexed(self, start: int = 0) -> NonEmptyBlock[tuple[int, _TSource]]:
         """Index elements in block.
@@ -194,7 +193,7 @@ class NonEmptyBlock(
         Returns:
             The list of indexed elements.
         """
-        return NonEmptyBlock((start, self._head), enumerate(self._tail, start=1 + start))
+        return NonEmptyBlock((start, self.head()), enumerate(self.tail(), start=1 + start))
 
     def item(self, index: int) -> Option[_TSource]:
         """Indexes into the list. The first element has index 0.
@@ -225,7 +224,7 @@ class NonEmptyBlock(
         Returns:
             The list of transformed elements.
         """
-        return NonEmptyBlock(mapping(self._head), self._tail.map(mapping))
+        return NonEmptyBlock(mapping(self.head()), self.tail().map(mapping))
 
     @overload
     def starmap(
@@ -263,7 +262,7 @@ class NonEmptyBlock(
         return starmap(mapping)(self)
 
     def sum(self: NonEmptyBlock[_TSourceSum | Literal[0]]) -> _TSourceSum | Literal[0]:
-        return self._value.sum()
+        return self._block.sum()
 
     def sum_by(self: NonEmptyBlock[_TSourceSum], projection: Callable[[_TSourceSum], _TResult]) -> _TResult:
         return pipe(self, sum_by(projection))
@@ -326,7 +325,7 @@ class NonEmptyBlock(
         list1: list[_TSource] = []
         list2: list[_TSource] = []
 
-        for item in self._value:
+        for item in self._block:
             if predicate(item):
                 list1.append(item)
             else:
@@ -376,7 +375,7 @@ class NonEmptyBlock(
         Returns:
             Returns the final state value.
         """
-        return functools.reduce(reduction, self._tail, self._head)
+        return functools.reduce(reduction, self.tail(), self.head())
 
     @staticmethod
     def singleton(item: _TSource) -> NonEmptyBlock[_TSource]:
@@ -391,20 +390,20 @@ class NonEmptyBlock(
         Returns:
             The list after removing the first N elements.
         """
-        if len(self._value) > count:
-            return Some(NonEmptyBlock(self._value[count], self._value[count + 1 :]))
+        if len(self._block) > count:
+            return Some(NonEmptyBlock(self._block[count], self._block[count + 1 :]))
         else:
             return Nothing
 
     def skip_last(self, count: int) -> Option[NonEmptyBlock[_TSource]]:
-        if len(self._value) > count:
-            return Some(NonEmptyBlock(self.head(), self._tail[:-count]))
+        if len(self._block) > count:
+            return Some(NonEmptyBlock(self.head(), self.tail()[:-count]))
         else:
             return Nothing
 
     def tail(self) -> Block[_TSource]:
         """Return tail of List."""
-        return self._tail
+        return self._block.tail()
 
     def sort(self: NonEmptyBlock[_TSourceSortable], reverse: bool = False) -> NonEmptyBlock[_TSourceSortable]:
         """Sort list directly.
@@ -417,7 +416,7 @@ class NonEmptyBlock(
         Returns:
             A sorted list.
         """
-        sorted_value = builtins.sorted(self._value, reverse=reverse)
+        sorted_value = builtins.sorted(self._block, reverse=reverse)
         return NonEmptyBlock(sorted_value[0], sorted_value[1:])
 
     def sort_with(self, func: Callable[[_TSource], Any], reverse: bool = False) -> NonEmptyBlock[_TSource]:
@@ -432,7 +431,7 @@ class NonEmptyBlock(
         Returns:
             A sorted list.
         """
-        sorted_value = builtins.sorted(self._value, key=func, reverse=reverse)
+        sorted_value = builtins.sorted(self._block, key=func, reverse=reverse)
         return NonEmptyBlock(sorted_value[0], sorted_value[1:])
 
     def take(self, count: int) -> NonEmptyBlock[_TSource]:
@@ -444,7 +443,7 @@ class NonEmptyBlock(
         Returns:
             The result list.
         """
-        return NonEmptyBlock(self.head(), self._tail[: count - 1])
+        return NonEmptyBlock(self.head(), self.tail()[: count - 1])
 
     def take_last(self, count: int) -> NonEmptyBlock[_TSource]:
         """Take last elements from block.
@@ -458,12 +457,12 @@ class NonEmptyBlock(
         Returns:
             The result list.
         """
-        last_elements = self._value[-count:]
+        last_elements = self._block[-count:]
         return NonEmptyBlock(last_elements[0], last_elements[1:])
 
     def dict(self) -> list[_TSource]:
         """Returns a json serializable representation of the list."""
-        return self._value.dict()
+        return self._block.dict()
 
     def zip(self, other: NonEmptyBlock[_TResult]) -> NonEmptyBlock[tuple[_TSource, _TResult]]:
         """Zip block.
@@ -478,13 +477,13 @@ class NonEmptyBlock(
             A single list containing pairs of matching elements from the
             input lists.
         """
-        return NonEmptyBlock((self.head(), other.head()), self._tail.zip(other._tail))
+        return NonEmptyBlock((self.head(), other.head()), self.tail().zip(other.tail()))
 
     def __add__(self, other: NonEmptyBlock[_TSource]) -> NonEmptyBlock[_TSource]:
         return self.append(other)
 
     def __contains__(self, value: Any) -> bool:
-        return self._value.__contains__(value)
+        return self._block.__contains__(value)
 
     @overload
     def __getitem__(self, key: slice) -> NonEmptyBlock[_TSource]:
@@ -495,20 +494,20 @@ class NonEmptyBlock(
         ...
 
     def __getitem__(self, key: Any) -> Any:
-        ret: Any = list(itertools.chain([self._head], self._tail))[key]
+        ret: Any = self._block[key]
         return ret
 
     def __iter__(self) -> Iterator[_TSource]:
-        return iter(self._value)
+        return iter(self._block)
 
     def __eq__(self, o: Any) -> bool:
-        return self._value == o
+        return self._block == o
 
     def __len__(self) -> int:
-        return 1 + len(self._tail)
+        return len(self._block)
 
     def __str__(self) -> str:
-        return f"[{', '.join(itertools.chain([str(self._head)], self._tail.map(str)))}]"
+        return str(self._block)
 
     def __repr__(self) -> str:
         return str(self)
@@ -519,7 +518,7 @@ class NonEmptyBlock(
 
 
 @curry_flip(1)
-def append(source: NonEmptyBlock[_TSource], other: NonEmptyBlock[_TSource]) -> NonEmptyBlock[_TSource]:
+def append(source: NonEmptyBlock[_TSource], other: Iterable[_TSource]) -> NonEmptyBlock[_TSource]:
     return source.append(other)
 
 
@@ -558,8 +557,9 @@ def concat(sources: NonEmptyBlock[NonEmptyBlock[_TSource]]) -> NonEmptyBlock[_TS
     return sources.reduce(reducer)
 
 
+@curry(1)
 def cons(head: _TSource, tail: NonEmptyBlock[_TSource]) -> NonEmptyBlock[_TSource]:
-    return NonEmptyBlock(head, tail)
+    return tail.cons(head)
 
 
 @curry_flip(1)
