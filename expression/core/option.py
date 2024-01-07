@@ -11,9 +11,6 @@ import builtins
 from collections.abc import Callable, Generator, Iterable
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, get_args, get_origin
 
-from pydantic import GetCoreSchemaHandler, ValidatorFunctionWrapHandler
-from pydantic_core import CoreSchema, core_schema
-
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
@@ -23,8 +20,12 @@ from .union import case, tag, tagged_union
 
 
 if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
+
     from expression.collections.seq import Seq
     from expression.core.result import Result
+
 
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
@@ -293,6 +294,9 @@ class Option(
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        from pydantic import ValidatorFunctionWrapHandler
+        from pydantic_core import core_schema
+
         origin = get_origin(source_type)
         if origin is None:  # used as `x: Owner` without params
             origin = source_type

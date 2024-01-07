@@ -23,10 +23,12 @@ import builtins
 import functools
 import itertools
 from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
-from typing import Any, Literal, TypeVar, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 
-from pydantic import GetCoreSchemaHandler
-from pydantic_core import core_schema
+
+if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
 
 from expression.core import (
     Nothing,
@@ -539,7 +541,9 @@ class Block(
         return str(self)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        from pydantic_core import core_schema
+
         instance_schema = core_schema.is_instance_schema(cls)
 
         args = get_args(source)

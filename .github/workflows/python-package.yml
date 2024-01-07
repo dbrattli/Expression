@@ -28,7 +28,7 @@ jobs:
         run: |
           pip install poetry
           poetry config installer.modern-installation false
-          poetry install
+          poetry install --all-extras
 
       - name: Code checks
         run: |
