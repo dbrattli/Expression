@@ -18,7 +18,7 @@ from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .misc import flip, fst, identity, snd
-from .option import Nothing, Nothing_, Option, Some, default_arg, is_none, is_some
+from .option import Nothing, Option, Some, default_arg, is_none, is_some
 from .pipe import PipeMixin, pipe, pipe2, pipe3
 from .result import Error, Ok, Result, is_error, is_ok
 from .try_ import Failure, Success, Try
@@ -31,7 +31,7 @@ from .typing import (
     try_downcast,
     upcast,
 )
-from .union import SingleCaseUnion, Tag, TaggedUnion, tag
+from .union import case, tag, tagged_union
 
 
 __all__ = [
@@ -74,7 +74,7 @@ __all__ = [
     "PipeMixin",
     "result",
     "Result",
-    "SingleCaseUnion",
+    "tagged_union",
     "snd",
     "Some",
     "Success",
@@ -82,8 +82,8 @@ __all__ = [
     "SupportsGreaterThan",
     "SupportsMatch",
     "SupportsSum",
-    "Tag",
-    "TaggedUnion",
+    "tag",
+    "case",
     "TailCall",
     "TailCallResult",
     "tailrec",

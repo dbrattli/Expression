@@ -37,7 +37,9 @@ dunamai = "^1.12.0"
 hypothesis = "^6.54.2"
 jupyter-book = "^0.15.0"
 sphinx-autodoc-typehints = "^1.17.0"
-pydantic = "^1.10.0"
+
+# Make optional dependency
+pydantic = "^2.5.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.3"

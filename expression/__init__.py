@@ -9,7 +9,7 @@ programming in Python.
 GitHub: https://github.com/cognitedata/Expression
 """
 
-from . import collections, core, effect
+from . import collections, core  # , effect
 from ._version import __version__
 from .core import (
     AsyncReplyChannel,
@@ -27,18 +27,15 @@ from .core import (
     Failure,
     MailboxProcessor,
     Nothing,
-    Nothing_,
     Ok,
     Option,
     Result,
-    SingleCaseUnion,
     Some,
     Success,
-    Tag,
-    TaggedUnion,
     TailCall,
     TailCallResult,
     Try,
+    case,
     compose,
     curry,
     curry_flip,
@@ -59,6 +56,7 @@ from .core import (
     result,
     snd,
     tag,
+    tagged_union,
     tailrec,
     tailrec_async,
     try_downcast,
@@ -75,6 +73,7 @@ Will be removed in next major version. Use curry_flip instead.
 __all__ = [
     "AsyncReplyChannel",
     "Builder",
+    "case",
     "Choice",
     "Choice1of2",
     "Choice1of3",
@@ -105,7 +104,6 @@ __all__ = [
     "is_some",
     "MailboxProcessor",
     "Nothing",
-    "Nothing_",
     "Ok",
     "option",
     "Option",
@@ -114,12 +112,10 @@ __all__ = [
     "pipe3",
     "result",
     "Result",
-    "SingleCaseUnion",
     "snd",
     "Some",
     "Success",
-    "Tag",
-    "TaggedUnion",
+    "tagged_union",
     "TailCall",
     "TailCallResult",
     "tailrec",

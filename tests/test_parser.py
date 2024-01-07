@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import string
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
-from expression import Error, Ok, Option, Some, Tag, TaggedUnion, pipe, tag
+from expression import Option, case, tagged_union, pipe, tag, Result
 from expression.collections import Block
 from expression.extra.parser import (
     Parser,
@@ -28,7 +28,7 @@ def test_parse_pchar():
 
     assert result.is_ok()
     match result:
-        case Ok(a):
+        case Result(tag="ok", ok=a):
             assert a == "A"
         case _:
             assert False
@@ -42,7 +42,7 @@ def test_parse_pchar_fluent():
 
     assert result.is_ok()
     match result:
-        case Ok(a):
+        case Result(tag="ok", ok=a):
             assert a == "A"
         case _:
             assert False
@@ -61,7 +61,7 @@ def test_parse_a_then_b():
     result = parseAB(input)
     assert result.is_ok()
     match result:
-        case Ok((a, b)):
+        case Result(tag="ok", ok=(a, b)):
             assert (a, b) == ("A", "B")
         case _:
             assert False
@@ -74,7 +74,7 @@ def test_parse_a_then_b_fluent():
     result = parseAB(input)
     assert result.is_ok()
     match result:
-        case Ok((a, b)):
+        case Result(tag="ok", ok=(a, b)):
             assert (a, b) == ("A", "B")
         case _:
             assert False
@@ -86,7 +86,7 @@ def test_pstring():
     ret = parse_abc("ABCDE")  # Success ("ABC", "DE")
     assert ret.is_ok()
     match ret:
-        case Ok(success):
+        case Result(tag="ok", ok=success):
             assert success == "ABC"
         case _:
             assert False
@@ -94,7 +94,7 @@ def test_pstring():
     ret = parse_abc("A|CDE")  # Failure "Expecting 'B'. Got '|'"
     assert ret.is_error()
     match ret:
-        case Error(error):
+        case Result(tag="error", error=error):
             assert error == "Expecting 'B'. Got '|'"
         case _:
             assert False
@@ -102,7 +102,7 @@ def test_pstring():
     ret = parse_abc("AB|DE")  # Failure "Expecting 'C'. Got '|'"
     assert ret.is_error()
     match ret:
-        case Error(error):
+        case Result(tag="error", error=error):
             assert error == "Expecting 'C'. Got '|'"
         case _:
             assert False
@@ -112,7 +112,7 @@ def test_int():
     ret = pint("123C")
 
     match ret:
-        case Ok(success):
+        case Result(tag="ok", ok=success):
             assert success == 123
         case _:
             assert False
@@ -122,7 +122,7 @@ def test_int_negative():
     ret = pint("-123C")
 
     match ret:
-        case Ok(success):
+        case Result(tag="ok", ok=success):
             assert success == -123
         case _:
             assert False
@@ -132,7 +132,7 @@ def test_float():
     ret = pfloat("123C")
 
     match ret:
-        case Ok(success):
+        case Result(tag="ok", ok=success):
             assert success == 123
         case _:
             assert False
@@ -142,7 +142,7 @@ def test_float_with_decimal():
     ret = pfloat("123.45C")
 
     match ret:
-        case Ok(success):
+        case Result(tag="ok", ok=success):
             assert success == 123.45
         case _:
             assert False
@@ -152,31 +152,33 @@ def test_negative_float_with_decimal():
     ret = pfloat("-123.45C")
 
     match ret:
-        case Ok(success):
+        case Result(tag="ok", ok=success):
             assert success == -123.45
         case _:
             assert False
 
+@tagged_union
+class ComparisonOperator:
+    tag: Literal["EQ", "NOT_EQ", "LT", "LT_E", "GT", "GT_E", "IS", "IS_NOT", "IN", "NOT_IN"] = tag()
 
-class ComparisonOperator(TaggedUnion):
-    EQ = tag()
-    NOT_EQ = tag()
-    LT = tag()
-    LT_E = tag()
-    GT = tag()
-    GT_E = tag()
-    IS = tag()
-    IS_NOT = tag()
-    IN = tag()
-    NOT_IN = tag()
+    EQ: bool = case()
+    NOT_EQ: bool = case()
+    LT: bool = case()
+    LT_E: bool = case()
+    GT: bool = case()
+    GT_E: bool = case()
+    IS: bool = case()
+    IS_NOT: bool = case()
+    IN: bool = case()
+    NOT_IN: None = case()
 
     @staticmethod
     def eq() -> ComparisonOperator:
-        return ComparisonOperator(ComparisonOperator.EQ)
+        return ComparisonOperator(EQ=True)
 
     @staticmethod
     def not_eq() -> ComparisonOperator:
-        return ComparisonOperator(ComparisonOperator.NOT_EQ)
+        return ComparisonOperator(NOT_EQ=True)
 
 
 @dataclass
@@ -185,37 +187,40 @@ class Compare:
     comparators: Block[Expression]
     ops: Block[ComparisonOperator]
 
-
-class BoolOp(TaggedUnion):
-    AND = tag()
-    OR = tag()
+@tagged_union
+class BoolOp:
+    AND: None = case()
+    OR: None = case()
 
     @staticmethod
     def and_() -> BoolOp:
-        return BoolOp(BoolOp.AND)
+        return BoolOp(AND=None)
 
     @staticmethod
     def or_() -> BoolOp:
-        return BoolOp(BoolOp.OR)
+        return BoolOp(OR=None)
 
 
-class Expression(TaggedUnion):
-    CONSTANT = tag()
-    NAME = Tag[str]()
-    BOOL_OP = Tag[BoolOp]()
-    COMPARE = Tag[Compare]()
+@tagged_union
+class Expression:
+    tag: Literal["NAME", "CONSTANT", "BOOL_OP", "COMPARE"] = tag()
+
+    CONSTANT: bool = case()
+    NAME: str = case()
+    BOOL_OP: BoolOp = case()
+    COMPARE: Compare = case()
 
     @staticmethod
     def name(name: str) -> Expression:
-        return Expression(Expression.NAME, name)
+        return Expression(NAME=name)
 
     @staticmethod
     def compare(compare: Compare) -> Expression:
-        return Expression(Expression.COMPARE, compare)
+        return Expression(COMPARE=compare)
 
     @staticmethod
     def constant(value: Any) -> Expression:
-        return Expression(Expression.CONSTANT, value)
+        return Expression(CONSTANT=value)
 
 
 def pname() -> Parser[Expression]:
@@ -228,7 +233,7 @@ def pname() -> Parser[Expression]:
 
     def mapper(first: str, rest: Option[Block[str]]) -> str:
         match rest:
-            case Some(letters):
+            case Option(tag="some", some=letters):
                 return first + "".join(letters)
             case _:
                 return first
@@ -255,7 +260,7 @@ def test_parse_name_expr():
 
     assert result.is_ok()
     match result:
-        case Ok(Expression(Expression.NAME, name)):
+        case Result(tag="ok", ok=Expression(NAME=name)):
             assert name == "test"
 
         case _:

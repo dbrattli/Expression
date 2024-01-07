@@ -11,19 +11,20 @@ the Result type to Exception.
 from __future__ import annotations
 
 import builtins
-from abc import ABC, abstractmethod
-from collections.abc import Callable, Generator, Iterable, Iterator
+from collections.abc import Callable, Generator, Iterable
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Generic,
-    TypeAlias,
+    Literal,
     TypeGuard,
     TypeVar,
-    cast,
+    get_args,
     get_origin,
 )
+
+from pydantic import GetCoreSchemaHandler, ValidatorFunctionWrapHandler
+from pydantic_core import CoreSchema, core_schema
 
 
 if TYPE_CHECKING:
@@ -32,7 +33,9 @@ if TYPE_CHECKING:
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
-from .typing import GenericValidator, ModelField, SupportsValidation
+
+# from .typing import GenericValidator, ModelField, SupportsValidation
+from .union import case, tag, tagged_union
 
 
 _TSource = TypeVar("_TSource")
@@ -41,111 +44,154 @@ _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
 
 
-def _validate(result: Any, field: ModelField) -> Result[Any, Any]:
-    if isinstance(result, BaseResult):
-        return cast(Result[Any, Any], result)
-
-    if not isinstance(result, builtins.dict):
-        raise ValueError("not result type")
-
-    try:
-        value: Any = result["ok"]
-        if field.sub_fields:
-            sub_field = field.sub_fields[0]
-            value, err = sub_field.validate(value, {}, loc="Result")
-            if err:
-                raise ValueError(str(err))
-        return Ok(value)
-    except KeyError:
-        try:
-            error: Any = result["error"]
-            sub_field = field.sub_fields[1]
-            error, err = sub_field.validate(error, {}, loc="Result")
-            if err:
-                raise ValueError(str(err))
-            return Error(error)
-        except KeyError:
-            raise ValueError("not a result")
-
-
-class BaseResult(
+@tagged_union
+class Result(
     Iterable[_TSource],
     PipeMixin,
-    SupportsValidation["BaseResult[_TSource, _TError]"],
     Generic[_TSource, _TError],
-    ABC,
 ):
-    """The result abstract base class."""
+    """The result class."""
 
-    __validators__: ClassVar = [_validate]
+    tag: Literal["ok", "error"] = tag()
 
-    @abstractmethod
+    ok: _TSource = case()
+    error: _TError = case()
+
+    @staticmethod
+    def Ok(value: _TSource) -> Result[_TSource, _TError]:
+        """Create a new Ok result."""
+        return Result(tag="ok", ok=value)
+
+    @staticmethod
+    def Error(error: _TError) -> Result[_TSource, _TError]:
+        """Create a new Error result."""
+        return Result(tag="error", error=error)
+
     def default_value(self, value: _TSource) -> _TSource:
         """Get with default value.
 
         Gets the value of the result if the result is Ok, otherwise
         returns the specified default value.
         """
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok", ok=value):
+                return value
+            case _:
+                return value
 
-    @abstractmethod
     def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
         """Get with default value lazily.
 
         Gets the value of the result if the result is Ok, otherwise
         returns the value produced by the getter
         """
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok", ok=value):
+                return value
+            case Result(error=error):
+                return getter(error)
 
-    @abstractmethod
     def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
-        raise NotImplementedError
+        """Map result.
 
-    @abstractmethod
+        Return a result of the value after applying the mapping
+        function, or Error if the input is Error.
+        """
+        match self:
+            case Result(tag="ok", ok=value):
+                return Result.Ok(mapper(value))
+            case Result(error=error):
+                return Result[_TResult, _TError].Error(error)
+
     def map2(
         self,
-        other: Ok[_TOther, _TError] | Error[_TOther, _TError],
+        other: Result[_TOther, _TError],
         mapper: Callable[[_TSource, _TOther], _TResult],
     ) -> Result[_TResult, _TError]:
-        raise NotImplementedError
+        """Map result.
 
-    @abstractmethod
+        Return a result of the value after applying the mapping
+        function, or Error if the input is Error.
+        """
+        match self:
+            case Result(tag="ok", ok=value):
+                return other.map(lambda value_: mapper(value, value_))
+            case Result(error=error):
+                return Result(error=error)
+
     def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
         """Map error.
 
         Return a result of the error value after applying the mapping
         function, or Ok if the input is Ok.
         """
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok", ok=value):
+                return Result[_TSource, _TResult].Ok(value)
+            case Result(error=error):
+                return Result.Error(mapper(error))
 
-    @abstractmethod
     def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
-        raise NotImplementedError
+        """Bind result.
 
-    @abstractmethod
+        Return a result of the value after applying the mapping
+        function, or Error if the input is Error.
+        """
+        match self:
+            case Result(tag="ok", ok=value):
+                return mapper(value)
+            case Result(error=error):
+                return Result[_TResult, _TError].Error(error)
+
     def is_error(self) -> bool:
         """Returns `True` if the result is an `Error` value."""
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok"):
+                return False
+            case _:
+                return True
 
-    @abstractmethod
     def is_ok(self) -> bool:
         """Return `True` if the result is an `Ok` value."""
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok"):
+                return True
+            case _:
+                return False
 
-    @abstractmethod
-    def dict(self) -> builtins.dict[str, _TSource | _TError]:
+    def model_dump(self) -> builtins.dict[str, _TSource | _TError]:
         """Return a json serializable representation of the result."""
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok", ok=value):
+                attr = getattr(value, "model_dump", None)
+                if attr and callable(attr):
+                    value = attr()
+                return {"ok": value}
+            case Result(error=error):
+                attr = getattr(error, "model_dump", None)
+                if attr and callable(attr):
+                    error = attr()
+                return {"error": error}
 
-    @abstractmethod
     def swap(self) -> Result[_TError, _TSource]:
         """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok", ok=value):
+                return Result(error=value)
+            case Result(error=error):
+                return Result(ok=error)
 
-    @abstractmethod
     def to_option(self) -> Option[_TSource]:
         """Convert result to an option."""
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok", ok=value):
+                from expression.core.option import Some
+
+                return Some(value)
+            case _:
+                from expression.core.option import Nothing
+
+                return Nothing
 
     @classmethod
     def of_option(cls, value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
@@ -158,130 +204,110 @@ class BaseResult(
         return of_option_with(value, error)
 
     def __eq__(self, o: Any) -> bool:
-        raise NotImplementedError
+        return isinstance(o, Result) and self.tag == o.tag and getattr(self, self.tag) == getattr(o, self.tag)  # type: ignore
 
-    @abstractmethod
     def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
-        raise NotImplementedError
+        match self:
+            case Result(tag="ok", ok=value):
+                return (yield value)
+            case _:
+                raise EffectError(self)
+
+    def __str__(self) -> str:
+        match self:
+            case Result(tag="ok", ok=value):
+                return f"Ok {value}"
+            case Result(error=error):
+                return f"Error {error}"
 
     def __repr__(self) -> str:
         return str(self)
 
+    def __hash__(self) -> int:
+        return hash(repr(self))
+
     @classmethod
-    def __get_validators__(
-        cls,
-    ) -> Iterator[GenericValidator[BaseResult[_TSource, _TError]]]:
-        yield from cls.__validators__
-
-    @abstractmethod
-    def __hash__(self) -> int:
-        raise NotImplementedError
-
-
-class Ok(BaseResult[_TSource, _TError]):
-    """The Ok result case class."""
-
-    __match_args__ = ("value",)
-
-    def default_value(self, value: _TSource) -> _TSource:
-        """Get with default value.
-
-        Gets the value of the option if the option is Some, otherwise
-        returns the specified default value.
-        """
-        return self._value
-
-    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
-        """Get with default value lazily.
-
-        Gets the value of the option if the option is Some, otherwise
-        returns the value produced by the getter
-        """
-        return self._value
-
-    def __init__(self, value: _TSource) -> None:
-        self._value = value
-
-    @property
-    def value(self) -> _TSource:
-        return self._value
-
-    def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
-        return Ok(mapper(self._value))
-
-    def map2(
-        self,
-        other: Ok[_TOther, _TError] | Error[_TOther, _TError],
-        mapper: Callable[[_TSource, _TOther], _TResult],
-    ) -> Result[_TResult, _TError]:
-        return other.map(lambda value: mapper(self._value, value))
-
-    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
-        return mapper(self._value)
-
-    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
-        """Map error.
-
-        Return a result of the error value after applying the mapping
-        function, or Ok if the input is Ok.
-        """
-        return Ok(self._value)
-
-    def is_error(self) -> bool:
-        """Returns `True` if the result is an `Ok` value."""
-        return False
-
-    def is_ok(self) -> bool:
-        """Returns `True` if the result is an `Ok` value."""
-        return True
-
-    def dict(self) -> builtins.dict[str, _TSource | _TError]:
-        """Returns a json string representation of the ok value."""
-        attr = getattr(self._value, "dict", None) or getattr(self._value, "dict", None)
-        if attr and callable(attr):
-            value = attr()
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        origin = get_origin(source_type)
+        if origin is None:  # used as `x: Result` without params
+            origin = source_type
+            type_vars = (Any, Any)
         else:
-            value = self._value
+            type_vars = get_args(source_type)
 
-        return {"ok": value}
+        ok_schema = handler.generate_schema(type_vars[0])
+        error_schema = handler.generate_schema(type_vars[1])
 
-    def swap(self) -> Result[_TError, _TSource]:
-        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
-        return Error(self._value)
+        def validate_ok(v: Any, handler: ValidatorFunctionWrapHandler) -> Result[_TSource, _TError]:
+            if "ok" not in v:
+                raise ValueError("Missing ok field")
+            value = handler(v["ok"])
+            return cls(ok=value)
 
-    def to_option(self) -> Option[_TSource]:
-        """Convert result to an option."""
-        from expression.core.option import Some
+        def validate_error(v: Any, handler: ValidatorFunctionWrapHandler) -> Result[_TSource, _TError]:
+            if "error" not in v:
+                raise ValueError("Missing error field")
 
-        return Some(self._value)
+            value = handler(v["error"])
+            return cls(error=value)
 
-    def __match__(self, pattern: Any) -> Iterable[_TSource]:
-        if self is pattern or self == pattern:
-            return [self.value]
+        python_schema = core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(cls),
+                core_schema.no_info_wrap_validator_function(validate_error, error_schema),
+                core_schema.no_info_wrap_validator_function(validate_ok, ok_schema),
+            ]
+        )
+        json_schema = core_schema.chain_schema(
+            [
+                core_schema.union_schema(
+                    [
+                        core_schema.typed_dict_schema(
+                            {
+                                "tag": core_schema.typed_dict_field(core_schema.str_schema()),
+                                "ok": core_schema.typed_dict_field(ok_schema),
+                            }
+                        ),
+                        core_schema.typed_dict_schema(
+                            {
+                                "tag": core_schema.typed_dict_field(core_schema.str_schema()),
+                                "error": core_schema.typed_dict_field(error_schema),
+                            }
+                        ),
+                    ]
+                ),
+                # after validating the json data convert it to python
+                core_schema.no_info_before_validator_function(
+                    lambda data: cls(data),
+                    python_schema,
+                ),
+            ]
+        )
 
-        try:
-            origin: Any = get_origin(pattern)
-            if isinstance(self, origin or pattern):
-                return [self.value]
-        except TypeError:
-            pass
+        return core_schema.json_or_python_schema(
+            json_schema=json_schema,
+            python_schema=python_schema,
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda instance: instance.model_dump()),
+        )
 
-        return []
 
-    def __eq__(self, o: Any) -> bool:
-        if isinstance(o, Ok):
-            return self.value == o.value  # type: ignore
-        return False
+def Error(error: _TError) -> Result[Any, _TError]:
+    return Result[Any, _TError].Error(error)
 
-    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
-        """Return iterator for Ok case."""
-        return (yield self._value)
 
-    def __str__(self):
-        return f"Ok {self._value}"
+def Ok(value: _TSource) -> Result[_TSource, Any]:
+    return Result[_TSource, Any].Ok(value)
 
-    def __hash__(self) -> int:
-        return hash(self._value)
+
+# class Ok(Result[_TSource, Any]):
+#     ok: _TSource = case()
+#     tag = "ok"
+
+
+# class Error(Result[Any, _TError]):
+#     error: _TError = case()
+
+#     tag = "error"
 
 
 class ResultException(EffectError):
@@ -292,108 +318,6 @@ class ResultException(EffectError):
 
     def __init__(self, message: str):
         self.message = message
-
-
-class Error(
-    ResultException,
-    BaseResult[_TSource, _TError],
-):
-    """The Error result case class."""
-
-    __match_args__ = ("error",)
-
-    def __init__(self, error: _TError) -> None:
-        super().__init__(str(error))
-        self._error = error
-
-    def default_value(self, value: _TSource) -> _TSource:
-        """Get with default value.
-
-        Gets the value of the option if the option is Some, otherwise
-        returns the specified default value.
-        """
-        return value
-
-    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
-        """Get with default value lazily.
-
-        Gets the value of the option if the option is Some, otherwise
-        returns the value produced by the getter
-        """
-        return getter(self._error)
-
-    @property
-    def error(self) -> _TError:
-        return self._error
-
-    def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
-        return Error(self._error)
-
-    def map2(
-        self,
-        other: Result[_TOther, _TError],
-        mapper: Callable[[_TSource, _TOther], _TResult],
-    ) -> Result[_TResult, _TError]:
-        return Error(self._error)
-
-    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
-        return Error(self._error)
-
-    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
-        """Map error.
-
-        Return a result of the error value after applying the mapping
-        function, or Ok if the input is Ok.
-        """
-        return Error(mapper(self._error))
-
-    def is_error(self) -> bool:
-        """Returns `True` if the result is an `Ok` value."""
-        return True
-
-    def is_ok(self) -> bool:
-        """Returns `True` if the result is an `Ok` value."""
-        return False
-
-    def dict(self) -> builtins.dict[str, Any]:
-        """Returns a json serializable representation of the error value."""
-        attr = getattr(self._error, "dict") or getattr(self._error, "dict")
-        if callable(attr):
-            error = attr()
-        else:
-            error = self._error
-
-        return {"error": error}
-
-    def swap(self) -> Result[_TError, _TSource]:
-        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
-        return Ok(self._error)
-
-    def to_option(self) -> Option[_TSource]:
-        """Convert result to an option."""
-        from expression.core.option import Nothing
-
-        return Nothing
-
-    def __eq__(self, o: Any) -> bool:
-        if isinstance(o, Error):
-            return self.error == o.error  # type: ignore
-        return False
-
-    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
-        """Return iterator for Error case."""
-        # Raise class here so sub-classes like Failure works as well.
-        raise self.__class__(self._error)
-
-        # We're a generator
-        while False:
-            yield
-
-    def __str__(self):
-        return f"Error {self._error}"
-
-    def __hash__(self) -> int:
-        return hash(self._error)
 
 
 def default_value(value: _TSource) -> Callable[[Result[_TSource, Any]], _TSource]:
@@ -429,8 +353,8 @@ def map(result: Result[_TSource, _TError], mapper: Callable[[_TSource], _TResult
 
 @curry_flip(2)
 def map2(
-    x: Ok[_TSource, _TError] | Error[_TSource, _TError],
-    y: Ok[_TOther, _TError] | Error[_TOther, _TError],
+    x: Result[_TSource, _TError],
+    y: Result[_TOther, _TError],
     mapper: Callable[[_TSource, _TOther], _TResult],
 ) -> Result[_TResult, _TError]:
     return x.map2(y, mapper)
@@ -445,15 +369,15 @@ def bind(
 
 
 def dict(source: Result[_TSource, _TError]) -> builtins.dict[str, _TSource | _TError]:
-    return source.dict()
+    return source.model_dump()
 
 
-def is_ok(result: Result[_TSource, _TError]) -> TypeGuard[Ok[_TSource, _TError]]:
+def is_ok(result: Result[_TSource, _TError]) -> TypeGuard[Result[_TSource, _TError]]:
     """Returns `True` if the result is an `Ok` value."""
     return result.is_ok()
 
 
-def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Error[_TSource, _TError]]:
+def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Result[_TSource, _TError]]:
     """Returns `True` if the result is an `Error` value."""
     return result.is_error()
 
@@ -463,11 +387,11 @@ def swap(result: Result[_TSource, _TError]) -> Result[_TError, _TSource]:
     return result.swap()
 
 
-def to_option(result: Result[_TSource, _TError]) -> Option[_TSource]:
+def to_option(result: Result[_TSource, Any]) -> Option[_TSource]:
     from expression.core.option import Nothing, Some
 
     match result:
-        case Ok(value):
+        case Result(tag="ok", ok=value):
             return Some(value)
         case _:
             return Nothing
@@ -480,8 +404,6 @@ def of_option(value: Option[_TSource], error: _TError) -> Result[_TSource, _TErr
 def of_option_with(value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
     return value.to_result_with(error)
 
-
-Result: TypeAlias = Ok[_TSource, _TError] | Error[_TSource, _TError]
 
 __all__ = [
     "Result",

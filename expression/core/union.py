@@ -1,133 +1,93 @@
-from __future__ import annotations
-
-import itertools
-from abc import ABC
-from collections.abc import Iterator
-from typing import Any, Generic, TypeVar, cast
-
-from .pipe import PipeMixin
-from .typing import GenericValidator, ModelField, SupportsValidation
+from copy import deepcopy
+from dataclasses import dataclass, field, fields
+from typing import Any, TypeVar, dataclass_transform
 
 
 _T = TypeVar("_T")
 
 
-class Tag(Generic[_T]):
-    """For creating tagged union cases.
+@dataclass_transform()
+def tagged_union(cls: type[_T]) -> type[_T]:
+    cls = dataclass(cls)  # TODO: decide if we should be a dataclass or not
+    fields_ = fields(cls)  # type: ignore
+    field_names = {f.name for f in fields_}
+    field_names.add("tag")
+    original_init = cls.__init__
 
-    Args:
-        tag: Optional tag number. If not set it will be generated
-        automatically.
+    def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
+        tag = kwargs.pop("tag", None)
+        if len(kwargs) != 1:
+            raise TypeError(f"One and only one case can be specified. Not {kwargs}")
+        name, value = next(iter(kwargs.items()))
+        if name not in field_names:
+            raise TypeError(f"Unknown case name: {name}")
+        if tag is not None and tag != name:
+            raise TypeError(f"Tag {tag} does not match case name {name}")
 
-    """
+        # Cannot use setattr because it is overridden
+        object.__setattr__(self, "tag", name)
+        object.__setattr__(self, name, value)
 
-    __match_args__ = ("tag",)
+        # Enables the use of dataclasses.asdict
+        union_fields = dict((f.name, f) for f in fields_ if f.name in [name, "tag"])
+        object.__setattr__(self, "__dataclass_fields__", union_fields)  # type: ignore
+        # print("original_init: ", original_init)
+        original_init(self)
 
-    INITIAL_TAG = 1000
-    _count = itertools.count(start=INITIAL_TAG)
+    def __repr__(self: Any) -> str:
+        return f"{cls.__name__}({self.tag}={getattr(self, self.tag)})"
 
-    def __init__(self, tag: int | None = None) -> None:
-        self.tag = tag or next(Tag._count)
+    def __hash__(self: Any) -> int:
+        return hash((cls.__name__, self.tag, getattr(self, self.tag)))
 
-    def __eq__(self, other: Any) -> bool:
-        if self is other:
-            return True
+    def __setattr__(self: Any, name: str, value: Any) -> None:
+        if name in field_names:
+            raise TypeError("Cannot change the value of a tagged union case")
 
-        if not isinstance(other, Tag):
-            return False
+        object.__setattr__(self, name, value)
 
-        return self.tag == other.tag
+    def __delattr__(self: Any, name: str) -> None:
+        if name in field_names:
+            raise TypeError("Cannot delete a tagged union case")
 
-    def __str__(self) -> str:
-        return f"tag: {self.tag}"
+        object.__delattr__(self, name)
 
-    def __repr__(self) -> str:
-        return f"tag: {self.tag}"
+    def __eq__(self: Any, other: Any) -> bool:
+        return (
+            isinstance(other, cls)
+            and self.tag == getattr(other, "tag")
+            and getattr(self, self.tag) == getattr(other, self.tag)
+        )
 
+    def __copy__(self: Any) -> Any:
+        mapping = {self.tag: getattr(self, self.tag)}
+        return cls(**mapping)
 
-def tag(tag: int | None = None) -> Tag[None]:
-    """Convenience from creating tags.
+    def __deepcopy__(self: Any, memo: Any) -> Any:
+        value = deepcopy(getattr(self, self.tag), memo)
+        mapping = {self.tag: value}
+        return cls(**mapping)
 
-    Less and simpler syntax since the type is given as an argument.
-    """
-    return Tag(tag)
+    cls.__eq__ = __eq__
+    cls.__init__ = __init__  # type: ignore
+    cls.__repr__ = __repr__
+    cls.__hash__ = __hash__
+    cls.__setattr__ = __setattr__
+    cls.__delattr__ = __delattr__
+    cls.__match_args__ = tuple(field_names)  # type: ignore
 
+    # We need to handle copy and deepcopy ourselves because they are needed by Pydantic
+    cls.__copy__ = __copy__  # type: ignore
+    cls.__deepcopy__ = __deepcopy__  # type: ignore
 
-class TypedTaggedUnion(SupportsValidation["TypedTaggedUnion[_T]"], Generic[_T], PipeMixin, ABC):
-    """A discriminated (tagged) union.
-
-    Takes a value, and an optional tag that may be used for matching.
-    """
-
-    __match_args__ = ("tag", "value")
-
-    def __init__(self, tag: Tag[_T], value: _T = None) -> None:
-        self.value = value
-        self.tag = tag
-
-        if not hasattr(self.__class__, "_tags"):
-            tags = {tag.tag: name for (name, tag) in self.__class__.__dict__.items() if isinstance(tag, Tag)}
-            setattr(self.__class__, "_tags", tags)
-
-        self.name = getattr(self.__class__, "_tags")[tag.tag]
-
-    def dict(self) -> Any:
-        tags: dict[str, Any] = {k: v for (k, v) in self.__class__.__dict__.items() if v is self.tag}
-        if self.value and hasattr(self.value, "dict"):
-            value: Any = self.value.dict()  # type: ignore
-        else:
-            value = self.value
-        return dict(tag=next(iter(tags.keys())), value=value)
-
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__}: {self.name} {self.value}"
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    @classmethod
-    def __get_validators__(cls) -> Iterator[GenericValidator[TypedTaggedUnion[_T]]]:
-        def _validate(union: Any, field: ModelField) -> TypedTaggedUnion[_T]:
-            if isinstance(union, TypedTaggedUnion):
-                return cast(TypedTaggedUnion[_T], union)
-
-            tags: dict[str, Any] = {k: v for (k, v) in cls.__dict__.items() if k == union["tag"]}
-            if field.sub_fields:
-                sub_field = field.sub_fields[0]
-                value, error = sub_field.validate(union["value"], {}, loc=union["tag"])
-                if error:
-                    raise ValueError(str(error))
-            else:
-                value = union["value"]
-            return cls(tags[union["tag"]], value)
-
-        yield _validate
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, TypedTaggedUnion):
-            return False
-
-        return self.tag == other.tag and self.value == other.value  # type: ignore
+    return cls
 
 
-class TaggedUnion(TypedTaggedUnion[Any]):
-    ...
+def case() -> Any:
+    """A case in a tagged union."""
+    return field(init=False, kw_only=True)
 
 
-class SingleCaseUnion(TypedTaggedUnion[_T]):
-    """Single case union.
-
-    Helper class to make single case tagged unions without having to
-    declare the tag which is needed to make a tagged union. The name of
-    the tag for a single case union is `VALUE` and may be used for
-    matching purposes.
-    """
-
-    VALUE = Tag[_T]()
-
-    def __init__(self, value: Any) -> None:
-        setattr(self.__class__, "_tags", {SingleCaseUnion.VALUE.tag: "VALUE"})
-        super().__init__(SingleCaseUnion.VALUE, value)
-
-
-__all__ = ["SingleCaseUnion", "Tag", "TaggedUnion", "tag"]
+def tag() -> Any:
+    """The tag of a tagged union."""
+    return field(init=False, kw_only=True)

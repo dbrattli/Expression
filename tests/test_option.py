@@ -18,14 +18,14 @@ from expression import (
     pipe,
     pipe2,
 )
-from expression.core.option import BaseOption, Nothing_
+from expression.core.option import Option, Nothing, Some
 from expression.extra.option import pipeline
 
 
 def test_option_some():
     xs = Some(42)
 
-    assert isinstance(xs, BaseOption)
+    assert isinstance(xs, Option)
     assert pipe(xs, option.is_some) is True
     assert pipe(xs, option.is_none) is False
 
@@ -34,10 +34,10 @@ def test_option_some_match():
     xs = Some(42)
 
     match xs:
-        case Some(x):
+        case Option(tag="some", some=x):
             assert x == 42
 
-        case _:  # type: ignore
+        case _:
             assert False
 
 
@@ -46,7 +46,7 @@ def test_option_some_match_fluent():
     ys = xs.map(lambda x: x + 1)
 
     match ys:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 43
         case _:
             assert False
@@ -65,7 +65,7 @@ def test_option_some_iterate():
 def test_option_none():
     xs = Nothing
 
-    assert isinstance(xs, BaseOption)
+    assert isinstance(xs, Option)
     assert xs.pipe(option.is_some) is False
     assert xs.pipe(option.is_none) is True
 
@@ -74,7 +74,7 @@ def test_option_none_match():
     xs = Nothing
 
     match xs:
-        case Some():  # type: ignore
+        case Option(tag="some"):
             assert False
 
         case x if x is Nothing:
@@ -167,7 +167,7 @@ def test_option_some_map_piped():
     ys: Option[int] = xs.pipe(option.map(mapper))
 
     match ys:
-        case Some(y):
+        case Option(tag="some", some=y):
             assert y == 43
         case _:
             assert False
@@ -187,7 +187,7 @@ def test_option_some_map_fluent():
     ys = xs.map(lambda x: x + 1)
 
     match ys:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 43
         case _:
             assert False
@@ -208,7 +208,7 @@ def test_option_some_map2_piped(x: int, y: int):
     zs = pipe2((xs, ys), option.map2(mapper))
 
     match zs:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == x + y
         case _:
             assert False
@@ -219,7 +219,7 @@ def test_option_some_bind_fluent():
     ys = xs.bind(lambda x: Some(x + 1))
 
     match ys:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 43
         case _:
             assert False
@@ -230,7 +230,7 @@ def test_option_some_bind_none_fluent():
     ys = xs.bind(lambda x: Nothing)
 
     match ys:
-        case Nothing_():
+        case Option(tag="none"):
             assert True
         case _:
             assert False
@@ -241,7 +241,7 @@ def test_option_none_bind_none_fluent():
     ys = xs.bind(lambda x: Nothing)
 
     match ys:
-        case Some():
+        case Option(tag="some"):
             assert False
         case _:
             assert True
@@ -255,7 +255,7 @@ def test_option_some_bind_piped():
     )
 
     match ys:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 43
         case _:
             assert False
@@ -393,7 +393,7 @@ def test_option_builder_yield_value():
 
     xs = fn()
     match xs:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 42
         case _:
             assert False
@@ -406,7 +406,7 @@ def test_option_builder_yield_value_async():
 
     xs = fn()
     match xs:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 42
         case _:
             assert False
@@ -420,7 +420,7 @@ def test_option_builder_yield_some_wrapped():
 
     xs = fn()
     match xs:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == Some(42)
         case _:
             assert False
@@ -434,7 +434,7 @@ def test_option_builder_return_some():
 
     xs = fn()
     match xs:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 42
         case _:
             assert False
@@ -448,7 +448,7 @@ def test_option_builder_return_nothing_wrapped():
 
     xs = fn()
     match xs:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value is Nothing
         case _:
             assert False
@@ -462,7 +462,7 @@ def test_option_builder_yield_from_some():
 
     xs = fn()
     match xs:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 43
         case _:
             assert False
@@ -489,7 +489,7 @@ def test_option_builder_multiple_some():
 
     xs = fn()
     match xs:
-        case Some(value):
+        case Option(tag="some", some=value):
             assert value == 85
         case _:
             assert False
@@ -556,13 +556,11 @@ class Model(BaseModel):
     two: Option[str] = Nothing
     three: Option[float] = Nothing
 
-    class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], Any]] = {BaseOption: option.dict}
-
-
 def test_parse_option_works():
-    obj = dict(one=10)
-    model = Model.parse_obj(obj)
+    obj = dict(one=10, two=None)
+    model = Model.model_validate(obj)
+
+    print("model: ", model)
 
     assert model.one.is_some()
     assert model.one.value == 10
@@ -571,9 +569,9 @@ def test_parse_option_works():
 
 
 def test_serialize_option_works():
-    model = Model(one=Some(10), two=Nothing)
-    json = model.json()
-    model_ = Model.parse_raw(json)
+    model = Model(one=Some(10))
+    json = model.model_dump_json()
+    model_ = Model.model_validate_json(json)
 
     assert model_.one.is_some()
     assert model_.one.value == 10
