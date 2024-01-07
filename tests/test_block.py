@@ -412,13 +412,10 @@ class Model(BaseModel):
     two: Block[str] = block.empty
     three: Block[float] = block.empty
 
-    class Config:
-        json_encoders: Dict[Type[Any], Callable[[Any], List[Any]]] = {Block: block.dict}
-
 
 def test_parse_block_works():
     obj = dict(one=[1, 2, 3], two=[])
-    model = Model.parse_obj(obj)
+    model = Model.model_validate(obj)
     assert isinstance(model.one, Block)
     assert model.one == Block([1, 2, 3])
     assert model.two == Block.empty()
@@ -430,10 +427,10 @@ def test_serialize_block_works():
     model = Model(one=Block([1, 2, 3]), two=Block.empty())
 
     # act
-    json = model.json()
+    json = model.model_dump_json()
 
     # assert
-    model_ = Model.parse_raw(json)
+    model_ = Model.model_validate_json(json)
     assert model_.one == Block([1, 2, 3])
     assert model_.two == Block.empty()
     assert model_.three == block.empty

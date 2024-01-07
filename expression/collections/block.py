@@ -23,7 +23,10 @@ import builtins
 import functools
 import itertools
 from collections.abc import Callable, Collection, Iterable, Iterator
-from typing import Any, ClassVar, Literal, TypeVar, cast, overload
+from typing import Any, Literal, Sequence, TypeVar, get_args, overload
+
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from expression.core import (
     Nothing,
@@ -35,7 +38,7 @@ from expression.core import (
     curry_flip,
     pipe,
 )
-from expression.core.typing import GenericValidator, ModelField, SupportsValidation
+from expression.core.typing import SupportsValidation
 
 from . import seq
 
@@ -50,29 +53,6 @@ _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
-
-
-def _validate(value: Any, field: ModelField) -> Block[Any]:
-    if isinstance(value, Block):
-        return cast(Block[Any], value)
-
-    if not isinstance(value, list):
-        raise ValueError("not a list")
-
-    value_ = cast(list[Any], value)
-
-    if field.sub_fields:
-        sub_field = field.sub_fields[0]
-
-        value__: list[Any] = []
-        for item in value_:
-            val, error = sub_field.validate(item, {}, loc="Block")
-            if error:
-                raise ValueError(str(error))
-            value__.append(val)
-        value_ = value__
-
-    return Block(value_)
 
 
 class Block(
@@ -98,8 +78,6 @@ class Block(
     """
 
     __match_args__ = ("_value",)
-
-    __validators__: ClassVar = [_validate]
 
     def __init__(self, value: Iterable[_TSource] = ()) -> None:
         # Use composition instead of inheritance since generic tuples
@@ -473,7 +451,7 @@ class Block(
         """Returns a json serializable representation of the list."""
 
         def to_obj(value: Any) -> Any:
-            attr = getattr(value, "dict", None) or getattr(value, "dict", None)
+            attr = getattr(value, "model_dump", None) or getattr(value, "dict", None)
             if attr and callable(attr):
                 value = attr()
             return value
@@ -563,8 +541,24 @@ class Block(
         return str(self)
 
     @classmethod
-    def __get_validators__(cls) -> Iterator[GenericValidator[Block[_TSource]]]:
-        yield from cls.__validators__
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        instance_schema = core_schema.is_instance_schema(cls)
+
+        args = get_args(source)
+        if args:
+            # replace the type and rely on Pydantic to generate the right schema
+            # for `Sequence`
+            sequence_t_schema = handler.generate_schema(Sequence[args[0]])
+        else:
+            sequence_t_schema = handler.generate_schema(Sequence)
+
+        non_instance_schema = core_schema.no_info_after_validator_function(Block, sequence_t_schema)
+        python_schema = core_schema.union_schema([instance_schema, non_instance_schema])
+        return core_schema.json_or_python_schema(
+            json_schema=non_instance_schema,
+            python_schema=python_schema,
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda instance: instance.dict()),
+        )
 
 
 @curry_flip(1)
@@ -783,7 +777,7 @@ def starmap(mapper: Callable[[_T1, _T2, _T3], _TResult]) -> Callable[[Block[tupl
 
 @overload
 def starmap(
-    mapper: Callable[[_T1, _T2, _T3, _T4], _TResult]
+    mapper: Callable[[_T1, _T2, _T3, _T4], _TResult],
 ) -> Callable[[Block[tuple[_T1, _T2, _T3, _T4]]], Block[_TResult]]:
     ...
 

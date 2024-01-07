@@ -560,8 +560,6 @@ def test_parse_option_works():
     obj = dict(one=10, two=None)
     model = Model.model_validate(obj)
 
-    print("model: ", model)
-
     assert model.one.is_some()
     assert model.one.value == 10
     assert model.two == Nothing

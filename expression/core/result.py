@@ -159,16 +159,16 @@ class Result(
             case _:
                 return False
 
-    def model_dump(self) -> builtins.dict[str, _TSource | _TError]:
+    def dict(self) -> builtins.dict[str, _TSource | _TError]:
         """Return a json serializable representation of the result."""
         match self:
             case Result(tag="ok", ok=value):
-                attr = getattr(value, "model_dump", None)
+                attr = getattr(value, "model_dump", None) or getattr(value, "dict", None)
                 if attr and callable(attr):
                     value = attr()
                 return {"ok": value}
             case Result(error=error):
-                attr = getattr(error, "model_dump", None)
+                attr = getattr(error, "model_dump", None) or getattr(error, "dict", None)
                 if attr and callable(attr):
                     error = attr()
                 return {"error": error}
@@ -369,7 +369,7 @@ def bind(
 
 
 def dict(source: Result[_TSource, _TError]) -> builtins.dict[str, _TSource | _TError]:
-    return source.model_dump()
+    return source.dict()
 
 
 def is_ok(result: Result[_TSource, _TError]) -> TypeGuard[Result[_TSource, _TError]]:
