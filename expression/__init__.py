@@ -9,7 +9,7 @@ programming in Python.
 GitHub: https://github.com/cognitedata/Expression
 """
 
-from . import collections, core  # , effect
+from . import collections, core, effect
 from ._version import __version__
 from .core import (
     AsyncReplyChannel,
@@ -90,6 +90,7 @@ __all__ = [
     "curry_flipped",
     "default_arg",
     "downcast",
+    "effect",
     "EffectError",
     "Error",
     "Failure",
