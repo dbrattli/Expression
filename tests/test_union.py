@@ -15,7 +15,7 @@ class Circle:
     radius: float
 
 
-@tagged_union
+@tagged_union(frozen=True)
 class Shape:
     tag: Literal["circle", "rectangle", "triangle"] = tag()
 
