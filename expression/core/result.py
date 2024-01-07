@@ -287,7 +287,7 @@ class Result(
         return core_schema.json_or_python_schema(
             json_schema=json_schema,
             python_schema=python_schema,
-            serialization=core_schema.plain_serializer_function_ser_schema(lambda instance: instance.model_dump()),
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda instance: instance.dict()),
         )
 
 
@@ -297,17 +297,6 @@ def Error(error: _TError) -> Result[Any, _TError]:
 
 def Ok(value: _TSource) -> Result[_TSource, Any]:
     return Result[_TSource, Any].Ok(value)
-
-
-# class Ok(Result[_TSource, Any]):
-#     ok: _TSource = case()
-#     tag = "ok"
-
-
-# class Error(Result[Any, _TError]):
-#     error: _TError = case()
-
-#     tag = "error"
 
 
 class ResultException(EffectError):

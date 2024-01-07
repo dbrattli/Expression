@@ -230,7 +230,6 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """Return `True` if list is empty."""
         return not self.value
 
-    @property
     @classmethod
     def empty(cls) -> TypedArray[Any]:
         """Returns empty array."""
