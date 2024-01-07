@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Generator, Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, get_args, get_origin
 
 from pydantic import GetCoreSchemaHandler, ValidatorFunctionWrapHandler
 from pydantic_core import CoreSchema, core_schema
@@ -203,7 +203,7 @@ class Option(
         return of_optional(value)
 
     @classmethod
-    def of_result(cls, result: Result[_TSource, _TError]) -> Option[_TSource]:
+    def of_result(cls, result: Result[_TSource, Any]) -> Option[_TSource]:
         """Convert result to an option."""
         return of_result(result)
 
@@ -260,7 +260,7 @@ class Option(
                 raise ValueError("There is no value.")
 
     def __eq__(self, o: Any) -> bool:
-        return isinstance(o, Option) and self.tag == o.tag and getattr(self, self.tag) == getattr(o, self.tag)
+        return isinstance(o, Option) and self.tag == o.tag and getattr(self, self.tag) == getattr(o, self.tag)  # type: ignore
 
     def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         match self:
@@ -482,7 +482,7 @@ def of_obj(value: Any) -> Option[Any]:
     return of_optional(value)
 
 
-def of_result(result: Result[_TSource, _TError]) -> Option[_TSource]:
+def of_result(result: Result[_TSource, Any]) -> Option[_TSource]:
     from expression.core.result import Result
 
     match result:

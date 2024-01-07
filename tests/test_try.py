@@ -1,8 +1,5 @@
-import pytest
-
 from expression import Failure, Success, Try
 
-from .utils import CustomException
 
 
 def test_can_create_success():

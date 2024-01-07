@@ -8,8 +8,7 @@ Everything else is the same as `Result`, just simpler to use.
 
 from typing import Any, TypeVar
 
-from .result import Error, Ok, Result
-from .union import case
+from .result import Result
 
 
 _TSource = TypeVar("_TSource")

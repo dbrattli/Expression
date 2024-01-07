@@ -1,9 +1,12 @@
 from collections.abc import Callable
 from typing import Any, TypeVar
 
+from typing_extensions import TypeVarTuple, Unpack
+
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")
+_P = TypeVarTuple("_P")
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
 
@@ -16,7 +19,7 @@ def identity(value: _A) -> _A:
     return value
 
 
-def starid(*value: Any) -> tuple[Any, ...]:
+def starid(*value: Unpack[_P]) -> tuple[Unpack[_P]]:
     return value
 
 

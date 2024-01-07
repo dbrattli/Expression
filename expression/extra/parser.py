@@ -228,7 +228,7 @@ def preturn(x: _A) -> Parser[_A]:
 
 def fail(error: str) -> Parser[Any]:
     def run(input: Remaining) -> ParseResult[Any]:
-        return Error[tuple[Any, Remaining], str](error)
+        return Error(error)
 
     return Parser(run, f'fail("{error}")')
 

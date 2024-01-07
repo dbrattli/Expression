@@ -22,11 +22,11 @@ from __future__ import annotations
 import builtins
 import functools
 import itertools
-from collections.abc import Callable, Collection, Iterable, Iterator
-from typing import Any, Literal, Sequence, TypeVar, get_args, overload
+from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
+from typing import Any, Literal, TypeVar, get_args, overload
 
 from pydantic import GetCoreSchemaHandler
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import core_schema
 
 from expression.core import (
     Nothing,
@@ -38,7 +38,6 @@ from expression.core import (
     curry_flip,
     pipe,
 )
-from expression.core.typing import SupportsValidation
 
 from . import seq
 
@@ -58,7 +57,6 @@ _T4 = TypeVar("_T4")
 class Block(
     Collection[_TSource],  # Sequence breaks pydantic
     PipeMixin,
-    SupportsValidation["Block[_TSource]"],
 ):
     """Immutable list type.
 
@@ -548,7 +546,7 @@ class Block(
         if args:
             # replace the type and rely on Pydantic to generate the right schema
             # for `Sequence`
-            sequence_t_schema = handler.generate_schema(Sequence[args[0]])
+            sequence_t_schema = handler.generate_schema(Sequence[args[0]])  # type: ignore
         else:
             sequence_t_schema = handler.generate_schema(Sequence)
 
@@ -841,9 +839,11 @@ def of_seq(xs: Iterable[_TSource]) -> Block[_TSource]:
 
 
 def of_option(option: Option[_TSource]) -> Block[_TSource]:
-    if isinstance(option, Some):
-        return singleton(option.value)
-    return empty
+    match option:
+        case Option(tag="some", some=value):
+            return singleton(value)
+        case _:
+            return empty
 
 
 @curry_flip(1)

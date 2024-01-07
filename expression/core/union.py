@@ -67,12 +67,12 @@ def tagged_union(cls: type[_T]) -> type[_T]:
         mapping = {self.tag: value}
         return cls(**mapping)
 
-    cls.__eq__ = __eq__
+    cls.__eq__ = __eq__  # type: ignore
     cls.__init__ = __init__  # type: ignore
-    cls.__repr__ = __repr__
-    cls.__hash__ = __hash__
-    cls.__setattr__ = __setattr__
-    cls.__delattr__ = __delattr__
+    cls.__repr__ = __repr__  # type: ignore
+    cls.__hash__ = __hash__  # type: ignore
+    cls.__setattr__ = __setattr__  # type: ignore
+    cls.__delattr__ = __delattr__  # type: ignore
     cls.__match_args__ = tuple(field_names)  # type: ignore
 
     # We need to handle copy and deepcopy ourselves because they are needed by Pydantic

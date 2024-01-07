@@ -1,6 +1,6 @@
 import functools
 from builtins import list as list
-from typing import Any, Callable, Dict, List, Tuple, Type
+from typing import Any, Callable, List, Tuple
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
