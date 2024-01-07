@@ -41,20 +41,6 @@ pydantic = ["pydantic"]
 all = ["pydantic"]
 
 
-[tool.black]
-line-length = 88
-target-version = ['py310']
-include = '\.py$'
-extend-exclude = '^/docs'
-
-[tool.isort]
-profile = "black"
-line_length=88                 # corresponds to -w  flag
-multi_line_output=3            # corresponds to -m  flag
-include_trailing_comma=true    # corresponds to -tc flag
-src_paths = ["expression"]
-float_to_top=true
-
 [tool.ruff]
 # Keep in sync with .pre-commit-config.yaml
 line-length = 120
