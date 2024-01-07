@@ -23,11 +23,11 @@ from typing import (
     get_origin,
 )
 
-from pydantic import GetCoreSchemaHandler, ValidatorFunctionWrapHandler
-from pydantic_core import CoreSchema, core_schema
-
 
 if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
+
     from expression.core.option import Option
 
 from .curry import curry_flip
@@ -228,6 +228,9 @@ class Result(
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        from pydantic import ValidatorFunctionWrapHandler
+        from pydantic_core import core_schema
+
         origin = get_origin(source_type)
         if origin is None:  # used as `x: Result` without params
             origin = source_type

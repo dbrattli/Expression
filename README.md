@@ -57,10 +57,16 @@ similar to Python, but F# can also do a lot of things better than Python:
 ## Getting Started
 
 You can install the latest `expression` from PyPI by running `pip` (or
-`pip3`). Note that `expression` only works for Python 3.9+.
+`pip3`). Note that `expression` only works for Python 3.11+.
 
 ```console
-> pip3 install expression
+> pip install expression
+```
+
+To add Pydantic support, install the `pydantic` extra:
+
+```console
+> pip install expression[pydantic]
 ```
 
 ## Goals
