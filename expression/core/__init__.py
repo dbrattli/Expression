@@ -2,16 +2,6 @@
 
 from . import aiotools, option, result
 from .builder import Builder
-from .choice import (
-    Choice,
-    Choice1of2,
-    Choice1of3,
-    Choice2,
-    Choice2of2,
-    Choice2of3,
-    Choice3,
-    Choice3of3,
-)
 from .compose import compose
 from .curry import curry, curry_flip
 from .error import EffectError, failwith
@@ -38,14 +28,6 @@ __all__ = [
     "aiotools",
     "AsyncReplyChannel",
     "Builder",
-    "Choice",
-    "Choice2",
-    "Choice3",
-    "Choice1of2",
-    "Choice2of2",
-    "Choice1of3",
-    "Choice2of3",
-    "Choice3of3",
     "compose",
     "curry",
     "curry_flip",

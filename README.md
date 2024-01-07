@@ -370,10 +370,10 @@ type union `(A | B)` are both types, while the cases in a tagged union type `U =
 are both constructors for the type U and are not types themselves. One consequence is
 that tagged unions can be nested in a way union types might not.
 
-In Expression you make a tagged union by defining your type as a sub-class of
-`TaggedUnion` with the appropriate generic types that this union represent for
-each case. Then you define static or class-method constructors for creating each of the
-tagged union cases.
+In Expression you make a tagged union by defining your type similar to a dataclass and
+decorate it with `@tagged_union` and add the appropriate generic types that this union
+represent for each case. Then you optionally define static or class-method constructors
+for creating each of the tagged union cases.
 
 ```python
 from dataclasses import dataclass
@@ -388,34 +388,45 @@ class Rectangle:
 class Circle:
     radius: float
 
-class Shape(TaggedUnion):
-    RECTANGLE = tag(Rectangle)
-    CIRCLE = tag(Circle)
+@tagged_union
+class Shape:
+    tag: Literal["rectangle", "circle"] = tag()
+
+    rectangle: Rectangle = case()
+    circle: Circle = case()
 
     @staticmethod
-    def rectangle(width: float, length: float) -> Shape:
-        return Shape(Shape.RECTANGLE, Rectangle(width, length))
+    def Rectangle(width: float, length: float) -> Shape:
+        ""Optional static method for creating a tagged union case""
+        return Shape(rectangle=Rectangle(width, length))
 
     @staticmethod
-    def circle(radius: float) -> Shape:
-        return Shape(Shape.CIRCLE, Circle(radius))
+    def Circle(radius: float) -> Shape:
+        """Optional static method for creating a tagged union case"""
+        return Shape(circle=Circle(radius))
 ```
+
+Note that the tag field is optional, but recommended. If you don't specify a tag field
+then then it will be created for you, but static type checkers will not be able to type
+check correctly when pattern matching.
 
 Now you may pattern match the shape to get back the actual value:
 
 ```python
-    from expression import match
-
     shape = Shape.Rectangle(2.3, 3.3)
 
     match shape:
-        case Shape(value=Rectangle(width=2.3)):
+        case Shape(tag="rectangle", rectangle=Rectangle(width=2.3)):
             assert shape.value.width == 2.3
         case _:
             assert False
 ```
 
-## Notable differences between Expression and F#
+Note that when matching keyword arguments, then the tag field must be specified for
+static type checkers to work correctly. It's not required for the code to work properly,
+but it's recommended.
+
+## Notable differences between Expression and F\#
 
 In F# modules are capitalized, in Python they are lowercase
 ([PEP-8](https://www.python.org/dev/peps/pep-0008/#package-and-module-names)).
@@ -450,27 +461,27 @@ with Expression.
 A collection of resources that were used as reference and inspiration
 for creating this library.
 
-- F# (http://fsharp.org)
-- Get Started with F# (https://aka.ms/fsharphome)
+- F# (<http://fsharp.org>)
+- Get Started with F# (<https://aka.ms/fsharphome>)
 - F# as a Better Python - Phillip Carter - NDC Oslo 2020
-  (https://www.youtube.com/watch?v=_QnbV6CAWXc)
-- OSlash (https://github.com/dbrattli/OSlash)
-- RxPY (https://github.com/ReactiveX/RxPY)
-- PEP 8 -- Style Guide for Python Code (https://www.python.org/dev/peps/pep-0008/)
+  (<https://www.youtube.com/watch?v=_QnbV6CAWXc>)
+- OSlash (<https://github.com/dbrattli/OSlash>)
+- RxPY (<https://github.com/ReactiveX/RxPY>)
+- PEP 8 -- Style Guide for Python Code (<https://www.python.org/dev/peps/pep-0008/>)
 - PEP 342 -- Coroutines via Enhanced Generators
-  (https://www.python.org/dev/peps/pep-0342/)
+  (<https://www.python.org/dev/peps/pep-0342/>)
 - PEP 380 -- Syntax for Delegating to a Subgenerator
-  (https://www.python.org/dev/peps/pep-0380)
-- PEP 479 -- Change StopIteration handling inside generators (https://www.python.org/dev/peps/pep-0479/)
-- PEP 634 -- Structural Pattern Matching (https://www.python.org/dev/peps/pep-0634/)
+  (<https://www.python.org/dev/peps/pep-0380>)
+- PEP 479 -- Change StopIteration handling inside generators (<https://www.python.org/dev/peps/pep-0479/>)
+- PEP 634 -- Structural Pattern Matching (<https://www.python.org/dev/peps/pep-0634/>)
 - Thunks, Trampolines and Continuation Passing
-  (https://jtauber.com/blog/2008/03/30/thunks,_trampolines_and_continuation_passing/)
+  (<https://jtauber.com/blog/2008/03/30/thunks,_trampolines_and_continuation_passing/>)
 - Tail Recursion Elimination
-  (http://neopythonic.blogspot.com/2009/04/tail-recursion-elimination.html)
+  (<http://neopythonic.blogspot.com/2009/04/tail-recursion-elimination.html>)
 - Final Words on Tail Calls
-  (http://neopythonic.blogspot.com/2009/04/final-words-on-tail-calls.html)
+  (<http://neopythonic.blogspot.com/2009/04/final-words-on-tail-calls.html>)
 - Python is the Haskell You Never Knew You Had: Tail Call Optimization
-  (https://sagnibak.github.io/blog/python-is-haskell-tail-recursion/)
+  (<https://sagnibak.github.io/blog/python-is-haskell-tail-recursion/>)
 
 ## How-to Contribute
 
@@ -496,7 +507,7 @@ by running:
 
 ## Code of Conduct
 
-This project follows https://www.contributor-covenant.org, see our [Code
+This project follows <https://www.contributor-covenant.org>, see our [Code
 of
 Conduct](https://github.com/cognitedata/Expression/blob/main/CODE_OF_CONDUCT.md).
 
