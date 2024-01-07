@@ -58,7 +58,9 @@ class Builder(Generic[_TInner, _TOuter], ABC):
             # Effect errors (Nothing, Error, etc) short circuits the processing so we
             # set `done` to `True` here.
             done.append(True)
-            return self.return_from(cast("_TOuter", error))
+            # get value from exception
+            value = error.args[0]
+            return self.return_from(cast("_TOuter", value))
         except StopIteration as ex:
             done.append(True)
             # Return of a value in the generator produces StopIteration with a value
@@ -127,6 +129,3 @@ class Builder(Generic[_TInner, _TOuter], ABC):
             return self.run(result)
 
         return wrapper
-
-
-__all__ = ["Builder"]

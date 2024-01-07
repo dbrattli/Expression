@@ -381,14 +381,14 @@ def test_parse_block_works():
 
 def test_ok_to_dict_works():
     result = Ok(10)
-    obj = result.model_dump()
+    obj = result.dict()
     assert obj == dict(ok=10)
 
 
 def test_error_to_dict_works():
     error = MyError(message="got error")
     result = Error(error)
-    obj = result.model_dump()
+    obj = result.dict()
     assert obj == dict(error=dict(message="got error"))
 
 
@@ -423,7 +423,6 @@ def test_error_from_dict_works():
 def test_model_to_json_works():
     model = Model(one=Ok(10))
     obj = model.model_dump_json()
-    print(f"obj: {obj}")
     assert obj == '{"one":{"ok":10},"two":{"error":{"message":"error"}},"three":{"error":{"message":"error"}}}'
 
 def test_error_default_value():

@@ -31,7 +31,6 @@ def tagged_union(cls: type[_T]) -> type[_T]:
         # Enables the use of dataclasses.asdict
         union_fields = dict((f.name, f) for f in fields_ if f.name in [name, "tag"])
         object.__setattr__(self, "__dataclass_fields__", union_fields)  # type: ignore
-        # print("original_init: ", original_init)
         original_init(self)
 
     def __repr__(self: Any) -> str:
