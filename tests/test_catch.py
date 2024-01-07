@@ -21,7 +21,7 @@ def test_catch_wraps_error():
 
     result = fn()
     match result:
-        case Error(ex):
+        case Result(tag="error", error=ex):
             assert isinstance(ex, ValueError)
             assert str(ex) == "error"
 
@@ -49,7 +49,7 @@ def test_catch_chained():
 
     result = fn(ValueError("error"))
     match result:
-        case Error(ex):
+        case Result(tag="error", error=ex):
             assert isinstance(ex, ValueError)
             assert str(ex) == "error"
         case _:
@@ -57,7 +57,7 @@ def test_catch_chained():
 
     result = fn(KeyError("error"))
     match result:
-        case Error(ex):
+        case Result(tag="error", error=ex):
             assert isinstance(ex, KeyError)
             assert str(ex) == "'error'"
         case _:
@@ -79,12 +79,12 @@ def test_catch_with_effect_error():
     @catch(exception=TypeError)
     @effect.try_[int]()
     def fn(a: int) -> Generator[int, int, int]:
-        b = yield from Error[int, Exception](ValueError("failure"))
+        b = yield from Error(ValueError("failure"))
         return a + b
 
     result = fn(1)
     match result:
-        case Error(ex):
+        case Result(tag="error", error=ex):
             assert isinstance(ex, ValueError)
             assert str(ex) == "failure"
         case _:
@@ -100,7 +100,7 @@ def test_catch_with_effect_exception():
 
     result = fn(1)
     match result:
-        case Error(ex):
+        case Result(tag="error", error=ex):
             assert isinstance(ex, TypeError)
         case _:
             assert False

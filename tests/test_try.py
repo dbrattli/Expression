@@ -16,16 +16,10 @@ def test_can_create_failure():
 def test_try_success():
     xs: Try[int] = Success(10)
 
-    for x in xs:
-        assert x == 10
-
-
-def test_try_failure():
-    error = CustomException("err")
-    xs: Try[int] = Failure(error)
-
-    with pytest.raises(Failure):  # type: ignore
-        for _ in xs:
+    match xs:
+        case Try(tag="ok", ok=x):
+            assert x == 10
+        case _:
             assert False
 
 
@@ -34,7 +28,7 @@ def test_try_match_failure():
     xs: Try[int] = Failure(error)
 
     match xs:
-        case Failure(err):
+        case Try(tag="error", error=err):
             assert err == error
-        case _:  # type: ignore
+        case _:
             assert False
