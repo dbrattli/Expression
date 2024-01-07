@@ -580,9 +580,11 @@ def of_seq(xs: Iterable[_TSource]) -> TypedArray[_TSource]:
 
 
 def of_option(option: Option[_TSource]) -> TypedArray[_TSource]:
-    if isinstance(option, Some):
-        return singleton(option.value)
-    return empty()
+    match option:
+        case Option(tag="some", some=value):
+            return singleton(value)
+        case _:
+            return empty()
 
 
 def singleton(value: _TSource) -> TypedArray[_TSource]:

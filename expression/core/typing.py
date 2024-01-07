@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Iterable
 from typing import Any, Protocol, TypeVar, cast, get_origin
 
 
@@ -55,24 +55,6 @@ class ModelField:
         ...
 
 
-Validator = Callable[[Any], _T]
-GenericValidator = Callable[[Any, ModelField], _T]
-
-
-class SupportsValidation(Protocol[_T_co]):
-    """A type that supports valication.
-
-    A type that implements __get_validators__ to be used with pydantic.
-    """
-
-    @classmethod
-    def __get_validators__(
-        cls,
-    ) -> Iterator[Validator[_T_co] | GenericValidator[_T_co]]:
-        """Yield an iterator of validators."""
-        ...
-
-
 def upcast(type: type[_Base], expr: _Base) -> _Base:
     """Upcast expression from a `Derived` to `Base`.
 
@@ -116,12 +98,8 @@ __all__ = [
     "downcast",
     "upcast",
     "try_downcast",
-    "GenericValidator",
     "SupportsLessThan",
     "SupportsSum",
     "SupportsGreaterThan",
-    "SupportsValidation",
     "SupportsMatch",
-    "Validator",
-    "GenericValidator",
 ]

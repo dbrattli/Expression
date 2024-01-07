@@ -64,7 +64,6 @@ __all__ = [
     "is_some",
     "MailboxProcessor",
     "Nothing",
-    "Nothing_",
     "Ok",
     "Option",
     "option",

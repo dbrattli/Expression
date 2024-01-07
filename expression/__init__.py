@@ -90,7 +90,6 @@ __all__ = [
     "curry_flipped",
     "default_arg",
     "downcast",
-    "effect",
     "EffectError",
     "Error",
     "Failure",

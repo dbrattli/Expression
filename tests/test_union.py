@@ -38,7 +38,7 @@ def test_union_shape_circle_pattern_matching_works():
     shape = Shape(circle=Circle(10.0))
 
     match shape:
-        case Shape(tag="rectangle", rectangle=(w, h)):
+        case Shape(tag="rectangle", rectangle=(_, _)):
             raise AssertionError("Should not match")
         case Shape(tag="circle", circle=Circle(radius=r)):
             assert r == 10.0
@@ -50,7 +50,7 @@ def test_shape_rectangle_pattern_matching_works():
     shape = Shape(rectangle=(10.0, 20.0))
 
     match shape:
-        case Shape(tag="circle", circle=Circle(radius=r)):
+        case Shape(tag="circle", circle=Circle(radius=_)):
             raise AssertionError("Should not match")
         case Shape(tag="rectangle", rectangle=(w, h)):
             assert w == 10.0
