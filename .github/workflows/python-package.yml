@@ -26,8 +26,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install poetry
-          poetry config installer.modern-installation false
+          pipx install poetry
           poetry install --all-extras
 
       - name: Code checks
