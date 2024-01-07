@@ -1,3 +1,4 @@
 jupyter-book
 sphinx-autodoc-typehints>=1.17.0
-expression>=2.0.1
+sphinx-panels
+expression>=4.0.0
