@@ -177,7 +177,7 @@ class Email:
 def test_single_case_union_works():
     email = Email(email="test@test.com")
     match email:
-        case Email(e):
+        case Email(email=e):
             assert e == "test@test.com"
         case _: # pyright: ignore
             assert False
