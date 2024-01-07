@@ -656,14 +656,14 @@ def starmap(mapper: Callable[[_T1, _T2], _TResult]) -> Callable[[Iterable[tuple[
 
 @overload
 def starmap(
-    mapper: Callable[[_T1, _T2, _T3], _TResult]
+    mapper: Callable[[_T1, _T2, _T3], _TResult],
 ) -> Callable[[Iterable[tuple[_T1, _T2, _T3]]], Iterable[_TResult]]:
     ...
 
 
 @overload
 def starmap(
-    mapper: Callable[[_T1, _T2, _T3, _T4], _TResult]
+    mapper: Callable[[_T1, _T2, _T3, _T4], _TResult],
 ) -> Callable[[Iterable[tuple[_T1, _T2, _T3, _T4]]], Iterable[_TResult]]:
     ...
 
