@@ -78,7 +78,7 @@ def test_union_can_add_custom_attributes_to_shape():
 def test_union_cannot_change_case_value():
     shape = Shape(circle=Circle(10.0))
     with pytest.raises(TypeError):
-        shape.circle = Circle(20.0)
+        shape.circle = Circle(20.0) # type: ignore
 
 
 def test_union_compare_shapes():
