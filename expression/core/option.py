@@ -39,7 +39,6 @@ _T2 = TypeVar("_T2")
 class Option(
     Iterable[_TSource],
     PipeMixin,
-    # SupportsValidation["BaseOption[_TSource]"],
 ):
     """Option abstract base class."""
 
