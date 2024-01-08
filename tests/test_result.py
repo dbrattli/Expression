@@ -1,15 +1,17 @@
-from typing import Any, Callable, Generator, List
+from collections.abc import Callable, Generator
+from typing import Any
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel, TypeAdapter
 
-from expression import Nothing, Option, Result, Some, effect, result, Ok, Error
+from expression import Error, Nothing, Ok, Option, Result, Some, effect, result
 from expression.collections import Block
 from expression.extra.result import pipeline, sequence
 
 from .utils import CustomException
+
 
 def test_pattern_match_with_alias():
     xs: Result[int, str] = Ok(42)
@@ -19,6 +21,7 @@ def test_pattern_match_with_alias():
             assert x == 42
         case _:
             assert False
+
 
 def test_result_ok():
     xs: Result[int, str] = Result.Ok(42)
@@ -204,7 +207,7 @@ def test_result_bind_piped(x: int, y: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_result_traverse_ok(xs: List[int]):
+def test_result_traverse_ok(xs: list[int]):
     ys: Block[Result[int, str]] = Block([Ok(x) for x in xs])
     zs = sequence(ys)
     match zs:
@@ -215,11 +218,9 @@ def test_result_traverse_ok(xs: List[int]):
 
 
 @given(st.lists(st.integers(), min_size=5))  # type: ignore
-def test_result_traverse_error(xs: List[int]):
+def test_result_traverse_error(xs: list[int]):
     error = "Do'h"
-    ys: Block[Result[int, str]] = Block(
-        [Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)]
-    )
+    ys: Block[Result[int, str]] = Block([Ok(x) if i == 3 else Error(error) for x, i in enumerate(xs)])
 
     zs = sequence(ys)
     match zs:
@@ -425,6 +426,7 @@ def test_model_to_json_works():
     obj = model.model_dump_json()
     assert obj == '{"one":{"ok":10},"two":{"error":{"message":"error"}},"three":{"error":{"message":"error"}}}'
 
+
 def test_error_default_value():
     xs: Result[int, int] = Error(0)
 
@@ -478,9 +480,7 @@ def test_result_of_option_error():
 
 
 def test_result_of_option_with_ok():
-    xs = result.of_option_with(
-        Some(42), error=lambda: exec('raise(Exception("Should not be called"))')
-    )
+    xs = result.of_option_with(Some(42), error=lambda: exec('raise(Exception("Should not be called"))'))
     assert xs == Ok(42)
 
 

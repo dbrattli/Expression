@@ -6,9 +6,7 @@ from expression import TailCall, tailrec
 
 def test_factorial():
     @tailrec
-    def factorial(
-        n: int, acc: int = 1
-    ) -> Any:  # Python 3.10: TailCallResult[int, [int, int]]:
+    def factorial(n: int, acc: int = 1) -> Any:  # Python 3.10: TailCallResult[int, [int, int]]:
         if n == 0:
             return acc
 

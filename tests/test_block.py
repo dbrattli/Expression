@@ -1,6 +1,7 @@
 import functools
 from builtins import list as list
-from typing import Any, Callable, List, Tuple
+from collections.abc import Callable
+from typing import Any, List
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
@@ -8,6 +9,7 @@ from pydantic import BaseModel
 
 from expression import Nothing, Option, Some, pipe
 from expression.collections import Block, block
+
 
 Func = Callable[[int], int]
 
@@ -128,7 +130,7 @@ def test_block_pipe_map(xs: List[int]):
 
 
 @given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
-def test_seq_pipe_starmap(xs: List[Tuple[int, int]]):
+def test_seq_pipe_starmap(xs: List[tuple[int, int]]):
     mapper: Callable[[int, int], int] = lambda x, y: x + y
     ys = pipe(
         block.of_seq(xs),
@@ -140,7 +142,7 @@ def test_seq_pipe_starmap(xs: List[Tuple[int, int]]):
 
 
 @given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
-def test_seq_pipe_map2(xs: List[Tuple[int, int]]):
+def test_seq_pipe_map2(xs: List[tuple[int, int]]):
     mapper: Callable[[int, int], int] = lambda x, y: x + y
     ys = pipe(
         block.of_seq(xs),
@@ -152,7 +154,7 @@ def test_seq_pipe_map2(xs: List[Tuple[int, int]]):
 
 
 @given(st.lists(st.tuples(st.integers(), st.integers(), st.integers())))  # type: ignore
-def test_seq_pipe_map3(xs: List[Tuple[int, int, int]]):
+def test_seq_pipe_map3(xs: List[tuple[int, int, int]]):
     mapper: Callable[[int, int, int], int] = lambda x, y, z: x + y + z
     ys = pipe(
         block.of_seq(xs),
@@ -279,7 +281,7 @@ def test_block_fold(xs: List[int]):
 
 @given(st.integers(max_value=100))  # type: ignore
 def test_block_unfold(x: int):
-    def unfolder(state: int) -> Option[Tuple[int, int]]:
+    def unfolder(state: int) -> Option[tuple[int, int]]:
         if state < x:
             return Some((state, state + 1))
         return Nothing
@@ -356,7 +358,6 @@ def test_block_monad_law_left_identity(value: int):
 
     return x >>= f is the same thing as f x
     """
-
     f: Callable[[int], Block[int]] = lambda x: rtn(x + 42)
 
     assert rtn(value).collect(f) == f(value)
