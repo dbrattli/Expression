@@ -176,63 +176,95 @@ class Email:
 
 def test_single_case_union_works():
     email = Email(email="test@test.com")
+
+    # Test attribute access
+    assert email.email == "test@test.com"
+    assert email.tag == "email" # type: ignore
+
+    # Test pattern matching
     match email:
         case Email(email=e):
             assert e == "test@test.com"
         case _: # pyright: ignore
             assert False
 
+@tagged_union(frozen=True, repr=False)
+class SecurePassword:
+    password: str = case()
 
+    # Override __str__ and __repr__ to make sure we don't leak the password in logs
+    def __str__(self) -> str:
+        return "********"
+    def __repr__(self) -> str:
+        return f"SecurePassword(password='********')"
+
+def test_single_case_union_secure_password_works():
+    password = SecurePassword(password="secret")
+
+    # Test attribute access
+    assert password.password == "secret"
+    assert password.tag == "password" # type: ignore
+
+    # Test pattern matching
+    match password:
+        case SecurePassword(password=p):
+            assert p == "secret"
+
+    # Test __str__
+    assert str(password) == "********"
+
+    # Test __repr__
+    assert repr(password) == "SecurePassword(password='********')"
 @tagged_union
 class Suit:
     tag: Literal["spades", "hearts", "clubs", "diamonds"] = tag()
 
-    spades: None = case()
-    hearts: None = case()
-    clubs: None = case()
-    diamonds: None = case()
+    spades: bool = case()
+    hearts: bool = case()
+    clubs: bool = case()
+    diamonds: bool = case()
 
     @staticmethod
     def Spades() -> Suit:
-        return Suit(spades=None)
+        return Suit(spades=True)
 
     @staticmethod
     def Hearts() -> Suit:
-        return Suit(hearts=None)
+        return Suit(hearts=True)
 
     @staticmethod
     def Clubs() -> Suit:
-        return Suit(clubs=None)
+        return Suit(clubs=True)
 
     @staticmethod
     def Diamonds() -> Suit:
-        return Suit(diamonds=None)
+        return Suit(diamonds=True)
 
 
 @tagged_union
 class Face:
     tag: Literal["jack", "queen", "king", "ace"] = tag()
 
-    jack: None = case()
-    queen: None = case()
-    king: None = case()
-    ace: None = case()
+    jack: bool = case()
+    queen: bool = case()
+    king: bool = case()
+    ace: bool = case()
 
     @staticmethod
     def Jack() -> Face:
-        return Face(jack=None)
+        return Face(jack=True)
 
     @staticmethod
     def Queen() -> Face:
-        return Face(queen=None)
+        return Face(queen=True)
 
     @staticmethod
     def King() -> Face:
-        return Face(king=None)
+        return Face(king=True)
 
     @staticmethod
     def Ace() -> Face:
-        return Face(ace=None)
+        return Face(ace=True)
 
 
 @tagged_union
@@ -241,7 +273,7 @@ class Card:
 
     face_card: tuple[Suit, Face] = case()
     value_card: tuple[Suit, int] = case()
-    joker: None = case()
+    joker: bool = case()
 
     @staticmethod
     def Face(suit: Suit, face: Face) -> Card:
@@ -249,25 +281,27 @@ class Card:
 
     @staticmethod
     def Value(suit: Suit, value: int) -> Card:
+        if value < 1 or value > 10:
+            raise ValueError("Value must be between 1 and 10")
         return Card(value_card=(suit, value))
 
     @staticmethod
     def Joker() -> Card:
-        return Card(joker=None)
+        return Card(joker=True)
 
 
 def test_rummy_score():
     def score(card: Card) -> int:
         match card:
-            case Card(tag="face_card", face_card=(Suit(spades=None), Face(queen=None))):
+            case Card(tag="face_card", face_card=(Suit(spades=True), Face(queen=True))):
                 return 40
-            case Card(tag="face_card", face_card=(_suit, Face(ace=None))):
+            case Card(tag="face_card", face_card=(_suit, Face(ace=True))):
                 return 15
             case Card(tag="face_card", face_card=(_suit, _face)):
                 return 10
             case Card(tag="value_card", value_card=(_suit, value)):
                 return value
-            case Card(tag="joker", joker=None):
+            case Card(tag="joker", joker=True):
                 return 0
             case _:
                 raise AssertionError("Should not match")
@@ -279,3 +313,24 @@ def test_rummy_score():
     assert score(Card.Face(Suit.Spades(), Face.King())) == 10
     assert score(Card.Face(Suit.Spades(), Face.Ace())) == 15
     assert score(Card.Face(Suit.Spades(), Face.Ace())) == 15
+    assert score(Card.Face(Suit.Hearts(), Face.Ace())) == 15
+    assert score(Card.Face(Suit.Hearts(), Face.King())) == 10
+    assert score(Card.Face(Suit.Clubs(), Face.Ace())) == 15
+    assert score(Card.Face(Suit.Clubs(), Face.King())) == 10
+    assert score(Card.Face(Suit.Clubs(), Face.Queen())) == 10
+    assert score(Card.Face(Suit.Clubs(), Face.Jack())) == 10
+    assert score(Card.Face(Suit.Diamonds(), Face.Ace())) == 15
+    assert score(Card.Face(Suit.Diamonds(), Face.King())) == 10
+    assert score(Card.Face(Suit.Diamonds(), Face.Queen())) == 10
+    assert score(Card.Face(Suit.Diamonds(), Face.Jack())) == 10
+    assert score(Card.Value(Suit.Hearts(), 1)) == 1
+    assert score(Card.Value(Suit.Hearts(), 2)) == 2
+    assert score(Card.Value(Suit.Hearts(), 3)) == 3
+    assert score(Card.Value(Suit.Hearts(), 4)) == 4
+    assert score(Card.Value(Suit.Hearts(), 5)) == 5
+    assert score(Card.Value(Suit.Hearts(), 6)) == 6
+    assert score(Card.Value(Suit.Hearts(), 7)) == 7
+    assert score(Card.Value(Suit.Hearts(), 8)) == 8
+    assert score(Card.Value(Suit.Hearts(), 9)) == 9
+    assert score(Card.Value(Suit.Hearts(), 10)) == 10
+

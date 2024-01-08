@@ -8,13 +8,16 @@ _T = TypeVar("_T")
 
 
 @dataclass_transform()
-def tagged_union(_cls: type[_T] | None = None, *, frozen: bool = False) -> Callable[[type[_T]], type[_T]] | type[_T]:
+def tagged_union(
+    _cls: type[_T] | None = None, *, frozen: bool = False, repr: bool = True
+) -> Callable[[type[_T]], type[_T]] | type[_T]:
     """Tagged union decorator.
 
     A decorator that turns a dataclass into a tagged union.
 
     Arguments:
         frozen: Whether the tagged union should be frozen.
+        repr: If True, the __repr__ method will be generated.
     """
 
     def transform(cls: type[_T]) -> type[_T]:
@@ -83,7 +86,8 @@ def tagged_union(_cls: type[_T] | None = None, *, frozen: bool = False) -> Calla
 
         cls.__eq__ = __eq__  # type: ignore
         cls.__init__ = __init__  # type: ignore
-        cls.__repr__ = __repr__  # type: ignore
+        if repr:
+            cls.__repr__ = __repr__  # type: ignore
         cls.__hash__ = __hash__  # type: ignore
         cls.__match_args__ = tuple(field_names)  # type: ignore
 
