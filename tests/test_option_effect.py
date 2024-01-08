@@ -1,6 +1,8 @@
-from typing import Generator, TypeVar
+from collections.abc import Generator
+from typing import TypeVar
 
 from expression import Nothing, Some, effect
+
 
 T = TypeVar("T", float, int)
 

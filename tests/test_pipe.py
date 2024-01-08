@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st

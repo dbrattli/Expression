@@ -1,7 +1,6 @@
+"""This file is just to explore how generators works
 """
-This file is just to explore how generators works
-"""
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 

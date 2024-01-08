@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 from expression.system import (
@@ -63,7 +61,7 @@ def test_token_disposing_works():
 
 
 def test_token_cancellation_register_works():
-    called: List[bool] = []
+    called: list[bool] = []
     source = CancellationTokenSource()
     with source:
         token = source.token
@@ -74,7 +72,7 @@ def test_token_cancellation_register_works():
 
 
 def test_token_cancellation_register_unregister_works():
-    called: List[bool] = []
+    called: list[bool] = []
     source = CancellationTokenSource()
     with source as _:
         token = source.token
@@ -86,7 +84,7 @@ def test_token_cancellation_register_unregister_works():
 
 
 def test_token_cancelled_register_throws():
-    called: List[bool] = []
+    called: list[bool] = []
     source = CancellationTokenSource.cancelled_source()
 
     with pytest.raises(ObjectDisposedException):

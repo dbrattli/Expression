@@ -1,7 +1,6 @@
 from expression import Failure, Success, Try
 
 
-
 def test_can_create_success():
     Success(10)
 

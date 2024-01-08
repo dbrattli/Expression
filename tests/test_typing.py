@@ -1,4 +1,4 @@
-from typing import Any, List, cast
+from typing import Any, cast
 
 import pytest
 
@@ -87,18 +87,18 @@ def test_try_downcast_negative():
 
 def test_try_cast_generic():
     # Arrange
-    d: List[Derived] = [Derived()]
+    d: list[Derived] = [Derived()]
 
     # Act
-    b = try_downcast(List[Any], d)
+    b = try_downcast(list[Any], d)
 
     # Assert
-    assert isinstance(b, List)
+    assert isinstance(b, list)
 
 
 def test_try_cast_generic_negative():
     # Arrange
-    d: List[Derived] = [Derived()]
+    d: list[Derived] = [Derived()]
 
     # Act
     b = try_downcast(str, d)

@@ -7,6 +7,7 @@ import pytest
 
 from expression import case, tag, tagged_union
 
+
 _T = TypeVar("_T")
 
 
@@ -78,7 +79,7 @@ def test_union_can_add_custom_attributes_to_shape():
 def test_union_cannot_change_case_value():
     shape = Shape(circle=Circle(10.0))
     with pytest.raises(TypeError):
-        shape.circle = Circle(20.0) # type: ignore
+        shape.circle = Circle(20.0)  # type: ignore
 
 
 def test_union_compare_shapes():
@@ -122,6 +123,7 @@ def test_maybe_just_works():
             assert False
         case _:
             assert False
+
 
 def test_maybe_nothing_works():
     xs = Maybe[int](nothing=None)
@@ -179,14 +181,15 @@ def test_single_case_union_works():
 
     # Test attribute access
     assert email.email == "test@test.com"
-    assert email.tag == "email" # type: ignore
+    assert email.tag == "email"  # type: ignore
 
     # Test pattern matching
     match email:
         case Email(email=e):
             assert e == "test@test.com"
-        case _: # pyright: ignore
+        case _:  # pyright: ignore
             assert False
+
 
 @tagged_union(frozen=True, repr=False)
 class SecurePassword:
@@ -195,15 +198,17 @@ class SecurePassword:
     # Override __str__ and __repr__ to make sure we don't leak the password in logs
     def __str__(self) -> str:
         return "********"
+
     def __repr__(self) -> str:
-        return f"SecurePassword(password='********')"
+        return "SecurePassword(password='********')"
+
 
 def test_single_case_union_secure_password_works():
     password = SecurePassword(password="secret")
 
     # Test attribute access
     assert password.password == "secret"
-    assert password.tag == "password" # type: ignore
+    assert password.tag == "password"  # type: ignore
 
     # Test pattern matching
     match password:
@@ -215,6 +220,8 @@ def test_single_case_union_secure_password_works():
 
     # Test __repr__
     assert repr(password) == "SecurePassword(password='********')"
+
+
 @tagged_union
 class Suit:
     tag: Literal["spades", "hearts", "clubs", "diamonds"] = tag()
@@ -333,4 +340,3 @@ def test_rummy_score():
     assert score(Card.Value(Suit.Hearts(), 8)) == 8
     assert score(Card.Value(Suit.Hearts(), 9)) == 9
     assert score(Card.Value(Suit.Hearts(), 10)) == 10
-

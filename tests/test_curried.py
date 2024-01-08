@@ -1,4 +1,4 @@
-from typing import Callable, List
+from collections.abc import Callable
 
 import pytest
 
@@ -100,7 +100,7 @@ def test_curry_flip_1():
     xs = [1, 2, 3]
 
     @curry_flip(1)
-    def map(source: List[int], mapper: Callable[[int], int]):
+    def map(source: list[int], mapper: Callable[[int], int]):
         return [mapper(x) for x in source]
 
     ys = pipe(
@@ -115,7 +115,7 @@ def test_curry_flip_2():
     xs = [1, 2, 3]
 
     @curry_flip(2)
-    def map(a: int, source: List[int], mapper: Callable[[int], int]):
+    def map(a: int, source: list[int], mapper: Callable[[int], int]):
         return [mapper(x) + a for x in source]
 
     ys = pipe(xs, map(lambda x: x * 10)(10))

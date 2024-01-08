@@ -1,6 +1,7 @@
 import functools
+from collections.abc import Callable, Iterable
 from itertools import accumulate
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
 from hypothesis import given  # type: ignore
@@ -33,7 +34,7 @@ def test_seq_yield():
 
 
 @given(st.lists(st.integers(), max_size=10))  # type: ignore
-def test_seq_yield_for_in(xs: List[int]):
+def test_seq_yield_for_in(xs: list[int]):
     @effect.seq[int]()
     def fn():
         for x in xs:
@@ -59,7 +60,7 @@ def test_seq_yield_for_in(xs: List[int]):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_pipe_map(xs: List[int]):
+def test_seq_pipe_map(xs: list[int]):
     mapper: Callable[[int], int] = lambda x: x + 1
     ys = pipe(xs, seq.map(mapper))
 
@@ -68,7 +69,7 @@ def test_seq_pipe_map(xs: List[int]):
 
 
 @given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
-def test_seq_pipe_starmap(xs: List[Tuple[int, int]]):
+def test_seq_pipe_starmap(xs: list[tuple[int, int]]):
     mapper: Callable[[int, int], int] = lambda x, y: x + y
     ys = pipe(xs, seq.starmap(mapper))
 
@@ -77,7 +78,7 @@ def test_seq_pipe_starmap(xs: List[Tuple[int, int]]):
 
 
 @given(st.lists(st.tuples(st.integers(), st.integers())))  # type: ignore
-def test_seq_pipe_map2(xs: List[Tuple[int, int]]):
+def test_seq_pipe_map2(xs: list[tuple[int, int]]):
     mapper: Callable[[int, int], int] = lambda x, y: x + y
     ys = pipe(xs, seq.map2(mapper))
 
@@ -86,7 +87,7 @@ def test_seq_pipe_map2(xs: List[Tuple[int, int]]):
 
 
 @given(st.lists(st.tuples(st.integers(), st.integers(), st.integers())))  # type: ignore
-def test_seq_pipe_map3(xs: List[Tuple[int, int, int]]):
+def test_seq_pipe_map3(xs: list[tuple[int, int, int]]):
     mapper: Callable[[int, int, int], int] = lambda x, y, z: x + y + z
     ys = pipe(xs, seq.map3(mapper))
 
@@ -95,7 +96,7 @@ def test_seq_pipe_map3(xs: List[Tuple[int, int, int]]):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_pipe_mapi(xs: List[int]):
+def test_seq_pipe_mapi(xs: list[int]):
     mapper: Callable[[int, int], int] = lambda i, x: x + i
     ys = pipe(xs, seq.mapi(mapper))
 
@@ -104,7 +105,7 @@ def test_seq_pipe_mapi(xs: List[int]):
 
 
 @given(st.lists(st.integers(), min_size=1))  # type: ignore
-def test_seq_head_pipe(xs: List[int]):
+def test_seq_head_pipe(xs: list[int]):
     value = pipe(xs, seq.head)
 
     assert value == xs[0]
@@ -120,14 +121,14 @@ def test_seq_head_empty_source():
 
 
 @given(st.lists(st.integers(), min_size=1))  # type: ignore
-def test_seq_head_fluent(xs: List[int]):
+def test_seq_head_fluent(xs: list[int]):
     value = seq.of_iterable(xs).head()
 
     assert value == xs[0]
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())  # type: ignore
-def test_seq_fold_pipe(xs: List[int], s: int):
+def test_seq_fold_pipe(xs: list[int], s: int):
     folder: Callable[[int, int], int] = lambda s, v: s + v
     value = pipe(seq.of_iterable(xs), seq.fold(folder, s))
 
@@ -135,7 +136,7 @@ def test_seq_fold_pipe(xs: List[int], s: int):
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())  # type: ignore
-def test_seq_fold_fluent(xs: List[int], s: int):
+def test_seq_fold_fluent(xs: list[int], s: int):
     value = seq.of_iterable(xs).fold(lambda s, v: s + v, s)
 
     assert value == sum(xs) + s
@@ -143,7 +144,7 @@ def test_seq_fold_fluent(xs: List[int], s: int):
 
 @given(st.integers(max_value=100))  # type: ignore
 def test_list_unfold(x: int):
-    def unfolder(state: int) -> Option[Tuple[int, int]]:
+    def unfolder(state: int) -> Option[tuple[int, int]]:
         if state < x:
             return Some((state, state + 1))
         return Nothing
@@ -154,7 +155,7 @@ def test_list_unfold(x: int):
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())  # type: ignore
-def test_seq_scan_pipe(xs: List[int], s: int):
+def test_seq_scan_pipe(xs: list[int], s: int):
     func: Callable[[int, int], int] = lambda s, v: s + v
     value = pipe(seq.of_iterable(xs), seq.scan(func, s))
 
@@ -163,7 +164,7 @@ def test_seq_scan_pipe(xs: List[int], s: int):
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers())  # type: ignore
-def test_seq_scan_fluent(xs: List[int], s: int):
+def test_seq_scan_fluent(xs: list[int], s: int):
     func: Callable[[int, int], int] = lambda s, v: s + v
     value = seq.of_iterable(xs).scan(func, s)
 
@@ -172,49 +173,49 @@ def test_seq_scan_fluent(xs: List[int], s: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_concat_1(xs: List[int]):
+def test_seq_concat_1(xs: list[int]):
     value = seq.concat(xs)
 
     assert list(value) == xs
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()))  # type: ignore
-def test_seq_concat_2(xs: List[int], ys: List[int]):
+def test_seq_concat_2(xs: list[int], ys: list[int]):
     value = seq.concat(xs, ys)
 
     assert list(value) == xs + ys
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()), st.lists(st.integers()))  # type: ignore
-def test_seq_concat_3(xs: List[int], ys: List[int], zs: List[int]):
+def test_seq_concat_3(xs: list[int], ys: list[int], zs: list[int]):
     value = seq.concat(xs, ys, zs)
 
     assert list(value) == xs + ys + zs
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()))  # type: ignore
-def test_seq_append_2(xs: List[int], ys: List[int]):
+def test_seq_append_2(xs: list[int], ys: list[int]):
     value = pipe(xs, seq.append(ys))
 
     assert list(value) == xs + ys
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()), st.lists(st.integers()))  # type: ignore
-def test_seq_append_3(xs: List[int], ys: List[int], zs: List[int]):
+def test_seq_append_3(xs: list[int], ys: list[int], zs: list[int]):
     value = pipe(xs, seq.append(ys, zs))
 
     assert list(value) == xs + ys + zs
 
 
 @given(st.lists(st.integers()), st.lists(st.integers()))  # type: ignore
-def test_seq_append_fluent(xs: List[int], ys: List[int]):
+def test_seq_append_fluent(xs: list[int], ys: list[int]):
     value = Seq(xs).append(ys)
 
     assert list(value) == xs + ys
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_collect(xs: List[int]):
+def test_seq_collect(xs: list[int]):
     collector = seq.collect(seq.singleton)
     ys = pipe(xs, collector)
 
@@ -222,7 +223,7 @@ def test_seq_collect(xs: List[int]):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_seq_skip(xs: List[int], x: int):
+def test_seq_skip(xs: list[int], x: int):
     ys = seq.of_iterable(xs)
     try:
         zs = pipe(ys, seq.skip(x))
@@ -232,7 +233,7 @@ def test_seq_skip(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_seq_take(xs: List[int], x: int):
+def test_seq_take(xs: list[int], x: int):
     ys = seq.of_iterable(xs)
     try:
         zs = pipe(ys, seq.take(x))
@@ -249,21 +250,21 @@ def test_seq_take_is_lazy():
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_length(xs: List[int]):
+def test_seq_length(xs: list[int]):
     ys = seq.of_iterable(xs)
     n = pipe(ys, seq.length)
     assert n == len(xs)
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_len(xs: List[int]):
+def test_seq_len(xs: list[int]):
     ys = seq.of_iterable(xs)
     n = ys.length()
     assert n == len(xs)
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_pipeline(xs: List[int]):
+def test_seq_pipeline(xs: list[int]):
     mapper: Callable[[int], int] = lambda x: x * 10
     predicate: Callable[[int], bool] = lambda x: x > 100
     folder: Callable[[int, int], int] = lambda s, x: s + x
@@ -273,13 +274,11 @@ def test_seq_pipeline(xs: List[int]):
         seq.filter(predicate),
         seq.fold(folder, 0),
     )
-    assert ys == functools.reduce(
-        lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0
-    )
+    assert ys == functools.reduce(lambda s, x: s + x, filter(lambda x: x > 100, map(lambda x: x * 10, xs)), 0)
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_delay(xs: List[int]):
+def test_seq_delay(xs: list[int]):
     ran = False
 
     def generator():
@@ -312,7 +311,7 @@ def test_seq_choose_option_fluent():
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_seq_infinite(xs: List[int]):
+def test_seq_infinite(xs: list[int]):
     ys = pipe(xs, seq.zip(seq.infinite))
 
     expected = list(enumerate(xs))
@@ -345,7 +344,6 @@ def test_seq_monad_law_left_identity(value: int):
 
     return x >>= f is the same thing as f x
     """
-
     f: Callable[[int], Seq[int]] = lambda x: rtn(x + 42)
 
     assert list(rtn(value).collect(f)) == list(f(value))

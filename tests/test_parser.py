@@ -4,7 +4,7 @@ import string
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from expression import Option, case, tagged_union, pipe, tag, Result
+from expression import Option, Result, case, pipe, tag, tagged_union
 from expression.collections import Block
 from expression.extra.parser import (
     Parser,
@@ -157,6 +157,7 @@ def test_negative_float_with_decimal():
         case _:
             assert False
 
+
 @tagged_union
 class ComparisonOperator:
     tag: Literal["EQ", "NOT_EQ", "LT", "LT_E", "GT", "GT_E", "IS", "IS_NOT", "IN", "NOT_IN"] = tag()
@@ -186,6 +187,7 @@ class Compare:
     left: Expression
     comparators: Block[Expression]
     ops: Block[ComparisonOperator]
+
 
 @tagged_union
 class BoolOp:

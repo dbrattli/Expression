@@ -1,5 +1,6 @@
 import functools
-from typing import Any, Callable, List, Tuple
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from hypothesis import given  # type: ignore
@@ -7,6 +8,7 @@ from hypothesis import strategies as st
 
 from expression import Nothing, Option, Some, pipe
 from expression.collections import TypedArray, array
+
 
 Func = Callable[[int], int]
 
@@ -104,7 +106,7 @@ def test_array_filter_preserves_type():
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_array_length(xs: List[int]):
+def test_array_length(xs: list[int]):
     ys = array.of_seq(xs)
     assert len(xs) == len(ys)
 
@@ -141,7 +143,7 @@ def test_array_head_match_list():
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
-def test_array_item(xs: List[int], index: int):
+def test_array_item(xs: list[int], index: int):
     ys = array.of_seq(xs)
     while index and index >= len(xs):
         index //= 2
@@ -149,7 +151,7 @@ def test_array_item(xs: List[int], index: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_array_pipe_map(xs: List[int]):
+def test_array_pipe_map(xs: list[int]):
     def mapper(x: int):
         return x + 1
 
@@ -209,7 +211,7 @@ def test_array_pipe_map(xs: List[int]):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_array_len(xs: List[int]):
+def test_array_len(xs: list[int]):
     ys = array.of_seq(xs)
     assert len(xs) == len(ys)
 
@@ -226,7 +228,7 @@ def test_array_len(xs: List[int]):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_array_take(xs: List[int], x: int):
+def test_array_take(xs: list[int], x: int):
     ys: TypedArray[int]
     try:
         ys = array.of_seq(xs).take(x)
@@ -236,7 +238,7 @@ def test_array_take(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_array_take_last(xs: List[int], x: int):
+def test_array_take_last(xs: list[int], x: int):
     expected = xs[-x:]
     ys: TypedArray[int]
     ys = array.of_seq(xs).take_last(x)
@@ -244,7 +246,7 @@ def test_array_take_last(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_array_skip(xs: List[int], x: int):
+def test_array_skip(xs: list[int], x: int):
     ys: TypedArray[int]
     try:
         ys = array.of_seq(xs).skip(x)
@@ -254,7 +256,7 @@ def test_array_skip(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
-def test_array_skip_last(xs: List[int], x: int):
+def test_array_skip_last(xs: list[int], x: int):
     expected = xs[:-x]
     ys: TypedArray[int]
     ys = array.of_seq(xs).skip_last(x)
@@ -272,7 +274,7 @@ def test_array_skip_last(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers(), min_size=1), st.integers(min_value=0))  # type: ignore
-def test_array_index(xs: List[int], x: int):
+def test_array_index(xs: list[int], x: int):
     x = x % len(xs) if x > 0 else x
     expected = xs[x]
 
@@ -288,7 +290,7 @@ def test_array_index(xs: List[int], x: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_array_indexed(xs: List[int]):
+def test_array_indexed(xs: list[int]):
     expected = list(enumerate(xs))
 
     ys: TypedArray[int] = array.of_seq(xs)
@@ -298,7 +300,7 @@ def test_array_indexed(xs: List[int]):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_array_fold(xs: List[int]):
+def test_array_fold(xs: list[int]):
     def folder(x: int, y: int) -> int:
         return x + y
 
@@ -312,7 +314,7 @@ def test_array_fold(xs: List[int]):
 
 @given(st.integers(max_value=100))  # type: ignore
 def test_array_unfold(x: int):
-    def unfolder(state: int) -> Option[Tuple[int, int]]:
+    def unfolder(state: int) -> Option[tuple[int, int]]:
         if state < x:
             return Some((state, state + 1))
         return Nothing
@@ -323,7 +325,7 @@ def test_array_unfold(x: int):
 
 
 @given(st.lists(st.integers()), st.integers())  # type: ignore
-def test_array_filter(xs: List[int], limit: int):
+def test_array_filter(xs: list[int], limit: int):
     expected = filter(lambda x: x < limit, xs)
 
     ys: TypedArray[int] = array.of_seq(xs)
@@ -378,7 +380,6 @@ def test_array_monad_law_left_identity(value: int):
 
     return x >>= f is the same thing as f x
     """
-
     f: Callable[[int], TypedArray[int]] = lambda x: rtn(x + 42)
 
     assert rtn(value).collect(f) == f(value)
@@ -420,7 +421,7 @@ def test_array_monad_law_associativity_empty(value: int):
 
 
 @given(st.lists(st.integers()))  # type: ignore
-def test_array_monad_law_associativity_iterable(xs: List[int]):
+def test_array_monad_law_associativity_iterable(xs: list[int]):
     # (m >>= f) >>= g is just like doing m >>= (\x -> f x >>= g)
     f: Callable[[int], TypedArray[int]] = lambda x: rtn(x + 10)
     g: Callable[[int], TypedArray[int]] = lambda y: rtn(y * 42)

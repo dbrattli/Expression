@@ -1,10 +1,10 @@
-from typing import Any, Callable, Generator
+from collections.abc import Callable, Generator
+from typing import Any
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel
-from tests.utils import CustomException
 
 from expression import (
     Error,
@@ -18,8 +18,9 @@ from expression import (
     pipe,
     pipe2,
 )
-from expression.core.option import Option, Nothing, Some
+from expression.core.option import Nothing, Option, Some
 from expression.extra.option import pipeline
+from tests.utils import CustomException
 
 
 def test_option_some():
@@ -555,6 +556,7 @@ class Model(BaseModel):
     one: Option[int]
     two: Option[str] = Nothing
     three: Option[float] = Nothing
+
 
 def test_parse_option_works():
     obj = dict(one=10, two=None)
