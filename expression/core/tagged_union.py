@@ -62,8 +62,6 @@ def tagged_union(
                 if not isinstance(other, cls):
                     return False
 
-                print("field names", field_names)
-                print((self.__index, getattr(self, self.tag)), (other.__index, getattr(other, other.tag)))
                 return (self.__index, getattr(self, self.tag)) < (other.__index, getattr(other, other.tag))  # type: ignore
 
             cls.__lt__ = __lt__  # type: ignore
@@ -105,7 +103,6 @@ def tagged_union(
         if repr:
             cls.__repr__ = __repr__  # type: ignore
         cls.__hash__ = __hash__  # type: ignore
-        print("match args", field_names)
         cls.__match_args__ = tuple(field_names)  # type: ignore
 
         # We need to handle copy and deepcopy ourselves because they are needed by Pydantic
