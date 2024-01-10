@@ -106,6 +106,29 @@ def test_option_none_not_equals_some():
     assert xs != ys
     assert ys != xs
 
+def test_option_order_some_some_works():
+    xs = Some(42)
+    ys = Some(41)
+
+    assert xs > ys
+    assert ys < xs
+
+
+def test_option_order_some_none_works():
+    xs = Some(42)
+    ys = Nothing
+
+    assert xs > ys
+    assert ys < xs
+
+def test_option_order_none_none_works():
+    xs = Nothing
+    ys = Nothing
+
+    assert not (xs < ys)
+
+
+
 
 def test_option_none_default_value():
     xs = Nothing
@@ -201,7 +224,7 @@ def test_option_none_map():
     assert ys is Nothing
 
 
-@given(st.integers(), st.integers())
+@given(st.integers(), st.integers()) # type: ignore
 def test_option_some_map2_piped(x: int, y: int):
     xs = Some(x)
     ys = Some(y)

@@ -21,7 +21,7 @@ from .typing import (
     try_downcast,
     upcast,
 )
-from .union import case, tag, tagged_union
+from .tagged_union import case, tag, tagged_union
 
 
 __all__ = [

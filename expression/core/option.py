@@ -9,14 +9,12 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Generator, Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, get_args, get_origin
 
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
-
-# from .typing import ModelField
-from .union import case, tag, tagged_union
+from .tagged_union import case, tag, tagged_union
 
 
 if TYPE_CHECKING:
@@ -35,7 +33,7 @@ _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 
 
-@tagged_union
+@tagged_union(frozen=True)
 class Option(
     Iterable[_TSource],
     PipeMixin,
@@ -270,9 +268,19 @@ class Option(
                 raise EffectError(Nothing)
 
     def __lt__(self, other: Any) -> bool:
-        if isinstance(other, Option):
-            return self.value < other.value  # type: ignore
-        return False
+        if not isinstance(other, Option):
+            return False
+
+        other = cast(Option[Any], other)
+        match self, other:
+            case Option(tag="some", some=self_value), Option(tag="some", some=other_value):  # type: ignore
+                return self_value < other_value  # type: ignore
+            case _, Option(tag="none"):
+                return False
+            case Option(tag="none"), _:
+                return True
+            case _:
+                return False
 
     def __str__(self) -> str:
         match self:
