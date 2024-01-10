@@ -132,6 +132,16 @@ def test_maybe_nothing_works():
             assert False
 
 
+def test_maybe_pattern_match_positional_tag_arg_works():
+    xs = Maybe(just=1)
+    match xs:
+        case Maybe("nothing"):
+            assert False
+        case Maybe("just", just=x):
+            assert x == 1
+        case _:
+            assert False
+
 def test_nested_unions_works():
     xs = Maybe(just=Shape(circle=Circle(10.0)))
     match xs:
@@ -174,8 +184,8 @@ def test_unions_can_be_composed():
     class Weather:
         tag: Literal["sunny", "rainy"] = tag()
 
-        sunny: bool = case()
-        rainy: bool = case()
+        sunny: Literal[True] = case()
+        rainy: Literal[True] = case()
 
     @tagged_union
     class Day:
@@ -247,10 +257,10 @@ def test_single_case_union_secure_password_works():
 class Suit:
     tag: Literal["spades", "hearts", "clubs", "diamonds"] = tag()
 
-    spades: bool = case()
-    hearts: bool = case()
-    clubs: bool = case()
-    diamonds: bool = case()
+    spades: Literal[True] = case()
+    hearts: Literal[True] = case()
+    clubs: Literal[True] = case()
+    diamonds: Literal[True] = case()
 
     @staticmethod
     def Spades() -> Suit:
@@ -273,10 +283,10 @@ class Suit:
 class Face:
     tag: Literal["jack", "queen", "king", "ace"] = tag()
 
-    jack: bool = case()
-    queen: bool = case()
-    king: bool = case()
-    ace: bool = case()
+    jack: Literal[True] = case()
+    queen: Literal[True] = case()
+    king: Literal[True] = case()
+    ace: Literal[True] = case()
 
     @staticmethod
     def Jack() -> Face:
@@ -297,21 +307,21 @@ class Face:
 
 @tagged_union
 class Card:
-    tag: Literal["value_card", "face_card", "joker"] = tag()
+    tag: Literal["value", "face", "joker"] = tag()
 
-    face_card: tuple[Suit, Face] = case()
-    value_card: tuple[Suit, int] = case()
-    joker: bool = case()
+    face: tuple[Suit, Face] = case()
+    value: tuple[Suit, int] = case()
+    joker: Literal[True] = case()
 
     @staticmethod
     def Face(suit: Suit, face: Face) -> Card:
-        return Card(face_card=(suit, face))
+        return Card(face=(suit, face))
 
     @staticmethod
     def Value(suit: Suit, value: int) -> Card:
         if value < 1 or value > 10:
             raise ValueError("Value must be between 1 and 10")
-        return Card(value_card=(suit, value))
+        return Card(value=(suit, value))
 
     @staticmethod
     def Joker() -> Card:
@@ -321,13 +331,13 @@ class Card:
 def test_rummy_score():
     def score(card: Card) -> int:
         match card:
-            case Card(tag="face_card", face_card=(Suit(spades=True), Face(queen=True))):
+            case Card(tag="face", face=(Suit(spades=True), Face(queen=True))):
                 return 40
-            case Card(tag="face_card", face_card=(_suit, Face(ace=True))):
+            case Card(tag="face", face=(_suit, Face(ace=True))):
                 return 15
-            case Card(tag="face_card", face_card=(_suit, _face)):
+            case Card(tag="face", face=(_suit, _face)):
                 return 10
-            case Card(tag="value_card", value_card=(_suit, value)):
+            case Card(tag="value", value=(_suit, value)):
                 return value
             case Card(tag="joker", joker=True):
                 return 0

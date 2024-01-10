@@ -32,18 +32,21 @@ def tagged_union(
 
         def __init__(self: Any, **kwargs: Any) -> None:
             tag = kwargs.pop("tag", None)
-            if len(kwargs) != 1:
-                raise TypeError(f"One and only one case can be specified. Not {kwargs}")
+
             name, value = next(iter(kwargs.items()))
             if name not in field_names:
                 raise TypeError(f"Unknown case name: {name}")
-            if tag is not None and tag != name:
-                raise TypeError(f"Tag {tag} does not match case name {name}")
 
-            # Cannot use setattr because it might be overridden for frozen classes
-            object.__setattr__(self, "tag", name)
-            object.__setattr__(self, name, value)
-            object.__setattr__(self, "__index", field_names.index(name))
+            if len(kwargs) != 1:
+                raise TypeError(f"One and only one case can be specified. Not {kwargs}")
+
+            match tag or name, name:
+                case str(tag), name if tag == name:
+                    object.__setattr__(self, "tag", name)
+                    object.__setattr__(self, name, value)
+                    object.__setattr__(self, "_index", field_names.index(name))
+                case tag, name:
+                    raise TypeError(f"Tag {tag} does not match case name {name}")
 
             # Enables the use of dataclasses.asdict
             union_fields = dict((f.name, f) for f in fields_ if f.name in [name, "tag"])
@@ -53,20 +56,20 @@ def tagged_union(
         def __repr__(self: Any) -> str:
             return f"{cls.__name__}({self.tag}={getattr(self, self.tag)})"
 
-        def __hash__(self: Any) -> int:
-            return hash((cls.__name__, self.tag, getattr(self, self.tag)))
-
         if order:
 
             def __lt__(self: Any, other: Any) -> bool:
                 if not isinstance(other, cls):
                     return False
 
-                return (self.__index, getattr(self, self.tag)) < (other.__index, getattr(other, other.tag))  # type: ignore
+                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))  # type: ignore
 
             cls.__lt__ = __lt__  # type: ignore
 
         if frozen:
+
+            def __hash__(self: Any) -> int:
+                return hash((cls.__name__, self.tag, getattr(self, self.tag)))
 
             def __setattr__(self: Any, name: str, value: Any) -> None:
                 if name in field_names:
@@ -81,6 +84,7 @@ def tagged_union(
 
             cls.__setattr__ = __setattr__
             cls.__delattr__ = __delattr__  # type: ignore
+            cls.__hash__ = __hash__  # type: ignore
 
         def __eq__(self: Any, other: Any) -> bool:
             return (
@@ -102,8 +106,7 @@ def tagged_union(
         cls.__init__ = __init__  # type: ignore
         if repr:
             cls.__repr__ = __repr__  # type: ignore
-        cls.__hash__ = __hash__  # type: ignore
-        cls.__match_args__ = tuple(field_names)  # type: ignore
+        cls.__match_args__ = field_names  # type: ignore
 
         # We need to handle copy and deepcopy ourselves because they are needed by Pydantic
         cls.__copy__ = __copy__  # type: ignore
