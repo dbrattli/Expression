@@ -33,9 +33,7 @@ if TYPE_CHECKING:
 from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
-
-# from .typing import GenericValidator, ModelField, SupportsValidation
-from .union import case, tag, tagged_union
+from .tagged_union import case, tag, tagged_union
 
 
 _TSource = TypeVar("_TSource")
@@ -44,7 +42,7 @@ _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
 
 
-@tagged_union
+@tagged_union(frozen=True)
 class Result(
     Iterable[_TSource],
     PipeMixin,
