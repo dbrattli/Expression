@@ -42,7 +42,7 @@ _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
 
 
-@tagged_union(frozen=True)
+@tagged_union(frozen=True, order=True)
 class Result(
     Iterable[_TSource],
     PipeMixin,
@@ -220,9 +220,6 @@ class Result(
 
     def __repr__(self) -> str:
         return str(self)
-
-    def __hash__(self) -> int:
-        return hash(repr(self))
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
