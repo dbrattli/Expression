@@ -594,6 +594,8 @@ def test_parse_option_works():
 def test_serialize_option_works():
     model = Model(one=Some(10))
     json = model.model_dump_json()
+    assert json == '{"one":10,"two":null,"three":null}'
+
     model_ = Model.model_validate_json(json)
 
     assert model_.one.is_some()
