@@ -1,10 +1,29 @@
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
-from typing import Any, TypeVar, dataclass_transform, overload
+from typing import Any, Protocol, TypeVar, dataclass_transform, overload
 
 
-_T = TypeVar("_T")
+def case() -> Any:
+    """A case in a tagged union."""
+    return field(init=False, kw_only=True)
+
+
+def tag() -> Any:
+    """The tag of a tagged union."""
+    return field(init=False, kw_only=True)
+
+
+class HasTag(Protocol):
+    """Base class for tagged unions.
+
+    A tagged union must include a tag field
+    """
+
+    tag: str = tag()
+
+
+_T = TypeVar("_T", bound=HasTag)
 
 
 @overload
@@ -68,46 +87,46 @@ def tagged_union(
 
         if order:
 
-            def __lt__(self: Any, other: Any) -> bool:
-                if not isinstance(other, cls):
+            def __lt__(self: _T, other: Any) -> bool:
+                if not hasattr(other, "tag"):
                     return False
 
-                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))  # type: ignore
+                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))
 
             cls.__lt__ = __lt__  # type: ignore
 
         if frozen:
 
-            def __hash__(self: Any) -> int:
+            def __hash__(self: _T) -> int:
                 return hash((cls.__name__, self.tag, getattr(self, self.tag)))
 
-            def __setattr__(self: Any, name: str, value: Any) -> None:
+            def __setattr__(self: _T, name: str, value: Any) -> None:
                 if name in field_names:
                     raise TypeError("Cannot change the value of a tagged union case")
                 object.__setattr__(self, name, value)
 
-            def __delattr__(self: Any, name: str) -> None:
+            def __delattr__(self: _T, name: str) -> None:
                 if name in field_names:
                     raise TypeError("Cannot delete a tagged union case")
 
                 object.__delattr__(self, name)
 
             cls.__setattr__ = __setattr__
-            cls.__delattr__ = __delattr__  # type: ignore
+            cls.__delattr__ = __delattr__
             cls.__hash__ = __hash__  # type: ignore
 
-        def __eq__(self: Any, other: Any) -> bool:
+        def __eq__(self: _T, other: _T) -> bool:
             return (
-                isinstance(other, cls)
+                hasattr(other, "tag")
                 and self.tag == getattr(other, "tag")
                 and getattr(self, self.tag) == getattr(other, self.tag)
             )
 
-        def __copy__(self: Any) -> Any:
+        def __copy__(self: _T) -> _T:
             mapping = {self.tag: getattr(self, self.tag)}
             return cls(**mapping)
 
-        def __deepcopy__(self: Any, memo: Any) -> Any:
+        def __deepcopy__(self: _T, memo: Any) -> _T:
             value = deepcopy(getattr(self, self.tag), memo)
             mapping = {self.tag: value}
             return cls(**mapping)
@@ -125,13 +144,3 @@ def tagged_union(
         return cls
 
     return transform if _cls is None else transform(_cls)
-
-
-def case() -> Any:
-    """A case in a tagged union."""
-    return field(init=False, kw_only=True)
-
-
-def tag() -> Any:
-    """The tag of a tagged union."""
-    return field(init=False, kw_only=True)
