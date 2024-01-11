@@ -15,7 +15,11 @@ _TSource = TypeVar("_TSource")
 
 
 class Try(Result[_TSource, Exception]):
-    pass
+    """A try result.
+
+    Same as `Result` but with error type pinned to `Exception`. Making it simpler
+    to use when the error type is an exception.
+    """
 
 
 def Success(value: _TSource) -> Try[_TSource]:
