@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Generator, Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, get_args, get_origin
 
 from .curry import curry_flip
 from .error import EffectError

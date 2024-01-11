@@ -1,45 +1,30 @@
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
-from typing import Any, Protocol, TypeVar, dataclass_transform, overload
+from typing import Any, TypeVar, dataclass_transform, overload
 
 
-def case() -> Any:
-    """A case in a tagged union."""
-    return field(init=False, kw_only=True)
-
-
-def tag() -> Any:
-    """The tag of a tagged union."""
-    return field(init=False, kw_only=True)
-
-
-class HasTag(Protocol):
-    """Base class for tagged unions.
-
-    A tagged union must include a tag field
-    """
-
-    tag: str = tag()
-
-
-_T = TypeVar("_T", bound=HasTag)
+_T = TypeVar("_T")
 
 
 @overload
-def tagged_union(*, frozen: bool = False, repr: bool = True, order: bool = False) -> Callable[[type[_T]], type[_T]]:
+def tagged_union(
+    *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
+) -> Callable[[type[_T]], type[_T]]:
     ...
 
 
 @overload
-def tagged_union(_cls: type[_T], *, frozen: bool = False, repr: bool = True, order: bool = False) -> type[_T]:
+def tagged_union(
+    _cls: type[_T], *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
+) -> type[_T]:
     ...
 
 
 @dataclass_transform()
 def tagged_union(
-    _cls: type[_T] | None = None, *, frozen: bool = False, repr: bool = True, order: bool = False
-) -> Callable[[type[_T]], type[_T]] | type[_T]:
+    _cls: Any = None, *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
+) -> Any:
     """Tagged union decorator.
 
     A decorator that turns a dataclass into a tagged union.
@@ -51,9 +36,10 @@ def tagged_union(
         order: If True, the __lt__ method will be generated. The first
             case will be considered the smallest with index 0 and the
             items will be compared as the tuple (index, value)
+        eq: If True, the __eq__ method will be generated.
     """
 
-    def transform(cls: type[_T]) -> type[_T]:
+    def transform(cls: Any) -> Any:
         cls = dataclass(init=False, repr=False, order=False, eq=False, kw_only=True)(cls)
         fields_ = fields(cls)  # type: ignore
         field_names = tuple(f.name for f in fields_)
@@ -87,25 +73,25 @@ def tagged_union(
 
         if order:
 
-            def __lt__(self: _T, other: Any) -> bool:
-                if not hasattr(other, "tag"):
+            def __lt__(self: Any, other: Any) -> bool:
+                if not isinstance(other, cls):
                     return False
 
-                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))
+                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))  # type: ignore
 
             cls.__lt__ = __lt__  # type: ignore
 
         if frozen:
 
-            def __hash__(self: _T) -> int:
+            def __hash__(self: Any) -> int:
                 return hash((cls.__name__, self.tag, getattr(self, self.tag)))
 
-            def __setattr__(self: _T, name: str, value: Any) -> None:
+            def __setattr__(self: Any, name: str, value: Any) -> None:
                 if name in field_names:
                     raise TypeError("Cannot change the value of a tagged union case")
                 object.__setattr__(self, name, value)
 
-            def __delattr__(self: _T, name: str) -> None:
+            def __delattr__(self: Any, name: str) -> None:
                 if name in field_names:
                     raise TypeError("Cannot delete a tagged union case")
 
@@ -113,34 +99,46 @@ def tagged_union(
 
             cls.__setattr__ = __setattr__
             cls.__delattr__ = __delattr__
-            cls.__hash__ = __hash__  # type: ignore
+            cls.__hash__ = __hash__
+        if eq:
 
-        def __eq__(self: _T, other: _T) -> bool:
-            return (
-                hasattr(other, "tag")
-                and self.tag == getattr(other, "tag")
-                and getattr(self, self.tag) == getattr(other, self.tag)
-            )
+            def __eq__(self: Any, other: Any) -> bool:
+                return (
+                    isinstance(other, cls)
+                    and self.tag == getattr(other, "tag")
+                    and getattr(self, self.tag) == getattr(other, self.tag)
+                )
 
-        def __copy__(self: _T) -> _T:
+            cls.__eq__ = __eq__
+
+        def __copy__(self: Any) -> Any:
             mapping = {self.tag: getattr(self, self.tag)}
             return cls(**mapping)
 
-        def __deepcopy__(self: _T, memo: Any) -> _T:
+        def __deepcopy__(self: Any, memo: Any) -> Any:
             value = deepcopy(getattr(self, self.tag), memo)
             mapping = {self.tag: value}
             return cls(**mapping)
 
-        cls.__eq__ = __eq__  # type: ignore
-        cls.__init__ = __init__  # type: ignore
+        cls.__init__ = __init__
         if repr:
-            cls.__repr__ = __repr__  # type: ignore
-        cls.__match_args__ = field_names  # type: ignore
+            cls.__repr__ = __repr__
+        cls.__match_args__ = field_names
 
         # We need to handle copy and deepcopy ourselves because they are needed by Pydantic
-        cls.__copy__ = __copy__  # type: ignore
-        cls.__deepcopy__ = __deepcopy__  # type: ignore
+        cls.__copy__ = __copy__
+        cls.__deepcopy__ = __deepcopy__
 
         return cls
 
     return transform if _cls is None else transform(_cls)
+
+
+def case() -> Any:
+    """A case in a tagged union."""
+    return field(init=False, kw_only=True)
+
+
+def tag() -> Any:
+    """The tag of a tagged union."""
+    return field(init=False, kw_only=True)
