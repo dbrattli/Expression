@@ -157,19 +157,19 @@ class Result(
             case _:
                 return False
 
-    def dict(self) -> builtins.dict[str, _TSource | _TError]:
+    def dict(self) -> builtins.dict[str, _TSource | _TError | Literal["ok", "error"]]:
         """Return a json serializable representation of the result."""
         match self:
             case Result(tag="ok", ok=value):
                 attr = getattr(value, "model_dump", None) or getattr(value, "dict", None)
                 if attr and callable(attr):
                     value = attr()
-                return {"ok": value}
+                return {"tag": "ok", "ok": value}
             case Result(error=error):
                 attr = getattr(error, "model_dump", None) or getattr(error, "dict", None)
                 if attr and callable(attr):
                     error = attr()
-                return {"error": error}
+                return {"tag": "error", "error": error}
 
     def swap(self) -> Result[_TError, _TSource]:
         """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
