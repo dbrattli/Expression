@@ -8,12 +8,12 @@ _T = TypeVar("_T")
 
 
 @overload
-def tagged_union(*, frozen: bool = False, repr: bool = True) -> Callable[[type[_T]], type[_T]]:
+def tagged_union(*, frozen: bool = False, repr: bool = True, order: bool = False) -> Callable[[type[_T]], type[_T]]:
     ...
 
 
 @overload
-def tagged_union(_cls: type[_T], *, frozen: bool = False, repr: bool = True) -> type[_T]:
+def tagged_union(_cls: type[_T], *, frozen: bool = False, repr: bool = True, order: bool = False) -> type[_T]:
     ...
 
 
@@ -35,7 +35,7 @@ def tagged_union(
     """
 
     def transform(cls: type[_T]) -> type[_T]:
-        cls = dataclass(cls)  # TODO: decide if we should be a dataclass or not
+        cls = dataclass(init=False, repr=False, order=False, eq=False, kw_only=True)(cls)
         fields_ = fields(cls)  # type: ignore
         field_names = tuple(f.name for f in fields_)
         original_init = cls.__init__

@@ -18,6 +18,7 @@ from .tagged_union import case, tag, tagged_union
 
 
 if TYPE_CHECKING:
+    # The following imports are only used for type checking and will be lazy imported.
     from pydantic import GetCoreSchemaHandler
     from pydantic_core import CoreSchema
 
@@ -33,7 +34,7 @@ _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 
 
-@tagged_union(frozen=True)
+@tagged_union(frozen=True, order=True)
 class Option(
     Iterable[_TSource],
     PipeMixin,
@@ -42,8 +43,8 @@ class Option(
 
     tag: Literal["some", "none"] = tag()
 
-    some: _TSource = case()
     none: None = case()
+    some: _TSource = case()
 
     @staticmethod
     def Some(value: _TSource) -> Option[_TSource]:
@@ -267,21 +268,6 @@ class Option(
             case _:
                 raise EffectError(Nothing)
 
-    def __lt__(self, other: Any) -> bool:
-        if not isinstance(other, Option):
-            return False
-
-        other = cast(Option[Any], other)
-        match self, other:
-            case Option(tag="some", some=self_value), Option(tag="some", some=other_value):  # type: ignore
-                return self_value < other_value  # type: ignore
-            case _, Option(tag="none"):
-                return False
-            case Option(tag="none"), _:
-                return True
-            case _:
-                return False
-
     def __str__(self) -> str:
         match self:
             case Option(tag="some", some=some):
@@ -291,13 +277,6 @@ class Option(
 
     def __repr__(self) -> str:
         return self.__str__()
-
-    def __hash__(self) -> int:
-        match self:
-            case Option(tag="some", some=value):
-                return hash((self.tag, value))
-            case _:
-                return hash((self.tag, 0))
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
