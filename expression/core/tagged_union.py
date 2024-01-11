@@ -1,10 +1,20 @@
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
-from typing import Any, TypeVar, dataclass_transform
+from typing import Any, TypeVar, dataclass_transform, overload
 
 
 _T = TypeVar("_T")
+
+
+@overload
+def tagged_union(*, frozen: bool = False, repr: bool = True) -> Callable[[type[_T]], type[_T]]:
+    ...
+
+
+@overload
+def tagged_union(_cls: type[_T], *, frozen: bool = False, repr: bool = True) -> type[_T]:
+    ...
 
 
 @dataclass_transform()
