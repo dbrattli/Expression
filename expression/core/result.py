@@ -201,9 +201,6 @@ class Result(
         """Convert option to a result."""
         return of_option_with(value, error)
 
-    def __eq__(self, o: Any) -> bool:
-        return isinstance(o, Result) and self.tag == o.tag and getattr(self, self.tag) == getattr(o, self.tag)  # type: ignore
-
     def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
         match self:
             case Result(tag="ok", ok=value):

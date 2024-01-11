@@ -289,7 +289,7 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
 
 def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
     match m:
-        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right, height=height)):
             if k < key:
                 return rebalance(change(k, u, left), key, value, right)
             elif k == key:
