@@ -62,13 +62,13 @@ def is_empty(m: MapTree[Any, Any]):
 
 
 def size_aux(acc: int, m: MapTree[Key, Value]) -> int:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            return size_aux(size_aux(acc + 1, m2.left), m2.right)
-        else:
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right)):
+            return size_aux(size_aux(acc + 1, left), right)
+        case Option(tag="some", some=MapTreeLeaf()):
             return acc + 1
-    else:
-        return acc
+        case _:
+            return acc
 
 
 def size(x: MapTree[Any, Any]):
@@ -76,13 +76,13 @@ def size(x: MapTree[Any, Any]):
 
 
 def height(m: MapTree[Key, Value]) -> int:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            return m2.height
-        else:
+    match m:
+        case Option(tag="some", some=MapTreeNode(height=height)):
+            return height
+        case Option(tag="some", some=MapTreeLeaf()):
             return 1
-    else:
-        return 0
+        case _:
+            return 0
 
 
 TOLERANCE = 2
