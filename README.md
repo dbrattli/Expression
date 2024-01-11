@@ -120,7 +120,7 @@ on-demand as we go along.
   - **AsyncObservable** - Asynchronous observables. Provided separately
     by [aioreactive](https://github.com/dbrattli/aioreactive).
 - **Data Modelling** - sum and product types
-  - **TaggedUnion** - A tagged (discriminated) union type.
+  - **@tagged_union** - A tagged (discriminated) union type decorator.
 - **Parser Combinators** - A recursive decent string parser combinator
   library.
 - **Effects**: - lightweight computational expressions for Python. This
@@ -403,7 +403,7 @@ class Shape:
 
     @staticmethod
     def Rectangle(width: float, length: float) -> Shape:
-        ""Optional static method for creating a tagged union case""
+        """Optional static method for creating a tagged union case"""
         return Shape(rectangle=Rectangle(width, length))
 
     @staticmethod
@@ -414,7 +414,12 @@ class Shape:
 
 Note that the tag field is optional, but recommended. If you don't specify a tag field
 then then it will be created for you, but static type checkers will not be able to type
-check correctly when pattern matching.
+check correctly when pattern matching. The `tag` field if specified should be a literal
+type with all the possible values for the tag. This is used by static type checkers to
+check exhaustiveness of pattern matching.
+
+Each case is given the `case()` field initializer. This is optioal, but recommended for
+static type checkers to work correctly. It's not required for the code to work properly,
 
 Now you may pattern match the shape to get back the actual value:
 
@@ -428,9 +433,9 @@ Now you may pattern match the shape to get back the actual value:
             assert False
 ```
 
-Note that when matching keyword arguments, then the tag field must be specified for
-static type checkers to work correctly. It's not required for the code to work properly,
-but it's recommended.
+Note that when matching keyword arguments, then the `tag` keyword argument must be
+specified for static type checkers to check exhaustiveness correctly. It's not required
+for the code to work properly, but it's recommended to avoid typing errors.
 
 ## Notable differences between Expression and F\#
 
