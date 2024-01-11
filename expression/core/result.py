@@ -352,7 +352,7 @@ def bind(
     return result.bind(mapper)
 
 
-def dict(source: Result[_TSource, _TError]) -> builtins.dict[str, _TSource | _TError]:
+def dict(source: Result[_TSource, _TError]) -> builtins.dict[str, _TSource | _TError | Literal["ok", "error"]]:
     return source.dict()
 
 
