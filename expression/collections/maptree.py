@@ -145,25 +145,24 @@ def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
 
 
 def add(k: Key, v: Value, m: MapTree[Key, Value]) -> MapTree[Key, Value]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            if k < mn.key:
-                return rebalance(add(k, v, mn.left), mn.key, mn.value, mn.right)
-            elif k == mn.key:
-                return Some(MapTreeNode(k, v, mn.left, mn.right, mn.height))
+    match m:
+        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right, height=height)):
+            if k < key:
+                return rebalance(add(k, v, left), key, value, right)
+            elif k == key:
+                return Some(MapTreeNode(k, v, left, right, height))
             else:
-                return rebalance(mn.left, mn.key, mn.value, add(k, v, mn.right))
-        else:
-            if k < m2.key:
+                return rebalance(left, key, value, add(k, v, right))
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            if k < key:
                 node = MapTreeNode(k, v, empty, m, 2)
                 return Some(node)
-            elif k == m2.key:
+            elif k == key:
                 return Some(MapTreeLeaf(k, v))
             else:
                 return Some(MapTreeNode(k, v, m, empty, 2))
-    else:
-        return Some(MapTreeLeaf(k, v))
+        case _:
+            return Some(MapTreeLeaf(k, v))
 
 
 def try_find(k: Key, m: MapTree[Key, Value]) -> Option[Value]:
@@ -206,16 +205,15 @@ def partition_aux(
     m: MapTree[Key, Value],
     acc: tuple[MapTree[Key, Value], MapTree[Key, Value]],
 ) -> tuple[MapTree[Key, Value], MapTree[Key, Value]]:
-    for m2 in m:
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            acc = partition_aux(predicate, mn.right, acc)
-            acc = partition1(predicate, mn.key, mn.value, acc)
-            return partition_aux(predicate, mn.left, acc)
-        else:
-            return partition1(predicate, m2.key, m2.value, acc)
-    else:  # Nothing
-        return acc
+    match m:
+        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+            acc = partition_aux(predicate, right, acc)
+            acc = partition1(predicate, key, value, acc)
+            return partition_aux(predicate, left, acc)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return partition1(predicate, key, value, acc)
+        case _:
+            return acc
 
 
 def partition(
@@ -236,16 +234,15 @@ def filter_aux(
     m: MapTree[Key, Value],
     acc: MapTree[Key, Value],
 ) -> MapTree[Key, Value]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            acc = filter_aux(predicate, mn.left, acc)
-            acc = filter1(predicate, mn.key, mn.value, acc)
-            return filter_aux(predicate, mn.right, acc)
-        else:
-            return filter1(predicate, m2.key, m2.value, acc)
-    else:  # Nothing
-        return acc
+    match m:
+        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+            acc = filter_aux(predicate, left, acc)
+            acc = filter1(predicate, key, value, acc)
+            return filter_aux(predicate, right, acc)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return filter1(predicate, key, value, acc)
+        case _:
+            return acc
 
 
 def filter(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
@@ -253,72 +250,69 @@ def filter(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> MapTree[K
 
 
 def splice_out_successor(m: MapTree[Key, Value]) -> tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            if is_empty(mn.left):
-                return mn.key, mn.value, mn.right
+    match m:
+        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+            if is_empty(left):
+                return key, value, right
             else:
-                k3, v3, l_ = splice_out_successor(mn.left)
-                return k3, v3, mk(l_, mn.key, mn.value, mn.right)
-        else:
-            return m2.key, m2.value, empty
-    else:  # Nothing
-        failwith("internal error: Map.splice_out_successor")
+                k3, v3, l_ = splice_out_successor(left)
+                return k3, v3, mk(l_, key, value, right)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return key, value, empty
+        case _:
+            failwith("internal error: Map.splice_out_successor")
 
 
 def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            if k < mn.key:
-                return rebalance(remove(k, mn.left), mn.key, mn.value, mn.right)
-            elif k == mn.key:
-                if is_empty(mn.left):
-                    return mn.right
-                elif is_empty(mn.right):
-                    return mn.left
+    match m:
+        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+            if k < key:
+                return rebalance(remove(k, left), key, value, right)
+            elif k == key:
+                if is_empty(left):
+                    return right
+                elif is_empty(right):
+                    return left
                 else:
-                    sk, sv, r_ = splice_out_successor(mn.right)
-                    return mk(mn.left, sk, sv, r_)
+                    sk, sv, r_ = splice_out_successor(right)
+                    return mk(left, sk, sv, r_)
             else:
-                return rebalance(mn.left, mn.key, mn.value, remove(k, mn.right))
-        else:
-            if k == m2.key:
+                return rebalance(left, key, value, remove(k, right))
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            if k == key:
                 return empty
             else:
                 return m
-    else:  # Nothing
-        return empty
+        case _:
+            return empty
 
 
 def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            if k < mn.key:
-                return rebalance(change(k, u, mn.left), mn.key, mn.value, mn.right)
-            elif k == mn.key:
-                for v in u(Some(mn.value)).to_list():
-                    return Some(MapTreeNode(k, v, mn.left, mn.right, mn.height))
+    match m:
+        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+            if k < key:
+                return rebalance(change(k, u, left), key, value, right)
+            elif k == key:
+                for v in u(Some(value)).to_list():
+                    return Some(MapTreeNode(k, v, left, right, height))
                 else:
-                    if is_empty(mn.left):
-                        return mn.right
-                    elif is_empty(mn.right):
-                        return mn.left
+                    if is_empty(left):
+                        return right
+                    elif is_empty(right):
+                        return left
                     else:
-                        sk, sv, r_ = splice_out_successor(mn.right)
-                        return mk(mn.left, sk, sv, r_)
+                        sk, sv, r_ = splice_out_successor(right)
+                        return mk(left, sk, sv, r_)
             else:
-                return rebalance(mn.left, mn.key, mn.value, change(k, u, mn.right))
-        else:
-            if k < m2.key:
+                return rebalance(left, key, value, change(k, u, right))
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            if k < key:
                 for v in u(Nothing).to_list():
                     return Some(MapTreeNode(k, v, empty, m, 2))
                 else:
                     return m
-            elif k == m2.key:
-                for v in u(Some(m2.value)).to_list():
+            elif k == key:
+                for v in u(Some(value)).to_list():
                     return Some(MapTreeLeaf(k, v))
                 else:
                     return empty
@@ -328,130 +322,123 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
                 else:
                     return m
 
-    else:
-        for v in u(Nothing):
-            return Some(MapTreeLeaf(k, v))
-        else:
-            return m
+        case _:
+            for v in u(Nothing):
+                return Some(MapTreeLeaf(k, v))
+            else:
+                return m
 
 
 def mem(k: Key, m: MapTree[Key, Value]) -> bool:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            if k < mn.key:
-                return mem(k, mn.left)
+    match m:
+        case Option(tag="some", some=MapTreeNode(key=key, left=left, right=right)):
+            if k < key:
+                return mem(k, left)
             else:
-                return k == mn.key or mem(k, mn.right)
-        else:
-            return k == m2.key
-    else:
-        return False
+                return k == key or mem(k, right)
+        case Option(tag="some", some=MapTreeLeaf(key=key)):
+            return k == key
+        case _:
+            return False
 
 
 def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
     """Iterate maptree."""
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            iter(fn, mn.left)
-            fn(mn.key, mn.value)
-            iter(fn, mn.right)
-        else:
-            fn(m2.key, m2.value)
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+            iter(fn, left)
+            fn(key, value)
+            iter(fn, right)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            fn(key, value)
+        case _:
+            pass
 
 
 def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) -> Option[Result]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            res = try_pick(f, mn.left)
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+            res = try_pick(f, left)
             if res.is_some():
                 return res
             else:
-                res = f(mn.key, mn.value)
+                res = f(key, value)
                 if res.is_some():
                     return res
                 else:
-                    return try_pick(f, mn.right)
-        else:
-            return f(m2.key, m2.value)
-    else:
-        return Nothing
+                    return try_pick(f, right)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return f(key, value)
+        case _:
+            return Nothing
 
 
 def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            return exists(f, mn.left) or f(mn.key, mn.value) or exists(f, mn.right)
-        else:
-            return f(m2.key, m2.value)
-    else:
-        return False
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+            return exists(f, left) or f(key, value) or exists(f, right)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return f(key, value)
+        case _:
+            return False
 
 
 def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            return forall(f, mn.left) and f(mn.key, mn.value) and forall(f, mn.right)
-        else:
-            return f(m2.key, m2.value)
-    else:
-        return True
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+            return forall(f, left) and f(key, value) and forall(f, right)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return f(key, value)
+        case _:
+            return True
 
 
 def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            l2 = map(f, mn.left)
-            v2 = f(mn.key, mn.value)
-            r2 = map(f, mn.right)
-            return Some(MapTreeNode(mn.key, v2, l2, r2, mn.height))
-        else:
-            return Some(MapTreeLeaf(m2.key, f(m2.key, m2.value)))
-    else:
-        return empty
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value, height=height)):
+            l2 = map(f, left)
+            v2 = f(key, value)
+            r2 = map(f, right)
+            return Some(MapTreeNode(key, v2, l2, r2, height))
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return Some(MapTreeLeaf(key, f(key, value)))
+        case _:
+            return empty
 
 
 def fold_back(f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result) -> Result:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            x = fold_back(f, mn.right, x)
-            x = f((mn.key, mn.value), x)
-            return fold_back(f, mn.left, x)
-        else:
-            return f((m2.key, m2.value), x)
-    else:
-        return x
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+            x = fold_back(f, right, x)
+            x = f((key, value), x)
+            return fold_back(f, left, x)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return f((key, value), x)
+        case _:
+            return x
 
 
 def fold(f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]) -> Result:
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            x = fold(f, x, mn.left)
-            x = f(x, (mn.key, mn.value))
-            return fold(f, x, mn.right)
-        else:
-            return f(x, (m2.key, m2.value))
-    else:
-        return x
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+            x = fold(f, x, left)
+            x = f(x, (key, value))
+            return fold(f, x, right)
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            return f(x, (key, value))
+        case _:
+            return x
 
 
 def to_list(m: MapTree[Key, Value]) -> Block[tuple[Key, Value]]:
     def loop(m: MapTree[Key, Value], acc: Block[tuple[Key, Value]]) -> Block[tuple[Key, Value]]:
-        for m2 in m.to_list():
-            if isinstance(m2, MapTreeNode):
-                mn = m2
-                return loop(mn.left, loop(mn.right, acc).cons((mn.key, mn.value)))
-            else:
-                return acc.cons((m2.key, m2.value))
-        else:
-            return acc
+        match m:
+            case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+                return loop(left, loop(right, acc).cons((key, value)))
+            case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+                return acc.cons((key, value))
+            case _:
+                return acc
 
     return loop(m, block.empty)
 
@@ -488,15 +475,14 @@ def collapseLHS(stack: Block[MapTree[Key, Value]]) -> Block[MapTree[Key, Value]]
     if stack.is_empty():
         return block.empty
     m, rest = stack.head(), stack.tail()
-    for m2 in m.to_list():
-        if isinstance(m2, MapTreeNode):
-            mn = m2
-            tree = Some(MapTreeLeaf(mn.key, mn.value))
-            return collapseLHS(rest.cons(mn.right).cons(tree).cons(mn.left))
-        else:
+    match m:
+        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+            tree = Some(MapTreeLeaf(key, value))
+            return collapseLHS(rest.cons(right).cons(tree).cons(left))
+        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
             return stack
-    else:
-        return collapseLHS(rest)
+        case _:
+            return collapseLHS(rest)
 
 
 class MkIterator(Iterator[tuple[Key, Value]]):
@@ -508,14 +494,14 @@ class MkIterator(Iterator[tuple[Key, Value]]):
             raise StopIteration
 
         rest = self.stack.tail()
-        for m in self.stack.head():
-            if isinstance(m, MapTreeNode):
+        match self.stack.head():
+            case Option(tag="some", some=MapTreeNode()):
                 failwith("Please report error: Map iterator, unexpected stack for next()")
-            else:
+            case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
                 self.stack = collapseLHS(rest)
-                return m.key, m.value
-        else:
-            failwith("Please report error: Map iterator, unexpected stack for next()")
+                return key, value
+            case _:
+                failwith("Please report error: Map iterator, unexpected stack for next()")
 
 
 def not_started() -> None:
