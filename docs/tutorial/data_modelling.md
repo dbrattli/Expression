@@ -72,8 +72,7 @@ A more complex type modelling example:
 from __future__ import annotations
 from typing import Tuple, final
 
-from expression import TaggedUnion, match
-from expression.core.union import Tag
+from expression import case, tag, tagged_union
 
 
 @tagged_union
@@ -189,7 +188,9 @@ print("Score: ", rummy_score)
 You can also use tagged unions to create single case tagged unions. This is useful
 when you want to create a type that is different from the underlying type. For example
 you may want to create a type that is a string but is a different type to a normal
-string:
+string.
+
+For single case tagged unions we don't need to define the tag, just the single case.
 
 ```{code-cell} python
 @tagged_union(frozen=True, repr=False)
