@@ -5,6 +5,7 @@ from hypothesis import strategies as st
 
 from expression import Some, pipe
 from expression.collections import Block, Map, map
+from expression.core.option import Some
 
 
 def test_map_empty():
@@ -125,7 +126,7 @@ def test_map_iterate(xs: dict[str, int]):
     assert sorted(ys) == sorted(list(xs.keys()))
 
 
-def test_map_change():
+def test_map_change_empty():
     xs = (  # type: ignore
         Map.empty()
         .change(1, lambda _: Some(1))  # type: ignore
@@ -134,3 +135,47 @@ def test_map_change():
     )  # type: ignore
 
     assert xs == Map.of_seq([(1, 1), (2, 2), (3, 3)])
+
+
+def test_expression_change_non_empty():
+    m: Map[str, int] = Map.empty()
+    m = m.add("1", 1).add("2", 2).add("3", 3).add("4", 4)
+    m = m.change("2", lambda x: Some(0))  # <- works cause "2" is second added item
+    m = m.change("1", lambda x: Some(42))
+    m = m.change("3", lambda x: x)
+
+    assert m == Map.of_list([("1", 42), ("2", 0), ("3", 3), ("4", 4)])
+
+
+def test_map_change():
+    d_1 = {"a": 1, "b": 3}
+    d_2 = {"some": 0, "values": -1}
+    key_1 = "1"
+    key_2 = "2"
+    m: Map[str, Dict[str, int]] = Map.empty()
+    m = (
+        m.add(key_1, d_1)
+        .add(key_2, d_2)
+        .add("3", {})
+        .add("4", {})
+        .add("5", {})
+        .add("6", {})
+        .add("7", {})
+    )
+    m = m.change(key_2, lambda x: Some({**x.value, "other": 42}))
+    m = m.change(key_1, lambda x: Some({**x.value, "some key": 5}))
+
+    def verify(
+        original: Dict[str, int], map_key: str, override_key: str, override_value: int
+    ):
+        value = m.get(map_key)
+        assert value
+        assert override_key in value
+        for k, v in value.items():
+            if k == override_key:
+                assert v == override_value
+            else:
+                assert v == original[k]
+
+    verify(d_1, key_1, "some key", 5)
+    verify(d_2, key_2, "other", 42)
