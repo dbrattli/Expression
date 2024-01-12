@@ -63,7 +63,7 @@ You can install the latest `expression` from PyPI by running `pip` (or
 > pip install expression
 ```
 
-To add Pydantic support, install the `pydantic` extra:
+To add Pydantic v2 support, install the `pydantic` extra:
 
 ```console
 > pip install expression[pydantic]
@@ -505,9 +505,7 @@ Guide](https://google.github.io/styleguide/pyguide.html).
 
 Code checks are done using
 
-- [Black](https://github.com/psf/black)
-- [flake8](https://github.com/PyCQA/flake8)
-- [isort](https://github.com/PyCQA/isort)
+- [Ruff](https://github.com/astral-sh/ruff)
 
 To run code checks on changed files every time you commit, install the pre-commit hooks
 by running:

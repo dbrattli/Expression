@@ -25,7 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, Tuple, TypeVar, final
 
-from expression import Tag, TaggedUnion, match
+from expression import case, tag, tagged_union
 
 _T = TypeVar("_T")
 ```
@@ -50,18 +50,20 @@ cannot. With tagged unions each of the union cases produces the same type which 
 we use a static create method for to create each of the union cases.
 
 ```{code-cell} python
-@final
-class Shape(TaggedUnion):
-    RECTANGLE = Tag[Rectangle]()
-    CIRCLE = Tag[Circle]()
+@tagged_union
+class Shape:
+    tag: Literal["rectangle", "circle"] = tag()
+
+    rectangle: Rectangle = case()
+    circle: Circle = case()
 
     @staticmethod
-    def rectangle(width: float, length: float) -> Shape:
-        return Shape(Shape.RECTANGLE, Rectangle(width, length))
+    def Rectangle(width: float, length: float) -> Shape:
+        return Shape(rectangle=Rectangle(width, length))
 
     @staticmethod
-    def circle(radius: float) -> Shape:
-        return Shape(Shape.CIRCLE, Circle(radius))
+    def Circle(radius: float) -> Shape:
+        return Shape(circle=Circle(radius))
 ```
 
 A more complex type modelling example:
@@ -74,75 +76,82 @@ from expression import TaggedUnion, match
 from expression.core.union import Tag
 
 
-@final
-class Suit(TaggedUnion):
-    HEARTS = Tag[None]
-    SPADES = Tag[None]()
-    CLUBS = Tag[None]()
-    DIAMONDS = Tag[None]()
+@tagged_union
+class Suit:
+    tag: Literal["spades", "hearts", "clubs", "diamonds"] = tag()
+
+    spades: Literal[True] = case()
+    hearts: Literal[True] = case()
+    clubs: Literal[True] = case()
+    diamonds: Literal[True] = case()
 
     @staticmethod
-    def hearts() -> Suit:
-        return Suit(Suit.HEARTS())
+    def Spades() -> Suit:
+        return Suit(spades=True)
 
     @staticmethod
-    def spades() -> Suit:
-        return Suit(Suit.SPADES)
+    def Hearts() -> Suit:
+        return Suit(hearts=True)
 
     @staticmethod
-    def clubs() -> Suit:
-        return Suit(Suit.CLUBS)
+    def Clubs() -> Suit:
+        return Suit(clubs=True)
 
     @staticmethod
-    def diamonds() -> Suit:
-        return Suit(Suit.DIAMONDS)
+    def Diamonds() -> Suit:
+        return Suit(diamonds=True)
 
+@tagged_union
+class Face:
+    tag: Literal["jack", "queen", "king", "ace"] = tag()
 
-@final
-class Face(TaggedUnion):
-    JACK = Tag[None]()
-    QUEEN = Tag[None]()
-    KIND = Tag[None]()
-    ACE = Tag[None]()
-
-    @staticmethod
-    def jack() -> Face:
-        return Face(Face.JACK)
+    jack: Literal[True] = case()
+    queen: Literal[True] = case()
+    king: Literal[True] = case()
+    ace: Literal[True] = case()
 
     @staticmethod
-    def queen() -> Face:
-        return Face(Face.QUEEN)
+    def Jack() -> Face:
+        return Face(jack=True)
 
     @staticmethod
-    def king() -> Face:
-        return Face(Face.KIND)
+    def Queen() -> Face:
+        return Face(queen=True)
 
     @staticmethod
-    def ace() -> Face:
-        return Face(Face.ACE)
-
-
-@final
-class Card(TaggedUnion):
-    FACE_CARD = Tag[Tuple[Suit, Face]]()
-    VALUE_CARD = Tag[Tuple[Suit, int]]()
-    JOKER = Tag[None]()
+    def King() -> Face:
+        return Face(king=True)
 
     @staticmethod
-    def face_card(suit: Suit, face: Face) -> Card:
-        return Card(Card.FACE_CARD, suit=suit, face=face)
+    def Ace() -> Face:
+        return Face(ace=True)
+
+
+@tagged_union
+class Card:
+    tag: Literal["value", "face", "joker"] = tag()
+
+    face: tuple[Suit, Face] = case()
+    value: tuple[Suit, int] = case()
+    joker: Literal[True] = case()
 
     @staticmethod
-    def value_card(suit: Suit, value: int) -> Card:
-        return Card(Card.VALUE_CARD, suit=suit, value=value)
+    def Face(suit: Suit, face: Face) -> Card:
+        return Card(face=(suit, face))
+
+    @staticmethod
+    def Value(suit: Suit, value: int) -> Card:
+        if value < 1 or value > 10:
+            raise ValueError("Value must be between 1 and 10")
+        return Card(value=(suit, value))
 
     @staticmethod
     def Joker() -> Card:
-        return Card(Card.JOKER)
+        return Card(joker=True)
 
 
-jack_of_hearts = Card.face_card(Suit.hearts(), Face.jack())
-three_of_clubs = Card.value_card(Suit.clubs(), 3)
+jack_of_hearts = Card.Face(suit=Suit.Hearts(), face=Face.Jack())
+three_of_clubs = Card.Value(suit=Suit.Clubs(), value=3)
 joker = Card.Joker()
 ```
 
@@ -150,21 +159,19 @@ We can now use our types with pattern matching to create our domain logic:
 
 ```{code-cell} python
 def calculate_value(card: Card) -> int:
-    with match(card) as case:
-        if case(Card.JOKER):
-            return 0
-        if case(Card.FACE_CARD(suit=Suit.SPADES, face=Face.QUEEN)):
+    match card:
+        case Card(tag="face", face=(Suit(spades=True), Face(queen=True))):
             return 40
-        if case(Card.FACE_CARD(face=Face.ACE)):
+        case Card(tag="face", face=(_suit, Face(ace=True))):
             return 15
-        if case(Card.FACE_CARD()):
+        case Card(tag="face", face=(_suit, _face)):
             return 10
-        if case(Card.VALUE_CARD(value=10)):
-            return 10
-        if case._:
-            return 5
-
-    assert False
+        case Card(tag="value", value=(_suit, value)):
+            return value
+        case Card(tag="joker", joker=True):
+            return 0
+        case _:
+            raise AssertionError("Should not match")
 
 
 rummy_score = calculate_value(jack_of_hearts)
@@ -176,3 +183,33 @@ print("Score: ", rummy_score)
 rummy_score = calculate_value(joker)
 print("Score: ", rummy_score)
 ```
+
+## Single case tagged unions
+
+You can also use tagged unions to create single case tagged unions. This is useful
+when you want to create a type that is different from the underlying type. For example
+you may want to create a type that is a string but is a different type to a normal
+string:
+
+```{code-cell} python
+@tagged_union(frozen=True, repr=False)
+class SecurePassword:
+    password: str = case()
+
+    # Override __str__ and __repr__ to make sure we don't leak the password in logs
+    def __str__(self) -> str:
+        return "********"
+
+    def __repr__(self) -> str:
+        return "SecurePassword(password='********')"
+
+password = SecurePassword(password="secret")
+match password:
+    case SecurePassword(password=p):
+        assert p == "secret"
+
+```
+
+This will make sure that the password is not leaked in logs or when printed to the
+console, and that we don't assign a password to a normal string anywhere in our code.
+

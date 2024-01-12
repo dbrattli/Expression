@@ -262,4 +262,3 @@ A simplified type called [`Try`](reference_try) is also available. It's a result
 that is pinned to `Exception` i.e., `Result[TSource, Exception]`. This makes the code
 simpler since you don't have specify the error type every time you declare the type of
 your result.
-
