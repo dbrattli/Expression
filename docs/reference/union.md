@@ -3,6 +3,6 @@
 # Tagged Unions
 
 ```{eval-rst}
-.. automodule:: expression.core.union
+.. automodule:: expression.core.tagged_union
     :members:
 ```
