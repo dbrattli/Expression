@@ -114,7 +114,7 @@ def test_generator_with_yield_from():
     assert value == 42
 
 
-def test_generator_with_yield_from_gen():
+def test_generator_with_yield_from_subgen():
     def gn():
         yield 42
 
@@ -137,3 +137,24 @@ def test_generator_with_yield_from_gen_empty():
     gen = fn()
     value = next(gen)
     assert value == 42
+
+def test_generator_with_yield_from_send_to_subgen():
+    def gn() -> Generator[int, int|None, int]:
+        ret = yield 42
+        print("subgenerator: ret", ret)
+        assert ret is not None
+        return ret + 1
+
+    def fn() -> Generator[int, int|None, int]:
+        ret = yield from gn()
+        print("generator: ret", ret)
+        return ret +1
+
+    gen = fn()
+    value = gen.send(None)
+    assert value == 42
+    try:
+        value = gen.send(10)
+    except StopIteration as ex:
+        print("StopIteration", ex.value)
+        assert ex.value == 12

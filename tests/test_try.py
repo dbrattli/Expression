@@ -28,3 +28,12 @@ def test_try_match_failure():
             assert err == error
         case _:
             assert False
+
+def test_try_to_string_success():
+    xs: Try[int] = Success(10)
+    assert str(xs) == "Success 10"
+
+def test_try_to_string_failure():
+    error = Exception("err")
+    xs: Try[int] = Failure(error)
+    assert str(xs) == "Failure err"
