@@ -21,6 +21,14 @@ class Try(Result[_TSource, Exception]):
     to use when the error type is an exception.
     """
 
+    def __str__(self) -> str:
+        """Return a string representation of the Try."""
+        match self:
+            case Try(tag="ok", ok=ok):
+                return f"Success {ok}"
+            case Try(error=error):
+                return f"Failure {error}"
+
 
 def Success(value: _TSource) -> Try[_TSource]:
     """The successful Try case.
