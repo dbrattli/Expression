@@ -8,7 +8,7 @@ Python async / await instead of providing an asynchronous IO mechanism
 by itself.
 """
 import asyncio
-from asyncio import Future
+from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
@@ -58,6 +58,12 @@ def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
     return future
 
 
+# Tasks that are scheduled on the main event loop. The main event loop keeps a
+# a weak reference to the tasks, so we need to keep a strong reference to them until
+# they are completed.
+__running_tasks: set[Task[Any]] = set()
+
+
 def start(computation: Awaitable[Any], token: CancellationToken | None = None) -> None:
     """Start computation.
 
@@ -69,9 +75,12 @@ def start(computation: Awaitable[Any], token: CancellationToken | None = None) -
     """
 
     async def runner() -> Any:
-        return await computation
+        result = await computation
+        __running_tasks.remove(task)
+        return result
 
     task = asyncio.create_task(runner())
+    __running_tasks.add(task)
 
     def cb():
         task.cancel()
@@ -89,9 +98,12 @@ def start_immediate(computation: Awaitable[Any], token: CancellationToken | None
     """
 
     async def runner() -> Any:
-        return await computation
+        result = await computation
+        __running_tasks.remove(task)
+        return result
 
     task = asyncio.create_task(runner())
+    __running_tasks.add(task)
 
     def cb() -> None:
         task.cancel()
