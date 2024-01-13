@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/expression.svg)](https://pypi.python.org/pypi/Expression)
 ![Python package](https://github.com/cognitedata/expression/workflows/Python%20package/badge.svg)
-![Upload Python Package](https://github.com/cognitedata/expression/workflows/Upload%20Python%20Package/badge.svg)
+[![Publish Package](https://github.com/dbrattli/Expression/actions/workflows/python-publish.yml/badge.svg)](https://github.com/dbrattli/Expression/actions/workflows/python-publish.yml)
 [![Documentation Status](https://readthedocs.org/projects/expression/badge/?version=latest)](https://expression.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/cognitedata/expression/branch/main/graph/badge.svg)](https://codecov.io/gh/cognitedata/expression)
 
