@@ -312,6 +312,38 @@ xs = fn()
 assert xs is Nothing
 ```
 
+### Option as an applicative
+
+Sometimes wish to combine two Options together via a function to produce a new Option
+i.e. we want to combine them only in the case when they are **both** Some. But if
+either one is Nothing, then the overall outcome should also be Nothing.
+We can use the function map2 to achieve this purpose.
+
+```python
+from expression import Some, Nothing, Option
+from operator import add
+
+def keep_positive(a: int) -> Option[int]:
+    if a > 0:
+        return Some(a)
+    else:
+      return Nothing
+
+def add_options(a: Option[int], b: Option[int]):
+  return a.map2(add, b)
+
+assert add_options(
+  keep_positive(4),
+  keep_positive(-2)
+) is Nothing
+
+assert add_options(
+  keep_positive(3),
+  keep_positive(2)
+) == Some(5)
+
+```
+
 For more information about options:
 
 - [Tutorial](https://expression.readthedocs.io/en/latest/tutorial/optional_values.html)
