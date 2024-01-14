@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "Expression"
 version = "0.0.0" # NOTE: will be updated by publish script
-description = "Practical functional programming for Python 3.9+"
+description = "Practical functional programming for Python 3.11+"
 readme = "README.md"
 authors = ["Dag Brattli <dag.brattli@cognite.com>"]
 license = "MIT License"
@@ -13,8 +13,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
