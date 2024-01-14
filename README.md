@@ -168,11 +168,16 @@ pipelines:
 ```python
 from expression.collections import seq, Seq
 
+# Since static type checkes aren't good good at inferring lambda types
+mapper: Callable[[int], int] = lambda x: x * 10
+predicate: Callable[[int], bool] = lambda x: x > 100
+folder: Callable[[int, int], int] = lambda s, x: s + x
+
 xs = Seq.of(9, 10, 11)
 ys = xs.pipe(
-    seq.map(lambda x: x * 10),
-    seq.filter(lambda x: x > 100),
-    seq.fold(lambda s, x: s + x, 0)
+    seq.map(mapper),
+    seq.filter(predicate),
+    seq.fold(folder, 0),
 )
 
 assert ys == 110
