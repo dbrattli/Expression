@@ -137,7 +137,7 @@ def test_map_change():
 
 
 def test_map_try_get_value():
-    values = []
+    values: list[int] = []
     xs = Map.of(a=1, b=2)
     assert xs.try_get_value("a", values) is True
     assert xs.try_get_value("b", values) is True
