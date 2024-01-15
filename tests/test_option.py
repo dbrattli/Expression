@@ -106,6 +106,7 @@ def test_option_none_not_equals_some():
     assert xs != ys
     assert ys != xs
 
+
 def test_option_order_some_some_works():
     xs = Some(42)
     ys = Some(41)
@@ -121,6 +122,7 @@ def test_option_order_some_none_works():
     assert xs > ys
     assert ys < xs
 
+
 def test_option_order_none_none_works():
     xs = Nothing
     ys = Nothing
@@ -128,10 +130,8 @@ def test_option_order_none_none_works():
     assert not (xs < ys)
 
 
-
-
 def test_option_none_default_value():
-    xs = Nothing
+    xs: Option[int] = Nothing
 
     zs = xs.default_value(42)
 
@@ -224,7 +224,7 @@ def test_option_none_map():
     assert ys is Nothing
 
 
-@given(st.integers(), st.integers()) # type: ignore
+@given(st.integers(), st.integers())  # type: ignore
 def test_option_some_map2_piped(x: int, y: int):
     xs = Some(x)
     ys = Some(y)
@@ -602,3 +602,18 @@ def test_serialize_option_works():
     assert model_.one.value == 10
     assert model_.two == Nothing
     assert model_.three == Nothing
+
+
+class A:
+    pass
+
+
+class B(A):
+    pass
+
+
+def test_option_covariance() -> None:
+    x: Option[B] = Some(B())
+    y: Option[A] = x
+
+    assert y.is_some()

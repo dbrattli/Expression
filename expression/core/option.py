@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from expression.core.result import Result
 
 
-_TSource = TypeVar("_TSource")
+_TSource = TypeVar("_TSource", covariant=True)
 _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
 
@@ -47,7 +47,7 @@ class Option(
     some: _TSource = case()
 
     @staticmethod
-    def Some(value: _TSource) -> Option[_TSource]:
+    def Some(value: _T1) -> Option[_T1]:
         """Create a Some option."""
         return Option(some=value)
 
@@ -56,7 +56,7 @@ class Option(
         """Create a None option."""
         return Option(none=None)
 
-    def default_value(self, value: _TSource) -> _TSource:
+    def default_value(self, value: _T1) -> _TSource | _T1:
         """Get with default value.
 
         Gets the value of the option if the option is Some, otherwise
@@ -191,8 +191,8 @@ class Option(
             case _:
                 return True
 
-    @classmethod
-    def of_obj(cls, value: _TSource) -> Option[_TSource]:
+    @staticmethod
+    def of_obj(value: _T1) -> Option[_T1]:
         """Convert object to an option."""
         return of_optional(value)
 
