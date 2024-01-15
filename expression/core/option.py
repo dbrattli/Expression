@@ -39,7 +39,7 @@ class Option(
     Iterable[_TSource],
     PipeMixin,
 ):
-    """Option abstract base class."""
+    """Option class."""
 
     tag: Literal["some", "none"] = tag()
 

@@ -5,7 +5,7 @@ can be composed. The Result type is typically used in monadic
 error-handling, which is often referred to as Railway-oriented
 Programming.
 
-There is also a simplifyed alias of this type called `Maybe` that pins
+There is also a simplifyed alias of this type called `Try` that pins
 the Result type to Exception.
 """
 from __future__ import annotations
