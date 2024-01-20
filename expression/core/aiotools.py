@@ -46,13 +46,16 @@ def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
     future: "Future[_TSource]" = asyncio.Future()
 
     def done(value: _TSource) -> None:
-        future.set_result(value)
+        if not future.done():
+            future.set_result(value)
 
     def error(err: Exception) -> None:
-        future.set_exception(err)
+        if not future.done():
+            future.set_exception(err)
 
     def cancel(_: OperationCanceledError) -> None:
-        future.cancel()
+        if not future.done():
+            future.cancel()
 
     callback(done, error, cancel)
     return future
