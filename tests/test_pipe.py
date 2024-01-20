@@ -1,10 +1,15 @@
 from collections.abc import Callable
+from typing import TypeVar
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
 from expression import pipe, pipe2
+from expression.core.pipe import starpipe, starid
 
+_A = TypeVar("_A")
+_B = TypeVar("_B")
+_C = TypeVar("_C")
 
 @given(st.integers())
 def test_pipe_id(x: int):
@@ -46,3 +51,30 @@ def test_pipe2_fn_gn(x: int, y: int):
     value = pipe2((x, y), fn, gn)
 
     assert value == gn(fn(x)(y))
+
+def test_starid_simple():
+    assert starid(1) == (1,)
+    assert starid(1, 2) == (1, 2)
+    assert starid(1, 2, 3) == (1, 2, 3)
+    assert starid(1, 2, 3, 4) == (1, 2, 3, 4)
+
+def fn(a: _A, b: _B) -> tuple[_A, _B]:
+    return a, b
+
+def gn(a: _A, b: _B) -> tuple[_B, _A]:
+    return b, a
+
+def yn(a: _A, b: _B) -> tuple[_A, _B, int]:
+    return a, b, 3
+
+def test_starpipe_simple():
+    assert starpipe((1, 2), fn) == fn(1, 2)
+
+def test_starpipe_id():
+    assert starpipe((1, 2), starid) == (1, 2)
+
+def test_starpipe_fn_gn():
+    assert starpipe((1, 2), fn, gn) == gn(*fn(1, 2))
+
+def test_starpipe_fn_gn_yn():
+    assert starpipe((1, 2), fn, gn, yn) == yn(*gn(*fn(1, 2)))

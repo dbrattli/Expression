@@ -382,3 +382,4 @@ def test_seq_monad_law_associativity_empty(value: int):
     # Empty list
     m = empty
     assert list(m.collect(f).collect(g)) == list(m.collect(lambda x: f(x).collect(g)))
+
