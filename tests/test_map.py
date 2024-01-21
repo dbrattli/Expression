@@ -126,7 +126,7 @@ def test_map_iterate(xs: dict[str, int]):
 
 
 def test_map_change():
-    xs = (
+    xs = ( # type: ignore
         Map.empty()
         .change(1, lambda _: Some(1))  # type: ignore
         .change(2, lambda _: Some(2))  # type: ignore
