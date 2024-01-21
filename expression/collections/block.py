@@ -23,7 +23,7 @@ import builtins
 import functools
 import itertools
 from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, TypeVarTuple, get_args, overload
 
 
 if TYPE_CHECKING:
@@ -54,6 +54,7 @@ _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
+_P = TypeVarTuple("_P")
 
 
 class Block(
@@ -235,25 +236,7 @@ class Block(
         """
         return Block((*builtins.map(mapping, self),))
 
-    @overload
-    def starmap(self: Block[tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]) -> Block[_TResult]:
-        ...
-
-    @overload
-    def starmap(
-        self: Block[tuple[_T1, _T2, _T3]],
-        mapping: Callable[[_T1, _T2, _T3], _TResult],
-    ) -> Block[_TResult]:
-        ...
-
-    @overload
-    def starmap(
-        self: Block[tuple[_T1, _T2, _T3, _T4]],
-        mapping: Callable[[_T1, _T2, _T3, _T4], _TResult],
-    ) -> Block[_TResult]:
-        ...
-
-    def starmap(self: Block[Any], mapping: Callable[..., Any]) -> Block[Any]:
+    def starmap(self: Block[tuple[*_P]], mapping: Callable[[*_P], _TResult]) -> Block[_TResult]:
         """Starmap source sequence.
 
         Unpack arguments grouped as tuple elements. Builds a new collection
@@ -767,24 +750,7 @@ def reduce(
     return source.tail().fold(reduction, source.head())
 
 
-@overload
-def starmap(mapper: Callable[[_T1, _T2], _TResult]) -> Callable[[Block[tuple[_T1, _T2]]], Block[_TResult]]:
-    ...
-
-
-@overload
-def starmap(mapper: Callable[[_T1, _T2, _T3], _TResult]) -> Callable[[Block[tuple[_T1, _T2, _T3]]], Block[_TResult]]:
-    ...
-
-
-@overload
-def starmap(
-    mapper: Callable[[_T1, _T2, _T3, _T4], _TResult],
-) -> Callable[[Block[tuple[_T1, _T2, _T3, _T4]]], Block[_TResult]]:
-    ...
-
-
-def starmap(mapper: Callable[..., Any]) -> Callable[[Block[Any]], Block[Any]]:
+def starmap(mapper: Callable[[*_P], _TResult]) -> Callable[[Block[tuple[*_P]]], Block[_TResult]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
@@ -798,7 +764,7 @@ def starmap(mapper: Callable[..., Any]) -> Callable[[Block[Any]], Block[Any]]:
         Partially applied map function.
     """
 
-    def mapper_(args: tuple[Any, ...]) -> Any:
+    def mapper_(args: tuple[*_P]) -> _TResult:
         return mapper(*args)
 
     return map(mapper_)

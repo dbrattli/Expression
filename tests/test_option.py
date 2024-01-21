@@ -128,8 +128,6 @@ def test_option_order_none_none_works():
     assert not (xs < ys)
 
 
-
-
 def test_option_none_default_value():
     xs = Nothing
 
