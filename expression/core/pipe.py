@@ -231,7 +231,8 @@ def starpipe(__args: Any, *__fns: Callable[..., Any]) -> Any:
 
     Example:
         >>> starpipe((x, y), fn) == fn(x, y)  # Same as (x, y) ||> fn
-        >>> starpipe((x, y), fn, gn) == gn(*fn(x))  # Same as (x, y) ||> fn |> gn
+        >>> starpipe((x, y), fn, gn) == gn(*fn(x))  # Same as (x, y) ||> fn |||> gn
+        >>> starpipe((x, y), fn, gn, hn) == hn(*gn(*fn(x)))  # Same as (x, y) ||> fn |||> gn ||> hn
         ...
     """
     # Cast since unpacked arguments be used with TypeVarTuple
