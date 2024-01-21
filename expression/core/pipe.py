@@ -12,10 +12,9 @@ Example:
     >>> assert pipe(v, fn, gn) == gn(fn(v))
 """
 from collections.abc import Callable
-from functools import reduce
 from typing import Any, TypeVar, TypeVarTuple, cast, overload
 
-from .compose import compose
+from .compose import compose, starcompose
 from .misc import starid
 
 
@@ -239,14 +238,7 @@ def starpipe(__args: Any, *__fns: Callable[..., Any]) -> Any:
     _starid = cast(Callable[..., Any], starid)
     fn = __fns[0] if len(__fns) else _starid
 
-    def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
-        def _compose(source: Any) -> Any:
-            """Return a pipeline of composed functions."""
-            return reduce(lambda fields, f: f(*fields), fns, source)
-
-        return _compose
-
-    return compose(*__fns[1:])(fn(*__args))
+    return starcompose(*__fns[1:])(fn(*__args))
 
 
 class PipeMixin:
