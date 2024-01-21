@@ -126,7 +126,7 @@ def test_map_iterate(xs: dict[str, int]):
 
 
 def test_map_change():
-    xs = (  # type: ignore
+    xs = ( # type: ignore
         Map.empty()
         .change(1, lambda _: Some(1))  # type: ignore
         .change(2, lambda _: Some(2))  # type: ignore
@@ -143,3 +143,9 @@ def test_map_try_get_value():
     assert xs.try_get_value("b", values) is True
     assert xs.try_get_value("c", values) is False
     assert values == [1, 2]
+
+def test_expression_issue_105():
+    m = Map[str, int].empty()
+    m = m.add("1", 1).add("2", 2).add("3", 3).add("4", 4)
+    m = m.change("2", lambda x: x)
+    m = m.change("3", lambda x: x)

@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from functools import reduce
-from typing import Any, TypeVar, overload
+from typing import Any, TypeVar, TypeVarTuple, overload
 
 
 _A = TypeVar("_A")
@@ -13,6 +13,12 @@ _G = TypeVar("_G")
 _H = TypeVar("_H")
 _T = TypeVar("_T")
 _J = TypeVar("_J")
+
+_P = TypeVarTuple("_P")
+_Q = TypeVarTuple("_Q")
+_X = TypeVarTuple("_X")
+_Y = TypeVarTuple("_Y")
+_Z = TypeVarTuple("_Z")
 
 
 @overload
@@ -134,6 +140,46 @@ def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
     def _compose(source: Any) -> Any:
         """Return a pipeline of composed functions."""
         return reduce(lambda acc, f: f(acc), fns, source)
+
+    return _compose
+
+
+@overload
+def starcompose() -> Callable[[Any], Any]:
+    ...
+
+
+@overload
+def starcompose(__fn1: Callable[[*_P], _A]) -> Callable[[*_P], _A]:
+    ...
+
+
+@overload
+def starcompose(__fn1: Callable[[*_P], tuple[*_Y]], __fn2: Callable[[*_Y], _B]) -> Callable[[*_P], _B]:
+    ...
+
+
+@overload
+def starcompose(
+    __fn1: Callable[[*_P], tuple[*_Y]], __fn2: Callable[[*_Y], tuple[*_Z]], __fn3: Callable[[*_Z], _C]
+) -> Callable[[*_P], _C]:
+    ...
+
+
+@overload
+def starcompose(
+    __fn1: Callable[[*_P], tuple[*_Y]],
+    __fn2: Callable[[*_Y], tuple[*_Z]],
+    __fn3: Callable[[*_Z], tuple[*_X]],
+    __fn4: Callable[[*_X], _D],
+) -> Callable[[*_P], _D]:
+    ...
+
+
+def starcompose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
+    def _compose(source: Any) -> Any:
+        """Return a pipeline of composed functions."""
+        return reduce(lambda fields, f: f(*fields), fns, source)
 
     return _compose
 

@@ -12,9 +12,9 @@ Example:
     >>> assert pipe(v, fn, gn) == gn(fn(v))
 """
 from collections.abc import Callable
-from typing import Any, TypeVar, overload
+from typing import Any, TypeVar, TypeVarTuple, cast, overload
 
-from .compose import compose
+from .compose import compose, starcompose
 from .misc import starid
 
 
@@ -28,6 +28,11 @@ _G = TypeVar("_G")
 _H = TypeVar("_H")
 _T = TypeVar("_T")
 _J = TypeVar("_J")
+_P = TypeVarTuple("_P")
+_Q = TypeVarTuple("_Q")
+_X = TypeVarTuple("_X")
+_Y = TypeVarTuple("_Y")
+_Z = TypeVarTuple("_Z")
 
 
 @overload
@@ -187,20 +192,54 @@ def pipe3(__values: Any, *fns: Any) -> Any:
     return pipe(fns[0](__values[0])(__values[1])(__values[2]), *fns[1:]) if fns else __values
 
 
-def starpipe(args: tuple[Any, ...], *fns: Callable[..., Any]):
+@overload
+def starpipe(__args: tuple[*_P], __fn1: Callable[[*_P], _B]) -> _B:
+    ...
+
+
+@overload
+def starpipe(__args: tuple[*_P], __fn1: Callable[[*_P], tuple[*_Q]], __fn2: Callable[[*_Q], _B]) -> _B:
+    ...
+
+
+@overload
+def starpipe(
+    __args: tuple[*_P],
+    __fn1: Callable[[*_P], tuple[*_Q]],
+    __fn2: Callable[[*_Q], tuple[*_X]],
+    __fn3: Callable[[*_X], _B],
+) -> _B:
+    ...
+
+
+@overload
+def starpipe(
+    __args: tuple[*_P],
+    __fn1: Callable[[*_P], tuple[*_Q]],
+    __fn2: Callable[[*_Q], tuple[*_X]],
+    __fn3: Callable[[*_X], tuple[*_Y]],
+    __fn4: Callable[[*_Y], _B],
+) -> _B:
+    ...
+
+
+def starpipe(__args: Any, *__fns: Callable[..., Any]) -> Any:
     """Functional pipe_n (`||>`, `||>`, `|||>`, etc).
 
     Allows the use of function arguments on the left side of the
     function. Calls the function with tuple arguments unpacked.
 
     Example:
-        >>> starpipe((x, y), __fn) == __fn(x, y)  # Same as (x, y) ||> __fn
-        >>> starpipe((x, y), __fn, gn) == gn(fn(x))  # Same as (x, y) ||> __fn |> gn
+        >>> starpipe((x, y), fn) == fn(x, y)  # Same as (x, y) ||> fn
+        >>> starpipe((x, y), fn, gn) == gn(*fn(x))  # Same as (x, y) ||> fn |||> gn
+        >>> starpipe((x, y), fn, gn, hn) == hn(*gn(*fn(x)))  # Same as (x, y) ||> fn |||> gn ||> hn
         ...
     """
-    fn = fns[0] if len(fns) else starid
+    # Cast since unpacked arguments be used with TypeVarTuple
+    _starid = cast(Callable[..., Any], starid)
+    fn = __fns[0] if len(__fns) else _starid
 
-    return compose(*fns[1:])(fn(*args))
+    return starcompose(*__fns[1:])(fn(*__args))
 
 
 class PipeMixin:

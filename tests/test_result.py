@@ -424,7 +424,10 @@ def test_error_from_dict_works():
 def test_model_to_json_works():
     model = Model(one=Ok(10))
     obj = model.model_dump_json()
-    assert obj == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}}}'
+    assert (
+        obj
+        == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}}}'
+    )
 
 
 def test_error_default_value():
