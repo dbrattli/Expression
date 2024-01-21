@@ -235,6 +235,27 @@ def test_option_some_map2_piped(x: int, y: int):
         case _:
             assert False
 
+def test_option_starmap_fluent():
+    xs = Some((42, 43))
+    mapper: Callable[[int, int], int] = lambda x, y: x + y
+    ys = xs.starmap(mapper)
+
+    match ys:
+        case Option(tag="some", some=value):
+            assert value == 85
+        case _:
+            assert False
+
+def test_option_starmap_piped():
+    xs = Some((42, 43))
+    mapper: Callable[[int, int], int] = lambda x, y: x + y
+    ys = pipe(xs, option.starmap(mapper))
+
+    match ys:
+        case Option(tag="some", some=value):
+            assert value == 85
+        case _:
+            assert False
 
 def test_option_some_bind_fluent():
     xs = Some(42)

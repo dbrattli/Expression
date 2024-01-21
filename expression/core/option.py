@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Generator, Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, TypeVarTuple, get_args, get_origin
 
 from .curry import curry_flip
 from .error import EffectError
@@ -32,6 +32,7 @@ _TError = TypeVar("_TError")
 
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
+_P = TypeVarTuple("_P")
 
 
 @tagged_union(frozen=True, order=True)
@@ -101,6 +102,19 @@ class Option(
         match self, other:
             case Option(tag="some", some=some), Option(tag="some", some=other_value):
                 return Some(mapper(some, other_value))
+            case _:
+                return Nothing
+
+    def starmap(self: Option[tuple[*_P]], mapper: Callable[[*_P], _TResult]) -> Option[_TResult]:
+        """Starmap option.
+
+        Applies the mapper to the values if the option is Some,
+        otherwise returns `Nothing`. The tuple is unpacked before
+        applying the mapper.
+        """
+        match self:
+            case Option(tag="some", some=some):
+                return Some(mapper(*some))
             case _:
                 return Nothing
 
@@ -413,6 +427,11 @@ def map(option: Option[_TSource], mapper: Callable[[_TSource], _TResult]) -> Opt
 @curry_flip(2)
 def map2(opt1: Option[_T1], opt2: Option[_T2], mapper: Callable[[_T1, _T2], _TResult]) -> Option[_TResult]:
     return opt1.map2(mapper, opt2)
+
+
+@curry_flip(1)
+def starmap(option: Option[tuple[*_P]], mapper: Callable[[*_P], _TResult]) -> Option[_TResult]:
+    return option.starmap(mapper)
 
 
 def or_else(
