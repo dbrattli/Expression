@@ -33,6 +33,7 @@ _Q = TypeVarTuple("_Q")
 _X = TypeVarTuple("_X")
 _Y = TypeVarTuple("_Y")
 _Z = TypeVarTuple("_Z")
+_K = TypeVarTuple("_K")
 
 
 @overload
@@ -219,6 +220,31 @@ def starpipe(
     __fn2: Callable[[*_Q], tuple[*_X]],
     __fn3: Callable[[*_X], tuple[*_Y]],
     __fn4: Callable[[*_Y], _B],
+) -> _B:
+    ...
+
+
+@overload
+def starpipe(
+    __args: tuple[*_P],
+    __fn1: Callable[[*_P], tuple[*_Q]],
+    __fn2: Callable[[*_Q], tuple[*_X]],
+    __fn3: Callable[[*_X], tuple[*_Y]],
+    __fn4: Callable[[*_Y], tuple[*_Z]],
+    __fn5: Callable[[*_Z], _B],
+) -> _B:
+    ...
+
+
+@overload
+def starpipe(
+    __args: tuple[*_P],
+    __fn1: Callable[[*_P], tuple[*_Q]],
+    __fn2: Callable[[*_Q], tuple[*_X]],
+    __fn3: Callable[[*_X], tuple[*_Y]],
+    __fn4: Callable[[*_Y], tuple[*_Z]],
+    __fn5: Callable[[*_Z], tuple[*_K]],
+    __fn6: Callable[[*_K], _B],
 ) -> _B:
     ...
 
