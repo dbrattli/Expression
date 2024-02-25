@@ -96,12 +96,14 @@ def test_union_compare_shapes_with_different_tags():
     shape2 = Shape(rectangle=(10.0, 20.0))
     assert shape1 != shape2
 
+
 @tagged_union(order=True, frozen=True)
 class Maybe(Generic[_T]):
     tag: Literal["just", "nothing"] = tag()
 
     nothing: None = case()
     just: _T = case()
+
 
 def test_maybe_works():
     xs = Maybe(just=1)
@@ -142,6 +144,7 @@ def test_maybe_pattern_match_positional_tag_arg_works():
         case _:
             assert False
 
+
 def test_nested_unions_works():
     xs = Maybe(just=Shape(circle=Circle(10.0)))
     match xs:
@@ -150,11 +153,13 @@ def test_nested_unions_works():
         case _:
             assert False
 
+
 def test_union_order_just_just_works():
     xs = Maybe(just=1)
     ys = Maybe(just=2)
     assert xs < ys
     assert ys > xs
+
 
 def test_union_order_just_nothing_works():
     xs = Maybe(just=1)
@@ -162,17 +167,20 @@ def test_union_order_just_nothing_works():
     assert xs > ys
     assert ys < xs
 
+
 def test_union_order_nothing_just_works():
     xs = Maybe[int](nothing=None)
     ys = Maybe(just=1)
     assert xs < ys
     assert ys > xs
 
+
 def test_union_order_nothing_nothing_works():
     xs = Maybe[int](nothing=None)
     ys = Maybe[int](nothing=None)
     assert not xs < ys
     assert not ys < xs
+
 
 def test_union_maybe_asdict_works():
     xs = Maybe(just=1)

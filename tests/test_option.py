@@ -106,6 +106,7 @@ def test_option_none_not_equals_some():
     assert xs != ys
     assert ys != xs
 
+
 def test_option_order_some_some_works():
     xs = Some(42)
     ys = Some(41)
@@ -120,6 +121,7 @@ def test_option_order_some_none_works():
 
     assert xs > ys
     assert ys < xs
+
 
 def test_option_order_none_none_works():
     xs = Nothing
@@ -222,7 +224,7 @@ def test_option_none_map():
     assert ys is Nothing
 
 
-@given(st.integers(), st.integers()) # type: ignore
+@given(st.integers(), st.integers())  # type: ignore
 def test_option_some_map2_piped(x: int, y: int):
     xs = Some(x)
     ys = Some(y)
@@ -235,6 +237,7 @@ def test_option_some_map2_piped(x: int, y: int):
         case _:
             assert False
 
+
 def test_option_starmap_fluent():
     xs = Some((42, 43))
     mapper: Callable[[int, int], int] = lambda x, y: x + y
@@ -246,6 +249,7 @@ def test_option_starmap_fluent():
         case _:
             assert False
 
+
 def test_option_starmap_piped():
     xs = Some((42, 43))
     mapper: Callable[[int, int], int] = lambda x, y: x + y
@@ -256,6 +260,7 @@ def test_option_starmap_piped():
             assert value == 85
         case _:
             assert False
+
 
 def test_option_some_bind_fluent():
     xs = Some(42)
