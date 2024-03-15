@@ -466,13 +466,13 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
     def __iter__(self) -> Iterator[_TSource]:
         return iter(self.value)
 
-    def __setitem__(self, key: int, value: Any) -> None:
+    def __setitem__(self, key: slice | int, value: Any) -> None:
         self.value[key] = value
 
     def __getitem__(self, key: Any) -> Any:
         return self.value[key]
 
-    def __delitem__(self, key: int) -> None:
+    def __delitem__(self, key: slice | int) -> None:
         del self.value[key]
 
     def __str__(self) -> str:
