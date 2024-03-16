@@ -131,7 +131,7 @@ def test_option_order_none_none_works():
 
 
 def test_option_none_default_value():
-    xs = Nothing
+    xs: Option[int] = Nothing
 
     zs = xs.default_value(42)
 
@@ -626,3 +626,18 @@ def test_serialize_option_works():
     assert model_.one.value == 10
     assert model_.two == Nothing
     assert model_.three == Nothing
+
+
+class A:
+    pass
+
+
+class B(A):
+    pass
+
+
+def test_option_covariance() -> None:
+    x: Option[B] = Some(B())
+    y: Option[A] = x
+
+    assert y.is_some()
