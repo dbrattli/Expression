@@ -26,3 +26,4 @@ chapters:
     - file: reference/map
     - file: reference/array
     - file: reference/misc
+    - file: reference/compose
