@@ -319,10 +319,12 @@ assert xs is Nothing
 
 ### Option as an applicative
 
-Sometimes wish to combine two Options together via a function to produce a new Option
-i.e. we want to combine them only in the case when they are **both** Some. But if
-either one is Nothing, then the overall outcome should also be Nothing.
-We can use the function map2 to achieve this purpose.
+In functional programming, we sometimes want to combine two Option values into a new Option. However, this combination should only happen if both Options are Some. If either Option is None, the resulting value should also be None.
+
+The map2 function allows us to achieve this behavior. It takes two Option values and a function as arguments. The function is applied only if both Options are Some, and the result becomes the new Some value. Otherwise, map2 returns None.
+
+This approach ensures that our combined value reflects the presence or absence of data in the original Options.
+
 
 ```python
 from expression import Some, Nothing, Option
