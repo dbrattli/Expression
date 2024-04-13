@@ -5,4 +5,6 @@
 ```{eval-rst}
 .. automodule:: expression.core.try_
     :members:
+    :show-inheritance:
+
 ```
