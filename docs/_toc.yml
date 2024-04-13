@@ -24,3 +24,4 @@ chapters:
     - file: reference/block
     - file: reference/seq
     - file: reference/map
+    - file: reference/array
