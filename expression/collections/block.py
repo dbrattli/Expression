@@ -13,9 +13,9 @@ Example:
     >>> xs = block.of_list([1, 2, 3, 4, 5])
     >>> ys = block.empty.cons(1).cons(2).cons(3).cons(4).cons(5)
     >>> zs = pipe(
-...     xs,
-...     block.filter(lambda x: x<10)
-... )
+    ...     xs,
+    ...     block.filter(lambda x: x<10)
+    ... )
 """
 from __future__ import annotations
 
