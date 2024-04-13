@@ -27,3 +27,4 @@ chapters:
     - file: reference/array
     - file: reference/misc
     - file: reference/compose
+    - file: reference/pipeline
