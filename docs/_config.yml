@@ -31,3 +31,4 @@ sphinx:
   extra_extensions: ["sphinx.ext.autodoc", "sphinx.ext.napoleon"]
   config:
     add_module_names: false
+    autodoc_default_options: { 'member-order': 'alphabetical', 'undoc-members': True }
