@@ -25,3 +25,4 @@ chapters:
     - file: reference/seq
     - file: reference/map
     - file: reference/array
+    - file: reference/misc
