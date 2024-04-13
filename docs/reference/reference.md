@@ -9,6 +9,7 @@
 
 ## Functional Helpers
 
+- [Misc](reference_misc)
 - [Pipe](reference_pipe)
 - [Curry](reference_curry)
 - [Mailbox](reference_mailbox)
