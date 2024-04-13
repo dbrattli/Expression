@@ -11,6 +11,7 @@
 
 - [Misc](reference_misc)
 - [Pipe](reference_pipe)
+- [Compose](reference_compose)
 - [Curry](reference_curry)
 - [Mailbox](reference_mailbox)
 
