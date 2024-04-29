@@ -14,11 +14,20 @@ kernelspec:
 ---
 (tutorial_optional_values)=
 
-# Optional Values
+# Error Handling
 
-Sometimes we don't have a value for a given variable. Perhaps the value is not known or
-available yet. In Python we represent the absence of a value with the special value
-`None`. In other languages there is usually a `null` value.
+For error handling we have two main strategies in Expression. We can either use the
+`Option` type or we can use the `Result` type. This is similar to the `Option` and
+`Result` types, you find in Rust, F#, Scala, and other functional programming languages.
+
+## Option
+
+The `Option` type is used when a value could be missing, that is when an actual value
+might not exist for a named value or variable. Perhaps the value is not known or
+available yet.
+
+In Python we represent the absence of a value with the special value `None`. In other
+languages there is usually a `null` value.
 
 ```{code-cell} python
 xs = None
@@ -27,7 +36,6 @@ print(xs)
 
 Without type hints we don't really know if the value is supposed to be `None´ or
 something else.
-
 
 ## Null Reference Exceptions
 
@@ -46,7 +54,7 @@ reference:
 > pain and damage in the last forty years.
 
 We don't have null-values in Python, but we have `None` values. Dereferencing a `None`
-value will lead to a `NameError`:
+value will lead to an `AttributeError`:
 
 ```{code-cell} python
 :tags: ["raises-exception"]

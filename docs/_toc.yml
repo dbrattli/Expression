@@ -7,7 +7,7 @@ chapters:
 - file: tutorial/introduction
 - file: tutorial/containers
 - file: tutorial/lambda_calculus
-- file: tutorial/optional_values
+- file: tutorial/error_handling
 - file: tutorial/data_modelling
 - file: tutorial/railway
 - file: tutorial/effects
