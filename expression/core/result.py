@@ -56,7 +56,7 @@ class Result(
     error: _TError = case()
 
     @staticmethod
-    def Ok(value: _TSource) -> Result[_TSource, _TError]:
+    def Ok(value: _TResult) -> Result[_TResult, _TError]:
         """Create a new Ok result."""
         return Result(tag="ok", ok=value)
 
@@ -97,7 +97,7 @@ class Result(
         """
         match self:
             case Result(tag="ok", ok=value):
-                return Result.Ok(mapper(value))
+                return Result[_TResult, _TError].Ok(mapper(value))
             case Result(error=error):
                 return Result[_TResult, _TError].Error(error)
 
@@ -127,7 +127,7 @@ class Result(
             case Result(tag="ok", ok=value):
                 return Result[_TSource, _TResult].Ok(value)
             case Result(error=error):
-                return Result.Error(mapper(error))
+                return Result[_TSource, _TResult].Error(mapper(error))
 
     def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
         """Bind result.
