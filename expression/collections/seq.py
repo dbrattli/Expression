@@ -128,7 +128,7 @@ class Seq(Iterable[_TSource], PipeMixin):
         return delay(generator)
 
     @staticmethod
-    def empty() -> Seq[_TSource]:
+    def empty() -> Seq[Any]:
         """Returns empty sequence."""
         return Seq()
 

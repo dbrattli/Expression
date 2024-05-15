@@ -319,7 +319,7 @@ def test_array_unfold(x: int):
             return Some((state, state + 1))
         return Nothing
 
-    result = TypedArray.unfold(unfolder, 0)
+    result: TypedArray[int] = TypedArray.unfold(unfolder, 0)
 
     assert list(result) == list(range(x))
 

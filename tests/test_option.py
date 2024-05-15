@@ -32,7 +32,7 @@ def test_option_some():
 
 
 def test_option_some_match():
-    xs = Some(42)
+    xs = Option.Some(42)
 
     match xs:
         case Option(tag="some", some=x):
@@ -237,6 +237,7 @@ def test_option_some_map2_piped(x: int, y: int):
         case _:
             assert False
 
+
 def test_option_starmap_fluent():
     xs = Some((42, 43))
     mapper: Callable[[int, int], int] = lambda x, y: x + y
@@ -248,6 +249,7 @@ def test_option_starmap_fluent():
         case _:
             assert False
 
+
 def test_option_starmap_piped():
     xs = Some((42, 43))
     mapper: Callable[[int, int], int] = lambda x, y: x + y
@@ -258,6 +260,7 @@ def test_option_starmap_piped():
             assert value == 85
         case _:
             assert False
+
 
 def test_option_some_bind_fluent():
     xs = Some(42)

@@ -14,13 +14,17 @@ chapters:
 - file: tutorial/continuations
 - file: reference/reference
   sections:
-    - file: reference/option
-    - file: reference/result
-    - file: reference/try
-    - file: reference/union
-    - file: reference/pipe
+    - file: reference/array
+    - file: reference/block
+    - file: reference/compose
     - file: reference/curry
     - file: reference/mailbox
-    - file: reference/block
-    - file: reference/seq
     - file: reference/map
+    - file: reference/misc
+    - file: reference/option
+    - file: reference/pipe
+    - file: reference/pipeline
+    - file: reference/result
+    - file: reference/seq
+    - file: reference/try
+    - file: reference/union

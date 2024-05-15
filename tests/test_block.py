@@ -286,7 +286,7 @@ def test_block_unfold(x: int):
             return Some((state, state + 1))
         return Nothing
 
-    result = Block.unfold(unfolder, 0)
+    result: Block[int] = Block.unfold(unfolder, 0)
 
     assert list(result) == list(range(x))
 

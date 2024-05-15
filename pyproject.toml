@@ -20,19 +20,19 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">= 3.11, < 4"
-typing-extensions = "^4.1.1"
+typing-extensions = "^4.10.0"
 
-pydantic = {version = "^2.0.0", optional = true}
+pydantic = {version = "^2.6.2", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest-asyncio = "^0.21.0"
 pytest = "^7.2.0"
 coverage = "^6.4.3"
 coveralls = "^3.3.1"
-pre-commit = "^3.0.0"
+pre-commit = "^3.6.2"
 dunamai = "^1.12.0"
 hypothesis = "^6.54.2"
-ruff = "^0.1.11"
+ruff = "^0.2.0"
 
 
 [tool.poetry.extras]
@@ -43,18 +43,18 @@ all = ["pydantic"]
 [tool.ruff]
 # Keep in sync with .pre-commit-config.yaml
 line-length = 120
+target-version = "py311"
 # D100: Missing docstring in public module
 # D104: Missing docstring in public package
 # D105: Missing docstring in magic method
-ignore = ["D100", "D101", "D102", "D103", "D105", "D107"]
-target-version = "py310"
-select = ["D", "E", "W",  "F", "I", "T", "RUF", "TID", "UP"]
+lint.ignore = ["D100", "D101", "D102", "D103", "D105", "D107"]
+lint.select = ["D", "E", "W",  "F", "I", "T", "RUF", "TID", "UP"]
 exclude = ["tests", "docs"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 lines-after-imports = 2
 known-third-party = ["pytest"]
 
