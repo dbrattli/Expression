@@ -280,7 +280,7 @@ class Block(
         return Block((*args,))
 
     @staticmethod
-    def of_seq(xs: Iterable[_TSource]) -> Block[_TSource]:
+    def of_seq(xs: Iterable[_TResult]) -> Block[_TResult]:
         """Create list from iterable sequence."""
         return Block((*xs,))
 

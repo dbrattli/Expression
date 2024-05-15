@@ -14,5 +14,5 @@ repos:
         language: node
         pass_filenames: false
         types: [python]
-        additional_dependencies: ["pyright@1.1.353"]
+        additional_dependencies: ["pyright@1.1.363"]
     repo: local

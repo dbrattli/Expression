@@ -32,7 +32,7 @@ def test_option_some():
 
 
 def test_option_some_match():
-    xs = Some(42)
+    xs = Option.Some(42)
 
     match xs:
         case Option(tag="some", some=x):
