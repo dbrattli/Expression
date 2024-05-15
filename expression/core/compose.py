@@ -176,7 +176,19 @@ def starcompose(
     ...
 
 
-def starcompose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
+def starcompose(*fns: Callable[..., Any]) -> Callable[..., Any]:
+    """Compose multiple functions left to right.
+
+    Composes zero or more functions into a functional composition. The
+    functions are composed left to right. A composition of zero
+    functions gives back the identity function.
+
+    The first function must accept a variable number of positional
+    arguments and if it returns a tuple, the subsequent functions must
+    accept the same number of arguments as the length of the tuple of
+    the previous function.
+    """
+
     def _compose(source: Any) -> Any:
         """Return a pipeline of composed functions."""
         return reduce(lambda fields, f: f(*fields), fns, source)
