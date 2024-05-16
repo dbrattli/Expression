@@ -186,7 +186,7 @@ class Option(
 
         match self:
             case Option(tag="some", some=some):
-                return Seq[_TSource].of(some)
+                return Seq[_TSourceOut].of(some)
             case _:
                 return Seq()
 
@@ -366,7 +366,7 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 
 def Some(value: _T1) -> Option[_T1]:
     """Create a Some option."""
-    return Option[_TSource].Some(value)
+    return Option[_T1].Some(value)
 
 
 @curry_flip(1)
