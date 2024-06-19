@@ -1,10 +1,11 @@
 from collections.abc import Callable, Generator
-from typing import Any
+from typing import Any, Annotated
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from expression import (
     Error,
@@ -599,26 +600,49 @@ def test_pipeline_error():
     assert hn(42) == Nothing
 
 
+PositiveInt = Annotated[int, Field(gt=0)]
+
+
+class Username(str):
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
+
+
 class Model(BaseModel):
     one: Option[int]
     two: Option[str] = Nothing
     three: Option[float] = Nothing
+    annotated_type: Option[PositiveInt] = Nothing
+    annotated_type_none: Option[PositiveInt] = Nothing
+
+    custom_type: Option[Username] = Nothing
+    custom_type_none: Option[Username] = Nothing
 
 
 def test_parse_option_works():
-    obj = dict(one=10, two=None)
+    obj = dict(
+        one=10, two=None, annotated_type=20, annotated_type_none=None, custom_type="test_user", custom_type_none=None
+    )
     model = Model.model_validate(obj)
 
     assert model.one.is_some()
     assert model.one.value == 10
     assert model.two == Nothing
     assert model.three == Nothing
+    assert model.custom_type == Some("test_user")
+    assert model.annotated_type == Some(20)
+    assert model.annotated_type_none == Nothing
+    assert model.custom_type_none == Nothing
 
 
 def test_serialize_option_works():
     model = Model(one=Some(10))
     json = model.model_dump_json()
-    assert json == '{"one":10,"two":null,"three":null}'
+    assert (
+        json
+        == '{"one":10,"two":null,"three":null,"annotated_type":null,"annotated_type_none":null,"custom_type":null,"custom_type_none":null}'
+    )
 
     model_ = Model.model_validate_json(json)
 
@@ -626,3 +650,19 @@ def test_serialize_option_works():
     assert model_.one.value == 10
     assert model_.two == Nothing
     assert model_.three == Nothing
+
+
+def test_pickle_option_works():
+    import pickle
+
+    x = Some(10)
+    y = Nothing
+    dump_x = pickle.dumps(x)
+    load_x = pickle.loads(dump_x)
+    dump_y = pickle.dumps(y)
+    load_y = pickle.loads(dump_y)
+    assert x == load_x
+    assert y == load_y
+
+
+#

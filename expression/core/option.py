@@ -326,8 +326,8 @@ class Option(
                 ),
                 core_schema.chain_schema(
                     [
-                        # Ensure the value is an instance of _T
-                        core_schema.is_instance_schema(item_tp),
+                        # item_tp's schema should ensure the value is an instance of _T
+                        # is_instance_schema doesn't work for Annotated[_T, ...]
                         # Use the value_schema to validate `values`
                         core_schema.no_info_wrap_validator_function(validate_some, value_schema),
                     ]
