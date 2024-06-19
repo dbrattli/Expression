@@ -71,11 +71,14 @@ def test_union_shape_repr_works():
 
 def test_union_shape_pickle_works():
     shape = Shape(circle=Circle(10.0))
-    import pickle
+    import pickle, dataclasses
 
     shape_ser = pickle.dumps(shape)
     shape_deser = pickle.loads(shape_ser)
     assert shape == shape_deser
+    assert shape.__dict__ == shape_deser.__dict__
+    assert dataclasses.fields(shape) == dataclasses.fields(shape_deser)
+    assert dataclasses.asdict(shape) == dataclasses.asdict(shape_deser)
 
 
 def test_union_can_add_custom_attributes_to_shape():
