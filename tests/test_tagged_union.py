@@ -7,7 +7,6 @@ import pytest
 
 from expression import case, tag, tagged_union
 
-
 _T = TypeVar("_T")
 
 
@@ -68,6 +67,15 @@ def test_union_shape_hash_works():
 def test_union_shape_repr_works():
     shape = Shape(circle=Circle(10.0))
     assert repr(shape) == "Shape(circle=Circle(radius=10.0))"
+
+
+def test_union_shape_pickle_works():
+    shape = Shape(circle=Circle(10.0))
+    import pickle
+
+    shape_ser = pickle.dumps(shape)
+    shape_deser = pickle.loads(shape_ser)
+    assert shape == shape_deser
 
 
 def test_union_can_add_custom_attributes_to_shape():

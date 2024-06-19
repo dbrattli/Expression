@@ -38,21 +38,20 @@ def tagged_union(
             items will be compared as the tuple (index, value)
         eq: If True, the __eq__ method will be generated.
     """
-
     # Performance can be improved if it is a issue in another day
-    def tagged_union_getstate(self: Any) -> dict:  # type: ignore
-        return [getattr(self, f.name) for f in fields(self)]  # type: ignore
-
-    def tagged_union_setstate(self: Any, state: dict):  # type: ignore
-        for f, value in zip(fields(self), state):  # type: ignore
-            # use setattr because dataclass may be frozen
-            object.__setattr__(self, f.name, value)  # type: ignore
 
     def transform(cls: Any) -> Any:
         cls = dataclass(init=False, repr=False, order=False, eq=False, kw_only=True)(cls)
         fields_ = fields(cls)  # type: ignore
         field_names = tuple(f.name for f in fields_)
         original_init = cls.__init__
+
+        def tagged_union_getstate(self: Any) -> dict:  # type: ignore
+            return {f.name: getattr(self, f.name) for f in fields(self)}  # type: ignore
+
+        def tagged_union_setstate(self: Any, state: dict):  # type: ignore
+            self.__init__(**state)
+
         cls.__setstate__ = tagged_union_setstate
         cls.__getstate__ = tagged_union_getstate
 

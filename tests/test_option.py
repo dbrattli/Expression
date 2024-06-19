@@ -652,12 +652,17 @@ def test_serialize_option_works():
     assert model_.three == Nothing
 
 
-# def test_pickle_option_works():
-#     import pickle
-#     x = Some(10)
-#
-#     dump_x = pickle.dumps(x)
-#     load_x = pickle.loads(x)
-#
-#     assert x == load_x
+def test_pickle_option_works():
+    import pickle
+
+    x = Some(10)
+    y = Nothing
+    dump_x = pickle.dumps(x)
+    load_x = pickle.loads(dump_x)
+    dump_y = pickle.dumps(y)
+    load_y = pickle.loads(dump_y)
+    assert x == load_x
+    assert y == load_y
+
+
 #
