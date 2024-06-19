@@ -443,7 +443,8 @@ def test_parse_block_works():
 
 def test_serialize_block_works():
     # arrange
-    model = Model(one=Block([1, 2, 3]), two=Block.empty())
+    obj = dict(one=[1, 2, 3], two=[], annotated_type=[1, 2, 3], custom_type=["a", "b", "c"])
+    model = Model.model_validate(obj)
 
     # act
     json = model.model_dump_json()
@@ -453,3 +454,7 @@ def test_serialize_block_works():
     assert model_.one == Block([1, 2, 3])
     assert model_.two == Block.empty()
     assert model_.three == block.empty
+    assert model_.annotated_type == Block([1, 2, 3])
+    assert model_.annotated_type_empty == block.empty
+    assert model_.custom_type == Block(["a", "b", "c"])
+    assert model_.custom_type_empty == block.empty

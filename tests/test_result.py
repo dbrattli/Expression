@@ -441,11 +441,13 @@ def test_error_from_dict_works():
 
 
 def test_model_to_json_works():
-    model = Model(one=Ok(10))
+    obj = dict(one=dict(ok=10), annotated_type=dict(ok=10), custom_type=dict(ok="johndoe"))
+
+    model = Model.model_validate(obj)
     obj = model.model_dump_json()
     assert (
         obj
-        == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}}}'
+        == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}},"annotated_type":{"tag":"ok","ok":10},"annotated_type_error":{"tag":"error","error":{"message":"error"}},"custom_type":{"tag":"ok","ok":"johndoe"},"custom_type_error":{"tag":"error","error":{"message":"error"}}}'
     )
 
 
