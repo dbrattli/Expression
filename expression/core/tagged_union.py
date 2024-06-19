@@ -1,29 +1,29 @@
+import dataclasses
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
 from typing import Any, TypeVar, dataclass_transform, overload
-
 
 _T = TypeVar("_T")
 
 
 @overload
 def tagged_union(
-    *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
+        *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
 ) -> Callable[[type[_T]], type[_T]]:
     ...
 
 
 @overload
 def tagged_union(
-    _cls: type[_T], *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
+        _cls: type[_T], *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
 ) -> type[_T]:
     ...
 
 
 @dataclass_transform()
 def tagged_union(
-    _cls: Any = None, *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
+        _cls: Any = None, *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
 ) -> Any:
     """Tagged union decorator.
 
@@ -39,11 +39,22 @@ def tagged_union(
         eq: If True, the __eq__ method will be generated.
     """
 
+    # Performance can be improved if it is a issue in another day
+    def tagged_union_getstate(self):
+        return [getattr(self, f.name) for f in fields(self)]
+
+    def tagged_union_setstate(self, state):
+        for field, value in zip(fields(self), state):
+            # use setattr because dataclass may be frozen
+            object.__setattr__(self, field.name, value)
+
     def transform(cls: Any) -> Any:
         cls = dataclass(init=False, repr=False, order=False, eq=False, kw_only=True)(cls)
         fields_ = fields(cls)  # type: ignore
         field_names = tuple(f.name for f in fields_)
         original_init = cls.__init__
+        cls.__setstate__ = tagged_union_setstate
+        cls.__getstate__ = tagged_union_getstate
 
         def __init__(self: Any, **kwargs: Any) -> None:
             tag = kwargs.pop("tag", None)
@@ -77,7 +88,8 @@ def tagged_union(
                 if not isinstance(other, cls):
                     return False
 
-                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))  # type: ignore
+                return (self._index, getattr(self, self.tag)) < (
+                    other._index, getattr(other, other.tag))  # type: ignore
 
             cls.__lt__ = __lt__  # type: ignore
 
@@ -101,12 +113,11 @@ def tagged_union(
             cls.__delattr__ = __delattr__
             cls.__hash__ = __hash__
         if eq:
-
             def __eq__(self: Any, other: Any) -> bool:
                 return (
-                    isinstance(other, cls)
-                    and self.tag == getattr(other, "tag")
-                    and getattr(self, self.tag) == getattr(other, self.tag)
+                        isinstance(other, cls)
+                        and self.tag == getattr(other, "tag")
+                        and getattr(self, self.tag) == getattr(other, self.tag)
                 )
 
             cls.__eq__ = __eq__

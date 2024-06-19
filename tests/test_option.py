@@ -638,7 +638,7 @@ def test_parse_option_works():
 def test_serialize_option_works():
     model = Model(one=Some(10))
     json = model.model_dump_json()
-    assert json == '{"one":10,"two":null,"three":null}'
+    assert json == '{"one":10,"two":null,"three":null,"annotated_type":null,"annotated_type_none":null,"custom_type":null,"custom_type_none":null}'
 
     model_ = Model.model_validate_json(json)
 
@@ -646,3 +646,14 @@ def test_serialize_option_works():
     assert model_.one.value == 10
     assert model_.two == Nothing
     assert model_.three == Nothing
+
+
+# def test_pickle_option_works():
+#     import pickle
+#     x = Some(10)
+#
+#     dump_x = pickle.dumps(x)
+#     load_x = pickle.loads(x)
+#
+#     assert x == load_x
+#
