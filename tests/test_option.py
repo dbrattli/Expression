@@ -599,13 +599,18 @@ def test_pipeline_error():
 
     assert hn(42) == Nothing
 
+
 PositiveInt = Annotated[int, Field(gt=0)]
+
+
 class Username(str):
     @classmethod
     def __get_pydantic_core_schema__(
             cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> CoreSchema:
         return core_schema.no_info_after_validator_function(cls, handler(str))
+
+
 class Model(BaseModel):
     one: Option[int]
     two: Option[str] = Nothing
@@ -615,7 +620,6 @@ class Model(BaseModel):
 
     custom_type: Option[Username] = Nothing
     custom_type_none: Option[Username] = Nothing
-
 
 
 def test_parse_option_works():
@@ -634,7 +638,6 @@ def test_parse_option_works():
     assert model.custom_type_none == Nothing
 
 
-
 def test_serialize_option_works():
     model = Model(one=Some(10))
     json = model.model_dump_json()
@@ -646,7 +649,6 @@ def test_serialize_option_works():
     assert model_.one.value == 10
     assert model_.two == Nothing
     assert model_.three == Nothing
-
 
 # def test_pickle_option_works():
 #     import pickle
