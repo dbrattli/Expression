@@ -11,7 +11,6 @@ from pydantic_core import CoreSchema, core_schema
 from expression import Nothing, Option, Some, pipe
 from expression.collections import Block, block
 
-
 Func = Callable[[int], int]
 
 
@@ -408,14 +407,13 @@ def test_block_monad_law_associativity_iterable(xs: List[int]):
     m = block.of_seq(xs)
     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
 
+
 PositiveInt = Annotated[int, Field(gt=0)]
 
 
 class Username(str):
     @classmethod
-    def __get_pydantic_core_schema__(
-            cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         return core_schema.no_info_after_validator_function(cls, handler(str))
 
 

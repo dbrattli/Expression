@@ -605,9 +605,7 @@ PositiveInt = Annotated[int, Field(gt=0)]
 
 class Username(str):
     @classmethod
-    def __get_pydantic_core_schema__(
-            cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         return core_schema.no_info_after_validator_function(cls, handler(str))
 
 
@@ -623,16 +621,16 @@ class Model(BaseModel):
 
 
 def test_parse_option_works():
-    obj = dict(one=10, two=None, annotated_type=20,
-               annotated_type_none=None,
-               custom_type='test_user', custom_type_none=None)
+    obj = dict(
+        one=10, two=None, annotated_type=20, annotated_type_none=None, custom_type="test_user", custom_type_none=None
+    )
     model = Model.model_validate(obj)
 
     assert model.one.is_some()
     assert model.one.value == 10
     assert model.two == Nothing
     assert model.three == Nothing
-    assert model.custom_type == Some('test_user')
+    assert model.custom_type == Some("test_user")
     assert model.annotated_type == Some(20)
     assert model.annotated_type_none == Nothing
     assert model.custom_type_none == Nothing
@@ -641,7 +639,10 @@ def test_parse_option_works():
 def test_serialize_option_works():
     model = Model(one=Some(10))
     json = model.model_dump_json()
-    assert json == '{"one":10,"two":null,"three":null,"annotated_type":null,"annotated_type_none":null,"custom_type":null,"custom_type_none":null}'
+    assert (
+        json
+        == '{"one":10,"two":null,"three":null,"annotated_type":null,"annotated_type_none":null,"custom_type":null,"custom_type_none":null}'
+    )
 
     model_ = Model.model_validate_json(json)
 
@@ -649,6 +650,7 @@ def test_serialize_option_works():
     assert model_.one.value == 10
     assert model_.two == Nothing
     assert model_.three == Nothing
+
 
 # def test_pickle_option_works():
 #     import pickle

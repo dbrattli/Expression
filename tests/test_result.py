@@ -370,9 +370,7 @@ PositiveInt = Annotated[int, Field(gt=0)]
 
 class Username(str):
     @classmethod
-    def __get_pydantic_core_schema__(
-            cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         return core_schema.no_info_after_validator_function(cls, handler(str))
 
 
@@ -446,8 +444,8 @@ def test_model_to_json_works():
     model = Model(one=Ok(10))
     obj = model.model_dump_json()
     assert (
-            obj
-            == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}}}'
+        obj
+        == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}}}'
     )
 
 
