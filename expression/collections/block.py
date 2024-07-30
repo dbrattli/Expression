@@ -17,6 +17,7 @@ Example:
     ...     block.filter(lambda x: x<10)
     ... )
 """
+
 from __future__ import annotations
 
 import builtins
@@ -316,18 +317,15 @@ class Block(
 
     @overload
     @staticmethod
-    def range(stop: int) -> Block[int]:
-        ...
+    def range(stop: int) -> Block[int]: ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int) -> Block[int]:
-        ...
+    def range(start: int, stop: int) -> Block[int]: ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: int) -> Block[int]:
-        ...
+    def range(start: int, stop: int, step: int) -> Block[int]: ...
 
     @staticmethod
     def range(*args: int, **kw: int) -> Block[int]:
@@ -497,12 +495,10 @@ class Block(
         return False
 
     @overload
-    def __getitem__(self, key: slice) -> Block[_TSource]:
-        ...
+    def __getitem__(self, key: slice) -> Block[_TSource]: ...
 
     @overload
-    def __getitem__(self, key: int) -> _TSource:
-        ...
+    def __getitem__(self, key: int) -> _TSource: ...
 
     def __getitem__(self, key: Any) -> Any:
         ret: Any = self._value[key]
@@ -840,18 +836,15 @@ def partition(
 
 
 @overload
-def range(stop: int) -> Block[int]:
-    ...
+def range(stop: int) -> Block[int]: ...
 
 
 @overload
-def range(start: int, stop: int) -> Block[int]:
-    ...
+def range(start: int, stop: int) -> Block[int]: ...
 
 
 @overload
-def range(start: int, stop: int, step: int) -> Block[int]:
-    ...
+def range(start: int, stop: int, step: int) -> Block[int]: ...
 
 
 def range(*args: int, **kw: int) -> Block[int]:

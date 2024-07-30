@@ -23,18 +23,15 @@ class AsyncSeq(AsyncIterable[TSource]):
 
     @overload
     @classmethod
-    def range(cls, stop: int) -> AsyncIterable[int]:
-        ...
+    def range(cls, stop: int) -> AsyncIterable[int]: ...
 
     @overload
     @classmethod
-    def range(cls, start: int, stop: int) -> AsyncIterable[int]:
-        ...
+    def range(cls, start: int, stop: int) -> AsyncIterable[int]: ...
 
     @overload
     @classmethod
-    def range(cls, start: int, stop: int, step: int) -> AsyncIterable[int]:
-        ...
+    def range(cls, start: int, stop: int, step: int) -> AsyncIterable[int]: ...
 
     @classmethod
     def range(cls, *args: Any, **kw: Any) -> AsyncIterable[int]:
@@ -67,18 +64,15 @@ async def repeat(value: TSource, times: int | None = None) -> AsyncIterable[TSou
 
 
 @overload
-def range(stop: int) -> AsyncIterable[int]:
-    ...
+def range(stop: int) -> AsyncIterable[int]: ...
 
 
 @overload
-def range(start: int, stop: int) -> AsyncIterable[int]:
-    ...
+def range(start: int, stop: int) -> AsyncIterable[int]: ...
 
 
 @overload
-def range(start: int, stop: int, step: int) -> AsyncIterable[int]:
-    ...
+def range(start: int, stop: int, step: int) -> AsyncIterable[int]: ...
 
 
 async def range(*args: int, **kw: int) -> AsyncIterable[int]:

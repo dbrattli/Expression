@@ -51,8 +51,7 @@ class ModelField:
 
     sub_fields: list[ModelField]
 
-    def validate(self, value: Any, values: dict[str, str], loc: str) -> tuple[Any, Any]:
-        ...
+    def validate(self, value: Any, values: dict[str, str], loc: str) -> tuple[Any, Any]: ...
 
 
 def upcast(type: type[_Base], expr: _Base) -> _Base:

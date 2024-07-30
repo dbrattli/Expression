@@ -7,6 +7,7 @@ The module is inspired by the F# `Async` module, but builds on top of
 Python async / await instead of providing an asynchronous IO mechanism
 by itself.
 """
+
 import asyncio
 from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
@@ -43,7 +44,7 @@ def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
         An asynchronous computation that provides the callback with the
         current continuations.
     """
-    future: "Future[_TSource]" = asyncio.Future()
+    future: Future[_TSource] = asyncio.Future()
 
     def done(value: _TSource) -> None:
         if not future.done():

@@ -64,12 +64,10 @@ class Parser(Generic[_A]):
         return pipe(self, mapped)
 
     @overload
-    def starmap(self: Parser[tuple[_B, _C]], mapper: Callable[[_B, _C], _D]) -> Parser[_D]:
-        ...
+    def starmap(self: Parser[tuple[_B, _C]], mapper: Callable[[_B, _C], _D]) -> Parser[_D]: ...
 
     @overload
-    def starmap(self: Parser[tuple[_B, _C, _D]], mapper: Callable[[_B, _C, _D], _E]) -> Parser[_E]:
-        ...
+    def starmap(self: Parser[tuple[_B, _C, _D]], mapper: Callable[[_B, _C, _D], _E]) -> Parser[_E]: ...
 
     def starmap(self: Parser[Any], mapper: Callable[..., Any]) -> Parser[Any]:
         return pipe(self, starmap(mapper))
@@ -198,14 +196,12 @@ def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
 
 @curry(1)
 @overload
-def starmap(mapper: Callable[[_A, _B], _C], parser: Parser[tuple[_A, _B]]) -> Parser[_C]:
-    ...
+def starmap(mapper: Callable[[_A, _B], _C], parser: Parser[tuple[_A, _B]]) -> Parser[_C]: ...
 
 
 @curry(1)
 @overload
-def starmap(mapper: Callable[[_A, _B, _C], _D], parser: Parser[tuple[_A, _B, _C]]) -> Parser[_D]:
-    ...
+def starmap(mapper: Callable[[_A, _B, _C], _D], parser: Parser[tuple[_A, _B, _C]]) -> Parser[_D]: ...
 
 
 @curry(1)

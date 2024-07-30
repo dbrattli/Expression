@@ -5,6 +5,7 @@ options. All functions takes the source as the last curried argument,
 i.e all functions returns a function that takes the source sequence as
 the only argument.
 """
+
 from __future__ import annotations
 
 import builtins
