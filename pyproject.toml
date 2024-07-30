@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">= 3.11, < 4"
+python = ">= 3.10, < 4"
 typing-extensions = "^4.10.0"
 
 pydantic = {version = "^2.6.2", optional = true}
@@ -43,7 +43,7 @@ all = ["pydantic"]
 [tool.ruff]
 # Keep in sync with .pre-commit-config.yaml
 line-length = 120
-target-version = "py311"
+target-version = "py310"
 # D100: Missing docstring in public module
 # D104: Missing docstring in public package
 # D105: Missing docstring in magic method
