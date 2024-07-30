@@ -8,6 +8,7 @@ Programming.
 There is also a simplifyed alias of this type called `Try` that pins
 the Result type to Exception.
 """
+
 from __future__ import annotations
 
 import builtins

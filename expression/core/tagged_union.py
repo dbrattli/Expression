@@ -10,15 +10,13 @@ _T = TypeVar("_T")
 @overload
 def tagged_union(
     *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
-) -> Callable[[type[_T]], type[_T]]:
-    ...
+) -> Callable[[type[_T]], type[_T]]: ...
 
 
 @overload
 def tagged_union(
     _cls: type[_T], *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
-) -> type[_T]:
-    ...
+) -> type[_T]: ...
 
 
 @dataclass_transform()

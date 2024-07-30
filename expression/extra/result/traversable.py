@@ -1,4 +1,5 @@
 """Data structures that can be traversed from left to right, performing an action on each element."""
+
 from collections.abc import Callable
 from typing import Any, TypeVar
 

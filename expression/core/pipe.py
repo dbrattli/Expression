@@ -11,6 +11,7 @@ Example:
     >>>
     >>> assert pipe(v, fn, gn) == gn(fn(v))
 """
+
 from collections.abc import Callable
 from typing import Any, TypeVar, TypeVarTuple, cast, overload
 
@@ -37,18 +38,15 @@ _K = TypeVarTuple("_K")
 
 
 @overload
-def pipe(__value: _A) -> _A:
-    ...
+def pipe(__value: _A) -> _A: ...
 
 
 @overload
-def pipe(__value: _A, __fn1: Callable[[_A], _B]) -> _B:
-    ...
+def pipe(__value: _A, __fn1: Callable[[_A], _B]) -> _B: ...
 
 
 @overload
-def pipe(__value: _A, __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> _C:
-    ...
+def pipe(__value: _A, __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> _C: ...
 
 
 @overload
@@ -57,8 +55,7 @@ def pipe(
     __fn1: Callable[[_A], _B],
     __fn2: Callable[[_B], _C],
     __fn3: Callable[[_C], _D],
-) -> _D:
-    ...
+) -> _D: ...
 
 
 @overload
@@ -68,8 +65,7 @@ def pipe(
     __fn2: Callable[[_B], _C],
     __fn3: Callable[[_C], _D],
     __fn4: Callable[[_D], _E],
-) -> _E:
-    ...
+) -> _E: ...
 
 
 @overload
@@ -80,8 +76,7 @@ def pipe(
     __fn3: Callable[[_C], _D],
     __fn4: Callable[[_D], _E],
     __fn5: Callable[[_E], _F],
-) -> _F:
-    ...
+) -> _F: ...
 
 
 @overload
@@ -93,8 +88,7 @@ def pipe(
     __fn4: Callable[[_D], _E],
     __fn5: Callable[[_E], _F],
     __fn6: Callable[[_F], _G],
-) -> _G:
-    ...
+) -> _G: ...
 
 
 @overload
@@ -107,8 +101,7 @@ def pipe(
     __fn5: Callable[[_E], _F],
     __fn6: Callable[[_F], _G],
     __fn7: Callable[[_G], _H],
-) -> _H:
-    ...
+) -> _H: ...
 
 
 @overload
@@ -122,8 +115,7 @@ def pipe(
     __fn6: Callable[[_F], _G],
     __fn7: Callable[[_G], _H],
     __fn8: Callable[[_H], _T],
-) -> _T:
-    ...
+) -> _T: ...
 
 
 @overload
@@ -138,8 +130,7 @@ def pipe(
     __fn7: Callable[[_G], _H],
     __fn8: Callable[[_H], _T],
     __fn9: Callable[[_T], _J],
-) -> _J:
-    ...
+) -> _J: ...
 
 
 def pipe(__value: Any, *fns: Callable[[Any], Any]) -> Any:
@@ -157,13 +148,11 @@ def pipe(__value: Any, *fns: Callable[[Any], Any]) -> Any:
 
 
 @overload
-def pipe2(__values: tuple[_A, _B]) -> tuple[_A, _B]:
-    ...
+def pipe2(__values: tuple[_A, _B]) -> tuple[_A, _B]: ...
 
 
 @overload
-def pipe2(__values: tuple[_A, _B], __fn1: Callable[[_A], Callable[[_B], _C]]) -> _C:
-    ...
+def pipe2(__values: tuple[_A, _B], __fn1: Callable[[_A], Callable[[_B], _C]]) -> _C: ...
 
 
 @overload
@@ -171,8 +160,7 @@ def pipe2(
     __values: tuple[_A, _B],
     __fn1: Callable[[_A], Callable[[_B], _C]],
     __fn2: Callable[[_C], _D],
-) -> _D:
-    ...
+) -> _D: ...
 
 
 @overload
@@ -181,8 +169,7 @@ def pipe2(
     __fn1: Callable[[_A], Callable[[_B], _C]],
     __fn2: Callable[[_C], _D],
     __fn3: Callable[[_D], _E],
-) -> _E:
-    ...
+) -> _E: ...
 
 
 def pipe2(__values: Any, *fns: Any) -> Any:
@@ -194,13 +181,11 @@ def pipe3(__values: Any, *fns: Any) -> Any:
 
 
 @overload
-def starpipe(__args: tuple[*_P], __fn1: Callable[[*_P], _B]) -> _B:
-    ...
+def starpipe(__args: tuple[*_P], __fn1: Callable[[*_P], _B]) -> _B: ...
 
 
 @overload
-def starpipe(__args: tuple[*_P], __fn1: Callable[[*_P], tuple[*_Q]], __fn2: Callable[[*_Q], _B]) -> _B:
-    ...
+def starpipe(__args: tuple[*_P], __fn1: Callable[[*_P], tuple[*_Q]], __fn2: Callable[[*_Q], _B]) -> _B: ...
 
 
 @overload
@@ -209,8 +194,7 @@ def starpipe(
     __fn1: Callable[[*_P], tuple[*_Q]],
     __fn2: Callable[[*_Q], tuple[*_X]],
     __fn3: Callable[[*_X], _B],
-) -> _B:
-    ...
+) -> _B: ...
 
 
 @overload
@@ -220,8 +204,7 @@ def starpipe(
     __fn2: Callable[[*_Q], tuple[*_X]],
     __fn3: Callable[[*_X], tuple[*_Y]],
     __fn4: Callable[[*_Y], _B],
-) -> _B:
-    ...
+) -> _B: ...
 
 
 @overload
@@ -232,8 +215,7 @@ def starpipe(
     __fn3: Callable[[*_X], tuple[*_Y]],
     __fn4: Callable[[*_Y], tuple[*_Z]],
     __fn5: Callable[[*_Z], _B],
-) -> _B:
-    ...
+) -> _B: ...
 
 
 @overload
@@ -245,8 +227,7 @@ def starpipe(
     __fn4: Callable[[*_Y], tuple[*_Z]],
     __fn5: Callable[[*_Z], tuple[*_K]],
     __fn6: Callable[[*_K], _B],
-) -> _B:
-    ...
+) -> _B: ...
 
 
 def starpipe(__args: Any, *__fns: Callable[..., Any]) -> Any:
@@ -272,12 +253,10 @@ class PipeMixin:
     """A pipe mixin class that enabled a class to use pipe fluently."""
 
     @overload
-    def pipe(self: _A, __fn1: Callable[[_A], _B]) -> _B:
-        ...
+    def pipe(self: _A, __fn1: Callable[[_A], _B]) -> _B: ...
 
     @overload
-    def pipe(self: _A, __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> _C:
-        ...
+    def pipe(self: _A, __fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> _C: ...
 
     @overload
     def pipe(
@@ -285,8 +264,7 @@ class PipeMixin:
         __fn1: Callable[[_A], _B],
         __fn2: Callable[[_B], _C],
         __fn3: Callable[[_C], _D],
-    ) -> _D:
-        ...
+    ) -> _D: ...
 
     @overload
     def pipe(
@@ -295,8 +273,7 @@ class PipeMixin:
         __fn2: Callable[[_B], _C],
         __fn3: Callable[[_C], _D],
         __fn4: Callable[[_D], _E],
-    ) -> _E:
-        ...
+    ) -> _E: ...
 
     @overload
     def pipe(
@@ -306,8 +283,7 @@ class PipeMixin:
         __fn3: Callable[[_C], _D],
         __fn4: Callable[[_D], _E],
         __fn5: Callable[[_E], _F],
-    ) -> _F:
-        ...
+    ) -> _F: ...
 
     @overload
     def pipe(
@@ -318,8 +294,7 @@ class PipeMixin:
         __fn4: Callable[[_D], _E],
         __fn5: Callable[[_E], _F],
         __fn6: Callable[[_F], _G],
-    ) -> _G:
-        ...
+    ) -> _G: ...
 
     def pipe(self, *args: Any) -> Any:
         """Pipe the left side object through the given functions."""
