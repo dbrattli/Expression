@@ -32,7 +32,7 @@ coveralls = "^3.3.1"
 pre-commit = "^3.6.2"
 dunamai = "^1.12.0"
 hypothesis = "^6.54.2"
-ruff = "0.5.5"
+ruff = "0.5.6"
 
 
 [tool.poetry.extras]
