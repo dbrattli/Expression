@@ -385,7 +385,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
     def sum_by(self, projection: Callable[[_TSource], _TSourceSum]) -> int:
         return pipe(
             self,
-            sum_by(projection),  # type: ignore
+            sum_by(projection),
         )
 
     def tail(self) -> TypedArray[_TSource]:
