@@ -10,15 +10,13 @@ _T = TypeVar("_T")
 @overload
 def tagged_union(
     *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
-) -> Callable[[type[_T]], type[_T]]:
-    ...
+) -> Callable[[type[_T]], type[_T]]: ...
 
 
 @overload
 def tagged_union(
     _cls: type[_T], *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
-) -> type[_T]:
-    ...
+) -> type[_T]: ...
 
 
 @dataclass_transform()
@@ -41,7 +39,7 @@ def tagged_union(
 
     def transform(cls: Any) -> Any:
         cls = dataclass(init=False, repr=False, order=False, eq=False, kw_only=True)(cls)
-        fields_ = fields(cls)  # type: ignore
+        fields_ = fields(cls)
         field_names = tuple(f.name for f in fields_)
         original_init = cls.__init__
 
@@ -65,7 +63,7 @@ def tagged_union(
 
             # Enables the use of dataclasses.asdict
             union_fields = dict((f.name, f) for f in fields_ if f.name in [name, "tag"])
-            object.__setattr__(self, "__dataclass_fields__", union_fields)  # type: ignore
+            object.__setattr__(self, "__dataclass_fields__", union_fields)
             original_init(self)
 
         def __repr__(self: Any) -> str:
@@ -77,9 +75,9 @@ def tagged_union(
                 if not isinstance(other, cls):
                     return False
 
-                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))  # type: ignore
+                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))
 
-            cls.__lt__ = __lt__  # type: ignore
+            cls.__lt__ = __lt__
 
         if frozen:
 
