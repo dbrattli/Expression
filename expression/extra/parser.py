@@ -260,7 +260,7 @@ def sequence(parser_list: Block[Parser[_A]]) -> Parser[Block[_A]]:
     match parser_list:
         case block.empty:
             return preturn(block.empty)
-        case Block([head, *tail]):  # type: ignore
+        case Block([head, *tail]):
             tail_ = sequence(Block(tail))
             return cons_p(head)(tail_)
         case _:

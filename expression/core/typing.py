@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
-from typing import Any, Protocol, TypeVar, cast, get_origin
+from typing import Any, Protocol, TypeVar, get_origin
 
 
 _T = TypeVar("_T")
@@ -87,8 +87,7 @@ def try_downcast(type_: type[_Derived], expr: Any) -> _Derived | None:
     """
     origin: type[_Derived] | None = get_origin(type_) or type_
     if origin is not None and isinstance(expr, origin):
-        derived = cast(_Derived, expr)
-        return derived
+        return expr
 
     return None
 
