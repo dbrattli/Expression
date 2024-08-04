@@ -1,7 +1,9 @@
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
-from typing import Any, TypeVar, dataclass_transform, overload
+from typing import Any, TypeVar, overload
+
+from typing_extensions import dataclass_transform
 
 
 _T = TypeVar("_T")

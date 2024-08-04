@@ -13,7 +13,9 @@ Example:
 """
 
 from collections.abc import Callable
-from typing import Any, TypeVar, TypeVarTuple, cast, overload
+from typing import Any, TypeVar, cast, overload
+
+from typing_extensions import TypeVarTuple, Unpack
 
 from .compose import compose, starcompose
 from .misc import starid
@@ -181,52 +183,54 @@ def pipe3(__values: Any, *fns: Any) -> Any:
 
 
 @overload
-def starpipe(__args: tuple[*_P], __fn1: Callable[[*_P], _B]) -> _B: ...
-
-
-@overload
-def starpipe(__args: tuple[*_P], __fn1: Callable[[*_P], tuple[*_Q]], __fn2: Callable[[*_Q], _B]) -> _B: ...
+def starpipe(__args: tuple[Unpack[_P]], __fn1: Callable[[Unpack[_P]], _B]) -> _B: ...
 
 
 @overload
 def starpipe(
-    __args: tuple[*_P],
-    __fn1: Callable[[*_P], tuple[*_Q]],
-    __fn2: Callable[[*_Q], tuple[*_X]],
-    __fn3: Callable[[*_X], _B],
+    __args: tuple[Unpack[_P]], __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Q]]], __fn2: Callable[[*_Q], _B]
 ) -> _B: ...
 
 
 @overload
 def starpipe(
-    __args: tuple[*_P],
-    __fn1: Callable[[*_P], tuple[*_Q]],
-    __fn2: Callable[[*_Q], tuple[*_X]],
-    __fn3: Callable[[*_X], tuple[*_Y]],
-    __fn4: Callable[[*_Y], _B],
+    __args: tuple[Unpack[_P]],
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Q]]],
+    __fn2: Callable[[Unpack[_Q]], tuple[Unpack[_X]]],
+    __fn3: Callable[[Unpack[_X]], _B],
 ) -> _B: ...
 
 
 @overload
 def starpipe(
-    __args: tuple[*_P],
-    __fn1: Callable[[*_P], tuple[*_Q]],
-    __fn2: Callable[[*_Q], tuple[*_X]],
-    __fn3: Callable[[*_X], tuple[*_Y]],
-    __fn4: Callable[[*_Y], tuple[*_Z]],
-    __fn5: Callable[[*_Z], _B],
+    __args: tuple[Unpack[_P]],
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Q]]],
+    __fn2: Callable[[Unpack[_Q]], tuple[Unpack[_X]]],
+    __fn3: Callable[[Unpack[_X]], tuple[Unpack[_Y]]],
+    __fn4: Callable[[Unpack[_Y]], _B],
 ) -> _B: ...
 
 
 @overload
 def starpipe(
-    __args: tuple[*_P],
-    __fn1: Callable[[*_P], tuple[*_Q]],
-    __fn2: Callable[[*_Q], tuple[*_X]],
-    __fn3: Callable[[*_X], tuple[*_Y]],
-    __fn4: Callable[[*_Y], tuple[*_Z]],
-    __fn5: Callable[[*_Z], tuple[*_K]],
-    __fn6: Callable[[*_K], _B],
+    __args: tuple[Unpack[_P]],
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Q]]],
+    __fn2: Callable[[Unpack[_Q]], tuple[Unpack[_X]]],
+    __fn3: Callable[[Unpack[_X]], tuple[Unpack[_Y]]],
+    __fn4: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    __fn5: Callable[[Unpack[_Z]], _B],
+) -> _B: ...
+
+
+@overload
+def starpipe(
+    __args: tuple[Unpack[_P]],
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Q]]],
+    __fn2: Callable[[Unpack[_Q]], tuple[Unpack[_X]]],
+    __fn3: Callable[[Unpack[_X]], tuple[Unpack[_Y]]],
+    __fn4: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    __fn5: Callable[[Unpack[_Z]], tuple[Unpack[_K]]],
+    __fn6: Callable[[Unpack[_K]], _B],
 ) -> _B: ...
 
 

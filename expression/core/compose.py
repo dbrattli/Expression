@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from functools import reduce
-from typing import Any, TypeVar, TypeVarTuple, overload
+from typing import Any, TypeVar, overload
+
+from typing_extensions import TypeVarTuple, Unpack
 
 
 _A = TypeVar("_A")
@@ -139,26 +141,30 @@ def starcompose() -> Callable[[Any], Any]: ...
 
 
 @overload
-def starcompose(__fn1: Callable[[*_P], _A]) -> Callable[[*_P], _A]: ...
-
-
-@overload
-def starcompose(__fn1: Callable[[*_P], tuple[*_Y]], __fn2: Callable[[*_Y], _B]) -> Callable[[*_P], _B]: ...
+def starcompose(__fn1: Callable[[Unpack[_P]], _A]) -> Callable[[Unpack[_P]], _A]: ...
 
 
 @overload
 def starcompose(
-    __fn1: Callable[[*_P], tuple[*_Y]], __fn2: Callable[[*_Y], tuple[*_Z]], __fn3: Callable[[*_Z], _C]
-) -> Callable[[*_P], _C]: ...
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]], __fn2: Callable[[Unpack[_Y]], _B]
+) -> Callable[[Unpack[_P]], _B]: ...
 
 
 @overload
 def starcompose(
-    __fn1: Callable[[*_P], tuple[*_Y]],
-    __fn2: Callable[[*_Y], tuple[*_Z]],
-    __fn3: Callable[[*_Z], tuple[*_X]],
-    __fn4: Callable[[*_X], _D],
-) -> Callable[[*_P], _D]: ...
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
+    __fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    __fn3: Callable[[Unpack[_Z]], _C],
+) -> Callable[[Unpack[_P]], _C]: ...
+
+
+@overload
+def starcompose(
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
+    __fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    __fn3: Callable[[Unpack[_Z]], tuple[Unpack[_X]]],
+    __fn4: Callable[[Unpack[_X]], _D],
+) -> Callable[[Unpack[_P]], _D]: ...
 
 
 def starcompose(*fns: Callable[..., Any]) -> Callable[..., Any]:
