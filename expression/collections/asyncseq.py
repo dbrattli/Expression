@@ -62,7 +62,7 @@ async def empty() -> AsyncIterable[Any]:
 
 
 async def repeat(value: TSource, times: int | None = None) -> AsyncIterable[TSource]:
-    for value in itertools.repeat(value, times):  # type: ignore
+    for value in itertools.repeat(value, times or 0):
         yield value
 
 
