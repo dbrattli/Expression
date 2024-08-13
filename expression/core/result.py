@@ -231,7 +231,7 @@ class Result(
             type_vars = (Any, Any)
         else:
             type_vars = get_args(source_type)
-            type_vars = fetch_type(type_vars)
+            type_vars = [fetch_type(x) for x in type_vars[:2]]
 
         ok_schema = handler.generate_schema(type_vars[0])
         error_schema = handler.generate_schema(type_vars[1])
