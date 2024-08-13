@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 
 import pytest
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.annotated_handlers import GetCoreSchemaHandler
 from pydantic_core import core_schema
 
@@ -17,9 +17,9 @@ class CustomString(str):
 @pytest.mark.parametrize("type_", [Option, Result])
 class TestNestedOrCustomType:
     @staticmethod
-    def create_model(name: str | None, type_: Any, type_arg: Any) -> type[BaseModel]:
-        _type_arg = type_arg if type_ is Option else (type_arg, Any)
-        return create_model(name or "_", value=(type_.__class_getitem__(_type_arg), Field(...)))  # type: ignore
+    def create_model(name: str | None, type_: Any, *type_arg: Any, config: ConfigDict | None = None) -> type[BaseModel]:
+        _type_arg = type_arg[0] if type_ is Option else (type_arg + (Any,))[:2]
+        return create_model(name or "_", __config__=config, value=(type_.__class_getitem__(_type_arg), Field(...)))  # type: ignore
 
     def test_option_create_model(self, type_: Any):
         if type_ is Result:
@@ -62,3 +62,15 @@ class TestNestedOrCustomType:
 
     def test_build_nested_custom_type(self, type_: Any):
         _ = self.create_model(None, type_, Annotated[Annotated[CustomString, 1], 2])
+
+    def test_result_nested_error(self, type_: Any):
+        if type_ is Option:
+            pytest.skip("This test is for Result")
+
+        config = ConfigDict(arbitrary_types_allowed=True)
+        target = self.create_model(None, type_, Any, Annotated[Annotated[Exception, 1], 2], config=config)
+        origin = self.create_model(None, type_, Any, Exception, config=config)
+
+        target_schema = target.model_json_schema()
+        origin_schema = origin.model_json_schema()
+        assert target_schema == origin_schema
