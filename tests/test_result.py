@@ -515,27 +515,15 @@ def test_result_swap_with_error():
 def test_nested_type_in_pydantic():
     class Target(BaseModel):
         value: Result[Annotated[Annotated[int, 1], 2], Any]
-
-    schema = Target.model_json_schema()
-    assert "properties" in schema
-    properties = schema["properties"]
-    assert "value" in properties
-    value = properties["value"]
-    assert value == {
-        "anyOf": [
-            {
-                "properties": {"tag": {"title": "Tag", "type": "string"}, "ok": {"title": "Ok", "type": "integer"}},
-                "required": ["tag", "ok"],
-                "type": "object",
-            },
-            {
-                "properties": {"tag": {"title": "Tag", "type": "string"}, "error": {"title": "Error"}},
-                "required": ["tag", "error"],
-                "type": "object",
-            },
-        ],
-        "title": "Value",
-    }
+    
+    class Origin(BaseModel):
+        value: Result[int, Any]
+    
+    target_schema = Target.model_json_schema()
+    origin_schema = Origin.model_json_schema()
+    for schema in (target_schema, origin_schema):
+        schema.pop('title', None)
+    assert target_schema == origin_schema
 
 
 def test_custom_type_in_pydantic():

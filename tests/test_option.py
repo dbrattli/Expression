@@ -639,13 +639,15 @@ def test_serialize_option_works():
 def test_nested_type_in_pydantic():
     class Target(BaseModel):
         value:  Option[Annotated[Annotated[int, 1], 2]]
+
+    class Origin(BaseModel):
+        value:  Option[int]
     
-    schema = Target.model_json_schema()
-    assert 'properties' in schema
-    properties = schema['properties']
-    assert 'value' in properties
-    value = properties['value']
-    assert value == {'title': 'Value'}
+    target_schema = Target.model_json_schema()
+    origin_schema = Origin.model_json_schema()
+    for schema in (target_schema, origin_schema):
+        schema.pop('title', None)
+    assert target_schema == origin_schema
 
 def test_custom_type_in_pydantic():
     class Target(BaseModel): # pyright: ignore[reportUnusedClass]
