@@ -307,7 +307,7 @@ class Option(
             item_tp = Any
         else:
             item_tp = get_args(source_type)[0]
-            item_tp = fetch_type(item_tp, origin)
+            item_tp = fetch_type(item_tp)
 
         value_schema = handler.generate_schema(item_tp)
         none_schema = handler.generate_schema(None)

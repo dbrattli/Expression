@@ -94,14 +94,14 @@ def try_downcast(type_: type[_Derived], expr: Any) -> _Derived | None:
     return None
 
 
-def fetch_type(value: Any, source_type: Any = None) -> Any:
+def fetch_type(value: Any) -> Any:
     if isinstance(value, str):
         new = type("_Dummy", (), {"__annotations__": {"target": value}})
         value = get_type_hints(new)["target"]
         return fetch_type(value)
 
     origin = get_origin(value)
-    if origin is not None and origin in {Annotated, Required, NotRequired, source_type}:
+    if origin in {Annotated, Required, NotRequired}:
         args = get_args(value)
         return fetch_type(args[0])
     return value
