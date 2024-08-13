@@ -18,6 +18,7 @@ from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
 from .tagged_union import case, tag, tagged_union
+from .typing import fetch_type
 
 
 if TYPE_CHECKING:
@@ -306,6 +307,7 @@ class Option(
             item_tp = Any
         else:
             item_tp = get_args(source_type)[0]
+            item_tp = fetch_type(item_tp, origin)
 
         value_schema = handler.generate_schema(item_tp)
         none_schema = handler.generate_schema(None)

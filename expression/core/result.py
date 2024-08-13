@@ -35,6 +35,7 @@ from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
 from .tagged_union import case, tag, tagged_union
+from .typing import fetch_type
 
 
 _TSource = TypeVar("_TSource")
@@ -230,6 +231,7 @@ class Result(
             type_vars = (Any, Any)
         else:
             type_vars = get_args(source_type)
+            type_vars = fetch_type(type_vars, origin)
 
         ok_schema = handler.generate_schema(type_vars[0])
         error_schema = handler.generate_schema(type_vars[1])

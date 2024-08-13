@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
-from typing import Any, Protocol, TypeVar, get_origin
+from typing import Annotated, Any, Protocol, TypeVar, get_args, get_origin, get_type_hints
+
+from typing_extensions import NotRequired, Required
 
 
 _T = TypeVar("_T")
@@ -90,6 +92,19 @@ def try_downcast(type_: type[_Derived], expr: Any) -> _Derived | None:
         return expr
 
     return None
+
+
+def fetch_type(value: Any, source_type: Any = None) -> Any:
+    if isinstance(value, str):
+        new = type("_Dummy", (), {"__annotations__": {"target": value}})
+        value = get_type_hints(new)["target"]
+        return fetch_type(value)
+
+    origin = get_origin(value)
+    if origin is not None and origin in {Annotated, Required, NotRequired, source_type}:
+        args = get_args(value)
+        return fetch_type(args[0])
+    return value
 
 
 __all__ = [
