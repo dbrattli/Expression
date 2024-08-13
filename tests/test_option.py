@@ -1,10 +1,12 @@
 from collections.abc import Callable, Generator
-from typing import Any
+from typing import Annotated, Any
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel
+from pydantic.annotated_handlers import GetCoreSchemaHandler
+from pydantic_core import core_schema
 
 from expression import (
     Error,
@@ -22,6 +24,13 @@ from expression.core.option import Nothing, Option, Some
 from expression.extra.option import pipeline
 from tests.utils import CustomException
 
+
+class CustomString(str):
+    @classmethod
+    def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> Any:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
 
 def test_option_some():
     xs = Some(42)
@@ -626,3 +635,22 @@ def test_serialize_option_works():
     assert model_.one.value == 10
     assert model_.two == Nothing
     assert model_.three == Nothing
+
+def test_nested_type_in_pydantic():
+    class Target(BaseModel):
+        value:  Option[Annotated[Annotated[int, 1], 2]]
+    
+    schema = Target.model_json_schema()
+    assert 'properties' in schema
+    properties = schema['properties']
+    assert 'value' in properties
+    value = properties['value']
+    assert value == {'title': 'Value'}
+
+def test_custom_type_in_pydantic():
+    class Target(BaseModel): # pyright: ignore[reportUnusedClass]
+        value:  Option[CustomString]
+
+def test_nested_custom_type_in_pydantic():
+    class Target(BaseModel): # pyright: ignore[reportUnusedClass]
+        value:  Option[Annotated[Annotated[CustomString, 1], 2]]

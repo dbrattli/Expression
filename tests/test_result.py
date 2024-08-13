@@ -1,10 +1,12 @@
 from collections.abc import Callable, Generator
-from typing import Any
+from typing import Annotated, Any
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel, TypeAdapter
+from pydantic.annotated_handlers import GetCoreSchemaHandler
+from pydantic_core import core_schema
 
 from expression import Error, Nothing, Ok, Option, Result, Some, effect, result
 from expression.collections import Block
@@ -12,6 +14,13 @@ from expression.extra.result import pipeline, sequence
 
 from .utils import CustomException
 
+
+class CustomString(str):
+    @classmethod
+    def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> Any:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
 
 def test_pattern_match_with_alias():
     xs: Result[int, str] = Ok(42)
@@ -502,3 +511,37 @@ def test_result_swap_with_error():
     error: Result[str, int] = Error(1)
     xs = result.swap(error)
     assert xs == Ok(1)
+
+def test_nested_type_in_pydantic():
+    class Target(BaseModel):
+        value: Result[Annotated[Annotated[int, 1], 2], Any]
+
+    schema = Target.model_json_schema()
+    assert "properties" in schema
+    properties = schema["properties"]
+    assert "value" in properties
+    value = properties["value"]
+    assert value == {
+        "anyOf": [
+            {
+                "properties": {"tag": {"title": "Tag", "type": "string"}, "ok": {"title": "Ok", "type": "integer"}},
+                "required": ["tag", "ok"],
+                "type": "object",
+            },
+            {
+                "properties": {"tag": {"title": "Tag", "type": "string"}, "error": {"title": "Error"}},
+                "required": ["tag", "error"],
+                "type": "object",
+            },
+        ],
+        "title": "Value",
+    }
+
+
+def test_custom_type_in_pydantic():
+    class Target(BaseModel): # pyright: ignore[reportUnusedClass]
+        value:  Result[CustomString, Any]
+
+def test_nested_custom_type_in_pydantic():
+    class Target(BaseModel): # pyright: ignore[reportUnusedClass]
+        value:  Result[Annotated[Annotated[CustomString, 1], 2], Any]
