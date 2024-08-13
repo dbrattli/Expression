@@ -1,8 +1,9 @@
-from typing import Any, cast
+from typing import Annotated, Any, cast
 
 import pytest
 
-from expression import downcast, try_downcast, upcast
+from expression import Option, Result, downcast, try_downcast, upcast
+from expression.core.typing import fetch_type
 
 
 class Base:
@@ -105,3 +106,28 @@ def test_try_cast_generic_negative():
 
     # Assert
     assert b is None
+
+
+@pytest.mark.parametrize(
+    ("type_", "expect"),
+    (
+        (None, None),
+        (int, int),
+        ("int", int),
+        (Annotated[int, 1], int),
+        (Annotated[Annotated[str, 1], 2], str),
+        ("Annotated[Annotated[str, 1], 2]", str),
+        ("Annotated[Annotated[str, 1], 2]", str),
+    ),
+)
+def test_fetch_nested_type(type_: Any, expect: Any):
+    value = fetch_type(type_)
+    assert value is expect
+
+
+@pytest.mark.parametrize(
+    "type_", (Option[int], Option[Annotated[int, int]], Result[int, Any], Result[Annotated[int, 1], Any])
+)
+def test_expression_to_expression(type_: Any):
+    value = fetch_type(type_)
+    assert value is type_
