@@ -16,18 +16,15 @@ _TError = TypeVar("_TError")
 
 
 @overload
-def pipeline() -> Callable[[_A], Option[_A]]:
-    ...
+def pipeline() -> Callable[[_A], Option[_A]]: ...
 
 
 @overload
-def pipeline(__fn: Callable[[_A], Option[_B]]) -> Callable[[_A], Option[_B]]:
-    ...
+def pipeline(__fn: Callable[[_A], Option[_B]]) -> Callable[[_A], Option[_B]]: ...
 
 
 @overload
-def pipeline(__fn1: Callable[[_A], Option[_B]], __fn2: Callable[[_B], Option[_C]]) -> Callable[[_A], Option[_C]]:
-    ...
+def pipeline(__fn1: Callable[[_A], Option[_B]], __fn2: Callable[[_B], Option[_C]]) -> Callable[[_A], Option[_C]]: ...
 
 
 @overload
@@ -35,8 +32,7 @@ def pipeline(
     __fn1: Callable[[_A], Option[_B]],
     __fn2: Callable[[_B], Option[_C]],
     __fn3: Callable[[_C], Option[_D]],
-) -> Callable[[_A], Option[_D]]:
-    ...
+) -> Callable[[_A], Option[_D]]: ...
 
 
 @overload
@@ -45,8 +41,7 @@ def pipeline(
     __fn2: Callable[[_B], Option[_C]],
     __fn3: Callable[[_C], Option[_D]],
     __fn4: Callable[[_D], Option[_E]],
-) -> Callable[[_A], Option[_E]]:
-    ...
+) -> Callable[[_A], Option[_E]]: ...
 
 
 @overload
@@ -56,8 +51,7 @@ def pipeline(
     __fn3: Callable[[_C], Option[_D]],
     __fn4: Callable[[_D], Option[_E]],
     __fn5: Callable[[_E], Option[_F]],
-) -> Callable[[_A], Option[_F]]:
-    ...
+) -> Callable[[_A], Option[_F]]: ...
 
 
 @overload
@@ -68,8 +62,7 @@ def pipeline(
     __fn4: Callable[[_D], Option[_E]],
     __fn5: Callable[[_E], Option[_F]],
     __fn6: Callable[[_F], Option[_G]],
-) -> Callable[[_A], Option[_G]]:
-    ...
+) -> Callable[[_A], Option[_G]]: ...
 
 
 def pipeline(*fns: Callable[[Any], Option[Any]]) -> Callable[[Any], Option[Any]]:

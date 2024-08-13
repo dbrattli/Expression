@@ -5,11 +5,14 @@ options. All functions takes the source as the last curried argument,
 i.e all functions returns a function that takes the source sequence as
 the only argument.
 """
+
 from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Generator, Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, TypeVarTuple, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, get_args, get_origin
+
+from typing_extensions import TypeVarTuple, Unpack
 
 from .curry import curry_flip
 from .error import EffectError
@@ -105,7 +108,7 @@ class Option(
             case _:
                 return Nothing
 
-    def starmap(self: Option[tuple[*_P]], mapper: Callable[[*_P], _TResult]) -> Option[_TResult]:
+    def starmap(self: Option[tuple[Unpack[_P]]], mapper: Callable[[Unpack[_P]], _TResult]) -> Option[_TResult]:
         """Starmap option.
 
         Applies the mapper to the values if the option is Some,
@@ -430,7 +433,7 @@ def map2(opt1: Option[_T1], opt2: Option[_T2], mapper: Callable[[_T1, _T2], _TRe
 
 
 @curry_flip(1)
-def starmap(option: Option[tuple[*_P]], mapper: Callable[[*_P], _TResult]) -> Option[_TResult]:
+def starmap(option: Option[tuple[Unpack[_P]]], mapper: Callable[[*_P], _TResult]) -> Option[_TResult]:
     return option.starmap(mapper)
 
 

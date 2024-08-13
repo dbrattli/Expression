@@ -1,6 +1,6 @@
 (reference_compose)=
 
-# Try
+# Compose
 
 ```{eval-rst}
 .. automodule:: expression.core.compose

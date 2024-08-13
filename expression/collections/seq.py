@@ -21,6 +21,7 @@ Example (fluent style):
     >>> xs = Seq([1, 2, 3])
     >>> ys = xs.map(lambda x: x + 1).filter(lambda x: x < 3)
 """
+
 from __future__ import annotations
 
 import builtins
@@ -175,22 +176,19 @@ class Seq(Iterable[_TSource], PipeMixin):
         return Seq(pipe(self, map(mapper)))
 
     @overload
-    def starmap(self: Seq[tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]) -> Seq[_TResult]:
-        ...
+    def starmap(self: Seq[tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]) -> Seq[_TResult]: ...
 
     @overload
     def starmap(
         self: Seq[tuple[_T1, _T2, _T3]],
         mapping: Callable[[_T1, _T2, _T3], _TResult],
-    ) -> Seq[_TResult]:
-        ...
+    ) -> Seq[_TResult]: ...
 
     @overload
     def starmap(
         self: Seq[tuple[_T1, _T2, _T3, _T4]],
         mapping: Callable[[_T1, _T2, _T3, _T4], _TResult],
-    ) -> Seq[_TResult]:
-        ...
+    ) -> Seq[_TResult]: ...
 
     def starmap(self: Seq[Any], mapping: Callable[..., Any]) -> Seq[Any]:
         """Starmap source sequence.
@@ -227,18 +225,15 @@ class Seq(Iterable[_TSource], PipeMixin):
 
     @overload
     @staticmethod
-    def range(stop: int) -> Iterable[int]:
-        ...
+    def range(stop: int) -> Iterable[int]: ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int) -> Iterable[int]:
-        ...
+    def range(start: int, stop: int) -> Iterable[int]: ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: int) -> Iterable[int]:
-        ...
+    def range(start: int, stop: int, step: int) -> Iterable[int]: ...
 
     @staticmethod
     def range(*args: int, **kw: int) -> Iterable[int]:
@@ -650,22 +645,19 @@ def map(source: Iterable[_TSource], mapper: Callable[[_TSource], _TResult]) -> I
 
 
 @overload
-def starmap(mapper: Callable[[_T1, _T2], _TResult]) -> Callable[[Iterable[tuple[_T1, _T2]]], Iterable[_TResult]]:
-    ...
+def starmap(mapper: Callable[[_T1, _T2], _TResult]) -> Callable[[Iterable[tuple[_T1, _T2]]], Iterable[_TResult]]: ...
 
 
 @overload
 def starmap(
     mapper: Callable[[_T1, _T2, _T3], _TResult],
-) -> Callable[[Iterable[tuple[_T1, _T2, _T3]]], Iterable[_TResult]]:
-    ...
+) -> Callable[[Iterable[tuple[_T1, _T2, _T3]]], Iterable[_TResult]]: ...
 
 
 @overload
 def starmap(
     mapper: Callable[[_T1, _T2, _T3, _T4], _TResult],
-) -> Callable[[Iterable[tuple[_T1, _T2, _T3, _T4]]], Iterable[_TResult]]:
-    ...
+) -> Callable[[Iterable[tuple[_T1, _T2, _T3, _T4]]], Iterable[_TResult]]: ...
 
 
 def starmap(mapper: Callable[..., Any]) -> Callable[[Iterable[Any]], Iterable[Any]]:
@@ -765,21 +757,18 @@ of_list = of_iterable
 
 
 @overload
-def range(stop: int) -> Iterable[int]:
-    ...
+def range(stop: int) -> Iterable[int]: ...
 
 
 @overload
 def range(
     start: int,
     stop: int,
-) -> Iterable[int]:
-    ...
+) -> Iterable[int]: ...
 
 
 @overload
-def range(start: int, stop: int, step: int) -> Iterable[int]:
-    ...
+def range(start: int, stop: int, step: int) -> Iterable[int]: ...
 
 
 def range(*args: int, **kw: int) -> Iterable[int]:

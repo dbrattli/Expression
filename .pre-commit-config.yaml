@@ -6,7 +6,7 @@ repos:
       - id: ruff-format
         args: [--check]
     repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.11
+    rev: v0.5.6
   - hooks:
       - id: pyright
         name: pyright
@@ -14,5 +14,5 @@ repos:
         language: node
         pass_filenames: false
         types: [python]
-        additional_dependencies: ["pyright@1.1.363"]
+        additional_dependencies: ["pyright@1.1.374"]
     repo: local

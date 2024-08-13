@@ -18,13 +18,11 @@ def catch(
 ) -> Callable[
     [Callable[..., _TSource | Result[_TSource, _TError]]],
     Callable[..., Result[_TSource, _TError | _TError_]],
-]:
-    ...
+]: ...
 
 
 @overload
-def catch(f: Callable[..., _TSource], *, exception: type[_TError]) -> Callable[..., Result[_TSource, _TError]]:
-    ...
+def catch(f: Callable[..., _TSource], *, exception: type[_TError]) -> Callable[..., Result[_TSource, _TError]]: ...
 
 
 def catch(  # type: ignore

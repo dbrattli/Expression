@@ -42,8 +42,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         return super().__call__(fn)
 
 
-class TryBuilder(ResultBuilder[_TSource, Exception]):
-    ...
+class TryBuilder(ResultBuilder[_TSource, Exception]): ...
 
 
 __all__ = ["ResultBuilder", "TryBuilder"]

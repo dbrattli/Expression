@@ -17,13 +17,16 @@ Example:
     ...     block.filter(lambda x: x<10)
     ... )
 """
+
 from __future__ import annotations
 
 import builtins
 import functools
 import itertools
 from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, TypeVarTuple, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
+
+from typing_extensions import TypeVarTuple, Unpack
 
 
 if TYPE_CHECKING:
@@ -236,7 +239,7 @@ class Block(
         """
         return Block((*builtins.map(mapping, self),))
 
-    def starmap(self: Block[tuple[*_P]], mapping: Callable[[*_P], _TResult]) -> Block[_TResult]:
+    def starmap(self: Block[tuple[Unpack[_P]]], mapping: Callable[[Unpack[_P]], _TResult]) -> Block[_TResult]:
         """Starmap source sequence.
 
         Unpack arguments grouped as tuple elements. Builds a new collection
@@ -316,18 +319,15 @@ class Block(
 
     @overload
     @staticmethod
-    def range(stop: int) -> Block[int]:
-        ...
+    def range(stop: int) -> Block[int]: ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int) -> Block[int]:
-        ...
+    def range(start: int, stop: int) -> Block[int]: ...
 
     @overload
     @staticmethod
-    def range(start: int, stop: int, step: int) -> Block[int]:
-        ...
+    def range(start: int, stop: int, step: int) -> Block[int]: ...
 
     @staticmethod
     def range(*args: int, **kw: int) -> Block[int]:
@@ -497,12 +497,10 @@ class Block(
         return False
 
     @overload
-    def __getitem__(self, key: slice) -> Block[_TSource]:
-        ...
+    def __getitem__(self, key: slice) -> Block[_TSource]: ...
 
     @overload
-    def __getitem__(self, key: int) -> _TSource:
-        ...
+    def __getitem__(self, key: int) -> _TSource: ...
 
     def __getitem__(self, key: Any) -> Any:
         ret: Any = self._value[key]
@@ -750,7 +748,7 @@ def reduce(
     return source.tail().fold(reduction, source.head())
 
 
-def starmap(mapper: Callable[[*_P], _TResult]) -> Callable[[Block[tuple[*_P]]], Block[_TResult]]:
+def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[Unpack[_P]]]], Block[_TResult]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
@@ -764,7 +762,7 @@ def starmap(mapper: Callable[[*_P], _TResult]) -> Callable[[Block[tuple[*_P]]], 
         Partially applied map function.
     """
 
-    def mapper_(args: tuple[*_P]) -> _TResult:
+    def mapper_(args: tuple[Unpack[_P]]) -> _TResult:
         return mapper(*args)
 
     return map(mapper_)
@@ -840,18 +838,15 @@ def partition(
 
 
 @overload
-def range(stop: int) -> Block[int]:
-    ...
+def range(stop: int) -> Block[int]: ...
 
 
 @overload
-def range(start: int, stop: int) -> Block[int]:
-    ...
+def range(start: int, stop: int) -> Block[int]: ...
 
 
 @overload
-def range(start: int, stop: int, step: int) -> Block[int]:
-    ...
+def range(start: int, stop: int, step: int) -> Block[int]: ...
 
 
 def range(*args: int, **kw: int) -> Block[int]:
