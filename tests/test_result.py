@@ -1,10 +1,11 @@
 from collections.abc import Callable, Generator
-from typing import Any
+from typing import Any, Annotated
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, TypeAdapter, Field, GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from expression import Error, Nothing, Ok, Option, Result, Some, effect, result
 from expression.collections import Block
@@ -364,20 +365,38 @@ class MyError(BaseModel):
     message: str
 
 
+PositiveInt = Annotated[int, Field(gt=0)]
+
+
+class Username(str):
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
+
+
 class Model(BaseModel):
     one: Result[int, MyError]
     two: Result[str, MyError] = Error(MyError(message="error"))
     three: Result[float, MyError] = Error(MyError(message="error"))
+    annotated_type: Result[PositiveInt, MyError] = Error(MyError(message="error"))
+    annotated_type_error: Result[PositiveInt, MyError] = Error(MyError(message="error"))
+
+    custom_type: Result[Username, MyError] = Error(MyError(message="error"))
+    custom_type_error: Result[Username, MyError] = Error(MyError(message="error"))
 
 
 def test_parse_block_works():
-    obj = dict(one=dict(ok=42))
+    obj = dict(one=dict(ok=42), annotated_type=dict(ok=42), custom_type=dict(ok="johndoe"))
     model = Model.model_validate(obj)
 
     assert isinstance(model.one, Result)
     assert model.one == Ok(42)
     assert model.two == Error(MyError(message="error"))
     assert model.three == Error(MyError(message="error"))
+    assert model.annotated_type == Ok(42)
+    assert model.annotated_type_error == Error(MyError(message="error"))
+    assert model.custom_type == Ok(Username("johndoe"))
+    assert model.custom_type_error == Error(MyError(message="error"))
 
 
 def test_ok_to_dict_works():
@@ -422,11 +441,13 @@ def test_error_from_dict_works():
 
 
 def test_model_to_json_works():
-    model = Model(one=Ok(10))
+    obj = dict(one=dict(ok=10), annotated_type=dict(ok=10), custom_type=dict(ok="johndoe"))
+
+    model = Model.model_validate(obj)
     obj = model.model_dump_json()
     assert (
         obj
-        == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}}}'
+        == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}},"annotated_type":{"tag":"ok","ok":10},"annotated_type_error":{"tag":"error","error":{"message":"error"}},"custom_type":{"tag":"ok","ok":"johndoe"},"custom_type_error":{"tag":"error","error":{"message":"error"}}}'
     )
 
 
