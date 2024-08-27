@@ -376,7 +376,7 @@ def test_filter_ok_failing_predicate():
 
 
 def test_filter_error():
-    error = Error("error")
+    error = Error("original error")
     ys = error.filter(lambda x: x > 10, "error")
 
     assert ys == error
@@ -397,7 +397,7 @@ def test_filter_with_ok_failing_predicate():
 
 
 def test_filter_with_error():
-    error = Error("error")
+    error = Error("original error")
     ys = error.filter_with(lambda x: x > 10, lambda value: f"error {value}")
 
     assert ys == error
