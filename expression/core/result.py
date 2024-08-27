@@ -158,6 +158,38 @@ class Result(
             case _:
                 return False
 
+    def filter(self, predicate: Callable[[_TSource], bool], default: _TError) -> Result[_TSource, _TError]:
+        """Filter result.
+
+        Returns the input if the predicate evaluates to true, otherwise
+        returns the `default`
+        """
+        match self:
+            case Result(tag="ok", ok=value) if predicate(value):
+                return self
+            case Result(tag="error"):
+                return self
+            case _:
+                return Error(default)
+
+    def filter_with(
+        self,
+        predicate: Callable[[_TSource], bool],
+        default: Callable[[_TSource], _TError],
+    ) -> Result[_TSource, _TError]:
+        """Filter result.
+
+        Returns the input if the predicate evaluates to true, otherwise
+        returns the `default` using the value as input
+        """
+        match self:
+            case Result(tag="ok", ok=value) if predicate(value):
+                return self
+            case Result(tag="ok", ok=value):
+                return Error(default(value))
+            case Result():
+                return self
+
     def dict(self) -> builtins.dict[str, _TSource | _TError | Literal["ok", "error"]]:
         """Return a json serializable representation of the result."""
         match self:

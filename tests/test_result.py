@@ -361,6 +361,48 @@ def test_pipeline_error():
     assert hn(42) == error
 
 
+def test_filter_ok_passing_predicate():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.filter(lambda x: x > 10, "error")
+
+    assert ys == xs
+
+
+def test_filter_ok_failing_predicate():
+    xs: Result[int, str] = Ok(5)
+    ys = xs.filter(lambda x: x > 10, "error")
+
+    assert ys == Error("error")
+
+
+def test_filter_error():
+    error = Error("error")
+    ys = error.filter(lambda x: x > 10, "error")
+
+    assert ys == error
+
+
+def test_filter_with_ok_passing_predicate():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == xs
+
+
+def test_filter_with_ok_failing_predicate():
+    xs: Result[int, str] = Ok(5)
+    ys = xs.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == Error("error 5")
+
+
+def test_filter_with_error():
+    error = Error("error")
+    ys = error.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == error
+
+
 class MyError(BaseModel):
     message: str
 
