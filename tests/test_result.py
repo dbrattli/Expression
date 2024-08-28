@@ -1,4 +1,5 @@
 from collections.abc import Callable, Generator
+from dataclasses import dataclass
 from typing import Any, Annotated
 
 import pytest
@@ -524,6 +525,7 @@ def test_result_swap_with_error():
     xs = result.swap(error)
     assert xs == Ok(1)
 
+
 def test_ok_or_else_ok():
     xs: Result[int, str] = Ok(42)
     ys = xs.or_else(Ok(0))
@@ -570,3 +572,32 @@ def test_error_or_else_with_error():
     xs: Result[str, str] = Error("original error")
     ys = xs.or_else_with(lambda error: Error(f"new error from {error}"))
     assert ys == Error("new error from original error")
+
+
+def test_merge_ok():
+    assert Result.Ok(42).merge() == 42
+
+
+def test_merge_error():
+    # Explicit type annotation required as merge favours the _TSource type
+    xs: Result[str, str] = Error("error")
+    assert xs.merge() == "error"
+
+
+class Parent:
+    pass
+
+
+@dataclass
+class Child1(Parent):
+    x: int
+
+
+@dataclass
+class Child2(Parent):
+    pass
+
+
+def test_merge_subclasses():
+    xs: Result[Parent, Parent] = Result.Ok(Child1(x=42))
+    assert xs.merge() == Child1(x=42)
