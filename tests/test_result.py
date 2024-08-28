@@ -523,3 +523,50 @@ def test_result_swap_with_error():
     error: Result[str, int] = Error(1)
     xs = result.swap(error)
     assert xs == Ok(1)
+
+def test_ok_or_else_ok():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.or_else(Ok(0))
+    assert ys == Ok(42)
+
+
+def test_ok_or_else_error():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.or_else(Error("new error"))
+    assert ys == Ok(42)
+
+
+def test_error_or_else_ok():
+    xs: Result[int, str] = Error("original error")
+    ys = xs.or_else(Ok(0))
+    assert ys == Ok(0)
+
+
+def test_error_or_else_error():
+    xs: Result[int, str] = Error("original error")
+    ys = xs.or_else(Error("new error"))
+    assert ys == Error("new error")
+
+
+def test_ok_or_else_with_ok():
+    xs: Result[str, str] = Ok("good")
+    ys = xs.or_else_with(lambda error: Ok(f"new error from {error}"))
+    assert ys == Ok("good")
+
+
+def test_ok_or_else_with_error():
+    xs: Result[str, str] = Ok("good")
+    ys = xs.or_else_with(lambda error: Ok(f"new error from {error}"))
+    assert ys == Ok("good")
+
+
+def test_error_or_else_with_ok():
+    xs: Result[str, str] = Error("original error")
+    ys = xs.or_else_with(lambda error: Ok(f"fixed {error}"))
+    assert ys == Ok("fixed original error")
+
+
+def test_error_or_else_with_error():
+    xs: Result[str, str] = Error("original error")
+    ys = xs.or_else_with(lambda error: Error(f"new error from {error}"))
+    assert ys == Error("new error from original error")

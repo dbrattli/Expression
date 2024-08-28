@@ -180,6 +180,14 @@ class Result(
             case Result(error=error):
                 return Result(ok=error)
 
+    def or_else(self, other: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+        """Return the result if it is Ok, otherwise return the other result."""
+        return self if self.is_ok() else other
+
+    def or_else_with(self, other: Callable[[_TError], Result[_TSource, _TError]]) -> Result[_TSource, _TError]:
+        """Return the result if it is Ok, otherwise return the result of the other function."""
+        return self if self.is_ok() else other(self.error)
+
     def to_option(self) -> Option[_TSource]:
         """Convert result to an option."""
         match self:
