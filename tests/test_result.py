@@ -194,6 +194,14 @@ def test_result_error_chained_map(msg: str, y: int):
         case _:
             assert False
 
+@given(st.text())
+def test_map_error(msg: str):
+    assert Error(msg).map_error(lambda x: f"more {x}") == Error("more " + msg)
+
+@given(st.text())
+def test_map_error_piped(msg: str):
+    assert Error(msg).pipe(result.map_error(lambda x: f"more {x}")) == Error(f"more {msg}")
+
 
 @given(st.integers(), st.integers())  # type: ignore
 def test_result_bind_piped(x: int, y: int):
@@ -362,6 +370,54 @@ def test_pipeline_error():
     assert hn(42) == error
 
 
+def test_filter_ok_passing_predicate():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.filter(lambda x: x > 10, "error")
+
+    assert ys == xs
+
+
+def test_filter_ok_failing_predicate():
+    xs: Result[int, str] = Ok(5)
+    ys = xs.filter(lambda x: x > 10, "error")
+
+    assert ys == Error("error")
+
+
+def test_filter_error():
+    error = Error("original error")
+    ys = error.filter(lambda x: x > 10, "error")
+
+    assert ys == error
+
+def test_filter_piped():
+    assert Ok(42).pipe(result.filter(lambda x: x > 10, "error")) == Ok(42)
+
+
+def test_filter_with_ok_passing_predicate():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == xs
+
+
+def test_filter_with_ok_failing_predicate():
+    xs: Result[int, str] = Ok(5)
+    ys = xs.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == Error("error 5")
+
+
+def test_filter_with_error():
+    error = Error("original error")
+    ys = error.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == error
+
+def test_filter_with_piped():
+    assert Ok(42).pipe(result.filter_with(lambda x: x > 10, lambda value: f"error {value}")) == Ok(42)
+
+
 class MyError(BaseModel):
     message: str
 
@@ -525,6 +581,8 @@ def test_result_swap_with_error():
     xs = result.swap(error)
     assert xs == Ok(1)
 
+def test_swap_piped():
+    assert Ok(42).pipe(result.swap) == Error(42)
 
 def test_ok_or_else_ok():
     xs: Result[int, str] = Ok(42)
@@ -549,6 +607,8 @@ def test_error_or_else_error():
     ys = xs.or_else(Error("new error"))
     assert ys == Error("new error")
 
+def test_or_else_piped():
+    assert Ok(42).pipe(result.or_else(Ok(0))) == Ok(42)
 
 def test_ok_or_else_with_ok():
     xs: Result[str, str] = Ok("good")
@@ -572,6 +632,10 @@ def test_error_or_else_with_error():
     xs: Result[str, str] = Error("original error")
     ys = xs.or_else_with(lambda error: Error(f"new error from {error}"))
     assert ys == Error("new error from original error")
+
+
+def test_or_else_with_piped():
+    assert Ok(42).pipe(result.or_else_with(lambda _: Ok(0))) == Ok(42)
 
 
 def test_merge_ok():
@@ -601,3 +665,7 @@ class Child2(Parent):
 def test_merge_subclasses():
     xs: Result[Parent, Parent] = Result.Ok(Child1(x=42))
     assert xs.merge() == Child1(x=42)
+
+
+def test_merge_piped():
+    assert Ok(42).pipe(result.merge) == 42
