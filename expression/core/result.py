@@ -5,7 +5,7 @@ can be composed. The Result type is typically used in monadic
 error-handling, which is often referred to as Railway-oriented
 Programming.
 
-There is also a simplifyed alias of this type called `Try` that pins
+There is also a simplified alias of this type called `Try` that pins
 the Result type to Exception.
 """
 
@@ -144,19 +144,11 @@ class Result(
 
     def is_error(self) -> bool:
         """Returns `True` if the result is an `Error` value."""
-        match self:
-            case Result(tag="ok"):
-                return False
-            case _:
-                return True
+        return self.tag == "error"
 
     def is_ok(self) -> bool:
         """Return `True` if the result is an `Ok` value."""
-        match self:
-            case Result(tag="ok"):
-                return True
-            case _:
-                return False
+        return self.tag == "ok"
 
     def dict(self) -> builtins.dict[str, _TSource | _TError | Literal["ok", "error"]]:
         """Return a json serializable representation of the result."""
@@ -187,6 +179,13 @@ class Result(
     def or_else_with(self, other: Callable[[_TError], Result[_TSource, _TError]]) -> Result[_TSource, _TError]:
         """Return the result if it is Ok, otherwise return the result of the other function."""
         return self if self.is_ok() else other(self.error)
+
+    def merge(self: Result[_TSource, _TSource]) -> _TSource:
+        """Merge the ok and error values into a single value.
+
+        This method is only available on Results where _TSource and _TError are the same type.
+        """
+        return self.default_with(lambda x: x)
 
     def to_option(self) -> Option[_TSource]:
         """Convert result to an option."""
