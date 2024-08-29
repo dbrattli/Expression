@@ -385,6 +385,11 @@ def map2(
 
 
 @curry_flip(1)
+def map_error(result: Result[_TSource, _TError], mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
+    return result.map_error(mapper)
+
+
+@curry_flip(1)
 def bind(
     result: Result[_TSource, _TError],
     mapper: Callable[[_TSource], Result[_TResult, Any]],
@@ -406,9 +411,44 @@ def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Result[_TSource, _T
     return result.is_error()
 
 
+@curry_flip(1)
+def filter(
+    result: Result[_TSource, _TError],
+    predicate: Callable[[_TSource], bool],
+    default: _TError,
+) -> Result[_TSource, _TError]:
+    return result.filter(predicate, default)
+
+
+@curry_flip(1)
+def filter_with(
+    result: Result[_TSource, _TError],
+    predicate: Callable[[_TSource], bool],
+    default: Callable[[_TSource], _TError],
+) -> Result[_TSource, _TError]:
+    return result.filter_with(predicate, default)
+
+
 def swap(result: Result[_TSource, _TError]) -> Result[_TError, _TSource]:
     """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
     return result.swap()
+
+
+@curry_flip(1)
+def or_else(result: Result[_TSource, _TError], other: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    return result.or_else(other)
+
+
+@curry_flip(1)
+def or_else_with(
+    result: Result[_TSource, _TError],
+    other: Callable[[_TError], Result[_TSource, _TError]],
+) -> Result[_TSource, _TError]:
+    return result.or_else_with(other)
+
+
+def merge(result: Result[_TSource, _TSource]) -> _TSource:
+    return result.merge()
 
 
 def to_option(result: Result[_TSource, Any]) -> Option[_TSource]:
@@ -438,9 +478,17 @@ __all__ = [
     "map",
     "bind",
     "dict",
+    "filter",
+    "filter_with",
     "is_ok",
     "is_error",
+    "map2",
+    "map_error",
+    "merge",
     "to_option",
     "of_option",
     "of_option_with",
+    "or_else",
+    "or_else_with",
+    "swap",
 ]
