@@ -1,7 +1,9 @@
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
-from typing import Any, TypeVar, dataclass_transform, overload
+from typing import Any, TypeVar, overload
+
+from typing_extensions import dataclass_transform
 
 
 _T = TypeVar("_T")
@@ -10,15 +12,13 @@ _T = TypeVar("_T")
 @overload
 def tagged_union(
     *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
-) -> Callable[[type[_T]], type[_T]]:
-    ...
+) -> Callable[[type[_T]], type[_T]]: ...
 
 
 @overload
 def tagged_union(
     _cls: type[_T], *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
-) -> type[_T]:
-    ...
+) -> type[_T]: ...
 
 
 @dataclass_transform()
@@ -41,9 +41,18 @@ def tagged_union(
 
     def transform(cls: Any) -> Any:
         cls = dataclass(init=False, repr=False, order=False, eq=False, kw_only=True)(cls)
-        fields_ = fields(cls)  # type: ignore
+        fields_ = fields(cls)
         field_names = tuple(f.name for f in fields_)
         original_init = cls.__init__
+
+        def tagged_union_getstate(self: Any) -> dict[str, Any]:
+            return {f.name: getattr(self, f.name) for f in fields(self)}
+
+        def tagged_union_setstate(self: Any, state: dict[str, Any]):
+            self.__init__(**state)
+
+        cls.__setstate__ = tagged_union_setstate
+        cls.__getstate__ = tagged_union_getstate
 
         def __init__(self: Any, **kwargs: Any) -> None:
             tag = kwargs.pop("tag", None)
@@ -65,7 +74,7 @@ def tagged_union(
 
             # Enables the use of dataclasses.asdict
             union_fields = dict((f.name, f) for f in fields_ if f.name in [name, "tag"])
-            object.__setattr__(self, "__dataclass_fields__", union_fields)  # type: ignore
+            object.__setattr__(self, "__dataclass_fields__", union_fields)
             original_init(self)
 
         def __repr__(self: Any) -> str:
@@ -77,9 +86,9 @@ def tagged_union(
                 if not isinstance(other, cls):
                     return False
 
-                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))  # type: ignore
+                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))
 
-            cls.__lt__ = __lt__  # type: ignore
+            cls.__lt__ = __lt__
 
         if frozen:
 

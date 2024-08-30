@@ -21,6 +21,7 @@ Contains the internal tree implementation of the `map`.
 
 Do not use directly. Use the `map` module instead.
 """
+
 import builtins
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass

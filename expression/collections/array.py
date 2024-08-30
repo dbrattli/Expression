@@ -6,6 +6,7 @@ backing storage is `bytearray`, `array.array` or `list` depending on
 type of input.
 
 """
+
 from __future__ import annotations
 
 import array
@@ -39,48 +40,37 @@ _TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
 _Array = list[_TSourceSum] | MutableSequence[_TSourceSum]
 
 
-class int8(int):
-    ...
+class int8(int): ...
 
 
-class int16(int):
-    ...
+class int16(int): ...
 
 
-class int32(int):
-    ...
+class int32(int): ...
 
 
-class int64(int):
-    ...
+class int64(int): ...
 
 
-class uint8(int):
-    ...
+class uint8(int): ...
 
 
-class uint16(int):
-    ...
+class uint16(int): ...
 
 
-class uint32(int):
-    ...
+class uint32(int): ...
 
 
-class uint64(int):
-    ...
+class uint64(int): ...
 
 
-class float32(float):
-    ...
+class float32(float): ...
 
 
-class float64(float):
-    ...
+class float64(float): ...
 
 
-class double(float):
-    ...
+class double(float): ...
 
 
 class TypeCode(Enum):
@@ -385,7 +375,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
     def sum_by(self, projection: Callable[[_TSource], _TSourceSum]) -> int:
         return pipe(
             self,
-            sum_by(projection),  # type: ignore
+            sum_by(projection),
         )
 
     def tail(self) -> TypedArray[_TSource]:

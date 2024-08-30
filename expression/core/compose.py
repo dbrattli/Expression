@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from functools import reduce
-from typing import Any, TypeVar, TypeVarTuple, overload
+from typing import Any, TypeVar, overload
+
+from typing_extensions import TypeVarTuple, Unpack
 
 
 _A = TypeVar("_A")
@@ -22,23 +24,19 @@ _Z = TypeVarTuple("_Z")
 
 
 @overload
-def compose() -> Callable[[_A], _A]:
-    ...
+def compose() -> Callable[[_A], _A]: ...
 
 
 @overload
-def compose(__fn1: Callable[[_A], _B]) -> Callable[[_A], _B]:
-    ...
+def compose(__fn1: Callable[[_A], _B]) -> Callable[[_A], _B]: ...
 
 
 @overload
-def compose(__fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> Callable[[_A], _C]:
-    ...
+def compose(__fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C]) -> Callable[[_A], _C]: ...
 
 
 @overload
-def compose(__fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C], __fn3: Callable[[_C], _D]) -> Callable[[_A], _D]:
-    ...
+def compose(__fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C], __fn3: Callable[[_C], _D]) -> Callable[[_A], _D]: ...
 
 
 @overload
@@ -47,8 +45,7 @@ def compose(
     __fn2: Callable[[_B], _C],
     __fn3: Callable[[_C], _D],
     __fn4: Callable[[_D], _E],
-) -> Callable[[_A], _E]:
-    ...
+) -> Callable[[_A], _E]: ...
 
 
 @overload
@@ -58,8 +55,7 @@ def compose(
     __fn3: Callable[[_C], _D],
     __fn4: Callable[[_D], _E],
     __fn5: Callable[[_E], _F],
-) -> Callable[[_A], _F]:
-    ...
+) -> Callable[[_A], _F]: ...
 
 
 @overload
@@ -70,8 +66,7 @@ def compose(
     __fn4: Callable[[_D], _E],
     __fn5: Callable[[_E], _F],
     __fn6: Callable[[_F], _G],
-) -> Callable[[_A], _G]:
-    ...
+) -> Callable[[_A], _G]: ...
 
 
 @overload
@@ -83,8 +78,7 @@ def compose(
     __fn5: Callable[[_E], _F],
     __fn6: Callable[[_F], _G],
     __fn7: Callable[[_G], _H],
-) -> Callable[[_A], _H]:
-    ...
+) -> Callable[[_A], _H]: ...
 
 
 @overload
@@ -97,8 +91,7 @@ def compose(
     __fn6: Callable[[_F], _G],
     __fn7: Callable[[_G], _H],
     __fn8: Callable[[_H], _T],
-) -> Callable[[_A], _T]:
-    ...
+) -> Callable[[_A], _T]: ...
 
 
 @overload
@@ -112,8 +105,7 @@ def compose(
     __fn7: Callable[[_G], _H],
     __fn8: Callable[[_H], _T],
     __fn9: Callable[[_T], _J],
-) -> Callable[[_A], _J]:
-    ...
+) -> Callable[[_A], _J]: ...
 
 
 def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
@@ -145,35 +137,34 @@ def compose(*fns: Callable[[Any], Any]) -> Callable[[Any], Any]:
 
 
 @overload
-def starcompose() -> Callable[[Any], Any]:
-    ...
+def starcompose() -> Callable[[Any], Any]: ...
 
 
 @overload
-def starcompose(__fn1: Callable[[*_P], _A]) -> Callable[[*_P], _A]:
-    ...
-
-
-@overload
-def starcompose(__fn1: Callable[[*_P], tuple[*_Y]], __fn2: Callable[[*_Y], _B]) -> Callable[[*_P], _B]:
-    ...
+def starcompose(__fn1: Callable[[Unpack[_P]], _A]) -> Callable[[Unpack[_P]], _A]: ...
 
 
 @overload
 def starcompose(
-    __fn1: Callable[[*_P], tuple[*_Y]], __fn2: Callable[[*_Y], tuple[*_Z]], __fn3: Callable[[*_Z], _C]
-) -> Callable[[*_P], _C]:
-    ...
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]], __fn2: Callable[[Unpack[_Y]], _B]
+) -> Callable[[Unpack[_P]], _B]: ...
 
 
 @overload
 def starcompose(
-    __fn1: Callable[[*_P], tuple[*_Y]],
-    __fn2: Callable[[*_Y], tuple[*_Z]],
-    __fn3: Callable[[*_Z], tuple[*_X]],
-    __fn4: Callable[[*_X], _D],
-) -> Callable[[*_P], _D]:
-    ...
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
+    __fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    __fn3: Callable[[Unpack[_Z]], _C],
+) -> Callable[[Unpack[_P]], _C]: ...
+
+
+@overload
+def starcompose(
+    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
+    __fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    __fn3: Callable[[Unpack[_Z]], tuple[Unpack[_X]]],
+    __fn4: Callable[[Unpack[_X]], _D],
+) -> Callable[[Unpack[_P]], _D]: ...
 
 
 def starcompose(*fns: Callable[..., Any]) -> Callable[..., Any]:

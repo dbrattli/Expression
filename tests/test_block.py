@@ -1,15 +1,15 @@
 import functools
 from builtins import list as list
 from collections.abc import Callable
-from typing import Any, List
+from typing import Any, List, Annotated
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from expression import Nothing, Option, Some, pipe
 from expression.collections import Block, block
-
 
 Func = Callable[[int], int]
 
@@ -408,24 +408,43 @@ def test_block_monad_law_associativity_iterable(xs: List[int]):
     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
 
 
+PositiveInt = Annotated[int, Field(gt=0)]
+
+
+class Username(str):
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
+
+
 class Model(BaseModel):
     one: Block[int]
     two: Block[str] = block.empty
     three: Block[float] = block.empty
+    annotated_type: Block[PositiveInt] = block.empty
+    annotated_type_empty: Block[PositiveInt] = block.empty
+
+    custom_type: Block[Username] = block.empty
+    custom_type_empty: Block[Username] = block.empty
 
 
 def test_parse_block_works():
-    obj = dict(one=[1, 2, 3], two=[])
+    obj = dict(one=[1, 2, 3], two=[], annotated_type=[1, 2, 3], custom_type=["a", "b", "c"])
     model = Model.model_validate(obj)
     assert isinstance(model.one, Block)
     assert model.one == Block([1, 2, 3])
     assert model.two == Block.empty()
     assert model.three == block.empty
+    assert model.annotated_type == Block([1, 2, 3])
+    assert model.annotated_type_empty == block.empty
+    assert model.custom_type == Block(["a", "b", "c"])
+    assert model.custom_type_empty == block.empty
 
 
 def test_serialize_block_works():
     # arrange
-    model = Model(one=Block([1, 2, 3]), two=Block.empty())
+    obj = dict(one=[1, 2, 3], two=[], annotated_type=[1, 2, 3], custom_type=["a", "b", "c"])
+    model = Model.model_validate(obj)
 
     # act
     json = model.model_dump_json()
@@ -435,3 +454,7 @@ def test_serialize_block_works():
     assert model_.one == Block([1, 2, 3])
     assert model_.two == Block.empty()
     assert model_.three == block.empty
+    assert model_.annotated_type == Block([1, 2, 3])
+    assert model_.annotated_type_empty == block.empty
+    assert model_.custom_type == Block(["a", "b", "c"])
+    assert model_.custom_type_empty == block.empty

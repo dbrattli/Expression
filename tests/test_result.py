@@ -1,10 +1,12 @@
 from collections.abc import Callable, Generator
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Annotated
 
 import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, TypeAdapter, Field, GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from expression import Error, Nothing, Ok, Option, Result, Some, effect, result
 from expression.collections import Block
@@ -192,6 +194,14 @@ def test_result_error_chained_map(msg: str, y: int):
         case _:
             assert False
 
+@given(st.text())
+def test_map_error(msg: str):
+    assert Error(msg).map_error(lambda x: f"more {x}") == Error("more " + msg)
+
+@given(st.text())
+def test_map_error_piped(msg: str):
+    assert Error(msg).pipe(result.map_error(lambda x: f"more {x}")) == Error(f"more {msg}")
+
 
 @given(st.integers(), st.integers())  # type: ignore
 def test_result_bind_piped(x: int, y: int):
@@ -360,24 +370,90 @@ def test_pipeline_error():
     assert hn(42) == error
 
 
+def test_filter_ok_passing_predicate():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.filter(lambda x: x > 10, "error")
+
+    assert ys == xs
+
+
+def test_filter_ok_failing_predicate():
+    xs: Result[int, str] = Ok(5)
+    ys = xs.filter(lambda x: x > 10, "error")
+
+    assert ys == Error("error")
+
+
+def test_filter_error():
+    error = Error("original error")
+    ys = error.filter(lambda x: x > 10, "error")
+
+    assert ys == error
+
+def test_filter_piped():
+    assert Ok(42).pipe(result.filter(lambda x: x > 10, "error")) == Ok(42)
+
+
+def test_filter_with_ok_passing_predicate():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == xs
+
+
+def test_filter_with_ok_failing_predicate():
+    xs: Result[int, str] = Ok(5)
+    ys = xs.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == Error("error 5")
+
+
+def test_filter_with_error():
+    error = Error("original error")
+    ys = error.filter_with(lambda x: x > 10, lambda value: f"error {value}")
+
+    assert ys == error
+
+def test_filter_with_piped():
+    assert Ok(42).pipe(result.filter_with(lambda x: x > 10, lambda value: f"error {value}")) == Ok(42)
+
+
 class MyError(BaseModel):
     message: str
+
+
+PositiveInt = Annotated[int, Field(gt=0)]
+
+
+class Username(str):
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
 
 
 class Model(BaseModel):
     one: Result[int, MyError]
     two: Result[str, MyError] = Error(MyError(message="error"))
     three: Result[float, MyError] = Error(MyError(message="error"))
+    annotated_type: Result[PositiveInt, MyError] = Error(MyError(message="error"))
+    annotated_type_error: Result[PositiveInt, MyError] = Error(MyError(message="error"))
+
+    custom_type: Result[Username, MyError] = Error(MyError(message="error"))
+    custom_type_error: Result[Username, MyError] = Error(MyError(message="error"))
 
 
 def test_parse_block_works():
-    obj = dict(one=dict(ok=42))
+    obj = dict(one=dict(ok=42), annotated_type=dict(ok=42), custom_type=dict(ok="johndoe"))
     model = Model.model_validate(obj)
 
     assert isinstance(model.one, Result)
     assert model.one == Ok(42)
     assert model.two == Error(MyError(message="error"))
     assert model.three == Error(MyError(message="error"))
+    assert model.annotated_type == Ok(42)
+    assert model.annotated_type_error == Error(MyError(message="error"))
+    assert model.custom_type == Ok(Username("johndoe"))
+    assert model.custom_type_error == Error(MyError(message="error"))
 
 
 def test_ok_to_dict_works():
@@ -422,11 +498,13 @@ def test_error_from_dict_works():
 
 
 def test_model_to_json_works():
-    model = Model(one=Ok(10))
+    obj = dict(one=dict(ok=10), annotated_type=dict(ok=10), custom_type=dict(ok="johndoe"))
+
+    model = Model.model_validate(obj)
     obj = model.model_dump_json()
     assert (
         obj
-        == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}}}'
+        == '{"one":{"tag":"ok","ok":10},"two":{"tag":"error","error":{"message":"error"}},"three":{"tag":"error","error":{"message":"error"}},"annotated_type":{"tag":"ok","ok":10},"annotated_type_error":{"tag":"error","error":{"message":"error"}},"custom_type":{"tag":"ok","ok":"johndoe"},"custom_type_error":{"tag":"error","error":{"message":"error"}}}'
     )
 
 
@@ -502,3 +580,92 @@ def test_result_swap_with_error():
     error: Result[str, int] = Error(1)
     xs = result.swap(error)
     assert xs == Ok(1)
+
+def test_swap_piped():
+    assert Ok(42).pipe(result.swap) == Error(42)
+
+def test_ok_or_else_ok():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.or_else(Ok(0))
+    assert ys == Ok(42)
+
+
+def test_ok_or_else_error():
+    xs: Result[int, str] = Ok(42)
+    ys = xs.or_else(Error("new error"))
+    assert ys == Ok(42)
+
+
+def test_error_or_else_ok():
+    xs: Result[int, str] = Error("original error")
+    ys = xs.or_else(Ok(0))
+    assert ys == Ok(0)
+
+
+def test_error_or_else_error():
+    xs: Result[int, str] = Error("original error")
+    ys = xs.or_else(Error("new error"))
+    assert ys == Error("new error")
+
+def test_or_else_piped():
+    assert Ok(42).pipe(result.or_else(Ok(0))) == Ok(42)
+
+def test_ok_or_else_with_ok():
+    xs: Result[str, str] = Ok("good")
+    ys = xs.or_else_with(lambda error: Ok(f"new error from {error}"))
+    assert ys == Ok("good")
+
+
+def test_ok_or_else_with_error():
+    xs: Result[str, str] = Ok("good")
+    ys = xs.or_else_with(lambda error: Ok(f"new error from {error}"))
+    assert ys == Ok("good")
+
+
+def test_error_or_else_with_ok():
+    xs: Result[str, str] = Error("original error")
+    ys = xs.or_else_with(lambda error: Ok(f"fixed {error}"))
+    assert ys == Ok("fixed original error")
+
+
+def test_error_or_else_with_error():
+    xs: Result[str, str] = Error("original error")
+    ys = xs.or_else_with(lambda error: Error(f"new error from {error}"))
+    assert ys == Error("new error from original error")
+
+
+def test_or_else_with_piped():
+    assert Ok(42).pipe(result.or_else_with(lambda _: Ok(0))) == Ok(42)
+
+
+def test_merge_ok():
+    assert Result.Ok(42).merge() == 42
+
+
+def test_merge_error():
+    # Explicit type annotation required as merge favours the _TSource type
+    xs: Result[str, str] = Error("error")
+    assert xs.merge() == "error"
+
+
+class Parent:
+    pass
+
+
+@dataclass
+class Child1(Parent):
+    x: int
+
+
+@dataclass
+class Child2(Parent):
+    pass
+
+
+def test_merge_subclasses():
+    xs: Result[Parent, Parent] = Result.Ok(Child1(x=42))
+    assert xs.merge() == Child1(x=42)
+
+
+def test_merge_piped():
+    assert Ok(42).pipe(result.merge) == 42

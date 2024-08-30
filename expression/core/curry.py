@@ -24,15 +24,13 @@ def _curry(args: tuple[Any, ...], arity: int, fun: Callable[..., Any]) -> Callab
 
 
 @overload
-def curry(num_args: Literal[0]) -> Callable[[Callable[_P, _B]], Callable[_P, _B]]:
-    ...
+def curry(num_args: Literal[0]) -> Callable[[Callable[_P, _B]], Callable[_P, _B]]: ...
 
 
 @overload
 def curry(
     num_args: Literal[1],
-) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[[_A], Callable[_P, _B]]]:
-    ...
+) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[[_A], Callable[_P, _B]]]: ...
 
 
 @overload
@@ -47,8 +45,7 @@ def curry(
             Callable[_P, _C],
         ],
     ],
-]:
-    ...
+]: ...
 
 
 @overload
@@ -66,8 +63,7 @@ def curry(
             ],
         ],
     ],
-]:
-    ...
+]: ...
 
 
 @overload
@@ -85,8 +81,7 @@ def curry(
             ],
         ],
     ],
-]:
-    ...
+]: ...
 
 
 def curry(num_args: _Arity) -> Callable[..., Any]:
@@ -115,15 +110,13 @@ def curry(num_args: _Arity) -> Callable[..., Any]:
 @overload
 def curry_flip(
     num_args: Literal[0],
-) -> Callable[[Callable[_P, _A]], Callable[_P, _A]]:
-    ...
+) -> Callable[[Callable[_P, _A]], Callable[_P, _A]]: ...
 
 
 @overload
 def curry_flip(
     num_args: Literal[1],
-) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[_P, Callable[[_A], _B]]]:
-    ...
+) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[_P, Callable[[_A], _B]]]: ...
 
 
 @overload
@@ -138,8 +131,7 @@ def curry_flip(
             Callable[[_B], _C],
         ],
     ],
-]:
-    ...
+]: ...
 
 
 @overload
@@ -157,8 +149,7 @@ def curry_flip(
             ],
         ],
     ],
-]:
-    ...
+]: ...
 
 
 @overload
@@ -176,8 +167,7 @@ def curry_flip(
             ],
         ],
     ],
-]:
-    ...
+]: ...
 
 
 def curry_flip(

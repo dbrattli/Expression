@@ -5,9 +5,10 @@ can be composed. The Result type is typically used in monadic
 error-handling, which is often referred to as Railway-oriented
 Programming.
 
-There is also a simplifyed alias of this type called `Try` that pins
+There is also a simplified alias of this type called `Try` that pins
 the Result type to Exception.
 """
+
 from __future__ import annotations
 
 import builtins
@@ -143,19 +144,43 @@ class Result(
 
     def is_error(self) -> bool:
         """Returns `True` if the result is an `Error` value."""
-        match self:
-            case Result(tag="ok"):
-                return False
-            case _:
-                return True
+        return self.tag == "error"
 
     def is_ok(self) -> bool:
         """Return `True` if the result is an `Ok` value."""
+        return self.tag == "ok"
+
+    def filter(self, predicate: Callable[[_TSource], bool], default: _TError) -> Result[_TSource, _TError]:
+        """Filter result.
+
+        Returns the input if the predicate evaluates to true, otherwise
+        returns the `default`
+        """
         match self:
-            case Result(tag="ok"):
-                return True
+            case Result(tag="ok", ok=value) if predicate(value):
+                return self
+            case Result(tag="error"):
+                return self
             case _:
-                return False
+                return Error(default)
+
+    def filter_with(
+        self,
+        predicate: Callable[[_TSource], bool],
+        default: Callable[[_TSource], _TError],
+    ) -> Result[_TSource, _TError]:
+        """Filter result.
+
+        Returns the input if the predicate evaluates to true, otherwise
+        returns the `default` using the value as input
+        """
+        match self:
+            case Result(tag="ok", ok=value) if predicate(value):
+                return self
+            case Result(tag="ok", ok=value):
+                return Error(default(value))
+            case Result():
+                return self
 
     def dict(self) -> builtins.dict[str, _TSource | _TError | Literal["ok", "error"]]:
         """Return a json serializable representation of the result."""
@@ -178,6 +203,21 @@ class Result(
                 return Result(error=value)
             case Result(error=error):
                 return Result(ok=error)
+
+    def or_else(self, other: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+        """Return the result if it is Ok, otherwise return the other result."""
+        return self if self.is_ok() else other
+
+    def or_else_with(self, other: Callable[[_TError], Result[_TSource, _TError]]) -> Result[_TSource, _TError]:
+        """Return the result if it is Ok, otherwise return the result of the other function."""
+        return self if self.is_ok() else other(self.error)
+
+    def merge(self: Result[_TSource, _TSource]) -> _TSource:
+        """Merge the ok and error values into a single value.
+
+        This method is only available on Results where _TSource and _TError are the same type.
+        """
+        return self.default_with(lambda x: x)
 
     def to_option(self) -> Option[_TSource]:
         """Convert result to an option."""
@@ -345,6 +385,11 @@ def map2(
 
 
 @curry_flip(1)
+def map_error(result: Result[_TSource, _TError], mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
+    return result.map_error(mapper)
+
+
+@curry_flip(1)
 def bind(
     result: Result[_TSource, _TError],
     mapper: Callable[[_TSource], Result[_TResult, Any]],
@@ -366,9 +411,44 @@ def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Result[_TSource, _T
     return result.is_error()
 
 
+@curry_flip(1)
+def filter(
+    result: Result[_TSource, _TError],
+    predicate: Callable[[_TSource], bool],
+    default: _TError,
+) -> Result[_TSource, _TError]:
+    return result.filter(predicate, default)
+
+
+@curry_flip(1)
+def filter_with(
+    result: Result[_TSource, _TError],
+    predicate: Callable[[_TSource], bool],
+    default: Callable[[_TSource], _TError],
+) -> Result[_TSource, _TError]:
+    return result.filter_with(predicate, default)
+
+
 def swap(result: Result[_TSource, _TError]) -> Result[_TError, _TSource]:
     """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
     return result.swap()
+
+
+@curry_flip(1)
+def or_else(result: Result[_TSource, _TError], other: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    return result.or_else(other)
+
+
+@curry_flip(1)
+def or_else_with(
+    result: Result[_TSource, _TError],
+    other: Callable[[_TError], Result[_TSource, _TError]],
+) -> Result[_TSource, _TError]:
+    return result.or_else_with(other)
+
+
+def merge(result: Result[_TSource, _TSource]) -> _TSource:
+    return result.merge()
 
 
 def to_option(result: Result[_TSource, Any]) -> Option[_TSource]:
@@ -398,9 +478,17 @@ __all__ = [
     "map",
     "bind",
     "dict",
+    "filter",
+    "filter_with",
     "is_ok",
     "is_error",
+    "map2",
+    "map_error",
+    "merge",
     "to_option",
     "of_option",
     "of_option_with",
+    "or_else",
+    "or_else_with",
+    "swap",
 ]
