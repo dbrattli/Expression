@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from expression.core.result import Result
 
 
+_TSourceOut = TypeVar("_TSourceOut", covariant=True)
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
@@ -40,7 +41,7 @@ _P = TypeVarTuple("_P")
 
 @tagged_union(frozen=True, order=True)
 class Option(
-    Iterable[_TSource],
+    Iterable[_TSourceOut],
     PipeMixin,
 ):
     """Option class."""
@@ -48,7 +49,7 @@ class Option(
     tag: Literal["some", "none"] = tag()
 
     none: None = case()
-    some: _TSource = case()
+    some: _TSourceOut = case()
 
     @staticmethod
     def Some(value: _TResult) -> Option[_TResult]:
@@ -56,11 +57,11 @@ class Option(
         return Option(some=value)
 
     @staticmethod
-    def Nothing() -> Option[_TSource]:
+    def Nothing() -> Option[_TSourceOut]:
         """Create a None option."""
         return Option(none=None)
 
-    def default_value(self, value: _TSource) -> _TSource:
+    def default_value(self, value: _TSource) -> _TSourceOut | _TSource:
         """Get with default value.
 
         Gets the value of the option if the option is Some, otherwise
@@ -72,7 +73,7 @@ class Option(
             case _:
                 return value
 
-    def default_with(self, getter: Callable[[], _TSource]) -> _TSource:
+    def default_with(self, getter: Callable[[], _TSource]) -> _TSourceOut | _TSource:
         """Get with default value lazily.
 
         Gets the value of the option if the option is Some, otherwise
@@ -84,7 +85,7 @@ class Option(
             case _:
                 return getter()
 
-    def map(self, mapper: Callable[[_TSource], _TResult]) -> Option[_TResult]:
+    def map(self, mapper: Callable[[_TSourceOut], _TResult]) -> Option[_TResult]:
         """Map option.
 
         Applies the mapper to the value if the option is Some, otherwise
@@ -96,7 +97,7 @@ class Option(
             case _:
                 return Nothing
 
-    def map2(self, mapper: Callable[[_TSource, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
+    def map2(self, mapper: Callable[[_TSourceOut, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
         """Map2 option.
 
         Applies the mapper to the values if both options are Some,
@@ -121,7 +122,7 @@ class Option(
             case _:
                 return Nothing
 
-    def bind(self, mapper: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
+    def bind(self, mapper: Callable[[_TSourceOut], Option[_TResult]]) -> Option[_TResult]:
         """Bind option.
 
         Applies and returns the result of the mapper if the value is
@@ -141,7 +142,7 @@ class Option(
             case _:
                 return Nothing
 
-    def or_else(self, if_none: Option[_TSource]) -> Option[_TSource]:
+    def or_else(self, if_none: Option[_TSourceOut]) -> Option[_TSourceOut]:
         """Returns option if it is Some, otherwise returns `if_one`."""
         match self:
             case Option(tag="some"):
@@ -149,7 +150,7 @@ class Option(
             case _:
                 return if_none
 
-    def or_else_with(self, if_none: Callable[[], Option[_TSource]]) -> Option[_TSource]:
+    def or_else_with(self, if_none: Callable[[], Option[_TSourceOut]]) -> Option[_TSourceOut]:
         """Or-else-with.
 
         Returns option if it is Some,
@@ -161,7 +162,7 @@ class Option(
             case _:
                 return if_none()
 
-    def filter(self, predicate: Callable[[_TSource], bool]) -> Option[_TSource]:
+    def filter(self, predicate: Callable[[_TSourceOut], bool]) -> Option[_TSourceOut]:
         """Filter option.
 
         Returns the input if the predicate evaluates to true, otherwise
@@ -173,7 +174,7 @@ class Option(
             case _:
                 return Nothing
 
-    def to_list(self) -> list[_TSource]:
+    def to_list(self) -> list[_TSourceOut]:
         """Convert option to list."""
         match self:
             case Option(tag="some", some=some):
@@ -181,14 +182,14 @@ class Option(
             case _:
                 return []
 
-    def to_seq(self) -> Seq[_TSource]:
+    def to_seq(self) -> Seq[_TSourceOut]:
         """Convert option to sequence."""
         # deferred import to avoid circular dependencies
         from expression.collections.seq import Seq
 
         match self:
             case Option(tag="some", some=some):
-                return Seq[_TSource].of(some)
+                return Seq[_TSourceOut].of(some)
             case _:
                 return Seq()
 
@@ -208,22 +209,22 @@ class Option(
             case _:
                 return True
 
-    @classmethod
-    def of_obj(cls, value: _TSource) -> Option[_TSource]:
+    @staticmethod
+    def of_obj(value: _TSource) -> Option[_TSource]:
         """Convert object to an option."""
         return of_optional(value)
 
-    @classmethod
-    def of_optional(cls, value: _TSource | None) -> Option[_TSource]:
+    @staticmethod
+    def of_optional(value: _TSource | None) -> Option[_TSource]:
         """Convert optional value to an option."""
         return of_optional(value)
 
-    @classmethod
-    def of_result(cls, result: Result[_TSource, Any]) -> Option[_TSource]:
+    @staticmethod
+    def of_result(result: Result[_TSource, Any]) -> Option[_TSource]:
         """Convert result to an option."""
         return of_result(result)
 
-    def to_optional(self) -> _TSource | None:
+    def to_optional(self) -> _TSourceOut | None:
         """Convert option to an optional."""
         match self:
             case Option(tag="some", some=some):
@@ -231,27 +232,27 @@ class Option(
             case _:
                 return None
 
-    def to_result(self, error: _TError) -> Result[_TSource, _TError]:
+    def to_result(self, error: _TError) -> Result[_TSourceOut, _TError]:
         """Convert option to a result."""
         from expression.core.result import Result
 
         match self:
             case Option(tag="some", some=some):
-                return Result[_TSource, _TError].Ok(some)
+                return Result(ok=some)
             case _:
-                return Result[_TSource, _TError].Error(error)
+                return Result(error=error)
 
-    def to_result_with(self, error: Callable[[], _TError]) -> Result[_TSource, _TError]:
+    def to_result_with(self, error: Callable[[], _TError]) -> Result[_TSourceOut, _TError]:
         """Convert option to a result."""
         from expression.core.result import Result
 
         match self:
             case Option(tag="some", some=some):
-                return Result[_TSource, _TError].Ok(some)
+                return Result(ok=some)
             case _:
-                return Result[_TSource, _TError].Error(error())
+                return Result(error=error())
 
-    def dict(self) -> _TSource | None:
+    def dict(self) -> _TSourceOut | None:
         """Returns a json string representation of the option."""
         match self:
             case Option(tag="some", some=value):
@@ -264,7 +265,7 @@ class Option(
                 return None
 
     @property
-    def value(self) -> _TSource:
+    def value(self) -> _TSourceOut:
         """Returns the value wrapped by the option.
 
         A `ValueError` is raised if the option is `Nothing`.
@@ -278,7 +279,7 @@ class Option(
     def __eq__(self, o: Any) -> bool:
         return isinstance(o, Option) and self.tag == o.tag and getattr(self, self.tag) == getattr(o, self.tag)  # type: ignore
 
-    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
+    def __iter__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
         match self:
             case Option(tag="some", some=value):
                 return (yield value)
@@ -366,9 +367,9 @@ Since Nothing is a singleton it can be tested e.g using `is`:
 """
 
 
-def Some(value: _TSource) -> Option[_TSource]:
+def Some(value: _T1) -> Option[_T1]:
     """Create a Some option."""
-    return Option[_TSource].Some(value)
+    return Option[_T1].Some(value)
 
 
 @curry_flip(1)
@@ -392,7 +393,7 @@ def bind(option: Option[_TSource], mapper: Callable[[_TSource], Option[_TResult]
 
 
 @curry_flip(1)
-def default_value(option: Option[_TSource], value: _TSource) -> _TSource:
+def default_value(option: Option[_TSource], value: _T1) -> _TSource | _T1:
     """Get value or default value.
 
     Gets the value of the option if the option is Some, otherwise
@@ -516,7 +517,7 @@ def model_dump(value: Option[_TSource]) -> _TSource | builtins.dict[Any, Any] | 
     return value.dict()
 
 
-def default_arg(value: Option[_TSource], default_value: _TSource) -> _TSource:
+def default_arg(value: Option[_TSource], default_value: _T1) -> _TSource | _T1:
     """Specify default argument.
 
     Used to specify a default value for an optional argument in the

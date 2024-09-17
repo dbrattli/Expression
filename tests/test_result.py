@@ -669,3 +669,17 @@ def test_merge_subclasses():
 
 def test_merge_piped():
     assert Ok(42).pipe(result.merge) == 42
+
+class A:
+    pass
+
+
+class B(A):
+    pass
+
+
+def test_result_covariance() -> None:
+    x: Result[B, str] = Ok(B())
+    y: Result[A, str] = x
+
+    assert y.is_ok()

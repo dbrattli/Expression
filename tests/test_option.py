@@ -132,7 +132,7 @@ def test_option_order_none_none_works():
 
 
 def test_option_none_default_value():
-    xs = Nothing
+    xs: Option[int] = Nothing
 
     zs = xs.default_value(42)
 
@@ -652,6 +652,20 @@ def test_serialize_option_works():
     assert model_.three == Nothing
 
 
+class A:
+    pass
+
+
+class B(A):
+    pass
+
+
+def test_option_covariance() -> None:
+    x: Option[B] = Some(B())
+    y: Option[A] = x
+
+    assert y.is_some()
+
 def test_pickle_option_works():
     import pickle
 
@@ -663,6 +677,3 @@ def test_pickle_option_works():
     load_y = pickle.loads(dump_y)
     assert x == load_x
     assert y == load_y
-
-
-#
