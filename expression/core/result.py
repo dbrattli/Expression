@@ -38,6 +38,7 @@ from .tagged_union import case, tag, tagged_union
 
 
 _TSource = TypeVar("_TSource")
+_TSourceOut = TypeVar("_TSourceOut", covariant=True)
 _TOther = TypeVar("_TOther")
 _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
@@ -45,15 +46,15 @@ _TError = TypeVar("_TError")
 
 @tagged_union(frozen=True, order=True)
 class Result(
-    Iterable[_TSource],
+    Iterable[_TSourceOut],
     PipeMixin,
-    Generic[_TSource, _TError],
+    Generic[_TSourceOut, _TError],
 ):
     """The result class."""
 
     tag: Literal["ok", "error"] = tag()
 
-    ok: _TSource = case()
+    ok: _TSourceOut = case()
     error: _TError = case()
 
     @staticmethod
@@ -62,23 +63,23 @@ class Result(
         return Result(tag="ok", ok=value)
 
     @staticmethod
-    def Error(error: _TError) -> Result[_TSource, _TError]:
+    def Error(error: _TError) -> Result[_TSourceOut, _TError]:
         """Create a new Error result."""
         return Result(tag="error", error=error)
 
-    def default_value(self, value: _TSource) -> _TSource:
+    def default_value(self, value: _TSource) -> _TSourceOut | _TSource:
         """Get with default value.
 
         Gets the value of the result if the result is Ok, otherwise
         returns the specified default value.
         """
         match self:
-            case Result(tag="ok", ok=value):
-                return value
+            case Result(tag="ok", ok=ok):
+                return ok
             case _:
                 return value
 
-    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource:
+    def default_with(self, getter: Callable[[_TError], _TSource]) -> _TSource | _TSourceOut:
         """Get with default value lazily.
 
         Gets the value of the result if the result is Ok, otherwise
@@ -90,7 +91,7 @@ class Result(
             case Result(error=error):
                 return getter(error)
 
-    def map(self, mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
+    def map(self, mapper: Callable[[_TSourceOut], _TResult]) -> Result[_TResult, _TError]:
         """Map result.
 
         Return a result of the value after applying the mapping
@@ -105,7 +106,7 @@ class Result(
     def map2(
         self,
         other: Result[_TOther, _TError],
-        mapper: Callable[[_TSource, _TOther], _TResult],
+        mapper: Callable[[_TSourceOut, _TOther], _TResult],
     ) -> Result[_TResult, _TError]:
         """Map result.
 
@@ -118,7 +119,7 @@ class Result(
             case Result(error=error):
                 return Result(error=error)
 
-    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
+    def map_error(self, mapper: Callable[[_TError], _TResult]) -> Result[_TSourceOut, _TResult]:
         """Map error.
 
         Return a result of the error value after applying the mapping
@@ -126,11 +127,11 @@ class Result(
         """
         match self:
             case Result(tag="ok", ok=value):
-                return Result[_TSource, _TResult].Ok(value)
+                return Result[_TSourceOut, _TResult].Ok(value)
             case Result(error=error):
-                return Result[_TSource, _TResult].Error(mapper(error))
+                return Result[_TSourceOut, _TResult].Error(mapper(error))
 
-    def bind(self, mapper: Callable[[_TSource], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
+    def bind(self, mapper: Callable[[_TSourceOut], Result[_TResult, _TError]]) -> Result[_TResult, _TError]:
         """Bind result.
 
         Return a result of the value after applying the mapping
@@ -150,7 +151,7 @@ class Result(
         """Return `True` if the result is an `Ok` value."""
         return self.tag == "ok"
 
-    def filter(self, predicate: Callable[[_TSource], bool], default: _TError) -> Result[_TSource, _TError]:
+    def filter(self, predicate: Callable[[_TSourceOut], bool], default: _TError) -> Result[_TSourceOut, _TError]:
         """Filter result.
 
         Returns the input if the predicate evaluates to true, otherwise
@@ -166,9 +167,9 @@ class Result(
 
     def filter_with(
         self,
-        predicate: Callable[[_TSource], bool],
-        default: Callable[[_TSource], _TError],
-    ) -> Result[_TSource, _TError]:
+        predicate: Callable[[_TSourceOut], bool],
+        default: Callable[[_TSourceOut], _TError],
+    ) -> Result[_TSourceOut, _TError]:
         """Filter result.
 
         Returns the input if the predicate evaluates to true, otherwise
@@ -182,7 +183,7 @@ class Result(
             case Result():
                 return self
 
-    def dict(self) -> builtins.dict[str, _TSource | _TError | Literal["ok", "error"]]:
+    def dict(self) -> builtins.dict[str, _TSourceOut | _TError | Literal["ok", "error"]]:
         """Return a json serializable representation of the result."""
         match self:
             case Result(tag="ok", ok=value):
@@ -196,7 +197,7 @@ class Result(
                     error = attr()
                 return {"tag": "error", "error": error}
 
-    def swap(self) -> Result[_TError, _TSource]:
+    def swap(self) -> Result[_TError, _TSourceOut]:
         """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
         match self:
             case Result(tag="ok", ok=value):
@@ -204,11 +205,11 @@ class Result(
             case Result(error=error):
                 return Result(ok=error)
 
-    def or_else(self, other: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    def or_else(self, other: Result[_TSourceOut, _TError]) -> Result[_TSourceOut, _TError]:
         """Return the result if it is Ok, otherwise return the other result."""
         return self if self.is_ok() else other
 
-    def or_else_with(self, other: Callable[[_TError], Result[_TSource, _TError]]) -> Result[_TSource, _TError]:
+    def or_else_with(self, other: Callable[[_TError], Result[_TSourceOut, _TError]]) -> Result[_TSourceOut, _TError]:
         """Return the result if it is Ok, otherwise return the result of the other function."""
         return self if self.is_ok() else other(self.error)
 
@@ -219,7 +220,7 @@ class Result(
         """
         return self.default_with(lambda x: x)
 
-    def to_option(self) -> Option[_TSource]:
+    def to_option(self) -> Option[_TSourceOut]:
         """Convert result to an option."""
         match self:
             case Result(tag="ok", ok=value):
@@ -241,7 +242,7 @@ class Result(
         """Convert option to a result."""
         return of_option_with(value, error)
 
-    def __iter__(self) -> Generator[_TSource, _TSource, _TSource]:
+    def __iter__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
         match self:
             case Result(tag="ok", ok=value):
                 return (yield value)
@@ -273,13 +274,13 @@ class Result(
         ok_schema = handler.generate_schema(type_vars[0])
         error_schema = handler.generate_schema(type_vars[1])
 
-        def validate_ok(v: Any, handler: ValidatorFunctionWrapHandler) -> Result[_TSource, _TError]:
+        def validate_ok(v: Any, handler: ValidatorFunctionWrapHandler) -> Result[_TSourceOut, _TError]:
             if "ok" not in v:
                 raise ValueError("Missing ok field")
             value = handler(v["ok"])
             return cls(ok=value)
 
-        def validate_error(v: Any, handler: ValidatorFunctionWrapHandler) -> Result[_TSource, _TError]:
+        def validate_error(v: Any, handler: ValidatorFunctionWrapHandler) -> Result[_TSourceOut, _TError]:
             if "error" not in v:
                 raise ValueError("Missing error field")
 

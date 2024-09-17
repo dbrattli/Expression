@@ -9,7 +9,7 @@
 > Pragmatic functional programming
 
 Expression aims to be a solid, type-safe, pragmatic, and high performance
-library for frictionless and practical functional programming in Python 3.11+.
+library for frictionless and practical functional programming in Python 3.10+.
 
 By pragmatic, we mean that the goal of the library is to use simple abstractions
 to enable you to do practical and productive functional programming in Python
@@ -57,7 +57,7 @@ similar to Python, but F# can also do a lot of things better than Python:
 ## Getting Started
 
 You can install the latest `expression` from PyPI by running `pip` (or
-`pip3`). Note that `expression` only works for Python 3.11+.
+`pip3`). Note that `expression` only works for Python 3.10+.
 
 ```console
 > pip install expression
@@ -88,7 +88,7 @@ To add Pydantic v2 support, install the `pydantic` extra:
   functions and methods.
 - Support PEP 634 and structural pattern matching.
 - Code must pass strict static type checking by
-  [pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
+  [Pylance](https://devblogs.microsoft.com/python/announcing-pylance-fast-feature-rich-language-support-for-python-in-visual-studio-code/).
   Pylance is awesome, use it!
 - [Pydantic](https://pydantic-docs.helpmanual.io/) friendly data types. Use Expression
   types as part of your Pydantic data model and (de)serialize to/from JSON.
@@ -324,7 +324,6 @@ In functional programming, we sometimes want to combine two Option values into a
 The map2 function allows us to achieve this behavior. It takes two Option values and a function as arguments. The function is applied only if both Options are Some, and the result becomes the new Some value. Otherwise, map2 returns None.
 
 This approach ensures that our combined value reflects the presence or absence of data in the original Options.
-
 
 ```python
 from expression import Some, Nothing, Option

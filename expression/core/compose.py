@@ -17,7 +17,6 @@ _T = TypeVar("_T")
 _J = TypeVar("_J")
 
 _P = TypeVarTuple("_P")
-_Q = TypeVarTuple("_Q")
 _X = TypeVarTuple("_X")
 _Y = TypeVarTuple("_Y")
 _Z = TypeVarTuple("_Z")
@@ -41,70 +40,76 @@ def compose(__fn1: Callable[[_A], _B], __fn2: Callable[[_B], _C], __fn3: Callabl
 
 @overload
 def compose(
-    __fn1: Callable[[_A], _B],
-    __fn2: Callable[[_B], _C],
-    __fn3: Callable[[_C], _D],
-    __fn4: Callable[[_D], _E],
+    fn1: Callable[[_A], _B],
+    fn2: Callable[[_B], _C],
+    fn3: Callable[[_C], _D],
+    fn4: Callable[[_D], _E],
+    /,
 ) -> Callable[[_A], _E]: ...
 
 
 @overload
 def compose(
-    __fn1: Callable[[_A], _B],
-    __fn2: Callable[[_B], _C],
-    __fn3: Callable[[_C], _D],
-    __fn4: Callable[[_D], _E],
-    __fn5: Callable[[_E], _F],
+    fn1: Callable[[_A], _B],
+    fn2: Callable[[_B], _C],
+    fn3: Callable[[_C], _D],
+    fn4: Callable[[_D], _E],
+    fn5: Callable[[_E], _F],
+    /,
 ) -> Callable[[_A], _F]: ...
 
 
 @overload
 def compose(
-    __fn1: Callable[[_A], _B],
-    __fn2: Callable[[_B], _C],
-    __fn3: Callable[[_C], _D],
-    __fn4: Callable[[_D], _E],
-    __fn5: Callable[[_E], _F],
-    __fn6: Callable[[_F], _G],
+    fn1: Callable[[_A], _B],
+    fn2: Callable[[_B], _C],
+    fn3: Callable[[_C], _D],
+    fn4: Callable[[_D], _E],
+    fn5: Callable[[_E], _F],
+    fn6: Callable[[_F], _G],
+    /,
 ) -> Callable[[_A], _G]: ...
 
 
 @overload
 def compose(
-    __fn1: Callable[[_A], _B],
-    __fn2: Callable[[_B], _C],
-    __fn3: Callable[[_C], _D],
-    __fn4: Callable[[_D], _E],
-    __fn5: Callable[[_E], _F],
-    __fn6: Callable[[_F], _G],
-    __fn7: Callable[[_G], _H],
+    fn1: Callable[[_A], _B],
+    fn2: Callable[[_B], _C],
+    fn3: Callable[[_C], _D],
+    fn4: Callable[[_D], _E],
+    fn5: Callable[[_E], _F],
+    fn6: Callable[[_F], _G],
+    fn7: Callable[[_G], _H],
+    /,
 ) -> Callable[[_A], _H]: ...
 
 
 @overload
 def compose(
-    __fn1: Callable[[_A], _B],
-    __fn2: Callable[[_B], _C],
-    __fn3: Callable[[_C], _D],
-    __fn4: Callable[[_D], _E],
-    __fn5: Callable[[_E], _F],
-    __fn6: Callable[[_F], _G],
-    __fn7: Callable[[_G], _H],
-    __fn8: Callable[[_H], _T],
+    fn1: Callable[[_A], _B],
+    fn2: Callable[[_B], _C],
+    fn3: Callable[[_C], _D],
+    fn4: Callable[[_D], _E],
+    fn5: Callable[[_E], _F],
+    fn6: Callable[[_F], _G],
+    fn7: Callable[[_G], _H],
+    fn8: Callable[[_H], _T],
+    /,
 ) -> Callable[[_A], _T]: ...
 
 
 @overload
 def compose(
-    __fn1: Callable[[_A], _B],
-    __fn2: Callable[[_B], _C],
-    __fn3: Callable[[_C], _D],
-    __fn4: Callable[[_D], _E],
-    __fn5: Callable[[_E], _F],
-    __fn6: Callable[[_F], _G],
-    __fn7: Callable[[_G], _H],
-    __fn8: Callable[[_H], _T],
-    __fn9: Callable[[_T], _J],
+    fn1: Callable[[_A], _B],
+    fn2: Callable[[_B], _C],
+    fn3: Callable[[_C], _D],
+    fn4: Callable[[_D], _E],
+    fn5: Callable[[_E], _F],
+    fn6: Callable[[_F], _G],
+    fn7: Callable[[_G], _H],
+    fn8: Callable[[_H], _T],
+    fn9: Callable[[_T], _J],
+    /,
 ) -> Callable[[_A], _J]: ...
 
 
@@ -141,29 +146,31 @@ def starcompose() -> Callable[[Any], Any]: ...
 
 
 @overload
-def starcompose(__fn1: Callable[[Unpack[_P]], _A]) -> Callable[[Unpack[_P]], _A]: ...
+def starcompose(fn1: Callable[[Unpack[_P]], _A], /) -> Callable[[Unpack[_P]], _A]: ...
 
 
 @overload
 def starcompose(
-    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]], __fn2: Callable[[Unpack[_Y]], _B]
+    fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]], fn2: Callable[[Unpack[_Y]], _B], /
 ) -> Callable[[Unpack[_P]], _B]: ...
 
 
 @overload
 def starcompose(
-    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
-    __fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
-    __fn3: Callable[[Unpack[_Z]], _C],
+    fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
+    fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    fn3: Callable[[Unpack[_Z]], _C],
+    /,
 ) -> Callable[[Unpack[_P]], _C]: ...
 
 
 @overload
 def starcompose(
-    __fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
-    __fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
-    __fn3: Callable[[Unpack[_Z]], tuple[Unpack[_X]]],
-    __fn4: Callable[[Unpack[_X]], _D],
+    fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
+    fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    fn3: Callable[[Unpack[_Z]], tuple[Unpack[_X]]],
+    fn4: Callable[[Unpack[_X]], _D],
+    /,
 ) -> Callable[[Unpack[_P]], _D]: ...
 
 
