@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "Expression"
 version = "0.0.0" # NOTE: will be updated by publish script
-description = "Practical functional programming for Python 3.11+"
+description = "Practical functional programming for Python 3.10+"
 readme = "README.md"
 authors = ["Dag Brattli <dag.brattli@cognite.com>"]
 license = "MIT License"
@@ -27,14 +27,14 @@ typing-extensions = ">=4.6.0"
 pydantic = {version = "^2.6.2", optional = true}
 
 [tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^0.21.0"
-pytest = "^7.2.0"
+pytest-asyncio = "^0.24.0"
+pytest = "^8.3.3"
 coverage = "^6.4.3"
 coveralls = "^3.3.1"
 pre-commit = "^3.6.2"
 dunamai = "^1.12.0"
 hypothesis = "^6.54.2"
-ruff = "0.5.6"
+ruff = "^0.6.7"
 
 
 [tool.poetry.extras]

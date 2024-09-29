@@ -1,7 +1,7 @@
 # Welcome to Expression
 
 Expression aims to be a solid, type-safe, pragmatic, and high performance
-library for frictionless and practical functional programming in Python 3.11+.
+library for frictionless and practical functional programming in Python 3.10+.
 
 By pragmatic, we mean that the goal of the library is to use simple abstractions
 to enable you to do practical and productive functional programming in Python
