@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Generator, Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, get_args, get_origin
 
 from typing_extensions import TypeVarTuple, Unpack
 
@@ -258,7 +258,7 @@ class Option(
             case Option(tag="some", some=value):
                 attr = getattr(value, "model_dump", None) or getattr(value, "dict", None)
                 if attr and callable(attr):
-                    value = attr()
+                    value = cast(_TSourceOut, attr())
 
                 return value
             case _:
