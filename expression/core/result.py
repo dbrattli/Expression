@@ -20,6 +20,7 @@ from typing import (
     Literal,
     TypeGuard,
     TypeVar,
+    cast,
     get_args,
     get_origin,
 )
@@ -189,12 +190,12 @@ class Result(
             case Result(tag="ok", ok=value):
                 attr = getattr(value, "model_dump", None) or getattr(value, "dict", None)
                 if attr and callable(attr):
-                    value = attr()
+                    value = cast(_TSourceOut, attr())
                 return {"tag": "ok", "ok": value}
             case Result(error=error):
                 attr = getattr(error, "model_dump", None) or getattr(error, "dict", None)
                 if attr and callable(attr):
-                    error = attr()
+                    error = cast(_TError, attr())
                 return {"tag": "error", "error": error}
 
     def swap(self) -> Result[_TError, _TSourceOut]:
