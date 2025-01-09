@@ -110,6 +110,19 @@ class Seq(Iterable[_TSource], PipeMixin):
         return Seq(xs)
 
     def collect(self, mapping: Callable[[_TSource], Seq[_TResult]]) -> Seq[_TResult]:
+        """Collect items from the sequence.
+
+        Applies the given function to each element of the list and
+        concatenates all the resulting sequences. This function is known
+        as `bind` or `flat_map` in other languages.
+
+        Args:
+            mapping: The function to generate sequences from the elements.
+
+        Returns:
+            A sequence comprising the concatenated values from the mapping
+            function.
+        """
         xs = pipe(self, collect(mapping))
         return Seq(xs)
 
@@ -429,6 +442,21 @@ def collect(
     source: Iterable[_TSource],
     mapping: Callable[[_TSource], Iterable[_TResult]],
 ) -> Iterable[_TResult]:
+    """Collect items from the sequence.
+
+    Applies the given function to each element of the list and
+    concatenates all the resulting sequences. This function is known as
+    `bind` or `flat_map` in other languages.
+
+    Args:
+        source: The input sequence to to collect from.
+        mapping: The function to generate sequences from the elements.
+
+    Returns:
+        A sequence comprising the concatenated values from the mapping
+        function.
+    """
+
     def gen() -> Iterator[_TResult]:
         for xs in source:
             yield from mapping(xs)
