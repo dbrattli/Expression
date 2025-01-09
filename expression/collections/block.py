@@ -113,6 +113,19 @@ class Block(
         return self.collect(mapper)
 
     def collect(self, mapping: Callable[[_TSource], Block[_TResult]]) -> Block[_TResult]:
+        """Collect items from the list.
+
+        Applies the given function to each element of the list and concatenates all the
+        resulting sequences. This function is known as `bind` or `flat_map` in other
+        languages.
+
+        Args:
+            mapping: The function to generate sequences from the elements.
+
+        Returns:
+            A list comprising the concatenated values from the mapping
+            function.
+        """
         mapped = builtins.map(mapping, self._value)
         xs = (y for x in mapped for y in x)
         return Block(xs)
@@ -556,19 +569,19 @@ def choose(source: Block[_TSource], chooser: Callable[[_TSource], Option[_TResul
 
 @curry_flip(1)
 def collect(source: Block[_TSource], mapping: Callable[[_TSource], Block[_TResult]]) -> Block[_TResult]:
-    """Collect block.
+    """Collect items from the list.
 
-    For each element of the list, applies the given function.
-    Concatenates all the results and return the combined list.
+    Applies the given function to each element of the list and
+    concatenates all the resulting sequences. This function is known as
+    `bind` or `flat_map` in other languages.
 
     Args:
         source: The input list (curried flipped).
-        mapping: The function to transform each input element into
-        a sublist to be concatenated.
+        mapping: The function to generate sequences from the elements.
 
     Returns:
-        A partially applied collect function that takes the source
-        list and returns the concatenation of the transformed sublists.
+        A sequence comprising the concatenated values from the mapping
+        function.
     """
     return source.collect(mapping)
 

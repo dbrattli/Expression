@@ -42,7 +42,7 @@ class Builder(Generic[_TInner, _TOuter], ABC):
         return fn()
 
     def run(self, xs: _TOuter) -> _TOuter:
-        """Default implementation assumes the result is already evalutated."""
+        """Default implementation assumes the result is already evaluated."""
         return xs
 
     def _send(
