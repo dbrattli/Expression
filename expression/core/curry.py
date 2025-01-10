@@ -1,3 +1,4 @@
+import functools
 from collections.abc import Callable
 from typing import Any, Concatenate, Literal, TypeVar, overload
 
@@ -102,7 +103,7 @@ def curry(num_args: _Arity) -> Callable[..., Any]:
     """
 
     def wrapper(fun: Callable[..., Any]) -> Callable[..., Any]:
-        return _curry((), num_args + 1, fun)
+        return functools.wraps(fun)(_curry((), num_args + 1, fun))
 
     return wrapper
 
@@ -192,6 +193,7 @@ def curry_flip(
     """
 
     def _wrap_fun(fun: Callable[..., Any]) -> Callable[..., Any]:
+        @functools.wraps(fun)
         def _wrap_args(*args: Any, **kwargs: Any) -> Callable[..., Any]:
             def _wrap_curried(*curry_args: Any) -> Any:
                 return fun(*curry_args, *args, **kwargs)
