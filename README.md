@@ -319,9 +319,12 @@ assert xs is Nothing
 
 ### Option as an applicative
 
-In functional programming, we sometimes want to combine two Option values into a new Option. However, this combination should only happen if both Options are Some. If either Option is None, the resulting value should also be None.
+In functional programming, we sometimes want to combine two Option values into a new Option. However, this combination
+should only happen if both Options are Some. If either Option is None, the resulting value should also be None.
 
-The map2 function allows us to achieve this behavior. It takes two Option values and a function as arguments. The function is applied only if both Options are Some, and the result becomes the new Some value. Otherwise, map2 returns None.
+The map2 function allows us to achieve this behavior. It takes two Option values and a function as arguments. The
+function is applied only if both Options are Some, and the result becomes the new Some value. Otherwise, map2 returns
+None.
 
 This approach ensures that our combined value reflects the presence or absence of data in the original Options.
 
@@ -414,7 +417,7 @@ type union `(A | B)` are both types, while the cases in a tagged union type `U =
 are both constructors for the type U and are not types themselves. One consequence is
 that tagged unions can be nested in a way union types might not.
 
-In Expression you make a tagged union by defining your type similar to a dataclass and
+In Expression you make a tagged union by defining your type similar to a `dataclass` and
 decorate it with `@tagged_union` and add the appropriate generic types that this union
 represent for each case. Then you optionally define static or class-method constructors
 for creating each of the tagged union cases.
@@ -456,7 +459,7 @@ check correctly when pattern matching. The `tag` field if specified should be a 
 type with all the possible values for the tag. This is used by static type checkers to
 check exhaustiveness of pattern matching.
 
-Each case is given the `case()` field initializer. This is optioal, but recommended for
+Each case is given the `case()` field initializer. This is optional, but recommended for
 static type checkers to work correctly. It's not required for the code to work properly,
 
 Now you may pattern match the shape to get back the actual value:
