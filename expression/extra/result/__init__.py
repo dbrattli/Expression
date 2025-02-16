@@ -5,4 +5,4 @@ from .pipeline import pipeline
 from .traversable import sequence, traverse
 
 
-__all__ = ["catch", "sequence", "traverse", "pipeline"]
+__all__ = ["catch", "pipeline", "sequence", "traverse"]

@@ -93,11 +93,11 @@ def try_downcast(type_: type[_Derived], expr: Any) -> _Derived | None:
 
 
 __all__ = [
-    "downcast",
-    "upcast",
-    "try_downcast",
-    "SupportsLessThan",
-    "SupportsSum",
     "SupportsGreaterThan",
+    "SupportsLessThan",
     "SupportsMatch",
+    "SupportsSum",
+    "downcast",
+    "try_downcast",
+    "upcast",
 ]

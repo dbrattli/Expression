@@ -316,4 +316,4 @@ class PipeMixin:
         return pipe(self, *args)
 
 
-__all__ = ["pipe", "pipe2", "pipe3", "PipeMixin", "starpipe"]
+__all__ = ["PipeMixin", "pipe", "pipe2", "pipe3", "starpipe"]

@@ -48,4 +48,4 @@ def fst(value: tuple[_TSource, Any]) -> _TSource:
     return a
 
 
-__all__ = ["fst", "identity", "starid", "flip", "snd"]
+__all__ = ["flip", "fst", "identity", "snd", "starid"]
