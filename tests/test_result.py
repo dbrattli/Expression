@@ -683,3 +683,10 @@ def test_result_covariance() -> None:
     y: Result[A, str] = x
 
     assert y.is_ok()
+
+
+def test_result_covariance_error() -> None:
+    x: Result[str, B] = Error(B())
+    y: Result[str, A] = x
+
+    assert y.is_error()
