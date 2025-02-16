@@ -16,13 +16,13 @@ from .error import ObjectDisposedException, OperationCanceledError
 
 
 __all__ = [
-    "AsyncDisposable",
+    "AnonymousDisposable",
     "AsyncAnonymousDisposable",
     "AsyncCompositeDisposable",
+    "AsyncDisposable",
     "CancellationToken",
     "CancellationTokenSource",
     "Disposable",
-    "AnonymousDisposable",
     "ObjectDisposedException",
     "OperationCanceledError",
 ]

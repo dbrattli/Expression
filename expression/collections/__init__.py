@@ -8,13 +8,13 @@ from .seq import Seq
 
 
 __all__ = [
+    "Block",
+    "Map",
+    "Seq",
+    "TypedArray",
     "array",
     "asyncseq",
-    "Block",
     "block",
-    "Map",
     "map",
-    "Seq",
     "seq",
-    "TypedArray",
 ]

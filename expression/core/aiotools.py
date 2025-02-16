@@ -164,9 +164,9 @@ __all__ = [
     "Continuation",
     "empty",
     "from_continuations",
+    "run_synchronously",
     "singleton",
     "sleep",
     "start",
     "start_immediate",
-    "run_synchronously",
 ]

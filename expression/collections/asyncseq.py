@@ -99,8 +99,8 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource
 
 __all__ = [
     "AsyncSeq",
-    "range",
     "filter",
     "map",
+    "range",
     "repeat",
 ]

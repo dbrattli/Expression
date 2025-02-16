@@ -656,6 +656,7 @@ def unfold(state: _TState, generator: Callable[[_TState], Option[tuple[_TSource,
 
 
 __all__ = [
+    "TypedArray",
     "empty",
     "filter",
     "fold",
@@ -663,15 +664,14 @@ __all__ = [
     "is_empty",
     "item",
     "map",
+    "of",
     "of_option",
     "of_seq",
-    "of",
+    "singleton",
     "sum",
     "sum_by",
-    "singleton",
     "take",
     "take_last",
     "try_head",
-    "TypedArray",
     "unfold",
 ]

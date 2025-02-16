@@ -135,9 +135,9 @@ class AsyncCompositeDisposable(AsyncDisposable):
 
 
 __all__ = [
-    "Disposable",
     "AnonymousDisposable",
-    "AsyncDisposable",
     "AsyncAnonymousDisposable",
     "AsyncCompositeDisposable",
+    "AsyncDisposable",
+    "Disposable",
 ]
