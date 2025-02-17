@@ -1,7 +1,8 @@
 {
   "include": [
     "expression",
-    "tests"
+    "tests",
+    "README.py"
   ],
   "reportImportCycles": false,
   "reportMissingImports": false,

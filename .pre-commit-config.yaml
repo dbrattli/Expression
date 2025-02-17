@@ -1,5 +1,13 @@
 exclude: "_version.py|versioneer.py"
 repos:
+  - repo: local
+    hooks:
+      - id: prevent-readme-edits
+        name: Prevent direct README.md edits
+        entry: .pre-commit-hooks/prevent-readme-edits.sh
+        language: script
+        files: README\.md$
+
   - hooks:
       - id: ruff
         args: ["--fix"]

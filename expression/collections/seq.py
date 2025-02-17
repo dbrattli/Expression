@@ -73,9 +73,9 @@ class Seq(Iterable[_TSource], PipeMixin):
     def __init__(self, iterable: Iterable[_TSource] = ()) -> None:
         self._value = iterable
 
-    @classmethod
-    def of(cls, *args: _TSource) -> Seq[_TSource]:
-        return cls(args)
+    @staticmethod
+    def of(*args: _TResult) -> Seq[_TResult]:
+        return Seq(args)
 
     @classmethod
     def of_iterable(cls, source: Iterable[_TSource]) -> Seq[_TSource]:
