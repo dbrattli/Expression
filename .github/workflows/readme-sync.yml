@@ -2,8 +2,6 @@ name: README Sync
 
 on:
   push:
-    paths:
-      - 'README.md'
 
 jobs:
   sync-readme:
@@ -61,7 +59,7 @@ jobs:
         if: steps.check_changes.outputs.readme_only_change == 'true' && steps.check_changes.outputs.changes_detected == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
-          commit-message: "[auto] Sync README.md changes to README.py"
+          commit-message: "[auto] Sync README.md"
           title: "docs: Sync README changes"
           body: |
             This PR was automatically created because README.md was edited directly.
