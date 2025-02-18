@@ -17,7 +17,9 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -32,6 +34,18 @@ jobs:
       - name: Code checks
         run: |
           poetry run pre-commit run --all-files --show-diff-on-failure
+
+      - name: Check README modifications
+        run: |
+          # Get the list of changed files in the last commit
+          CHANGED_FILES=$(git diff --name-only HEAD^)
+          
+          # Check if README.md was modified but README.py wasn't
+          if echo "$CHANGED_FILES" | grep -q "README.md" && ! echo "$CHANGED_FILES" | grep -q "README.py"; then
+            echo "ERROR: README.md was modified directly"
+            echo "Please make all documentation updates in README.py instead"
+            exit 1
+          fi
 
       - name: Test with pytest
         run: |
