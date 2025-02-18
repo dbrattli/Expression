@@ -359,11 +359,10 @@ xs = fn3()
 
 # %% [markdown]
 """
-This enables ["railway oriented
-programming"](https://fsharpforfunandprofit.com/rop/), e.g., if one part of the
-function yields from `Nothing` then the function is side-tracked
-(short-circuit) and the following statements will never be executed. The end
-result of the expression will be `Nothing`. Thus results from such an option
+This enables ["railway oriented programming"](https://fsharpforfunandprofit.com/rop/),
+e.g., if one part of the function yields from `Nothing` then the function is
+side-tracked (short-circuit) and the following statements will never be executed. The
+end result of the expression will be `Nothing`. Thus results from such an option
 decorated function can either be `Ok(value)` or `Error(error_value)`.
 """
 
