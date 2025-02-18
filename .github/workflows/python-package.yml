@@ -39,7 +39,7 @@ jobs:
         run: |
           # Get the list of changed files in the last commit
           CHANGED_FILES=$(git diff --name-only HEAD^)
-          
+
           # Check if README.md was modified but README.py wasn't
           if echo "$CHANGED_FILES" | grep -q "README.md" && ! echo "$CHANGED_FILES" | grep -q "README.py"; then
             echo "ERROR: README.md was modified directly"

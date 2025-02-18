@@ -9,28 +9,28 @@ jobs:
   sync-readme:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[auto] Sync README.md') }}
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-      
+
       - name: Install dependencies
         run: |
           pipx install poetry
           poetry install --all-extras
-      
+
       - name: Check if README.md was modified directly
         id: check_changes
         run: |
           # Get the list of changed files in the last commit
           CHANGED_FILES=$(git diff --name-only HEAD^)
-          
+
           # Check if README.md was the only file changed
           if [[ $(echo "$CHANGED_FILES" | grep -v "README.md" | wc -l) -eq 0 ]]; then
             echo "readme_only_change=true" >> $GITHUB_OUTPUT
@@ -43,20 +43,20 @@ jobs:
         run: |
           # Save current README.md
           cp README.md README.md.orig
-          
+
           # Run make_readme.sh to get a clean README.md
           poetry run ./make_readme.sh
-          
+
           # Restore original README.md
           mv README.md.orig README.md
-          
+
           # Check if there are differences in README.py
           if ! git diff --quiet README.py; then
             echo "changes_detected=true" >> $GITHUB_OUTPUT
           else
             echo "changes_detected=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Create Pull Request
         if: steps.check_changes.outputs.readme_only_change == 'true' && steps.check_changes.outputs.changes_detected == 'true'
         uses: peter-evans/create-pull-request@v5
@@ -65,10 +65,10 @@ jobs:
           title: "docs: Sync README changes"
           body: |
             This PR was automatically created because README.md was edited directly.
-            
+
             In this project, we maintain README.md through README.py to ensure proper formatting and consistency.
             Please make future edits to README.py instead of README.md.
-            
+
             This PR updates README.py to match the changes made to README.md.
           branch: fix/readme-sync
           delete-branch: true

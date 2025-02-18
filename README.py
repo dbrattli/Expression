@@ -246,8 +246,8 @@ Expression can be used both with a fluent or functional syntax (or both.)
 
 #### Fluent syntax
 
-The fluent syntax uses methods and is very compact. But it might get you into
-trouble for large pipelines since it's not a natural way of adding line breaks.
+The fluent syntax uses methods and is very compact. But it might get you into trouble
+for large pipelines since it's not a natural way of adding line breaks.
 """
 
 # %%
@@ -259,15 +259,13 @@ ys = xs.map(lambda x: x * 100).filter(lambda x: x > 100).fold(lambda s, x: s + x
 
 # %% [markdown]
 """
-Note that fluent syntax is probably the better choice if you use mypy
-for type checking since mypy may have problems inferring types through
-larger pipelines.
+Note that fluent syntax is probably the better choice if you use mypy for type checking
+since mypy may have problems inferring types through larger pipelines.
 
 #### Functional syntax
 
-The functional syntax is a bit more verbose but you can easily add new
-operations on new lines. The functional syntax is great to use together
-with pylance/pyright.
+The functional syntax is a bit more verbose but you can easily add new operations on new
+lines. The functional syntax is great to use together with pylance/pyright.
 """
 
 # %%
@@ -289,12 +287,14 @@ ys = pipe(
 """
 Both fluent and functional syntax may be mixed and even pipe can be used
 fluently.
-
-```python
-from expression.collections import seq, Seq
-xs = Seq.of(1, 2, 3).pipe(seq.map(...))
-```
 """
+
+# %%
+from expression.collections import Seq, seq
+
+
+xs = Seq.of(1, 2, 3).pipe(seq.map(mapper))
+
 
 # %% [markdown]
 """
