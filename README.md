@@ -527,7 +527,7 @@ Note that when matching keyword arguments, then the `tag` keyword argument must 
 specified for static type checkers to check exhaustiveness correctly. It's not required
 for the code to work properly, but it's recommended to avoid typing errors.
 
-
+<!-- #region -->
 ## Notable differences between Expression and F\#
 
 In F# modules are capitalized, in Python they are lowercase
@@ -538,10 +538,14 @@ is `option` and the type is capitalized i.e `Option`.
 Thus in Expression you use `option` as the module to access module functions such as
 `option.map` and the name `Option` for the type itself.
 
-```pycon >>> from expression import Option, option >>> Option <class
-'expression.core.option.Option'> >>> option <module 'expression.core.option' from
-'/Users/dbrattli/Developer/Github/Expression/expression/core/option.py'> ```
-
+```python
+>>> from expression import Option, option
+>>> Option
+<class'expression.core.option.Option'>
+>>> option
+<module 'expression.core.option' from '/Users/dbrattli/Developer/Github/Expression/expression/core/option.py'>
+```
+<!-- #endregion -->
 
 ## Common Gotchas and Pitfalls
 
@@ -582,7 +586,7 @@ for creating this library.
 - Python is the Haskell You Never Knew You Had: Tail Call Optimization
   (<https://sagnibak.github.io/blog/python-is-haskell-tail-recursion/>)
 
-
+<!-- #region -->
 ## How-to Contribute
 
 You are very welcome to contribute with suggestions or PRs :heart_eyes: It is
@@ -599,10 +603,10 @@ Code checks are done using
 To run code checks on changed files every time you commit, install the pre-commit hooks
 by running:
 
-```console
+```bash
 > pre-commit install
 ```
-
+<!-- #endregion -->
 
 ## Code of Conduct
 
