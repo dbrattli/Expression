@@ -1,14 +1,13 @@
-from collections.abc import Callable, Generator
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Annotated
 
-import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel, TypeAdapter, Field, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
-from expression import Error, Nothing, Ok, Option, Result, Some, effect, result
+from expression import Error, Nothing, Ok, Option, Result, Some, result
 from expression.collections import Block
 from expression.extra.result import pipeline, sequence
 
