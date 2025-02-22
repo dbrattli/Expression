@@ -177,8 +177,8 @@ class Option(
     def to_list(self) -> list[_TSourceOut]:
         """Convert option to list."""
         match self:
-            case Option(tag="some", some=some):
-                return [some]
+            case Option(tag="some", some=value):
+                return [value]
             case _:
                 return []
 
@@ -188,8 +188,8 @@ class Option(
         from expression.collections.seq import Seq
 
         match self:
-            case Option(tag="some", some=some):
-                return Seq[_TSourceOut].of(some)
+            case Option(tag="some", some=value):
+                return Seq[_TSourceOut].of(value)
             case _:
                 return Seq()
 

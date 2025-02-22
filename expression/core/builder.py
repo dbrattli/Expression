@@ -38,12 +38,34 @@ class Builder(Generic[_TInner, _TOuter], ABC):
         raise NotImplementedError("Builder does not implement a zero method")
 
     def delay(self, fn: Callable[[], _TOuter]) -> _TOuter:
-        """Default implementation evaluates the given function."""
+        """Delay the computation.
+
+        In F# computation expressions, delay wraps the entire computation to ensure
+        it is not evaluated until run. This enables proper sequencing of effects
+        and lazy evaluation.
+
+        Args:
+            fn: The computation to delay
+
+        Returns:
+            The delayed computation
+        """
         return fn()
 
-    def run(self, xs: _TOuter) -> _TOuter:
-        """Default implementation assumes the result is already evaluated."""
-        return xs
+    def run(self, computation: _TOuter) -> _TOuter:
+        """Run a computation.
+
+        Forces evaluation of a delayed computation. In F# computation expressions,
+        run is called at the end to evaluate the entire computation that was
+        wrapped in delay.
+
+        Args:
+            computation: The computation to run
+
+        Returns:
+            The evaluated result
+        """
+        return computation
 
     def _send(
         self,
@@ -126,6 +148,7 @@ class Builder(Generic[_TInner, _TOuter], ABC):
             if result is None:
                 result = self.zero()
 
+            # Run the computation at the end
             return self.run(result)
 
         return wrapper

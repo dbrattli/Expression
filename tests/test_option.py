@@ -1,7 +1,6 @@
-from collections.abc import Callable, Generator
+from collections.abc import Callable
 from typing import Any, Annotated
 
-import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel, Field, GetCoreSchemaHandler
@@ -14,14 +13,12 @@ from expression import (
     Option,
     Result,
     Some,
-    effect,
     option,
     pipe,
     pipe2,
 )
 from expression.core.option import Nothing, Option, Some
 from expression.extra.option import pipeline
-from tests.utils import CustomException
 
 
 def test_option_some():
@@ -53,11 +50,19 @@ def test_option_some_match_fluent():
         case _:
             assert False
 
+def test_option_some_iterate_to_list():
+    xs = Some(42)
+
+    for x in xs.to_list():
+        assert x == 42
+        break
+    else:
+        assert False
 
 def test_option_some_iterate():
     xs = Some(42)
 
-    for x in option.to_list(xs):
+    for x in xs:
         assert x == 42
         break
     else:
@@ -424,150 +429,6 @@ def test_option_to_optional_nothing():
     xs = option.to_optional(Nothing)
     assert xs is None
 
-
-def test_option_builder_zero():
-    @effect.option[int]()
-    def fn():
-        while False:
-            yield
-
-    xs = fn()
-    assert xs is Nothing
-
-
-def test_option_builder_yield_value():
-    @effect.option[int]()
-    def fn():
-        yield 42
-
-    xs = fn()
-    match xs:
-        case Option(tag="some", some=value):
-            assert value == 42
-        case _:
-            assert False
-
-
-def test_option_builder_yield_value_async():
-    @effect.option[int]()
-    def fn():
-        yield 42
-
-    xs = fn()
-    match xs:
-        case Option(tag="some", some=value):
-            assert value == 42
-        case _:
-            assert False
-
-
-def test_option_builder_yield_some_wrapped():
-    @effect.option[Option[int]]()
-    def fn() -> Generator[Option[int], Option[int], Option[int]]:
-        x: Option[int] = yield Some(42)
-        return x
-
-    xs = fn()
-    match xs:
-        case Option(tag="some", some=value):
-            assert value == Some(42)
-        case _:
-            assert False
-
-
-def test_option_builder_return_some():
-    @effect.option[int]()
-    def fn() -> Generator[int, int, int]:
-        x: int = yield 42
-        return x
-
-    xs = fn()
-    match xs:
-        case Option(tag="some", some=value):
-            assert value == 42
-        case _:
-            assert False
-
-
-def test_option_builder_return_nothing_wrapped():
-    @effect.option[Option[int]]()
-    def fn():
-        return Nothing
-        yield
-
-    xs = fn()
-    match xs:
-        case Option(tag="some", some=value):
-            assert value is Nothing
-        case _:
-            assert False
-
-
-def test_option_builder_yield_from_some():
-    @effect.option[int]()
-    def fn() -> Generator[int, int, int]:
-        x = yield from Some(42)
-        return x + 1
-
-    xs = fn()
-    match xs:
-        case Option(tag="some", some=value):
-            assert value == 43
-        case _:
-            assert False
-
-
-def test_option_builder_yield_from_none():
-    @effect.option[int]()
-    def fn() -> Generator[int, int, int]:
-        x: int
-        x = yield from Nothing
-        return x
-
-    xs = fn()
-    assert xs is Nothing
-
-
-def test_option_builder_multiple_some():
-    @effect.option[int]()
-    def fn() -> Generator[int, int, int]:
-        x: int = yield 42
-        y = yield from Some(43)
-
-        return x + y
-
-    xs = fn()
-    match xs:
-        case Option(tag="some", some=value):
-            assert value == 85
-        case _:
-            assert False
-
-
-def test_option_builder_none_short_circuits():
-    @effect.option[int]()
-    def fn() -> Generator[int, int, int]:
-        x: int = yield from Nothing
-        y = yield from Some(43)
-
-        return x + y
-
-    xs = fn()
-    assert xs is Nothing
-
-
-def test_option_builder_throws():
-    error = "do'h"
-
-    @effect.option()
-    def fn():
-        raise CustomException(error)
-        yield
-
-    with pytest.raises(CustomException) as ex:
-        fn()
-
-    assert ex.value.message == error
 
 
 def test_pipeline_none():
