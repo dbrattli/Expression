@@ -1,14 +1,13 @@
-from collections.abc import Callable, Generator
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Annotated
 
-import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel, TypeAdapter, Field, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
-from expression import Error, Nothing, Ok, Option, Result, Some, effect, result
+from expression import Error, Nothing, Ok, Option, Result, Some, result
 from expression.collections import Block
 from expression.extra.result import pipeline, sequence
 
@@ -240,103 +239,6 @@ def test_result_traverse_error(xs: list[int]):
             assert False
 
 
-def test_result_effect_zero():
-    @effect.result()
-    def fn():
-        while False:
-            yield
-
-    with pytest.raises(NotImplementedError):
-        fn()
-
-
-def test_result_effect_yield_ok():
-    @effect.result[int, Exception]()
-    def fn():
-        yield 42
-        return None
-
-    xs = fn()
-    for x in xs:
-        assert x == 42
-
-
-def test_result_effect_return_ok():
-    @effect.result[int, Exception]()
-    def fn() -> Generator[int, int, int]:
-        x: int = yield 42
-        return x
-
-    xs = fn()
-    match xs:
-        case Result(tag="ok", ok=x):
-            assert x == 42
-        case _:
-            assert False
-
-
-def test_result_effect_yield_from_ok():
-    @effect.result[int, Exception]()
-    def fn() -> Generator[int, int, int]:
-        x = yield from Ok(42)
-        return x + 1
-
-    xs = fn()
-    match xs:
-        case Result(tag="ok", ok=x):
-            assert x == 43
-        case _:
-            assert False
-
-
-def test_result_effect_yield_from_error():
-    error = "Do'h"
-
-    def mayfail() -> Result[int, str]:
-        return Error(error)
-
-    @effect.result[int, Exception]()
-    def fn() -> Generator[int, int, int]:
-        xs = mayfail()
-        x: int = yield from xs
-        return x + 1
-
-    xs = fn()
-    match xs:
-        case Result(tag="error", error=err):
-            assert err == error
-        case _:
-            assert False, "Should not happen"
-
-
-def test_result_effect_multiple_ok():
-    @effect.result[int, Exception]()
-    def fn() -> Generator[int, int, int]:
-        x: int = yield 42
-        y = yield from Ok(43)
-
-        return x + y
-
-    xs = fn()
-    match xs:
-        case Result(tag="ok", ok=value):
-            assert value == 85
-        case _:
-            assert False
-
-
-def test_result_effect_throws():
-    error = CustomException("this happend!")
-
-    @effect.result[int, Exception]()
-    def fn() -> Generator[int, int, int]:
-        _ = yield from Ok(42)
-        raise error
-
-    with pytest.raises(CustomException) as exc:
-        fn()
-
-    assert exc.value == error
 
 
 def test_pipeline_none():
