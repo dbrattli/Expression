@@ -12,25 +12,81 @@ _TError = TypeVar("_TError")
 _P = ParamSpec("_P")
 
 
-class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
+class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):  # Use Any for _TSource
     def bind(
         self,
-        xs: Result[_TSource, _TError],
-        fn: Callable[[_TSource], Result[_TResult, _TError]],
-    ) -> Result[_TResult, _TError]:
+        xs: Result[_TSource, _TError],  # Use Any for xs type
+        fn: Callable[[Any], Result[_TResult, _TError]],  # Use Any for fn input type
+    ) -> Result[_TResult, _TError]:  # Use Any for bind return type
+        """Bind a function to a result value.
+
+        In F# computation expressions, this corresponds to ``let!`` and enables
+        sequencing of computations.
+
+        Args:
+            xs: The result value to bind
+            fn: The function to apply to the value if Ok
+
+        Returns:
+            The result of applying fn to the value if Ok, otherwise Error
+        """
         return pipe(xs, result.bind(fn))
 
-    def return_(self, x: _TSource) -> Result[_TSource, _TError]:
+    def return_(self, x: _TSource) -> Result[_TSource, _TError]:  # Use Any for return_ type
+        """Wrap a value in a result.
+
+        In F# computation expressions, this corresponds to ``return`` and lifts
+        a value into the result context.
+
+        Args:
+            x: The value to wrap
+
+        Returns:
+            Ok containing the value
+        """
         return Ok(x)
 
-    def return_from(self, xs: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    def return_from(self, xs: Result[Any, _TError]) -> Result[Any, _TError]:  # Use Any for return_from type
+        """Return a result value directly.
+
+        In F# computation expressions, this corresponds to ``return!`` and allows
+        returning an already wrapped value.
+
+        Args:
+            xs: The result value to return
+
+        Returns:
+            The result value unchanged
+        """
         return xs
 
-    def combine(self, xs: Result[_TSource, _TError], ys: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    def combine(
+        self, xs: Result[Any, _TError], ys: Result[Any, _TError]
+    ) -> Result[Any, _TError]:  # Use Any for combine types
+        """Combine two result computations.
+
+        In F# computation expressions, this enables sequencing multiple
+        expressions where we only care about the final result.
+
+        Args:
+            xs: First result computation
+            ys: Second result computation
+
+        Returns:
+            The second computation if first is Ok, otherwise Error
+        """
         return xs.bind(lambda _: ys)
 
-    def zero(self) -> Result[_TSource, _TError]:
-        raise NotImplementedError
+    def zero(self) -> Result[Any, _TError]:  # Use Any for zero return type
+        """Return the zero value for results.
+
+        In F# computation expressions, this is used when no value is returned,
+        corresponding to Ok(()) in F#.
+
+        Returns:
+            Ok(None)
+        """
+        return Ok(None)
 
     def __call__(
         self,  # Ignored self parameter
@@ -38,7 +94,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
             _P,
             Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
         ],
-    ) -> Callable[_P, Result[_TSource, _TError]]:
+    ) -> Callable[_P, Result[Any, _TError]]:  # Use Any for __call__ return type
         return super().__call__(fn)
 
 
