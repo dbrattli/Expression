@@ -231,9 +231,9 @@ def test_option_builder_yield_value_async():
     @effect.option[int]()
     def fn() -> Generator[int, None, None]:
         yield 42
-        return None  # Explicit return None to match generator type
 
     computation = fn()
+    print(f"Computation result: {computation}")
     match computation:
         case Option(tag="some", some=value):
             assert value == 42

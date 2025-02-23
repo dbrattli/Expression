@@ -3,7 +3,6 @@
 from collections.abc import Generator
 from typing import List
 
-import pytest
 from pytest import raises
 
 from expression import effect, Ok, Error, Result
@@ -93,10 +92,10 @@ def test_result_builder_zero():
     def fn() -> Generator[int, int, None]:
         if False:
             yield 42
-        # No return or yield, should use zero()
+        # No return or yield should use zero()
 
-    with pytest.raises(NotImplementedError):
-        fn()
+    computation = fn()
+    assert computation == Ok(None) # Assert that zero() returns Ok(None)
 
 
 def test_result_builder_yield_from_ok():
