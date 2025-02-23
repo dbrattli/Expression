@@ -48,11 +48,17 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
 
     # Optional methods for control flow
     def delay(self, fn: Callable[[], _M]) -> _M:
-        """Delay the computation."""
+        """Delay the computation.
+
+        Default implementation is to return the result of the function.
+        """
         return fn()
 
     def run(self, computation: _M) -> _M:
-        """Run a computation."""
+        """Run a computation.
+
+        Default implementation is to return the computation as is.
+        """
         return computation
 
     # Internal implementation
@@ -107,8 +113,7 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
                 ret = self._send(gen, state, value)  # Pass state to _send
                 return self.delay(lambda: ret)  # Delay every bind call
 
-            initial_result = self._send(gen, state)  # Capture initial result
-            result = initial_result  # Assign initial result to result
+            result = self._send(gen, state)  # Capture initial result
 
             while not state.is_done:  # Check state.is_done
                 cont = self.bind(result, binder)
