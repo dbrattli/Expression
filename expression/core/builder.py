@@ -69,14 +69,12 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
     ) -> _M:
         try:
             yielded = gen.send(value)
-            print(f"yielded: {yielded}")
             return self.return_(yielded)
         except EffectError as error:
             # Effect errors (Nothing, Error, etc) short circuits
             state.is_done = True
             return self.return_from(cast("_M", error.args[0]))
         except StopIteration as ex:
-            print("StopIteration: ", ex)
             state.is_done = True
             # Return of a value in the generator produces StopIteration with a value
             if ex.value is not None:
