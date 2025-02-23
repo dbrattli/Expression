@@ -12,12 +12,12 @@ _TError = TypeVar("_TError")
 _P = ParamSpec("_P")
 
 
-class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):  # Use Any for _TSource
+class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
     def bind(
         self,
-        xs: Result[_TSource, _TError],  # Use Any for xs type
-        fn: Callable[[Any], Result[_TResult, _TError]],  # Use Any for fn input type
-    ) -> Result[_TResult, _TError]:  # Use Any for bind return type
+        xs: Result[_TSource, _TError],
+        fn: Callable[[Any], Result[_TResult, _TError]],
+    ) -> Result[_TResult, _TError]:
         """Bind a function to a result value.
 
         In F# computation expressions, this corresponds to ``let!`` and enables
@@ -46,7 +46,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):  # Use Any for _TS
         """
         return Ok(x)
 
-    def return_from(self, xs: Result[Any, _TError]) -> Result[Any, _TError]:  # Use Any for return_from type
+    def return_from(self, xs: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
         """Return a result value directly.
 
         In F# computation expressions, this corresponds to ``return!`` and allows
@@ -60,9 +60,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):  # Use Any for _TS
         """
         return xs
 
-    def combine(
-        self, xs: Result[Any, _TError], ys: Result[Any, _TError]
-    ) -> Result[Any, _TError]:  # Use Any for combine types
+    def combine(self, xs: Result[_TSource, _TError], ys: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
         """Combine two result computations.
 
         In F# computation expressions, this enables sequencing multiple
@@ -94,7 +92,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):  # Use Any for _TS
             _P,
             Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
         ],
-    ) -> Callable[_P, Result[Any, _TError]]:  # Use Any for __call__ return type
+    ) -> Callable[_P, Result[_TSource, _TError]]:
         return super().__call__(fn)
 
 

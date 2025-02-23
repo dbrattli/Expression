@@ -3,7 +3,6 @@
 from collections.abc import Generator
 from typing import List
 
-import pytest
 from pytest import raises
 
 from expression import effect, Ok, Error, Result
