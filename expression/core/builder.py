@@ -18,7 +18,6 @@ class BuilderState(Generic[_T]):
 
     def __init__(self):
         self.is_done = False
-        self.last_yielded_value: _T | None = None
 
 
 class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
@@ -70,24 +69,20 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
     ) -> _M:
         try:
             yielded = gen.send(value)
-            state.last_yielded_value = yielded  # Store yielded value in state
+            print(f"yielded: {yielded}")
             return self.return_(yielded)
         except EffectError as error:
             # Effect errors (Nothing, Error, etc) short circuits
             state.is_done = True
             return self.return_from(cast("_M", error.args[0]))
         except StopIteration as ex:
+            print("StopIteration: ", ex)
             state.is_done = True
-
             # Return of a value in the generator produces StopIteration with a value
             if ex.value is not None:
-                state.last_yielded_value = ex.value  # Store yielded value in state
+                return self.return_(ex.value)
 
-            # Return last yielded value from state if available, otherwise zero()
-            if state.last_yielded_value is None:
-                return self.zero()
-
-            return self.return_(state.last_yielded_value)
+            raise  # Raise StopIteration with no value
 
         except RuntimeError:
             state.is_done = True
@@ -106,18 +101,22 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
         def wrapper(*args: _P.args, **kw: _P.kwargs) -> _M:
             gen = fn(*args, **kw)
             state = BuilderState[_T]()  # Initialize BuilderState
-
             result: _M | None = None
 
             def binder(value: Any) -> _M:
                 ret = self._send(gen, state, value)  # Pass state to _send
                 return self.delay(lambda: ret)  # Delay every bind call
 
-            result = self._send(gen, state)  # Capture initial result
-
-            while not state.is_done:  # Check state.is_done
-                cont = self.bind(result, binder)
-                result = self.combine(result, cont)  # Combine every bind call
+            try:
+                result = self._send(gen, state)  # Capture initial result
+                while not state.is_done:  # Loop until coroutine is done
+                    cont: _M = self.bind(result, binder)
+                    result = self.combine(result, cont)  # Combine with previous result
+            except StopIteration:
+                # This happens when the generator exits without a value. I.e. returns None.
+                # In this case, we return the zero value if no result was produced.
+                if result is None:
+                    result = self.zero()
 
             return self.run(result)  # Run the computation
 
