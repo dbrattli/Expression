@@ -233,7 +233,6 @@ def test_option_builder_yield_value_async():
         yield 42
 
     computation = fn()
-    print(f"Computation result: {computation}")
     match computation:
         case Option(tag="some", some=value):
             assert value == 42

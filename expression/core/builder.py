@@ -65,7 +65,7 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
         self,
         gen: Generator[Any, Any, Any],
         state: BuilderState[_T],  # Use BuilderState
-        value: _T | None = None,
+        value: _T,
     ) -> _M:
         try:
             yielded = gen.send(value)
@@ -76,6 +76,7 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
             return self.return_from(cast("_M", error.args[0]))
         except StopIteration as ex:
             state.is_done = True
+
             # Return of a value in the generator produces StopIteration with a value
             if ex.value is not None:
                 return self.return_(ex.value)
@@ -93,29 +94,32 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
             Generator[_T | None, _T, _T | None] | Generator[_T | None, None, _T | None],
         ],
     ) -> Callable[_P, _M]:
-        """Builder decorator."""
+        """The builder decorator."""
 
         @wraps(fn)
         def wrapper(*args: _P.args, **kw: _P.kwargs) -> _M:
             gen = fn(*args, **kw)
             state = BuilderState[_T]()  # Initialize BuilderState
-            result: _M = self.zero()
+            result: _M = self.zero()  # Initialize result
+            value: _M
 
             def binder(value: Any) -> _M:
                 ret = self._send(gen, state, value)  # Pass state to _send
                 return self.delay(lambda: ret)  # Delay every bind call
 
             try:
-                result = self._send(gen, state)  # Capture initial result
-                while not state.is_done:  # Loop until coroutine is done
-                    cont: _M = self.bind(result, binder)
-                    result = self.combine(result, cont)  # Combine with previous result
+                # Initialize co-routine with None to start the generator and get the
+                # first value
+                result = value = binder(None)
+
+                while not state.is_done:  # Loop until coroutine is exhausted
+                    value: _M = self.bind(value, binder)  # Send value to coroutine
+                    result = self.combine(result, value)  # Combine previous result with new value
 
             except StopIteration:
-                # This happens when the generator exits without a value. I.e. returns
-                # None.
+                # This will happens if the generator exits by returning None
                 pass
 
-            return self.run(result)  # Run the computation
+            return self.run(result)  # Run the result
 
         return wrapper

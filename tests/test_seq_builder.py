@@ -60,7 +60,7 @@ def test_seq_builder_combine():
         yield 42  # First computation
 
         evaluated.append(2)
-        yield from Seq([43, 44]) # Yield from sequence
+        yield from Seq([43, 44, 45]) # Yield from sequence
 
         evaluated.append(3)
         return sum(evaluated)  # Final result
@@ -68,7 +68,7 @@ def test_seq_builder_combine():
     computation = fn()
 
     assert evaluated == [1, 2, 3]  # All computations ran
-    assert list(computation) == [42, 43, 44, 6]  # Returns values from sequence
+    assert list(computation) == [42, 43, 44, 45, 6]  # Returns values from sequence
 
 
 def test_seq_builder_return_from():

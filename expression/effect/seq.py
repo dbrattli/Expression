@@ -23,14 +23,8 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         Returns:
             The concatenated results of applying fn to each value in the sequence
         """
-        # This may look a bit weird, but it's essentially the
-        # proccessing of each line in the generator function. The
-        # `fn(x)` is the actual processing of the value in the sequence.
-        # We do not process more than one line at a time anyway.
-        for x in xs:
-            return fn(x)
-
-        return []
+        # We do this eagerly to have progress in the sequence
+        return [y for x in xs for y in fn(x)]
 
     def return_(self, x: _TSource) -> Iterable[_TSource]:
         """Wrap a value in a sequence.
