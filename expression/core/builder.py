@@ -99,7 +99,7 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
         def wrapper(*args: _P.args, **kw: _P.kwargs) -> _M:
             gen = fn(*args, **kw)
             state = BuilderState[_T]()  # Initialize BuilderState
-            result: _M | None = None
+            result: _M = self.zero()
 
             def binder(value: Any) -> _M:
                 ret = self._send(gen, state, value)  # Pass state to _send
@@ -110,11 +110,11 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
                 while not state.is_done:  # Loop until coroutine is done
                     cont: _M = self.bind(result, binder)
                     result = self.combine(result, cont)  # Combine with previous result
+
             except StopIteration:
-                # This happens when the generator exits without a value. I.e. returns None.
-                # In this case, we return the zero value if no result was produced.
-                if result is None:
-                    result = self.zero()
+                # This happens when the generator exits without a value. I.e. returns
+                # None.
+                pass
 
             return self.run(result)  # Run the computation
 
