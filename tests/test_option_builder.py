@@ -231,7 +231,6 @@ def test_option_builder_yield_value_async():
     @effect.option[int]()
     def fn() -> Generator[int, None, None]:
         yield 42
-        return None  # Explicit return None to match generator type
 
     computation = fn()
     match computation:

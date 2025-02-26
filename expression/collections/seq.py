@@ -142,7 +142,7 @@ class Seq(Iterable[_TSource], PipeMixin):
         return delay(generator)
 
     @staticmethod
-    def empty() -> Seq[Any]:
+    def empty() -> Seq[_TSource]:
         """Returns empty sequence."""
         return Seq()
 
@@ -363,7 +363,8 @@ class Seq(Iterable[_TSource], PipeMixin):
 
     def __iter__(self) -> Iterator[_TSource]:
         """Return iterator for sequence."""
-        return builtins.iter(self._value)
+        # Make sure we return a proper generator that can handle send, throw, and close
+        return (x for x in self._value)
 
     def __repr__(self) -> str:
         result = "["
@@ -397,7 +398,8 @@ class SeqGen(Iterable[_TSource]):
 
     def __iter__(self) -> Iterator[_TSource]:
         xs = self.gen()
-        return builtins.iter(xs)
+        # Make sure we return a proper generator that can handle send, throw, and close
+        return (x for x in xs)
 
 
 def append(
