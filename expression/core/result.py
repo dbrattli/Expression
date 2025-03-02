@@ -12,7 +12,7 @@ the Result type to Exception.
 from __future__ import annotations
 
 import builtins
-from collections.abc import Callable, Generator, Iterable
+from collections.abc import Awaitable, Callable, Generator, Iterable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -49,6 +49,7 @@ _TErrorOut = TypeVar("_TErrorOut", covariant=True)
 @tagged_union(frozen=True, order=True)
 class Result(
     Iterable[_TSourceOut],
+    Awaitable[_TSourceOut],
     PipeMixin,
     Generic[_TSourceOut, _TErrorOut],
 ):
@@ -254,6 +255,16 @@ class Result(
                 return (yield value)
             case _:
                 raise EffectError(self)
+
+    def __await__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
+        """Make Result awaitable by delegating to __iter__."""
+        match self:
+            case Result(tag="ok", ok=value):
+                return value
+            case _:
+                raise EffectError(self)
+
+        yield None
 
     def __str__(self) -> str:
         match self:
