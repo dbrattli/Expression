@@ -233,13 +233,12 @@ async def test_async_result_builder_yield_ok_wrapped():
         case _:
             assert False
 
-
 @pytest.mark.asyncio
 async def test_async_result_builder_return_error_wrapped():
     """Test that async_result builder properly handles returning Error directly."""
 
     @effect.async_result[Result[int, str], str]()
-    async def fn() -> AsyncGenerator[Result[int, str], int]:
+    async def fn() -> AsyncGenerator[Result[int, str], Result[int, str]]:
         yield Error("error")  # Use yield await instead of return
         # No need for additional yield
 
@@ -360,13 +359,13 @@ async def test_async_result_builder_with_async_functions():
 async def test_async_result_builder_with_async_result_functions():
     """Test that async_result builder properly works with functions returning async Results."""
 
-    async def async_ok_function(x: int) -> Result[int, str]:
+    async def async_ok_function(x: int) -> int:
         await asyncio.sleep(0.01)  # Small delay to simulate async work
-        return Ok(x * 2)
+        return await Ok(x * 2)
 
-    async def async_error_function(msg: str) -> Result[int, str]:
+    async def async_error_function(msg: str) -> int:
         await asyncio.sleep(0.01)  # Small delay to simulate async work
-        return Error(msg)
+        return await Error(msg)
 
     @effect.async_result[int, str]()
     async def success_fn() -> AsyncGenerator[int, int]:
@@ -375,18 +374,18 @@ async def test_async_result_builder_with_async_result_functions():
         # Call async function and get its result
         result = await async_ok_function(x)
         # Then yield the result
-        y: int = yield await result
+        y: int = yield result
 
         yield y
 
     @effect.async_result[int, str]()
     async def error_fn() -> AsyncGenerator[int, int]:
-        x: int = yield 21
+        _: int = yield 21
 
         # Call async function and get its result
         result = await async_error_function("async error")
         # Then yield it - this should short-circuit
-        y: int = yield await result
+        y: int = yield result
 
         yield y  # Should not reach here
 

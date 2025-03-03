@@ -14,8 +14,8 @@ from typing_extensions import ParamSpec
 from .error import EffectError
 
 
-_T = TypeVar("_T")  # for value type
-_M = TypeVar("_M")  # for monadic type
+_T = TypeVar("_T")  # The container item type
+_M = TypeVar("_M")  # for container type
 _P = ParamSpec("_P")
 
 
@@ -82,12 +82,10 @@ class AsyncBuilder(Generic[_T, _M], ABC):  # Corrected Generic definition
             # Effect errors (Nothing, Error, etc) short circuits
             state.is_done = True
             return await self.return_from(cast("_M", error.args[0]))
-        except StopAsyncIteration as ex:
-            print("StopAsyncIteration occurred", ex)
+        except StopAsyncIteration:
             state.is_done = True
             raise
-        except Exception as ex:
-            print("Exception occurred", ex)
+        except Exception:
             state.is_done = True
             raise
 

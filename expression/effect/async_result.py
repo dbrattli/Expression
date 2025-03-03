@@ -5,8 +5,8 @@ may fail, using the Result type. It's similar to the Result builder but
 works with async operations.
 """
 
-from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from typing import Any, ParamSpec, TypeVar
 
 from expression.core import Ok, Result
 from expression.core.async_builder import AsyncBuilder
@@ -15,6 +15,7 @@ from expression.core.async_builder import AsyncBuilder
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
+_P = ParamSpec("_P")
 
 
 class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
@@ -118,6 +119,16 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
         Default implementation is to return the computation as is.
         """
         return computation
+
+    def __call__(
+        self,
+        fn: Callable[
+            _P,
+            AsyncGenerator[_TSource, _TSource] | AsyncGenerator[_TSource, None],
+        ],
+    ) -> Callable[_P, Awaitable[Result[_TSource, _TError]]]:
+        """The builder decorator."""
+        return super().__call__(fn)
 
 
 # Create singleton instances

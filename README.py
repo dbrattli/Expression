@@ -463,6 +463,78 @@ pinned to `Exception` i.e., `Result[TSource, Exception]`.
 
 # %% [markdown]
 """
+### AsyncResult
+
+The `AsyncResult[T, TError]` type is the asynchronous version of `Result`. It allows you
+to compose asynchronous operations that may fail, using the Result type. This is
+particularly useful for handling errors in asynchronous code, such as API calls,
+database operations, or any other I/O-bound tasks.
+
+Similar to the `Result` effect, AsyncResult enables "railway oriented programming" but
+for asynchronous operations. If any part of the function yields an `Error`, the function
+is short-circuited and the following statements will never be executed.
+"""
+
+# %%
+from collections.abc import AsyncGenerator
+
+from expression import Error, Ok, effect
+
+
+@effect.async_result[int, str]()
+async def fn() -> AsyncGenerator[int, int]:
+    x: int = yield 42  # Regular value
+    y: int = yield await Ok(43)  # Awaitable Ok value
+
+    # Short-circuit if condition is met
+    if x + y > 80:
+        z: int = yield await Error("Value too large")  # This will short-circuit
+    else:
+        z: int = yield 44
+
+    yield x + y + z  # Final value
+
+
+# This would be run in an async context
+# result = await fn()
+# assert result == Error("Value too large")
+
+# %% [markdown]
+"""
+AsyncResult works well with other async functions and can be nested:
+"""
+
+
+# %%
+@effect.async_result[int, str]()
+async def inner(x: int) -> AsyncGenerator[int, int]:
+    y: int = yield x + 1
+    yield y + 1  # Final value is y + 1
+
+
+@effect.async_result[int, str]()
+async def outer() -> AsyncGenerator[int, int]:
+    x: int = yield 40
+
+    # Call inner and await its result
+    inner_result = await inner(x)
+    y: int = yield await inner_result
+
+    yield y  # Final value is y
+
+
+# This would be run in an async context
+# result = await outer()
+# assert result == Ok(42)  # 40 -> 41 -> 42
+
+# %% [markdown]
+"""
+A simplified type called `AsyncTry` is also available. It's an async result type that is
+pinned to `Exception` i.e., `AsyncResult[TSource, Exception]`.
+"""
+
+# %% [markdown]
+"""
 ### Sequence
 
 Sequences is a thin wrapper on top of iterables and contains operations for working with
