@@ -129,6 +129,11 @@ on-demand as we go along.
   is amazing stuff.
   - **option** - an optional world for working with optional values.
   - **result** - an error handling world for working with result values.
+  - **seq** - a world for working with sequences.
+  - **async_result** - an asynchronous error handling world for working
+    with asynchronous result values.
+  - **async_option** - an asynchronous optional world for working with
+    asynchronous optional values.
 - **Mailbox Processor**: for lock free programming using the [Actor
   model](https://en.wikipedia.org/wiki/Actor_model).
 - **Cancellation Token**: for cancellation of asynchronous (and
@@ -418,6 +423,135 @@ assert isinstance(xs, Result)
 A simplified type called `Try` is also available. It's a result type that is
 pinned to `Exception` i.e., `Result[TSource, Exception]`.
 
+
+### AsyncResult
+
+The `AsyncResult[T, TError]` type is the asynchronous version of `Result`. It allows you
+to compose asynchronous operations that may fail, using the Result type. This is
+particularly useful for handling errors in asynchronous code, such as API calls,
+database operations, or any other I/O-bound tasks.
+
+Similar to the `Result` effect, AsyncResult enables "railway oriented programming" but
+for asynchronous operations. If any part of the function yields an `Error`, the function
+is short-circuited and the following statements will never be executed.
+
+```python
+from collections.abc import AsyncGenerator
+
+from expression import Error, Ok, effect
+
+
+@effect.async_result[int, str]()
+async def fn() -> AsyncGenerator[int, int]:
+    x: int = yield 42  # Regular value
+    y: int = yield await Ok(43)  # Awaitable Ok value
+
+    # Short-circuit if condition is met
+    if x + y > 80:
+        z: int = yield await Error("Value too large")  # This will short-circuit
+    else:
+        z: int = yield 44
+
+    yield x + y + z  # Final value
+
+
+# This would be run in an async context
+# result = await fn()
+# assert result == Error("Value too large")
+```
+
+AsyncResult works well with other async functions and can be nested:
+
+
+```python
+@effect.async_result[int, str]()
+async def inner(x: int) -> AsyncGenerator[int, int]:
+    y: int = yield x + 1
+    yield y + 1  # Final value is y + 1
+
+
+@effect.async_result[int, str]()
+async def outer() -> AsyncGenerator[int, int]:
+    x: int = yield 40
+
+    # Call inner and await its result
+    inner_result = await inner(x)
+    y: int = yield await inner_result
+
+    yield y  # Final value is y
+
+
+# This would be run in an async context
+# result = await outer()
+# assert result == Ok(42)  # 40 -> 41 -> 42
+```
+
+A simplified type called `AsyncTry` is also available. It's an async result type that is
+pinned to `Exception` i.e., `AsyncResult[TSource, Exception]`.
+
+
+### AsyncOption
+
+The `AsyncOption[T]` type is the asynchronous version of `Option`. It allows you to
+compose asynchronous operations that may return an optional value, using the Option type.
+This is particularly useful for handling optional values in asynchronous code, such as
+API calls that might not return a value, database queries that might not find a record,
+or any other I/O-bound tasks that might not produce a meaningful result.
+
+Similar to the `Option` effect, AsyncOption enables short-circuiting but for asynchronous
+operations. If any part of the function yields `Nothing`, the function is short-circuited
+and the following statements will never be executed.
+
+```python
+from collections.abc import AsyncGenerator
+
+from expression import Nothing, Some, effect
+
+
+@effect.async_option[int]()
+async def fn_option() -> AsyncGenerator[int, int]:
+    x: int = yield 42  # Regular value
+    y: int = yield await Some(43)  # Awaitable Some value
+
+    # Short-circuit if condition is met
+    if x + y > 80:
+        z: int = yield await Nothing  # This will short-circuit
+    else:
+        z: int = yield 44
+
+    yield x + y + z  # Final value
+
+
+# This would be run in an async context
+# result = await fn_option()
+# assert result is Nothing
+```
+
+AsyncOption works well with other async functions and can be nested:
+
+
+```python
+@effect.async_option[int]()
+async def inner_option(x: int) -> AsyncGenerator[int, int]:
+    y: int = yield x + 1
+    yield y + 1  # Final value is y + 1
+
+
+@effect.async_option[int]()
+async def outer_option() -> AsyncGenerator[int, int]:
+    x: int = yield 40
+
+    # Call inner and await its result
+    inner_result = await inner_option(x)
+    y: int = yield await inner_result
+
+    yield y  # Final value is y
+
+
+# This would be run in an async context
+# result = await outer_option()
+# assert result == Some(42)  # 40 -> 41 -> 42
+```
 
 ### Sequence
 
