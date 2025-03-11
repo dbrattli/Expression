@@ -142,6 +142,9 @@ on-demand as we go along.
   is amazing stuff.
   - **option** - an optional world for working with optional values.
   - **result** - an error handling world for working with result values.
+  - **seq** - a world for working with sequences.
+  - **async_result** - an asynchronous error handling world for working
+    with asynchronous result values.
 - **Mailbox Processor**: for lock free programming using the [Actor
   model](https://en.wikipedia.org/wiki/Actor_model).
 - **Cancellation Token**: for cancellation of asynchronous (and
