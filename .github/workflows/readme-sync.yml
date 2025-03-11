@@ -25,30 +25,18 @@ jobs:
           pipx install poetry
           poetry install --all-extras
 
-      - name: Create branch and update README
+      - name: Generate README.md
         run: |
-          # Create new branch
-          git checkout -b readme-sync-${{ github.sha }}
-
           # Generate new README.md
           poetry run ./make_readme.sh
-
-          # Setup git
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
-          # Commit changes if README.md was modified
-          if ! git diff --quiet README.md; then
-            git add README.md
-            git commit -m "[auto] Sync README.md"
-            git push origin readme-sync-${{ github.sha }}
-          fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
+          commit-message: "[auto] Sync README.md from README.py"
           title: '[auto] Sync README.md from README.py'
           body: 'Auto-generated PR to sync README.md with changes from README.py'
-          branch: readme-sync-${{ github.sha }}
+          branch: "update-readme"
+          delete-branch: true
           base: ${{ github.ref }}
           labels: automated,documentation
