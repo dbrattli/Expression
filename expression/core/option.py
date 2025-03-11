@@ -9,7 +9,7 @@ the only argument.
 from __future__ import annotations
 
 import builtins
-from collections.abc import Callable, Generator, Iterable
+from collections.abc import Awaitable, Callable, Generator, Iterable
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, get_args, get_origin
 
 from typing_extensions import TypeVarTuple, Unpack
@@ -42,6 +42,7 @@ _P = TypeVarTuple("_P")
 @tagged_union(frozen=True, order=True)
 class Option(
     Iterable[_TSourceOut],
+    Awaitable[_TSourceOut],
     PipeMixin,
 ):
     """Option class."""
@@ -295,6 +296,16 @@ class Option(
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    def __await__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
+        """Make Option awaitable by delegating to __iter__."""
+        match self:
+            case Option(tag="some", some=value):
+                return value
+            case _:
+                raise EffectError(self)
+
+        yield None
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
