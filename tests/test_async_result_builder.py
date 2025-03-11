@@ -176,7 +176,6 @@ async def test_async_result_builder_nested():
 
         # Call inner and await its result
         inner_result = await inner(x)
-        print("inner_result", inner_result)
         y: int = yield await inner_result  # Then yield the result
 
         yield y + 1
