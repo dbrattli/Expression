@@ -496,7 +496,8 @@ The `AsyncOption[T]` type is the asynchronous version of `Option`. It allows you
 compose asynchronous operations that may return an optional value, using the Option type.
 This is particularly useful for handling optional values in asynchronous code, such as
 API calls that might not return a value, database queries that might not find a record,
-or any other I/O-bound tasks that might not produce a meaningful result.
+or any other I/O-bound tasks that might not produce a meaningful result. The AsyncOption
+builder was added in version 0.25.0.
 
 Similar to the `Option` effect, AsyncOption enables short-circuiting but for asynchronous
 operations. If any part of the function yields `Nothing`, the function is short-circuited
