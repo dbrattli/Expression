@@ -1,3 +1,4 @@
+import asyncio
 import functools
 from collections.abc import Callable, Iterable
 from itertools import accumulate
@@ -382,3 +383,21 @@ def test_seq_monad_law_associativity_empty(value: int):
     # Empty list
     m = empty
     assert list(m.collect(f).collect(g)) == list(m.collect(lambda x: f(x).collect(g)))
+
+
+@pytest.mark.asyncio
+async def test_par_map():
+    async def async_fn(i: int):
+        await asyncio.sleep(0.1)
+        return i * 2
+
+    xs = seq.of_iterable(range(1, 10))
+
+    start_time = asyncio.get_event_loop().time()
+    ys = await xs.par_map(async_fn)
+    end_time = asyncio.get_event_loop().time()
+
+    assert list(ys) == [i * 2 for i in range(1, 10)]
+
+    time_taken = end_time - start_time
+    assert time_taken < 0.2, "par_map took too long"

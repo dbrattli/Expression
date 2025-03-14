@@ -16,7 +16,8 @@
 # - https://github.com/fsharp/fsharp/blob/master/src/fsharp/FSharp.Core/map.fs
 from __future__ import annotations
 
-from collections.abc import Callable, ItemsView, Iterable, Iterator, Mapping
+import asyncio
+from collections.abc import Awaitable, Callable, ItemsView, Iterable, Iterator, Mapping
 from typing import Any, TypeVar, cast
 
 from expression.core import Option, PipeMixin, SupportsLessThan, curry_flip, pipe
@@ -113,6 +114,25 @@ class Map(Mapping[_Key, _Value], PipeMixin):
             The resulting map of keys and transformed values.
         """
         return Map(maptree.map(mapping, self._tree))
+
+    async def par_map(self, mapping: Callable[[_Key, _Value], Awaitable[_Result]]) -> Map[_Key, _Result]:
+        """Map the mapping asynchronously.
+
+        Builds a new collection whose elements are the results of
+        applying the given asynchronous function to each of the elements
+        of the collection. The key passed to the function indicates the
+        key of element being transformed.
+
+        Args:
+            mapping: The function to transform the key/value pairs
+
+        Returns:
+            The resulting map of keys and transformed values.
+        """
+        keys_and_values = self.to_seq()
+        result = await asyncio.gather(*(mapping(key, value) for key, value in keys_and_values))
+        keys = [key for key, _ in keys_and_values]
+        return Map.of_seq(zip(keys, result))
 
     def partition(self, predicate: Callable[[_Key, _Value], bool]) -> tuple[Map[_Key, _Value], Map[_Key, _Value]]:
         r1, r2 = maptree.partition(predicate, self._tree)

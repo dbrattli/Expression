@@ -24,10 +24,11 @@ Example (fluent style):
 
 from __future__ import annotations
 
+import asyncio
 import builtins
 import functools
 import itertools
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Awaitable, Callable, Iterable, Iterator
 from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from expression.core import (
@@ -194,6 +195,22 @@ class Seq(Iterable[_TSource], PipeMixin):
             The result sequence.
         """
         return Seq(pipe(self, map(mapper)))
+
+    async def par_map(self, mapper: Callable[[_TSource], Awaitable[_TResult]]) -> Seq[_TResult]:
+        """Map sequence asynchronously.
+
+        Builds a new collection whose elements are the results of
+        applying the given asynchronous function to each of the elements
+        of the collection.
+
+        Args:
+            mapper: A function to transform items from the input sequence.
+
+        Returns:
+            The result sequence.
+        """
+        result = await asyncio.gather(*(mapper(item) for item in self))
+        return Seq(result)
 
     @overload
     def starmap(self: Seq[tuple[_T1, _T2]], mapping: Callable[[_T1, _T2], _TResult]) -> Seq[_TResult]: ...

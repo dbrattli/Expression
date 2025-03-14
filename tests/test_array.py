@@ -1,3 +1,4 @@
+import asyncio
 import functools
 from collections.abc import Callable
 from typing import Any
@@ -428,3 +429,20 @@ def test_array_monad_law_associativity_iterable(xs: list[int]):
 
     m = array.of_seq(xs)
     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
+
+@pytest.mark.asyncio
+async def test_par_map():
+    async def async_fn(i: int):
+        await asyncio.sleep(0.1)
+        return i * 2
+
+    xs = TypedArray(range(1, 10))
+
+    start_time = asyncio.get_event_loop().time()
+    ys = await xs.par_map(async_fn)
+    end_time = asyncio.get_event_loop().time()
+
+    assert ys == TypedArray(i * 2 for i in range(1, 10))
+
+    time_taken = end_time - start_time
+    assert time_taken < 0.2, "par_map took too long"

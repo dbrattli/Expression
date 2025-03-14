@@ -1,5 +1,7 @@
+import asyncio
 from collections.abc import Callable, ItemsView, Iterable
 
+import pytest
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
@@ -150,3 +152,21 @@ def test_expression_issue_105():
     m = m.add("1", 1).add("2", 2).add("3", 3).add("4", 4)
     m = m.change("2", lambda x: x)
     m = m.change("3", lambda x: x)
+
+
+@pytest.mark.asyncio
+async def test_par_map():
+    async def async_fn(key: str, value: int) -> int:
+        await asyncio.sleep(0.1)
+        return int(key) * value
+
+    xs = Map.of_seq((str(i), i) for i in range(1, 10))
+
+    start_time = asyncio.get_event_loop().time()
+    ys = await xs.par_map(async_fn)
+    end_time = asyncio.get_event_loop().time()
+
+    assert ys == Map.of_seq((str(i), i * i) for i in range(1, 10))
+
+    time_taken = end_time - start_time
+    assert time_taken < 0.2, "par_map took too long"
