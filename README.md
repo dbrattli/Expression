@@ -6,6 +6,7 @@
 [![Publish Package](https://github.com/dbrattli/Expression/actions/workflows/python-publish.yml/badge.svg)](https://github.com/dbrattli/Expression/actions/workflows/python-publish.yml)
 [![Documentation Status](https://readthedocs.org/projects/expression/badge/?version=latest)](https://expression.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/cognitedata/expression/branch/main/graph/badge.svg)](https://codecov.io/gh/cognitedata/expression)
+[![libs.tech recommends](https://libs.tech/project/298085065/badge.svg)](https://libs.tech/project/298085065/expression)
 
 > Pragmatic functional programming
 
