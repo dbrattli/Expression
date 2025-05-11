@@ -20,6 +20,8 @@ from typing import (
     Literal,
     TypeGuard,
     TypeVar,
+    ParamSpec,
+    Concatenate,
     cast,
     get_args,
     get_origin,
@@ -44,6 +46,7 @@ _TOther = TypeVar("_TOther")
 _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
 _TErrorOut = TypeVar("_TErrorOut", covariant=True)
+_TParams = ParamSpec("_TParams")
 
 
 @tagged_union(frozen=True, order=True)
@@ -415,6 +418,14 @@ def bind(
     return result.bind(mapper)
 
 
+def bind_with(
+    mapper: Callable[Concatenate[_TSource, _TParams], Result[_TResult, Any]],
+    *args: _TParams.args,
+    **kwargs: _TParams.kwargs,
+) -> Callable[[Result[_TSource, _TError]], Result[_TResult, _TError]]:
+    return bind(curry_flip(1)(mapper)(*args, **kwargs))
+
+
 def dict(source: Result[_TSource, _TError]) -> builtins.dict[str, _TSource | _TError | Literal["ok", "error"]]:
     return source.dict()
 
@@ -492,6 +503,7 @@ __all__ = [
     "Ok",
     "Result",
     "bind",
+    "bind_with",
     "default_value",
     "default_with",
     "dict",

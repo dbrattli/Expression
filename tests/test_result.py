@@ -215,6 +215,28 @@ def test_result_bind_piped(x: int, y: int):
             assert False
 
 
+@given(st.integers(), st.integers())  # type: ignore
+def test_result_bind_with_piped(x: int, y: int):
+    xs: Result[int, str] = Ok(x)
+
+    def mapper(x: int, y: int) -> Result[int, str]:
+        return Ok(x - y)
+
+    ys = xs.pipe(result.bind_with(mapper, y=y))
+    match ys:
+        case Result(tag="ok", ok=value):
+            assert Ok(value) == mapper(x, y=y)
+        case _:
+            assert False
+
+    ys = xs.pipe(result.bind_with(mapper, y))
+    match ys:
+        case Result(tag="ok", ok=value):
+            assert Ok(value) == mapper(x, y)
+        case _:
+            assert False
+
+
 @given(st.lists(st.integers()))  # type: ignore
 def test_result_traverse_ok(xs: list[int]):
     ys: Block[Result[int, str]] = Block([Ok(x) for x in xs])
