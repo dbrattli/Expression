@@ -11,85 +11,143 @@ _T = TypeVar("_T")
 
 @overload
 def tagged_union(
-    *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
-) -> Callable[[type[_T]], type[_T]]: ...
+    *,
+    frozen: bool = False,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+) -> Callable[[type[_T]], type[_T]]:
+    ...
 
 
 @overload
 def tagged_union(
-    _cls: type[_T], *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
-) -> type[_T]: ...
+    _cls: type[_T],
+    *,
+    frozen: bool = False,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
+) -> type[_T]:
+    ...
 
 
 @dataclass_transform()
 def tagged_union(
-    _cls: Any = None, *, frozen: bool = False, repr: bool = True, eq: bool = True, order: bool = False
+    _cls: Any | None = None,
+    *,
+    frozen: bool = False,
+    repr: bool = True,
+    eq: bool = True,
+    order: bool = False,
 ) -> Any:
-    """Tagged union decorator.
+    """
+    Decorator that turns a dataclass into a tagged union.
 
-    A decorator that turns a dataclass into a tagged union.
-
-    Arguments:
-        frozen: Whether the tagged union should be frozen. If True,
-            the __setattr__ and __delattr__ methods will be generated.
-        repr: If True, the __repr__ method will be generated.
-        order: If True, the __lt__ method will be generated. The first
-            case will be considered the smallest with index 0 and the
-            items will be compared as the tuple (index, value)
-        eq: If True, the __eq__ method will be generated.
+    The decorated class behaves like an immutable variant type where
+    exactly one field is set.  The name of the active field becomes
+    the ``tag`` attribute and can be used for pattern matching.
     """
 
     def transform(cls: Any) -> Any:
-        cls = dataclass(init=False, repr=False, order=False, eq=False, kw_only=True)(cls)
-        fields_ = fields(cls)
-        field_names = tuple(f.name for f in fields_)
-        original_init = cls.__init__
+        # Create a dataclass that only stores the active case and the tag.
+        cls = dataclass(
+            init=False,
+            repr=False,
+            order=False,
+            eq=False,
+            kw_only=True,
+        )(cls)
 
-        def tagged_union_getstate(self: Any) -> dict[str, Any]:
+        original_init = cls.__init__
+        field_names = tuple(f.name for f in fields(cls))
+
+        # ------------------------------------------------------------------
+        # Pickle support
+        # ------------------------------------------------------------------
+        def __getstate__(self: Any) -> dict[str, Any]:
             return {f.name: getattr(self, f.name) for f in fields(self)}
 
-        def tagged_union_setstate(self: Any, state: dict[str, Any]):
+        def __setstate__(self: Any, state: dict[str, Any]) -> None:
             self.__init__(**state)
 
-        cls.__setstate__ = tagged_union_setstate
-        cls.__getstate__ = tagged_union_getstate
+        cls.__getstate__ = __getstate__
+        cls.__setstate__ = __setstate__
 
+        # ------------------------------------------------------------------
+        # Custom constructor
+        # ------------------------------------------------------------------
         def __init__(self: Any, **kwargs: Any) -> None:
             tag = kwargs.pop("tag", None)
-
+            if not kwargs:
+                raise TypeError("A case must be specified")
             name, value = next(iter(kwargs.items()))
             if name not in field_names:
                 raise TypeError(f"Unknown case name: {name}")
-
             if len(kwargs) != 1:
-                raise TypeError(f"One and only one case can be specified. Not {kwargs}")
+                raise TypeError(
+                    f"Only one case may be specified; got {list(kwargs.keys())}"
+                )
 
-            match tag or name, name:
-                case str(tag), name if tag == name:
-                    object.__setattr__(self, "tag", name)
-                    object.__setattr__(self, name, value)
-                    object.__setattr__(self, "_index", field_names.index(name))
-                case tag, name:
-                    raise TypeError(f"Tag {tag} does not match case name {name}")
+            # Resolve the tag
+            if tag is None or tag == name:
+                object.__setattr__(self, "tag", name)
+                object.__setattr__(self, name, value)
+                object.__setattr__(self, "_index", field_names.index(name))
+            else:
+                raise TypeError(f"Tag {tag!r} does not match case name {name!r}")
 
-            # Enables the use of dataclasses.asdict
-            union_fields = dict((f.name, f) for f in fields_ if f.name in [name, "tag"])
+            # Keep only the active fields for dataclasses.asdict
+            union_fields = {
+                f.name: f for f in fields(cls) if f.name in (name, "tag")
+            }
             object.__setattr__(self, "__dataclass_fields__", union_fields)
+
             original_init(self)
 
-        def __repr__(self: Any) -> str:
-            return f"{cls.__name__}({self.tag}={getattr(self, self.tag)})"
+        cls.__init__ = __init__
 
+        # ------------------------------------------------------------------
+        # Representation
+        # ------------------------------------------------------------------
+        def __repr__(self: Any) -> str:
+            return f"{cls.__name__}({self.tag}={getattr(self, self.tag)!r})"
+
+        if repr:
+            cls.__repr__ = __repr__
+
+        # ------------------------------------------------------------------
+        # Equality
+        # ------------------------------------------------------------------
+        if eq:
+
+            def __eq__(self: Any, other: Any) -> bool:
+                return (
+                    isinstance(other, cls)
+                    and self.tag == getattr(other, "tag")
+                    and getattr(self, self.tag) == getattr(other, self.tag)
+                )
+
+            cls.__eq__ = __eq__
+
+        # ------------------------------------------------------------------
+        # Ordering
+        # ------------------------------------------------------------------
         if order:
 
             def __lt__(self: Any, other: Any) -> bool:
                 if not isinstance(other, cls):
-                    return False
-
-                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))
+                    return NotImplemented
+                return (
+                    (self._index, getattr(self, self.tag))
+                    < (other._index, getattr(other, other.tag))
+                )
 
             cls.__lt__ = __lt__
 
+        # ------------------------------------------------------------------
+        # Immutability helpers
+        # ------------------------------------------------------------------
         if frozen:
 
             def __hash__(self: Any) -> int:
@@ -103,40 +161,29 @@ def tagged_union(
             def __delattr__(self: Any, name: str) -> None:
                 if name in field_names:
                     raise TypeError("Cannot delete a tagged union case")
-
                 object.__delattr__(self, name)
 
+            cls.__hash__ = __hash__
             cls.__setattr__ = __setattr__
             cls.__delattr__ = __delattr__
-            cls.__hash__ = __hash__
-        if eq:
 
-            def __eq__(self: Any, other: Any) -> bool:
-                return (
-                    isinstance(other, cls)
-                    and self.tag == getattr(other, "tag")
-                    and getattr(self, self.tag) == getattr(other, self.tag)
-                )
-
-            cls.__eq__ = __eq__
-
+        # ------------------------------------------------------------------
+        # Copy helpers (required by Pydantic)
+        # ------------------------------------------------------------------
         def __copy__(self: Any) -> Any:
-            mapping = {self.tag: getattr(self, self.tag)}
-            return cls(**mapping)
+            return cls(**{self.tag: getattr(self, self.tag)})
 
-        def __deepcopy__(self: Any, memo: Any) -> Any:
+        def __deepcopy__(self: Any, memo: dict[int, Any]) -> Any:
             value = deepcopy(getattr(self, self.tag), memo)
-            mapping = {self.tag: value}
-            return cls(**mapping)
+            return cls(**{self.tag: value})
 
-        cls.__init__ = __init__
-        if repr:
-            cls.__repr__ = __repr__
-        cls.__match_args__ = field_names
-
-        # We need to handle copy and deepcopy ourselves because they are needed by Pydantic
         cls.__copy__ = __copy__
         cls.__deepcopy__ = __deepcopy__
+
+        # ------------------------------------------------------------------
+        # Pattern matching support
+        # ------------------------------------------------------------------
+        cls.__match_args__ = field_names
 
         return cls
 
@@ -144,10 +191,10 @@ def tagged_union(
 
 
 def case() -> Any:
-    """A case in a tagged union."""
+    """Marker for a tagged union case."""
     return field(init=False, kw_only=True)
 
 
 def tag() -> Any:
-    """The tag of a tagged union."""
+    """Marker for the tag of a tagged union."""
     return field(init=False, kw_only=True)
