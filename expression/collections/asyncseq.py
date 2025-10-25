@@ -87,7 +87,7 @@ class AsyncSeq(AsyncIterable[TSource]):
 
         return pipe(self, _collect)
 
-    async def concat(self: "AsyncSeq[AsyncIterable[TResult]]") -> AsyncIterable[TResult]:
+    async def concat(self: "AsyncSeq[AsyncIterable[TSource]]") -> AsyncIterable[TSource]:
         """Concatenate sequences.
 
         Combines the given variable number of enumerations and/or
@@ -291,6 +291,7 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource
 
 def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     """Choose items from the sequence."""
+
     async def _choose(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
         async for value in source:
             result = chooser(value)
@@ -304,6 +305,7 @@ def collect(
     mapping: Callable[[TSource], AsyncIterable[TResult]],
 ) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     """Collect items from the sequence."""
+
     async def _collect(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
         async for value in source:
             async for item in mapping(value):
