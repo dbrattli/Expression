@@ -312,4 +312,4 @@ def collect(
             async for item in mapping(value):
                 yield item
 
-    return _choose
+    return _collect
