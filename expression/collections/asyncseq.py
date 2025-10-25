@@ -74,11 +74,10 @@ class AsyncSeq(AsyncIterable[TSource]):
         as `bind` or `flat_map` in other languages.
 
         Args:
-            mapping: The function to generate sequences from the elements.
+            mapping: The function that generates an async iterable for each element.
 
         Returns:
-            A sequence comprising the concatenated values from the mapping
-            function.
+            An async iterable yielding all items from the inner iterables.
         """
 
         async def _collect(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
@@ -110,11 +109,10 @@ class AsyncSeq(AsyncIterable[TSource]):
         `True`.
 
         Args:
-            predicate: A function to test whether each item in the
-                input sequence should be included in the output.
+            predicate: A function that tests each item.
 
         Returns:
-            The filtered sequence.
+            The filtered async iterable.
         """
 
         async def _filter(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
@@ -128,18 +126,7 @@ class AsyncSeq(AsyncIterable[TSource]):
         """Fold elements in sequence.
 
         Applies a function to each element of the collection,
-        threading an accumulator argument through the computation. If
-        the input function is f and the elements are i0...iN then
-        computes f (... (f s i0)...) iN.
-
-        Args:
-            folder: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-
-        Returns:
-            The state object after the folding function is applied to
-            each element of the sequence.
+        threading an accumulator argument through the computation.
         """
         result = state
         async for value in self:
@@ -150,20 +137,8 @@ class AsyncSeq(AsyncIterable[TSource]):
         """Fold elements in sequence backwards.
 
         Applies the function to each element of the collection,
-        starting from the end, threading an accumulator argument through
-        the computation. If the input function is f and the elements are
-        i0...iN then computes f i0 (... (f iN s)...).
-
-        Args:
-            folder: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-
-        Returns:
-            The state object after the folding function is applied to
-            each element of the sequence.
+        starting from the end.
         """
-        # Convert to list first since we need to iterate backwards
         items = []
         async for value in self:
             items.append(value)
@@ -176,16 +151,7 @@ class AsyncSeq(AsyncIterable[TSource]):
     async def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -> AsyncIterable[TState]:
         """Scan elements in sequence.
 
-        Like fold, but computes on-demand and returns the sequence of
-        intermediary and final results.
-
-        Args:
-            scanner: A function that updates the state with each element
-                from the sequence.
-            state: The initial state.
-
-        Returns:
-            The resulting sequence of computed states.
+        Like fold, but yields intermediate results.
         """
         result = state
         yield result
@@ -195,11 +161,7 @@ class AsyncSeq(AsyncIterable[TSource]):
             yield result
 
     async def take(self, count: int) -> AsyncIterable[TSource]:
-        """Returns the first N elements of the sequence.
-
-        Args:
-            count: The number of items to take.
-        """
+        """Returns the first N elements of the sequence."""
 
         async def _take(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
             i = 0
@@ -212,14 +174,7 @@ class AsyncSeq(AsyncIterable[TSource]):
         return pipe(self, _take)
 
     async def skip(self, count: int) -> AsyncIterable[TSource]:
-        """Skip elements from sequence.
-
-        Returns a sequence that skips N elements of the underlying
-        sequence and then yields the remaining elements of the sequence.
-
-        Args:
-            count: The number of elements to skip.
-        """
+        """Skip elements from sequence."""
 
         async def _skip(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
             i = 0
@@ -231,26 +186,13 @@ class AsyncSeq(AsyncIterable[TSource]):
         return pipe(self, _skip)
 
     async def head(self) -> TSource:
-        """Returns the first element of the sequence.
-
-        Returns:
-            The first element of the sequence.
-
-        Raises:
-            Raises `ValueError` if the source sequence is empty.
-        """
+        """Returns the first element of the sequence."""
         async for value in self:
             return value
-
         raise ValueError("Sequence contains no elements")
 
     async def tail(self) -> AsyncIterable[TSource]:
-        """Return the tail of the sequence.
-
-        Returns a sequence that skips 1 element of the underlying
-        sequence and then yields the remaining elements of the
-        sequence.
-        """
+        """Return the tail of the sequence."""
 
         async def _tail(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
             first = True
@@ -277,11 +219,7 @@ class AsyncSeq(AsyncIterable[TSource]):
         return result
 
     async def max(self) -> TSource:
-        """Return maximum of all elements.
-
-        Returns the greatest of all elements of the sequence, compared via
-        `max()`.
-        """
+        """Return maximum of all elements."""
         items = []
         async for value in self:
             items.append(value)
@@ -290,11 +228,7 @@ class AsyncSeq(AsyncIterable[TSource]):
         return builtins.max(items)
 
     async def min(self) -> TSource:
-        """Return the minimum of all elements.
-
-        Returns the smallest of all elements of the sequence, compared via
-        `min()`.
-        """
+        """Return minimum of all elements."""
         items = []
         async for value in self:
             items.append(value)
@@ -327,12 +261,8 @@ async def repeat(value: TSource, times: int | None = None) -> AsyncIterable[TSou
 
 @overload
 def range(stop: int) -> AsyncIterable[int]: ...
-
-
 @overload
 def range(start: int, stop: int) -> AsyncIterable[int]: ...
-
-
 @overload
 def range(start: int, start_stop: int, step: int) -> AsyncIterable[int]: ...
 
@@ -360,15 +290,12 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource
 
 
 def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
-    """Choose items from the sequence.
-
-    Applies the following 
-    """
+    """Choose items from the sequence."""
     async def _choose(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
         async for value in source:
             result = chooser(value)
             if not result.is_none():
-                yield result
+                yield result.value
 
     return _choose
 
@@ -376,15 +303,10 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[AsyncIter
 def collect(
     mapping: Callable[[TSource], AsyncIterable[TResult]],
 ) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
-    """Collect 
-    """
-    async def _all_???????
+    """Collect items from the sequence."""
+    async def _collect(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
+        async for value in source:
+            async for item in mapping(value):
+                yield item
 
-        # This is ****
-
-
-
-Continue
-
-
-
+    return _collect
