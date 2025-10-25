@@ -149,7 +149,7 @@ class AsyncSeq(AsyncIterable[TSource]):
     async def fold_back(self, folder: Callable[[TSource, TState], TState], state: TState) -> TState:
         """Fold elements in sequence backwards.
 
-        Applies a function to each element of the collection,
+        Applies the function to each element of the collection,
         starting from the end, threading an accumulator argument through
         the computation. If the input function is f and the elements are
         i0...iN then computes f i0 (... (f iN s)...).
@@ -218,7 +218,7 @@ class AsyncSeq(AsyncIterable[TSource]):
         sequence and then yields the remaining elements of the sequence.
 
         Args:
-            count: The number of items to skip.
+            count: The number of elements to skip.
         """
 
         async def _skip(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
@@ -334,7 +334,7 @@ def range(start: int, stop: int) -> AsyncIterable[int]: ...
 
 
 @overload
-def range(start: int, stop: int, step: int) -> AsyncIterable[int]: ...
+def range(start: int, start_stop: int, step: int) -> AsyncIterable[int]: ...
 
 
 async def range(*args: int, **kw: int) -> AsyncIterable[int]:
@@ -362,23 +362,13 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource
 def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     """Choose items from the sequence.
 
-    Applies the given function to each element of the list. Returns
-    the list comprised of the results x for each element where the
-    function returns `Some(x)`.
-
-    Args:
-        chooser: The function to generate options from the elements.
-
-    Returns:
-        The list comprising the values selected from the chooser
-        function.
+    Applies the following 
     """
-
     async def _choose(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
         async for value in source:
             result = chooser(value)
             if not result.is_none():
-                yield result.value
+                yield result
 
     return _choose
 
@@ -386,98 +376,15 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[AsyncIter
 def collect(
     mapping: Callable[[TSource], AsyncIterable[TResult]],
 ) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
-    """Collect items from the sequence.
-
-    Applies the function to each element of the list and
-    concatenates all the resulting sequences. This function is known
-    as `bind` or `flat_map` in other languages.
-
-    Args:
-        mapping: The function to generate sequences from the elements.
-
-    Returns:
-        A sequence comprising the concatenated values from the mapping
-        function.
+    """Collect 
     """
+    async def _all_???????
 
-    async def _collect(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
-        async for value in source:
-            async for item in mapping(value):
-                yield item
-
-    return _collect
+        # This is ****
 
 
-async def concat(source: AsyncIterable[AsyncIterable[TSource]]) -> AsyncIterable[TSource]:
-    """Concatenate sequences.
 
-    Combines the given variable number of enumerations and/or
-    enumeration-of-enumerations as a single concatenated enumeration.
-    """
-    async for value in source:
-        async for item in value:
-            yield item
+Continue
 
 
-def fold(folder: Callable[[TState, TSource], TState], state: TState) -> Callable[[AsyncIterable[TSource]], TState]:
-    """Fold elements in sequence.
 
-    Applies a function to each element of the collection,
-    threading an accumulator argument through the computation. If
-    the input function is f and the elements are i0...iN then
-    computes f (... (f s i0)...) iN.
-
-    Args:
-        folder: A function that updates the state with each element
-            from the sequence.
-        state: The initial state.
-
-    Returns:
-        The state object after the folding function is applied to
-        each element of the sequence.
-    """
-
-    async def _fold(source: AsyncIterable[TSource]) -> TState:
-        result = state
-        async for value in source:
-            result = folder(result, value)
-        return result
-
-    return _fold
-
-
-def fold_back(folder: Callable[[TSource, TState], TState], state: TState) -> Callable[[AsyncIterable[TSource]], TState]:
-    """Fold elements in sequence backwards.
-
-    Applies a function to each element of the collection,
-    starting from the end, threading an accumulator argument through
-    the computation. If the input function is f and the elements are
-    i0...iN then computes f i0 (... (f iN s)...).
-
-    Args:
-        folder: A function that updates the state with each element
-            from the sequence.
-        state: The initial state.
-
-    Returns:
-        The state object after the folding function is applied to
-        each element of the sequence.
-    """
-
-    async def _fold_back(source: AsyncIterable[TSource]) -> TState:
-        # Convert to list first since we need to iterate backwards
-        items = []
-        async for value in source:
-            items.append(value)
-
-        result = state
-        for ? ? ? ?? ??? ?? ?? ??:  # placeholder placeholder
-
-    return _fold_back
-
-
-def scan(
-    scanner: Callable[[TState, TSource], TState], 
-    state: TState
-) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TState]]:
-    """...
