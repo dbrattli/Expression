@@ -4,6 +4,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Callable
 from typing import Any, TypeVar, overload
 
 from expression.core import Option, pipe
+from expression.core.typing import SupportsSum
 
 
 TSource = TypeVar("TSource")
@@ -311,4 +312,4 @@ def collect(
             async for item in mapping(value):
                 yield item
 
-    return _collect
+    return _choose
