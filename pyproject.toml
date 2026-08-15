@@ -33,19 +33,21 @@ all = ["pydantic>=2.6.2,<3.0.0"]
 [project.urls]
 Homepage = "https://github.com/cognitedata/Expression"
 
-[tool.poetry]
-version = "0.0.0" # NOTE: updated by the publish workflow
+[tool.hatch.version]
+path = "expression/_version.py"
 
-[tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^1.4.0"
-pytest = "^9.1.1"
-coverage = "^7.15.4"
-coveralls = "^4.1.0"
-pre-commit = "^4.6.2"
-dunamai = "^1.26.2"
-hypothesis = "^6.165.9"
-ruff = "^0.16.3"
-jupytext = "^1.19.5"
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=1.4.0,<2",
+    "pytest>=9.1.1,<10",
+    "coverage>=7.15.4,<8",
+    "coveralls>=4.1.0,<5",
+    "pre-commit>=4.6.2,<5",
+    "dunamai>=1.26.2,<2",
+    "hypothesis>=6.165.9,<7",
+    "ruff>=0.16.3,<0.17",
+    "jupytext>=1.19.5,<2",
+]
 
 
 [tool.ruff]
@@ -72,5 +74,5 @@ asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 
 [build-system]
-requires = ["poetry-core>=2.4.1,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling>=1.27.0,<2"]
+build-backend = "hatchling.build"

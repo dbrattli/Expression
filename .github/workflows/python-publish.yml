@@ -46,19 +46,22 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install Poetry
-        run: pip install poetry==2.4.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: uv sync --all-extras
 
       - name: Build package
-        run: poetry build
+        run: uv build
 
       - name: Publish to PyPI
-        run: poetry publish -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
+        run: uv publish --token ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Read released version
         id: version
         run: |
-          VERSION=$(sed -n '/^\[tool.poetry\]/,/^\[/ s/^version = "\(.*\)".*/\1/p' pyproject.toml | head -1)
+          VERSION=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' expression/_version.py | head -1)
           test -n "$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 

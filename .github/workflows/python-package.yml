@@ -27,14 +27,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
       - name: Install dependencies
-        run: |
-          pipx install poetry==2.4.1
-          poetry install --all-extras
+        run: uv sync --all-extras
 
       - name: Code checks
-        run: |
-          poetry run pre-commit run --all-files --show-diff-on-failure
+        run: uv run pre-commit run --all-files --show-diff-on-failure
 
       - name: Check README modifications
         run: |
@@ -49,5 +49,4 @@ jobs:
           fi
 
       - name: Test with pytest
-        run: |
-          poetry run pytest
+        run: uv run pytest
