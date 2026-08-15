@@ -17,7 +17,7 @@ latex:
 
 # Information about where the book exists on the web
 repository:
-  url: https://github.com/cognitedata/expression # Online location of your book
+  url: https://github.com/dbrattli/Expression # Online location of your book
   path_to_book: docs  # Optional path to your book, relative to the repository root
   branch: main  # Which branch of the repository should be used when creating links (optional)
 
@@ -32,4 +32,18 @@ sphinx:
   config:
     add_module_names: false
     autodoc_default_options: { 'member-order': 'alphabetical', 'undoc-members': True }
+    nb_custom_formats:
+      .py:
+        - jupytext.reads
+        - fmt: py:percent
+    exclude_patterns:
+      - "_build/**"
+      - "**.ipynb_checkpoints"
+      - ".DS_Store"
+      - "Thumbs.db"
+      - "conf.py"
+      - "markdown.md"
+      - "markdown-notebooks.md"
+      - "notebooks.ipynb"
+      - "reference/computational_expressions.md"
     language: en

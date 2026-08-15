@@ -81,6 +81,35 @@ To add Pydantic v2 support, install the `pydantic` extra:
 
 # %% [markdown]
 """
+### Start with a practical workflow
+
+Expression is designed for ordinary Python code. Start with one of these common needs:
+
+- Transform an iterable in readable steps with `pipe` and `Seq`.
+- Use `Option` when a value may be absent.
+- Use `Result` when a caller needs an expected failure reason.
+
+```python
+from expression import pipe
+from expression.collections import seq
+
+total = pipe(
+    [4, 7, 12, 15],
+    seq.filter(lambda score: score >= 10),
+    seq.map(lambda score: score * 2),
+    seq.sum,
+)
+
+assert total == 54
+```
+
+Learn progressively in the
+[documentation](https://expression.readthedocs.io/en/latest/): start with installation,
+then pipelines, optional values, expected failures, collections, and domain modelling.
+"""
+
+# %% [markdown]
+"""
 ## Goals
 
 - Industrial strength library for functional programming in Python.
