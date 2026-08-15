@@ -11,18 +11,18 @@ jobs:
     if: ${{ github.actor != 'github-actions[bot]' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
-          pipx install poetry
+          pipx install poetry==2.4.1
           poetry install --all-extras
 
       - name: Generate README.md
@@ -31,7 +31,7 @@ jobs:
           poetry run ./make_readme.sh
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "[auto] Sync README.md from README.py"
           title: '[auto] Sync README.md from README.py'

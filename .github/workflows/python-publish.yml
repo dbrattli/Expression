@@ -12,18 +12,18 @@ jobs:
     name: "Publish library"
     steps:
       - name: Check out
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
           fetch-depth: 0
 
       - name: Setup Python Env
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
-        run: pip install poetry dunamai
+        run: pip install poetry==2.4.1 dunamai==1.26.2
 
       - name: Set version
         run: |
