@@ -39,11 +39,18 @@ def tagged_union(
     eq: bool = True,
     order: bool = False,
 ) -> Any:
-    """Decorator that turns a dataclass into a tagged union.
+    """Tagged union decorator.
 
-    The decorated class behaves like an immutable variant type where
-    exactly one field is set.  The name of the active field becomes
-    the ``tag`` attribute and can be used for pattern matching.
+    A decorator that turns a dataclass into a tagged union.
+
+    Arguments:
+        frozen: Whether the tagged union should be frozen. If True,
+            the __setattr__ and __delattr__ methods will be generated.
+        repr: If True, the __repr__ method will be generated.
+        order: If True, the __lt__ method will be generated. The first
+            case will be considered the smallest with index 0 and the
+            items will be compared as the tuple (index, value)
+        eq: If True, the __eq__ method will be generated.
     """
 
     def transform(cls: Any) -> Any:
