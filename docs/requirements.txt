@@ -1,4 +1,4 @@
-jupyter-book
+jupyter-book>=1.0.4,<2.0
 sphinx>=5.0.0
 sphinx-autodoc-typehints>=1.17.0
 sphinx-panels

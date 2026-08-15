@@ -25,7 +25,7 @@ def test_pattern_match_with_alias():
 
 
 def test_result_ok():
-    xs: Result[int, str] = Result.Ok(42)
+    xs = Result[int, str].Ok(42)
 
     assert isinstance(xs, Result)
     assert xs.is_ok()
@@ -40,7 +40,7 @@ def test_result_ok():
 
 
 def test_result_match_ok():
-    xs: Result[int, str] = Result.Ok(42)
+    xs = Result[int, str].Ok(42)
 
     match xs:
         case Result(tag="ok", ok=x):
@@ -565,7 +565,7 @@ class Child2(Parent):
 
 
 def test_merge_subclasses():
-    xs: Result[Parent, Parent] = Result.Ok(Child1(x=42))
+    xs = Result[Parent, Parent].Ok(Child1(x=42))
     assert xs.merge() == Child1(x=42)
 
 

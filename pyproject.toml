@@ -1,46 +1,51 @@
-[tool.poetry]
+[project]
 name = "Expression"
-version = "0.0.0" # NOTE: will be updated by publish script
+dynamic = ["version"]
 description = "Practical functional programming for Python 3.10+"
 readme = "README.md"
-authors = ["Dag Brattli <dag.brattli@cognite.com>"]
-license = "MIT License"
-homepage = "https://github.com/cognitedata/Expression"
+requires-python = ">=3.10,<4"
+authors = [
+    { name = "Dag Brattli", email = "dag.brattli@cognite.com" },
+]
+license = "MIT"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Other Environment",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+dependencies = [
+    "typing-extensions>=4.6.0",
+]
 
-[tool.poetry.dependencies]
-python = ">= 3.10, < 4"
-typing-extensions = ">=4.6.0"
+[project.optional-dependencies]
+pydantic = ["pydantic>=2.6.2,<3.0.0"]
+all = ["pydantic>=2.6.2,<3.0.0"]
 
-pydantic = {version = "^2.6.2", optional = true}
+[project.urls]
+Homepage = "https://github.com/cognitedata/Expression"
+
+[tool.poetry]
+version = "0.0.0" # NOTE: updated by the publish workflow
 
 [tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^0.25.0"
-pytest = "^8.3.3"
-coverage = "^6.4.3"
-coveralls = "^3.3.1"
-pre-commit = "^4.0.1"
-dunamai = "^1.12.0"
-hypothesis = "^6.54.2"
-ruff = "^0.9.0"
-jupytext = "^1.16.1"
-
-
-[tool.poetry.extras]
-pydantic = ["pydantic"]
-all = ["pydantic"]
+pytest-asyncio = "^1.4.0"
+pytest = "^9.1.1"
+coverage = "^7.15.4"
+coveralls = "^4.1.0"
+pre-commit = "^4.6.2"
+dunamai = "^1.26.2"
+hypothesis = "^6.165.9"
+ruff = "^0.16.3"
+jupytext = "^1.19.5"
 
 
 [tool.ruff]
@@ -64,7 +69,8 @@ known-third-party = ["pytest"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.4.1,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

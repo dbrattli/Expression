@@ -515,9 +515,10 @@ class Block(
     @overload
     def __getitem__(self, key: int) -> _TSource: ...
 
-    def __getitem__(self, key: Any) -> Any:
-        ret: Any = self._value[key]
-        return ret
+    def __getitem__(self, key: slice | int) -> Block[_TSource] | _TSource:
+        if isinstance(key, slice):
+            return Block(self._value[key])
+        return self._value[key]
 
     def __iter__(self) -> Iterator[_TSource]:
         return iter(self._value)

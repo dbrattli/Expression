@@ -1,15 +1,17 @@
 import builtins
 import itertools
 from collections.abc import AsyncIterable, AsyncIterator, Callable
-from typing import Any, TypeVar, overload
+from typing import Any, TypeVar, cast, overload
 
 from expression.core import Option, pipe
-from expression.core.typing import SupportsSum
+from expression.core.typing import SupportsLessThan, SupportsSum
 
 
 TSource = TypeVar("TSource")
 TResult = TypeVar("TResult")
 TState = TypeVar("TState")
+TSourceSortable = TypeVar("TSourceSortable", bound=SupportsLessThan)
+TSourceSum = TypeVar("TSourceSum", bound=SupportsSum)
 
 
 class AsyncSeq(AsyncIterable[TSource]):
@@ -22,7 +24,7 @@ class AsyncSeq(AsyncIterable[TSource]):
         return AsyncSeq(pipe(self._ai, map(mapper)))  # type: ignore[arg-type]
 
     @classmethod
-    async def empty(cls) -> "AsyncSeq[Any]":
+    def empty(cls) -> "AsyncSeq[Any]":
         return AsyncSeq(empty())
 
     @overload
@@ -140,7 +142,7 @@ class AsyncSeq(AsyncIterable[TSource]):
         Applies the function to each element of the collection,
         starting from the end.
         """
-        items = []
+        items: list[TSource] = []
         async for value in self:
             items.append(value)
 
@@ -212,25 +214,25 @@ class AsyncSeq(AsyncIterable[TSource]):
             count += 1
         return count
 
-    async def sum(self) -> TSource:
+    async def sum(self: "AsyncSeq[TSourceSum]") -> TSourceSum:
         """Returns the sum of the elements in the sequence."""
-        result: TSource = 0  # type: ignore
+        result = cast(TSourceSum, 0)
         async for value in self:
-            result += value  # type: ignore
+            result = cast(TSourceSum, result + value)
         return result
 
-    async def max(self) -> TSource:
+    async def max(self: "AsyncSeq[TSourceSortable]") -> TSourceSortable:
         """Return maximum of all elements."""
-        items = []
+        items: list[TSourceSortable] = []
         async for value in self:
             items.append(value)
         if not items:
             raise ValueError("Sequence contains no elements")
         return builtins.max(items)
 
-    async def min(self) -> TSource:
+    async def min(self: "AsyncSeq[TSourceSortable]") -> TSourceSortable:
         """Return minimum of all elements."""
-        items = []
+        items: list[TSourceSortable] = []
         async for value in self:
             items.append(value)
         if not items:

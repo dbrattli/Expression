@@ -7,8 +7,5 @@
   "reportImportCycles": false,
   "reportMissingImports": false,
   "pythonVersion": "3.10",
-  "typeCheckingMode": "strict",
-  "reportShadowedImports": "none",
-  "venv": ".venv",
-  "venvPath": "."
+  "typeCheckingMode": "strict"
 }

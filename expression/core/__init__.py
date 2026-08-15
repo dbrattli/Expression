@@ -67,7 +67,6 @@ __all__ = [
     "result",
     "snd",
     "tag",
-    "tag",
     "tagged_union",
     "tailrec",
     "tailrec_async",

@@ -16,8 +16,7 @@ def tagged_union(
     repr: bool = True,
     eq: bool = True,
     order: bool = False,
-) -> Callable[[type[_T]], type[_T]]:
-    ...
+) -> Callable[[type[_T]], type[_T]]: ...
 
 
 @overload
@@ -28,8 +27,7 @@ def tagged_union(
     repr: bool = True,
     eq: bool = True,
     order: bool = False,
-) -> type[_T]:
-    ...
+) -> type[_T]: ...
 
 
 @dataclass_transform()
@@ -41,8 +39,7 @@ def tagged_union(
     eq: bool = True,
     order: bool = False,
 ) -> Any:
-    """
-    Decorator that turns a dataclass into a tagged union.
+    """Decorator that turns a dataclass into a tagged union.
 
     The decorated class behaves like an immutable variant type where
     exactly one field is set.  The name of the active field becomes
@@ -85,9 +82,7 @@ def tagged_union(
             if name not in field_names:
                 raise TypeError(f"Unknown case name: {name}")
             if len(kwargs) != 1:
-                raise TypeError(
-                    f"Only one case may be specified; got {list(kwargs.keys())}"
-                )
+                raise TypeError(f"Only one case may be specified; got {list(kwargs.keys())}")
 
             # Resolve the tag
             if tag is None or tag == name:
@@ -98,9 +93,7 @@ def tagged_union(
                 raise TypeError(f"Tag {tag!r} does not match case name {name!r}")
 
             # Keep only the active fields for dataclasses.asdict
-            union_fields = {
-                f.name: f for f in fields(cls) if f.name in (name, "tag")
-            }
+            union_fields = {f.name: f for f in fields(cls) if f.name in (name, "tag")}
             object.__setattr__(self, "__dataclass_fields__", union_fields)
 
             original_init(self)
@@ -138,10 +131,7 @@ def tagged_union(
             def __lt__(self: Any, other: Any) -> bool:
                 if not isinstance(other, cls):
                     return NotImplemented
-                return (
-                    (self._index, getattr(self, self.tag))
-                    < (other._index, getattr(other, other.tag))
-                )
+                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))
 
             cls.__lt__ = __lt__
 
