@@ -489,7 +489,7 @@ def try_find(table: Map[_Key, _Value], key: _Key) -> Option[_Value]:
     return table.try_find(key)
 
 
-empty: Map[Any, Any] = Map.empty()
+empty = Map[Any, Any].empty()
 
 __all__ = [
     "Map",

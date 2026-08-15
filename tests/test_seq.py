@@ -113,7 +113,7 @@ def test_seq_head_pipe(xs: list[int]):
 
 def test_seq_head_empty_source():
     with pytest.raises(ValueError):
-        empty: Seq[Any] = Seq.empty()
+        empty = Seq[Any].empty()
         pipe(
             empty,
             seq.head,
