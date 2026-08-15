@@ -3,7 +3,7 @@
 from . import aiotools, option, result
 from .builder import Builder
 from .compose import compose
-from .curry import curry, curry_flip
+from .curry import curry, curry_flip, pipeable
 from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
@@ -64,6 +64,7 @@ __all__ = [
     "pipe",
     "pipe2",
     "pipe3",
+    "pipeable",
     "result",
     "snd",
     "tag",

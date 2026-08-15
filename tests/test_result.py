@@ -193,6 +193,25 @@ def test_result_error_chained_map(msg: str, y: int):
         case _:
             assert False
 
+
+def test_result_apply():
+    value: Result[int, str] = Ok(2)
+    function: Result[Callable[[int], int], str] = Ok(lambda x: x + 1)
+
+    assert value.apply(function) == Ok(3)
+    assert value.pipe(result.apply(function)) == Ok(3)
+
+
+def test_result_apply_errors():
+    value_error: Result[int, str] = Error("value error")
+    function_error: Result[Callable[[int], int], str] = Error("function error")
+    function: Result[Callable[[int], int], str] = Ok(lambda x: x + 1)
+
+    assert value_error.apply(function) == Error("value error")
+    assert Ok(2).apply(function_error) == Error("function error")
+    assert value_error.apply(function_error) == Error("function error")
+
+
 @given(st.text())
 def test_map_error(msg: str):
     assert Error(msg).map_error(lambda x: f"more {x}") == Error("more " + msg)

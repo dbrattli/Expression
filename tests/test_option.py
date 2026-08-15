@@ -50,6 +50,23 @@ def test_option_some_match_fluent():
         case _:
             assert False
 
+
+def test_option_apply():
+    value: Option[int] = Some(2)
+    function: Option[Callable[[int], int]] = Some(lambda x: x + 1)
+
+    assert value.apply(function) == Some(3)
+    assert value.pipe(option.apply(function)) == Some(3)
+
+
+def test_option_apply_nothing():
+    value: Option[int] = Some(2)
+    function: Option[Callable[[int], int]] = Some(lambda x: x + 1)
+
+    assert Nothing.apply(function) == Nothing
+    assert value.apply(Nothing) == Nothing
+
+
 def test_option_some_iterate_to_list():
     xs = Some(42)
 
@@ -481,6 +498,10 @@ class Model(BaseModel):
     custom_type_none: Option[Username] = Nothing
 
 
+class TupleModel(BaseModel):
+    values: Option[tuple[int, ...]]
+
+
 def test_parse_option_works():
     obj = dict(
         one=10, two=None, annotated_type=20, annotated_type_none=None, custom_type="test_user", custom_type_none=None
@@ -495,6 +516,12 @@ def test_parse_option_works():
     assert model.annotated_type == Some(20)
     assert model.annotated_type_none == Nothing
     assert model.custom_type_none == Nothing
+
+
+def test_parse_option_tuple_works():
+    model = TupleModel.model_validate({"values": [1, 2, 3]})
+
+    assert model.values == Some((1, 2, 3))
 
 
 def test_serialize_option_works():

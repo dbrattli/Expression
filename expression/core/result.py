@@ -122,6 +122,22 @@ class Result(
             case Result(error=error):
                 return Result(error=error)
 
+    def apply(
+        self,
+        function: Result[Callable[[_TSourceOut], _TResult], _TErrorOut],
+    ) -> Result[_TResult, _TErrorOut]:
+        """Apply a function in a Result to this Result's value.
+
+        If both Results are Ok, apply the function. If either Result is an
+        Error, return that error; the function Result takes precedence when
+        both are errors.
+        """
+        match function:
+            case Result(tag="ok", ok=mapper):
+                return self.map(mapper)
+            case Result(error=error):
+                return Result[_TResult, _TErrorOut].Error(error)
+
     def map_error(self, mapper: Callable[[_TErrorOut], _TResult]) -> Result[_TSourceOut, _TResult]:
         """Map error.
 
@@ -403,6 +419,19 @@ def map2(
 
 
 @curry_flip(1)
+def apply(
+    value: Result[_TSource, _TError],
+    function: Result[Callable[[_TSource], _TResult], _TError],
+) -> Result[_TResult, _TError]:
+    """Apply a function Result to a value Result.
+
+    The function Result takes precedence when both inputs are errors. The
+    curried form supports ``value.pipe(result.apply(function))``.
+    """
+    return value.apply(function)
+
+
+@curry_flip(1)
 def map_error(result: Result[_TSource, _TError], mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
     return result.map_error(mapper)
 
@@ -491,6 +520,7 @@ __all__ = [
     "Error",
     "Ok",
     "Result",
+    "apply",
     "bind",
     "default_value",
     "default_with",
