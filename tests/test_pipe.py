@@ -3,9 +3,11 @@ from typing import TypeVar
 
 from hypothesis import given
 from hypothesis import strategies as st
+from typing_extensions import assert_type
 
 from expression import pipe, pipe2
-from expression.core.pipe import starpipe, starid
+from expression.core import PipeMixin
+from expression.core.pipe import starid, starpipe
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")
@@ -34,6 +36,65 @@ def test_pipe_fn_gn(x: int, y: int, z: int):
     )
 
     assert value == gn(fn(x))
+
+
+def test_pipe_supports_sixteen_stages():
+    def increment(value: int) -> int:
+        return value + 1
+
+    value = pipe(
+        0,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+    )
+
+    assert_type(value, int)
+    assert value == 16
+
+
+def test_pipe_mixin_supports_sixteen_stages():
+    class Value(PipeMixin):
+        def __init__(self, value: int) -> None:
+            self.value = value
+
+    def increment(value: Value) -> Value:
+        return Value(value.value + 1)
+
+    value = Value(0).pipe(
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+        increment,
+    )
+
+    assert_type(value, Value)
+    assert value.value == 16
 
 
 @given(st.integers(), st.integers())

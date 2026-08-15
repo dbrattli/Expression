@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 import pytest
 
-from expression import curry, curry_flip, pipe
+from expression import curry, curry_flip, pipe, pipeable
 
 
 def test_curry_identity():
@@ -121,3 +121,10 @@ def test_curry_flip_2():
     ys = pipe(xs, map(lambda x: x * 10)(10))
 
     assert ys == [20, 30, 40]
+
+
+def test_pipeable():
+    def transform(value: int, increment: int, *, multiplier: int) -> int:
+        return (value + increment) * multiplier
+
+    assert pipe(2, pipeable(transform, 1, multiplier=3)) == 9
