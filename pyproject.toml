@@ -61,6 +61,10 @@ lint.ignore = ["D100", "D101", "D102", "D103", "D105", "D107"]
 lint.select = ["D", "E", "W",  "F", "I", "T", "RUF", "TID", "UP"]
 exclude = ["tests", "docs"]
 
+[tool.ruff.lint.per-file-ignores]
+"docs/guides/*.py" = ["D212", "D415", "E402", "E501", "I001"]
+"docs/tutorial/*.py" = ["D212", "D415", "E402", "E501", "I001"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
