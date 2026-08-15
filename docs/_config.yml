@@ -32,3 +32,4 @@ sphinx:
   config:
     add_module_names: false
     autodoc_default_options: { 'member-order': 'alphabetical', 'undoc-members': True }
+    language: en
