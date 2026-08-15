@@ -8,7 +8,7 @@ on:
 jobs:
   create-readme-pr:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'github-actions[bot]' }}
+    if: ${{ github.actor != 'github-actions[bot]' && github.ref == 'refs/heads/main' }}
 
     steps:
       - uses: actions/checkout@v7
@@ -39,5 +39,4 @@ jobs:
           body: 'Auto-generated PR to sync README.md with changes from README.py'
           branch: "update-readme"
           delete-branch: true
-          base: ${{ github.ref }}
           labels: automated,documentation
