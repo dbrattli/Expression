@@ -23,7 +23,7 @@ Do not use directly. Use the `map` module instead.
 """
 
 import builtins
-from collections.abc import Callable, Hashable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
 
@@ -56,7 +56,7 @@ class MapTreeNode(MapTreeLeaf[Key, Value]):
     height: int
 
 
-empty: MapTree[Hashable, Any] = Nothing
+empty: MapTree[Any, Any] = Nothing
 
 
 def is_empty(m: MapTree[Any, Any]):
@@ -73,7 +73,7 @@ def size_aux(acc: int, m: MapTree[Key, Value]) -> int:
             return acc
 
 
-def size(x: MapTree[Hashable, Any]):
+def size(x: MapTree[Any, Any]):
     return size_aux(0, x)
 
 
