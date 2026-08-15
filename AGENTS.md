@@ -11,13 +11,13 @@ as the source for the generated `README.md`; never edit `README.md` alone.
 
 ## Build, Test, and Development Commands
 
-- `just install` creates the Poetry environment with optional Pydantic support.
+- `just install` creates the uv environment with optional Pydantic support.
 - `just test` runs the complete test suite configured in `pyproject.toml`.
-- `poetry run pytest tests/test_option.py -k map` runs a focused test selection.
+- `uv run pytest tests/test_option.py -k map` runs a focused test selection.
 - `just lint` runs pre-commit across all files, reproducing CI lint, formatting,
   type-checking, and README checks; `just check` runs lint and tests together.
 - `just build` creates source and wheel distributions.
-- `poetry run ./make_readme.sh` regenerates `README.md` after changing `README.py`.
+- `uv run ./make_readme.sh` regenerates `README.md` after changing `README.py`.
 
 Release automation runs through EasyBuild.ShipIt. Install the local tool manifest with
 `dotnet tool restore` and use Conventional Commit subjects (`feat:`, `fix:`, `docs:`,
