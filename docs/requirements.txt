@@ -1,4 +1,5 @@
 jupyter-book>=1.0.4.post1,<2.0
+jupytext>=1.19.5,<2.0
 linkify-it-py
 myst-nb
 sphinx>=7,<8
