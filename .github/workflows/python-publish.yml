@@ -1,39 +1,78 @@
-# This workflows will upload a Python Package using Poetry when a release is created
-
 name: Publish Package
 
 on:
-  release:
-    types: [created]
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  publish:
+  shipit-pr:
+    name: ShipIt - Pull Request
     runs-on: ubuntu-latest
-    name: "Publish library"
+    if: "!startsWith(github.event.head_commit.message, 'chore: release ')"
+    timeout-minutes: 10
     steps:
-      - name: Check out
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
-          token: "${{ secrets.GITHUB_TOKEN }}"
           fetch-depth: 0
 
-      - name: Setup Python Env
-        uses: actions/setup-python@v7
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '9.x'
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Run ShipIt
+        run: dotnet shipit --allow-branch main --skip-invalid-commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    name: Release to PyPI
+    runs-on: ubuntu-latest
+    if: "startsWith(github.event.head_commit.message, 'chore: release ')"
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
 
-      - name: Install dependencies
-        run: pip install poetry==2.4.1 dunamai==1.26.2
-
-      - name: Set version
-        run: |
-          VERSION=$(dunamai from any --no-metadata --style pep440)
-          poetry version $VERSION
-          echo "__version__ = \"$VERSION\"" > expression/_version.py
+      - name: Install Poetry
+        run: pip install poetry==2.4.1
 
       - name: Build package
         run: poetry build
 
-      - name: Release to PyPI
+      - name: Publish to PyPI
+        run: poetry publish -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Read released version
+        id: version
         run: |
-          poetry publish -u __token__ -p ${{ secrets.PYPI_API_TOKEN }} || echo 'Version exists'
+          VERSION=$(sed -n '/^\[tool.poetry\]/,/^\[/ s/^version = "\(.*\)".*/\1/p' pyproject.toml | head -1)
+          test -n "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Tag and create GitHub release
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists; skipping."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" --title "$TAG" --notes "See [CHANGELOG.md](https://github.com/dbrattli/Expression/blob/main/CHANGELOG.md) for details."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

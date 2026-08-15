@@ -19,6 +19,11 @@ as the source for the generated `README.md`; never edit `README.md` alone.
 - `just build` creates source and wheel distributions.
 - `poetry run ./make_readme.sh` regenerates `README.md` after changing `README.py`.
 
+Release automation runs through EasyBuild.ShipIt. Install the local tool manifest with
+`dotnet tool restore` and use Conventional Commit subjects (`feat:`, `fix:`, `docs:`,
+`chore:`, `ci:`, etc.); ShipIt uses these commits to generate `CHANGELOG.md` and open
+release pull requests. Do not hand-edit generated release entries.
+
 ## Coding Style & Naming Conventions
 
 Write Python compatible with 3.10 and follow PEP 8. Ruff enforces a 120-character line
