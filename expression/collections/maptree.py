@@ -27,13 +27,14 @@ from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
 
-from expression.core import Nothing, Option, Some, SupportsLessThan, failwith, pipe
+from expression.core import Nothing, Option, Some, failwith, pipe
+from expression.core.typing import SupportsLessThanAndHash
 
 from . import block, seq
 from .block import Block
 
 
-Key = TypeVar("Key", bound=SupportsLessThan)
+Key = TypeVar("Key", bound=SupportsLessThanAndHash)
 Value = TypeVar("Value")
 Result = TypeVar("Result")
 

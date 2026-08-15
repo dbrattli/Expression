@@ -19,15 +19,16 @@ from __future__ import annotations
 from collections.abc import Callable, ItemsView, Iterable, Iterator, Mapping
 from typing import Any, TypeVar, cast
 
-from expression.core import Option, PipeMixin, SupportsLessThan, curry_flip, pipe
+from expression.core import Option, PipeMixin, curry_flip, pipe
+from expression.core.typing import SupportsLessThanAndHash
 
 from . import maptree, seq
 from .block import Block
 from .maptree import MapTree
 
 
-_Key = TypeVar("_Key", bound=SupportsLessThan)
-_Key_ = TypeVar("_Key_", bound=SupportsLessThan)
+_Key = TypeVar("_Key", bound=SupportsLessThanAndHash)
+_Key_ = TypeVar("_Key_", bound=SupportsLessThanAndHash)
 _Value = TypeVar("_Value")
 _Result = TypeVar("_Result")
 

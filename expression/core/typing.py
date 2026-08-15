@@ -17,6 +17,11 @@ class SupportsLessThan(Protocol):
         raise NotImplementedError
 
 
+class SupportsLessThanAndHash(SupportsLessThan, Protocol):
+    def __hash__(self) -> int:
+        return super().__hash__()
+
+
 class SupportsSum(Protocol):
     @abstractmethod
     def __radd__(self, __other: Any) -> Any:
