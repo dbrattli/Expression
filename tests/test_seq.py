@@ -318,6 +318,51 @@ def test_seq_infinite(xs: list[int]):
     assert expected == list(ys)
 
 
+@given(st.lists(st.integers()))  # type: ignore
+def test_seq_pairwise_pipe(xs: list[int]):
+    pairs = pipe(xs, seq.pairwise)
+
+    assert list(pairs) == list(zip(xs, xs[1:]))
+
+
+@given(st.lists(st.integers()))  # type: ignore
+def test_seq_pairwise_fluent(xs: list[int]):
+    source = Seq[int].of_iterable(xs)
+    pairs = source.pairwise()
+
+    assert list(pairs) == list(zip(xs, xs[1:]))
+
+
+def test_seq_pairwise_short_sources_are_empty():
+    empty: list[int] = []
+
+    assert list(seq.pairwise(empty)) == []
+    assert list(seq.pairwise([1])) == []
+
+
+def test_seq_pairwise_preserves_repeatable_sources():
+    pairs = seq.pairwise([1, 2, 3])
+
+    assert list(pairs) == [(1, 2), (2, 3)]
+    assert list(pairs) == [(1, 2), (2, 3)]
+
+
+def test_seq_pairwise_is_lazy():
+    consumed: list[int] = []
+
+    def source() -> Iterable[int]:
+        for value in [1, 2, 3]:
+            consumed.append(value)
+            yield value
+
+    pairs = seq.pairwise(source())
+    assert consumed == []
+
+    iterator = iter(pairs)
+    assert next(iterator) == (1, 2)
+    assert consumed == [1, 2]
+
+
 rtn: Callable[[int], Seq[int]] = seq.singleton
 empty: Seq[int] = seq.empty
 
