@@ -328,6 +328,10 @@ class Seq(Iterable[_TSource], PipeMixin):
         """Return the index of the first element matching the predicate, if any."""
         return pipe(self, try_find_index(predicate))
 
+    def try_pick(self, chooser: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
+        """Return the first value produced by the chooser, if any."""
+        return pipe(self, try_pick(chooser))
+
     def dict(self) -> Iterable[_TSource]:
         """Returns a json serializable representation of the list."""
 
@@ -975,6 +979,33 @@ def try_find_index(source: Iterable[_TSource], predicate: Callable[[_TSource], b
 
 
 @curry_flip(1)
+def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
+    """Return the first value produced by the chooser, if any.
+
+    The chooser is evaluated in sequence order, and evaluation stops as
+    soon as it returns `Some`.
+
+    Args:
+        source: The input sequence.
+        chooser: A function that transforms elements into optional results.
+
+    Returns:
+        The first result wrapped in `Some`, or `Nothing` when the chooser
+        returns `Nothing` for every element.
+
+    Example:
+        >>> pipe([1, 2, 3], try_pick(lambda value: Option.of_obj(value * 10 if value % 2 == 0 else None)))
+        Some 20
+    """
+    for value in source:
+        result = chooser(value)
+        if result.is_some():
+            return result
+
+    return Nothing
+
+
+@curry_flip(1)
 def unfold(state: _TState, generator: Callable[[_TState], Option[tuple[_TSource, _TState]]]) -> Iterable[_TSource]:
     """Unfold sequence.
 
@@ -1068,6 +1099,7 @@ __all__ = [
     "tail",
     "take",
     "try_find_index",
+    "try_pick",
     "unfold",
     "zip",
 ]

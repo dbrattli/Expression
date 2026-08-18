@@ -414,6 +414,58 @@ def test_seq_try_find_index_propagates_predicate_exceptions():
         pipe([1], seq.try_find_index(predicate))
 
 
+def test_seq_try_pick_pipe_returns_first_transformed_value():
+    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing
+    result = pipe([1, 2, 4], seq.try_pick(choose_even))
+
+    assert result == Some("2")
+
+
+def test_seq_try_pick_fluent():
+    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing
+    source = Seq[int].of_iterable([1, 2, 4])
+
+    assert source.try_pick(choose_even) == Some("2")
+
+
+def test_seq_try_pick_returns_nothing_without_a_choice():
+    empty: list[int] = []
+    never_choose: Callable[[int], Option[str]] = lambda _: Nothing
+
+    assert pipe(empty, seq.try_pick(never_choose)) is Nothing
+    assert pipe([1, 2], seq.try_pick(never_choose)) is Nothing
+
+
+def test_seq_try_pick_preserves_some_none():
+    choose_none: Callable[[int], Option[None]] = lambda value: Some(None) if value == 2 else Nothing
+    result = pipe([1, 2, 3], seq.try_pick(choose_none))
+
+    assert result == Some(None)
+
+
+def test_seq_try_pick_stops_after_first_choice():
+    consumed: list[int] = []
+    choose_two: Callable[[int], Option[int]] = lambda value: Some(value * 10) if value == 2 else Nothing
+
+    def source() -> Iterable[int]:
+        for value in [1, 2, 3]:
+            consumed.append(value)
+            yield value
+
+    result = pipe(source(), seq.try_pick(choose_two))
+
+    assert result == Some(20)
+    assert consumed == [1, 2]
+
+
+def test_seq_try_pick_propagates_chooser_exceptions():
+    def chooser(_: int) -> Option[str]:
+        raise ValueError("chooser failed")
+
+    with pytest.raises(ValueError, match="chooser failed"):
+        pipe([1], seq.try_pick(chooser))
+
+
 rtn: Callable[[int], Seq[int]] = seq.singleton
 empty: Seq[int] = seq.empty
 
