@@ -31,8 +31,10 @@ from collections.abc import Callable, Iterable, Iterator
 from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from expression.core import (
+    Nothing,
     Option,
     PipeMixin,
+    Some,
     SupportsGreaterThan,
     SupportsLessThan,
     SupportsSum,
@@ -321,6 +323,10 @@ class Seq(Iterable[_TSource], PipeMixin):
 
     def to_list(self) -> Block[_TSource]:
         return to_list(self)
+
+    def try_find_index(self, predicate: Callable[[_TSource], bool]) -> Option[int]:
+        """Return the index of the first element matching the predicate, if any."""
+        return pipe(self, try_find_index(predicate))
 
     def dict(self) -> Iterable[_TSource]:
         """Returns a json serializable representation of the list."""
@@ -943,6 +949,32 @@ def to_list(source: Iterable[_TSource]) -> Block[_TSource]:
 
 
 @curry_flip(1)
+def try_find_index(source: Iterable[_TSource], predicate: Callable[[_TSource], bool]) -> Option[int]:
+    """Return the index of the first element matching the predicate, if any.
+
+    Indices are zero-based, and evaluation stops as soon as the predicate
+    returns `True`.
+
+    Args:
+        source: The input sequence.
+        predicate: A function to test each element.
+
+    Returns:
+        The first matching index wrapped in `Some`, or `Nothing` when no
+        element matches.
+
+    Example:
+        >>> pipe([1, 2, 3], try_find_index(lambda value: value % 2 == 0))
+        Some 1
+    """
+    for index, value in enumerate(source):
+        if predicate(value):
+            return Some(index)
+
+    return Nothing
+
+
+@curry_flip(1)
 def unfold(state: _TState, generator: Callable[[_TState], Option[tuple[_TSource, _TState]]]) -> Iterable[_TSource]:
     """Unfold sequence.
 
@@ -1035,6 +1067,7 @@ __all__ = [
     "sum_by",
     "tail",
     "take",
+    "try_find_index",
     "unfold",
     "zip",
 ]
