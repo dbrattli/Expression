@@ -243,6 +243,10 @@ class Seq(Iterable[_TSource], PipeMixin):
         """
         return Seq(mapi(mapping)(self))
 
+    def pairwise(self) -> Seq[tuple[_TSource, _TSource]]:
+        """Return adjacent elements paired with their predecessor."""
+        return Seq(pairwise(self))
+
     @overload
     @staticmethod
     def range(stop: int) -> Iterable[int]: ...
@@ -793,6 +797,25 @@ of_list = of_iterable
 """Alias to `seq.of_iterable`."""
 
 
+def pairwise(source: Iterable[_TSource]) -> Iterable[tuple[_TSource, _TSource]]:
+    """Return adjacent elements paired with their predecessor.
+
+    The result is evaluated lazily and contains no elements when the source has
+    fewer than two elements.
+
+    Args:
+        source: The input sequence.
+
+    Returns:
+        A sequence of overlapping adjacent pairs.
+
+    Example:
+        >>> list(pairwise([1, 2, 3, 4]))
+        [(1, 2), (2, 3), (3, 4)]
+    """
+    return SeqGen(lambda: itertools.pairwise(source))
+
+
 @overload
 def range(stop: int) -> Iterable[int]: ...
 
@@ -1003,6 +1026,7 @@ __all__ = [
     "of",
     "of_iterable",
     "of_list",
+    "pairwise",
     "range",
     "scan",
     "singleton",
