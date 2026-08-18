@@ -370,6 +370,13 @@ def test_seq_try_find_index_pipe_returns_first_matching_index():
     assert result == Some(2)
 
 
+def test_seq_try_find_pipe_returns_first_match():
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+    result = pipe([1, 2, 4], seq.try_find(is_even))
+
+    assert result == Some(2)
+
+
 def test_seq_try_find_index_fluent():
     source = Seq[int].of_iterable([1, 3, 4, 6])
 
@@ -389,6 +396,21 @@ def test_seq_try_find_index_returns_nothing_without_match():
 
     assert pipe(empty, seq.try_find_index(always_true)) is Nothing
     assert pipe([1, 3], seq.try_find_index(is_even)) is Nothing
+
+
+def test_seq_try_find_fluent():
+    source = Seq[int].of_iterable([1, 2, 4])
+
+    assert source.try_find(lambda value: value % 2 == 0) == Some(2)
+
+
+def test_seq_try_find_returns_nothing_without_match():
+    empty: list[int] = []
+    always_true: Callable[[int], bool] = lambda _: True
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+
+    assert pipe(empty, seq.try_find(always_true)) is Nothing
+    assert pipe([1, 3], seq.try_find(is_even)) is Nothing
 
 
 def test_seq_try_find_index_stops_after_first_match():
@@ -412,6 +434,37 @@ def test_seq_try_find_index_propagates_predicate_exceptions():
 
     with pytest.raises(ValueError, match="predicate failed"):
         pipe([1], seq.try_find_index(predicate))
+
+
+def test_seq_try_find_can_match_none():
+    source: list[int | None] = [1, None, 2]
+    is_none: Callable[[int | None], bool] = lambda value: value is None
+    result = pipe(source, seq.try_find(is_none))
+
+    assert result == Some(None)
+
+
+def test_seq_try_find_stops_after_first_match():
+    consumed: list[int] = []
+    is_two: Callable[[int], bool] = lambda value: value == 2
+
+    def source() -> Iterable[int]:
+        for value in [1, 2, 3]:
+            consumed.append(value)
+            yield value
+
+    result = pipe(source(), seq.try_find(is_two))
+
+    assert result == Some(2)
+    assert consumed == [1, 2]
+
+
+def test_seq_try_find_propagates_predicate_exceptions():
+    def predicate(_: int) -> bool:
+        raise ValueError("predicate failed")
+
+    with pytest.raises(ValueError, match="predicate failed"):
+        pipe([1], seq.try_find(predicate))
 
 
 rtn: Callable[[int], Seq[int]] = seq.singleton
