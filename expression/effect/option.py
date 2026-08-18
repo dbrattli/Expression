@@ -99,7 +99,10 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         self,  # Ignored self parameter
         fn: Callable[
             _P,
-            Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
+            Generator[_TSource | None, _TSource, _TSource | None]
+            | Generator[_TSource | None, None, _TSource | None]
+            | _TSource
+            | None,
         ],
     ) -> Callable[_P, Option[_TSource]]:
         return super().__call__(fn)

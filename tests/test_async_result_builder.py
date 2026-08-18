@@ -417,3 +417,41 @@ async def test_async_result_builder_with_nested_async_generators():
 
     computation = await outer_gen()
     assert computation == Ok(42)  # 40 -> 41 -> 42
+
+
+@pytest.mark.asyncio
+async def test_async_result_builder_plain_function_body():
+    """A body without a yield statement is treated like a `return` statement."""
+
+    @effect.async_result[int, str]()
+    async def fn() -> int:
+        await asyncio.sleep(0)  # Simulate async work
+        return 42
+
+    computation = await fn()
+    assert computation == Ok(42)
+
+
+@pytest.mark.asyncio
+async def test_async_result_builder_plain_function_body_none():
+    """A plain async function body returning None maps to zero()."""
+
+    @effect.async_result[int, str]()
+    async def fn() -> None:
+        return None
+
+    computation = await fn()
+    assert computation == Ok(None)
+
+
+@pytest.mark.asyncio
+async def test_async_result_builder_runtime_error_propagates():
+    """A RuntimeError raised in the body propagates instead of being swallowed."""
+
+    @effect.async_result[int, str]()
+    async def fn() -> AsyncGenerator[int, int]:
+        raise RuntimeError("boom")
+        yield 42  # Should not reach here
+
+    with raises(RuntimeError, match="boom"):
+        await fn()

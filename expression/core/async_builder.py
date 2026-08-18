@@ -4,6 +4,7 @@ This module provides the base class for async builders, which are used to
 create computational expressions for async operations.
 """
 
+import inspect
 from abc import ABC
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from functools import wraps
@@ -93,14 +94,36 @@ class AsyncBuilder(Generic[_T, _M], ABC):  # Corrected Generic definition
         self,
         fn: Callable[
             _P,
-            AsyncGenerator[_T, Any],
+            AsyncGenerator[_T, Any] | Awaitable[_T | None] | _T | None,
         ],
     ) -> Callable[_P, Awaitable[_M]]:
-        """The builder decorator."""
+        """The builder decorator.
+
+        A body without a `yield` statement is a plain async function. Its
+        return value is treated like a `return` statement (F# `return`): a
+        value is lifted with `return_`, and a `None` return value maps to
+        `zero()`.
+        """
 
         @wraps(fn)
         async def wrapper(*args: _P.args, **kw: _P.kwargs) -> _M:
-            gen = fn(*args, **kw)
+            body = fn(*args, **kw)
+
+            if not inspect.isasyncgen(body):
+                # A body without a `yield` statement is a plain (async)
+                # function. Treat its return value like a `return` statement:
+                # a value maps to return_(value), a None return value maps
+                # to zero().
+                result_value: _T | None
+                if inspect.iscoroutine(body):
+                    result_value = await cast("Awaitable[_T]", body)
+                else:
+                    result_value = cast("_T | None", body)
+                if result_value is None:
+                    return await self.run(await self.zero())
+                return await self.run(await self.return_(result_value))
+
+            gen = cast("AsyncGenerator[_T, Any]", body)
             state = AsyncBuilderState[_T]()  # Initialize AsyncBuilderState
             result: _M = await self.zero()  # Initialize result
             value: _M
