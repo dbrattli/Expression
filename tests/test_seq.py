@@ -363,6 +363,57 @@ def test_seq_pairwise_is_lazy():
     assert consumed == [1, 2]
 
 
+def test_seq_try_find_index_pipe_returns_first_matching_index():
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+    result = pipe([1, 3, 4, 6], seq.try_find_index(is_even))
+
+    assert result == Some(2)
+
+
+def test_seq_try_find_index_fluent():
+    source = Seq[int].of_iterable([1, 3, 4, 6])
+
+    assert source.try_find_index(lambda value: value % 2 == 0) == Some(2)
+
+
+def test_seq_try_find_index_can_return_zero():
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+
+    assert pipe([2, 4], seq.try_find_index(is_even)) == Some(0)
+
+
+def test_seq_try_find_index_returns_nothing_without_match():
+    empty: list[int] = []
+    always_true: Callable[[int], bool] = lambda _: True
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+
+    assert pipe(empty, seq.try_find_index(always_true)) is Nothing
+    assert pipe([1, 3], seq.try_find_index(is_even)) is Nothing
+
+
+def test_seq_try_find_index_stops_after_first_match():
+    consumed: list[int] = []
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+
+    def source() -> Iterable[int]:
+        for value in [1, 3, 4, 6]:
+            consumed.append(value)
+            yield value
+
+    result = pipe(source(), seq.try_find_index(is_even))
+
+    assert result == Some(2)
+    assert consumed == [1, 3, 4]
+
+
+def test_seq_try_find_index_propagates_predicate_exceptions():
+    def predicate(_: int) -> bool:
+        raise ValueError("predicate failed")
+
+    with pytest.raises(ValueError, match="predicate failed"):
+        pipe([1], seq.try_find_index(predicate))
+
+
 rtn: Callable[[int], Seq[int]] = seq.singleton
 empty: Seq[int] = seq.empty
 
