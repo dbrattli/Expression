@@ -302,3 +302,37 @@ def test_result_builder_yield_from_error_short_circuit():
             assert err == "error"
         case _:
             assert False
+
+
+def test_result_builder_plain_function_body():
+    """A body without a yield statement is treated like a `return` statement."""
+
+    @effect.result[int, str]()
+    def fn() -> int:
+        return 42
+
+    computation = fn()
+    assert computation == Ok(42)
+
+
+def test_result_builder_plain_function_body_none():
+    """A plain function body returning None maps to zero()."""
+
+    @effect.result[int, str]()
+    def fn() -> None:
+        return None
+
+    computation = fn()
+    assert computation == Ok(None)
+
+
+def test_result_builder_runtime_error_propagates():
+    """A RuntimeError raised in the body propagates instead of being swallowed."""
+
+    @effect.result[int, str]()
+    def fn() -> Generator[int, int, int]:
+        raise RuntimeError("boom")
+        yield 42  # Should not reach here
+
+    with raises(RuntimeError, match="boom"):
+        fn()

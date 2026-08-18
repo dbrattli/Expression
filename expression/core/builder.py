@@ -1,3 +1,4 @@
+import inspect
 from abc import ABC
 from collections.abc import Callable, Generator
 from functools import wraps
@@ -83,22 +84,34 @@ class Builder(Generic[_T, _M], ABC):  # Corrected Generic definition
 
             raise  # Raise StopIteration with no value
 
-        except RuntimeError:
-            state.is_done = True
-            return self.zero()  # Return zero() to handle generator runtime errors instead of raising StopIteration
-
     def __call__(
         self,
         fn: Callable[
             _P,
-            Generator[_T | None, _T, _T | None] | Generator[_T | None, None, _T | None],
+            Generator[_T | None, _T, _T | None] | Generator[_T | None, None, _T | None] | _T | None,
         ],
     ) -> Callable[_P, _M]:
-        """The builder decorator."""
+        """The builder decorator.
+
+        A body without a `yield` statement is a plain function. Its return
+        value is treated like a `return` statement (F# `return`): a value is
+        lifted with `return_`, and a `None` return value maps to `zero()`.
+        """
 
         @wraps(fn)
         def wrapper(*args: _P.args, **kw: _P.kwargs) -> _M:
-            gen = fn(*args, **kw)
+            body = fn(*args, **kw)
+
+            if not inspect.isgenerator(body):
+                # A body without a `yield` statement is a plain function.
+                # Treat its return value like a `return` statement: a value
+                # maps to return_(value), a None return value maps to zero().
+                result_value = cast("_T | None", body)
+                if result_value is None:
+                    return self.run(self.zero())
+                return self.run(self.return_(result_value))
+
+            gen = cast("Generator[Any, Any, Any]", body)
             state = BuilderState[_T]()  # Initialize BuilderState
             result: _M = self.zero()  # Initialize result
             value: _M

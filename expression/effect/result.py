@@ -90,7 +90,10 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         self,  # Ignored self parameter
         fn: Callable[
             _P,
-            Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
+            Generator[_TSource | None, _TSource, _TSource | None]
+            | Generator[_TSource | None, None, _TSource | None]
+            | _TSource
+            | None,
         ],
     ) -> Callable[_P, Result[_TSource, _TError]]:
         return super().__call__(fn)

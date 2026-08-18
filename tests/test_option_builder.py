@@ -290,3 +290,37 @@ def test_option_builder_yield_from_nothing_short_circuit():
 
     computation = fn()
     assert computation is Nothing
+
+
+def test_option_builder_plain_function_body():
+    """A body without a yield statement is treated like a `return` statement."""
+
+    @effect.option[int]()
+    def fn() -> int:
+        return 42
+
+    computation = fn()
+    assert computation == Some(42)
+
+
+def test_option_builder_plain_function_body_none():
+    """A plain function body returning None maps to zero()."""
+
+    @effect.option[int]()
+    def fn() -> None:
+        return None
+
+    computation = fn()
+    assert computation is Nothing
+
+
+def test_option_builder_runtime_error_propagates():
+    """A RuntimeError raised in the body propagates instead of being swallowed."""
+
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        raise RuntimeError("boom")
+        yield 42  # Should not reach here
+
+    with raises(RuntimeError, match="boom"):
+        fn()

@@ -124,7 +124,11 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
         self,
         fn: Callable[
             _P,
-            AsyncGenerator[_TSource, _TSource] | AsyncGenerator[_TSource, None],
+            AsyncGenerator[_TSource, _TSource]
+            | AsyncGenerator[_TSource, None]
+            | Awaitable[_TSource | None]
+            | _TSource
+            | None,
         ],
     ) -> Callable[_P, Awaitable[Result[_TSource, _TError]]]:
         """The builder decorator."""
