@@ -10,9 +10,10 @@ type of input.
 from __future__ import annotations
 
 import array
+import asyncio
 import builtins
 import functools
-from collections.abc import Callable, Iterable, Iterator, MutableSequence
+from collections.abc import Awaitable, Callable, Iterable, Iterator, MutableSequence
 from enum import Enum
 from typing import Any, TypeVar, cast
 
@@ -185,7 +186,34 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         self.typecode = typecode
 
     def map(self, mapping: Callable[[_TSource], _TResult]) -> TypedArray[_TResult]:
+        """Map array.
+
+        Builds a new array whose elements are the results of applying
+        the given function to each of the elements of the array.
+
+        Args:
+            mapping: A function to transform items from the input array.
+
+        Returns:
+            The result sequence.
+        """
         result = builtins.map(mapping, self.value)
+        return TypedArray(result)
+
+    async def par_map(self, mapping: Callable[[_TSource], Awaitable[_TResult]]) -> TypedArray[_TResult]:
+        """Map array asynchronously.
+
+        Builds a new array whose elements are the results of applying
+        the given asynchronous function to each of the elements of the
+        array.
+
+        Args:
+            mapping: A function to transform items from the input array.
+
+        Returns:
+            The result sequence.
+        """
+        result = await asyncio.gather(*(mapping(item) for item in self))
         return TypedArray(result)
 
     def choose(self, chooser: Callable[[_TSource], Option[_TResult]]) -> TypedArray[_TResult]:

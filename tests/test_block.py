@@ -1,3 +1,4 @@
+import asyncio
 import functools
 from builtins import list as list
 from collections.abc import Callable
@@ -7,6 +8,7 @@ from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 from pydantic import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
+import pytest
 
 from expression import Nothing, Option, Some, pipe
 from expression.collections import Block, block
@@ -458,3 +460,20 @@ def test_serialize_block_works():
     assert model_.annotated_type_empty == block.empty
     assert model_.custom_type == Block(["a", "b", "c"])
     assert model_.custom_type_empty == block.empty
+
+@pytest.mark.asyncio
+async def test_par_map():
+    async def async_fn(i: int):
+        await asyncio.sleep(0.1)
+        return i * 2
+
+    xs = Block(range(1, 10))
+
+    start_time = asyncio.get_event_loop().time()
+    ys = await xs.par_map(async_fn)
+    end_time = asyncio.get_event_loop().time()
+
+    assert ys == Block(i * 2 for i in range(1, 10))
+
+    time_taken = end_time - start_time
+    assert time_taken < 0.2, "par_map took too long"
