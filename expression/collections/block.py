@@ -20,10 +20,11 @@ Example:
 
 from __future__ import annotations
 
+import asyncio
 import builtins
 import functools
 import itertools
-from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
+from collections.abc import Awaitable, Callable, Collection, Iterable, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 
 from typing_extensions import TypeVarTuple, Unpack
@@ -251,6 +252,23 @@ class Block(
             The list of transformed elements.
         """
         return Block((*builtins.map(mapping, self),))
+
+    async def par_map(self, mapping: Callable[[_TSource], Awaitable[_TResult]]) -> Block[_TResult]:
+        """Map list asynchronously.
+
+        Builds a new collection whose elements are the results of
+        applying the given asynchronous function to each of the
+        elements of the collection.
+
+        Args:
+            mapping: The function to transform elements from the input
+                list.
+
+        Returns:
+            The list of transformed elements.
+        """
+        result = await asyncio.gather(*(mapping(item) for item in self))
+        return Block(result)
 
     def starmap(self: Block[tuple[Unpack[_P]]], mapping: Callable[[Unpack[_P]], _TResult]) -> Block[_TResult]:
         """Starmap source sequence.
