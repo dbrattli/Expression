@@ -321,6 +321,19 @@ class Seq(Iterable[_TSource], PipeMixin):
         """
         return Seq(pipe(self, take(count)))
 
+    def take_while(self, predicate: Callable[[_TSource], bool]) -> Seq[_TSource]:
+        """Returns elements while a predicate holds.
+
+        Returns a sequence that yields elements from the underlying
+        sequence while the given predicate returns `True`, and then
+        skips the remaining elements.
+
+        Args:
+            predicate: A function that evaluates to `False` when no more
+                items should be returned.
+        """
+        return Seq(pipe(self, take_while(predicate)))
+
     def to_list(self) -> Block[_TSource]:
         return to_list(self)
 
@@ -946,6 +959,32 @@ def take(source: Iterable[_TSource], count: int) -> Iterable[_TSource]:
     return Seq()
 
 
+@curry_flip(1)
+def take_while(source: Iterable[_TSource], predicate: Callable[[_TSource], bool]) -> Iterable[_TSource]:
+    """Returns elements while a predicate holds.
+
+    Returns a sequence that yields elements from the underlying
+    sequence while the given predicate returns `True`, and then
+    skips the remaining elements.
+
+    Args:
+        source: The source sequence.
+        predicate: A function that evaluates to `False` when no more
+            items should be returned.
+
+    Returns:
+        The result sequence.
+    """
+
+    def gen() -> Iterator[_TSource]:
+        for item in source:
+            if not predicate(item):
+                break
+            yield item
+
+    return SeqGen(gen)
+
+
 def to_list(source: Iterable[_TSource]) -> Block[_TSource]:
     from .block import Block
 
@@ -1098,6 +1137,7 @@ __all__ = [
     "sum_by",
     "tail",
     "take",
+    "take_while",
     "try_find_index",
     "try_pick",
     "unfold",

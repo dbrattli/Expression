@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable, Iterable
-from itertools import accumulate
+from itertools import accumulate, takewhile
 from typing import Any, Optional
 
 import pytest
@@ -246,6 +246,43 @@ def test_seq_take_is_lazy():
     xs = seq.infinite
 
     ys = pipe(xs, seq.take(5))
+    assert list(ys) == [0, 1, 2, 3, 4]
+
+
+@given(st.lists(st.integers()))  # type: ignore
+def test_seq_take_while(xs: list[int]):
+    def predicate(x: int) -> bool:
+        return x >= 0
+
+    ys = seq.of_iterable(xs)
+    zs = pipe(ys, seq.take_while(predicate))
+    assert list(zs) == list(takewhile(predicate, xs))
+
+
+@given(st.lists(st.integers()))  # type: ignore
+def test_seq_take_while_fluent(xs: list[int]):
+    def predicate(x: int) -> bool:
+        return x >= 0
+
+    ys = seq.of_iterable(xs).take_while(predicate)
+    assert list(ys) == list(takewhile(predicate, xs))
+
+
+def test_seq_take_while_stops_on_first_false():
+    def is_even(x: int) -> bool:
+        return x % 2 == 0
+
+    xs = seq.of_iterable([2, 4, 1, 6, 8])
+    ys = pipe(xs, seq.take_while(is_even))
+    assert list(ys) == [2, 4]
+
+
+def test_seq_take_while_is_lazy():
+    def predicate(x: int) -> bool:
+        return x < 5
+
+    xs = seq.infinite
+    ys = pipe(xs, seq.take_while(predicate))
     assert list(ys) == [0, 1, 2, 3, 4]
 
 
