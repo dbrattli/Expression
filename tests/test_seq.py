@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable, Iterable
-from itertools import accumulate
+from itertools import accumulate, takewhile
 from typing import Any, Optional
 
 import pytest
@@ -250,6 +250,43 @@ def test_seq_take_is_lazy():
 
 
 @given(st.lists(st.integers()))  # type: ignore
+def test_seq_take_while(xs: list[int]):
+    def predicate(x: int) -> bool:
+        return x >= 0
+
+    ys = seq.of_iterable(xs)
+    zs = pipe(ys, seq.take_while(predicate))
+    assert list(zs) == list(takewhile(predicate, xs))
+
+
+@given(st.lists(st.integers()))  # type: ignore
+def test_seq_take_while_fluent(xs: list[int]):
+    def predicate(x: int) -> bool:
+        return x >= 0
+
+    ys = seq.of_iterable(xs).take_while(predicate)
+    assert list(ys) == list(takewhile(predicate, xs))
+
+
+def test_seq_take_while_stops_on_first_false():
+    def is_even(x: int) -> bool:
+        return x % 2 == 0
+
+    xs = seq.of_iterable([2, 4, 1, 6, 8])
+    ys = pipe(xs, seq.take_while(is_even))
+    assert list(ys) == [2, 4]
+
+
+def test_seq_take_while_is_lazy():
+    def predicate(x: int) -> bool:
+        return x < 5
+
+    xs = seq.infinite
+    ys = pipe(xs, seq.take_while(predicate))
+    assert list(ys) == [0, 1, 2, 3, 4]
+
+
+@given(st.lists(st.integers()))  # type: ignore
 def test_seq_length(xs: list[int]):
     ys = seq.of_iterable(xs)
     n = pipe(ys, seq.length)
@@ -441,12 +478,54 @@ def test_seq_try_find_can_match_none():
     is_none: Callable[[int | None], bool] = lambda value: value is None
     result = pipe(source, seq.try_find(is_none))
 
-    assert result == Some(None)
-
-
 def test_seq_try_find_stops_after_first_match():
     consumed: list[int] = []
     is_two: Callable[[int], bool] = lambda value: value == 2
+      
+
+def test_seq_try_find_propagates_predicate_exceptions():
+    def predicate(_: int) -> bool:
+        raise ValueError("predicate failed")
+
+    with pytest.raises(ValueError, match="predicate failed"):
+        pipe([1], seq.try_find(predicate))
+    result = pipe(source(), seq.try_pick(choose_two))
+
+    assert result == Some(20)
+    assert consumed == [1, 2]
+
+def test_seq_try_pick_pipe_returns_first_transformed_value():
+    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing
+    result = pipe([1, 2, 4], seq.try_pick(choose_even))
+
+    assert result == Some("2")
+
+
+def test_seq_try_pick_fluent():
+    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing
+    source = Seq[int].of_iterable([1, 2, 4])
+
+    assert source.try_pick(choose_even) == Some("2")
+
+
+def test_seq_try_pick_returns_nothing_without_a_choice():
+    empty: list[int] = []
+    never_choose: Callable[[int], Option[str]] = lambda _: Nothing
+
+    assert pipe(empty, seq.try_pick(never_choose)) is Nothing
+    assert pipe([1, 2], seq.try_pick(never_choose)) is Nothing
+
+
+def test_seq_try_pick_preserves_some_none():
+    choose_none: Callable[[int], Option[None]] = lambda value: Some(None) if value == 2 else Nothing
+    result = pipe([1, 2, 3], seq.try_pick(choose_none))
+
+    assert result == Some(None)
+
+
+def test_seq_try_pick_stops_after_first_choice():
+    consumed: list[int] = []
+    choose_two: Callable[[int], Option[int]] = lambda value: Some(value * 10) if value == 2 else Nothing
 
     def source() -> Iterable[int]:
         for value in [1, 2, 3]:
@@ -458,13 +537,12 @@ def test_seq_try_find_stops_after_first_match():
     assert result == Some(2)
     assert consumed == [1, 2]
 
+def test_seq_try_pick_propagates_chooser_exceptions():
+    def chooser(_: int) -> Option[str]:
+        raise ValueError("chooser failed")
 
-def test_seq_try_find_propagates_predicate_exceptions():
-    def predicate(_: int) -> bool:
-        raise ValueError("predicate failed")
-
-    with pytest.raises(ValueError, match="predicate failed"):
-        pipe([1], seq.try_find(predicate))
+    with pytest.raises(ValueError, match="chooser failed"):
+        pipe([1], seq.try_pick(chooser))
 
 
 rtn: Callable[[int], Seq[int]] = seq.singleton

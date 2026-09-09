@@ -321,6 +321,19 @@ class Seq(Iterable[_TSource], PipeMixin):
         """
         return Seq(pipe(self, take(count)))
 
+    def take_while(self, predicate: Callable[[_TSource], bool]) -> Seq[_TSource]:
+        """Returns elements while a predicate holds.
+
+        Returns a sequence that yields elements from the underlying
+        sequence while the given predicate returns `True`, and then
+        skips the remaining elements.
+
+        Args:
+            predicate: A function that evaluates to `False` when no more
+                items should be returned.
+        """
+        return Seq(pipe(self, take_while(predicate)))
+
     def to_list(self) -> Block[_TSource]:
         return to_list(self)
 
@@ -331,6 +344,9 @@ class Seq(Iterable[_TSource], PipeMixin):
     def try_find(self, predicate: Callable[[_TSource], bool]) -> Option[_TSource]:
         """Return the first element matching the predicate, if any."""
         return pipe(self, try_find(predicate))
+    def try_pick(self, chooser: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
+        """Return the first value produced by the chooser, if any."""
+        return pipe(self, try_pick(chooser))
 
     def dict(self) -> Iterable[_TSource]:
         """Returns a json serializable representation of the list."""
@@ -946,6 +962,32 @@ def take(source: Iterable[_TSource], count: int) -> Iterable[_TSource]:
     return Seq()
 
 
+@curry_flip(1)
+def take_while(source: Iterable[_TSource], predicate: Callable[[_TSource], bool]) -> Iterable[_TSource]:
+    """Returns elements while a predicate holds.
+
+    Returns a sequence that yields elements from the underlying
+    sequence while the given predicate returns `True`, and then
+    skips the remaining elements.
+
+    Args:
+        source: The source sequence.
+        predicate: A function that evaluates to `False` when no more
+            items should be returned.
+
+    Returns:
+        The result sequence.
+    """
+
+    def gen() -> Iterator[_TSource]:
+        for item in source:
+            if not predicate(item):
+                break
+            yield item
+
+    return SeqGen(gen)
+
+
 def to_list(source: Iterable[_TSource]) -> Block[_TSource]:
     from .block import Block
 
@@ -999,6 +1041,28 @@ def try_find(source: Iterable[_TSource], predicate: Callable[[_TSource], bool]) 
     for value in source:
         if predicate(value):
             return Some(value)
+def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
+    """Return the first value produced by the chooser, if any.
+
+    The chooser is evaluated in sequence order, and evaluation stops as
+    soon as it returns `Some`.
+
+    Args:
+        source: The input sequence.
+        chooser: A function that transforms elements into optional results.
+
+    Returns:
+        The first result wrapped in `Some`, or `Nothing` when the chooser
+        returns `Nothing` for every element.
+
+    Example:
+        >>> pipe([1, 2, 3], try_pick(lambda value: Option.of_obj(value * 10 if value % 2 == 0 else None)))
+        Some 20
+    """
+    for value in source:
+        result = chooser(value)
+        if result.is_some():
+            return result
 
     return Nothing
 
@@ -1097,7 +1161,9 @@ __all__ = [
     "tail",
     "take",
     "try_find",
+    "take_while",
     "try_find_index",
+    "try_pick",
     "unfold",
     "zip",
 ]
