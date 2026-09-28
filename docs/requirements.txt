@@ -1,4 +1,4 @@
-jupyter-book>=2.1.6,<3.0
+jupyter-book>=2.1.7,<3.0
 jupytext>=1.19.5,<2.0
 linkify-it-py
 myst-nb
