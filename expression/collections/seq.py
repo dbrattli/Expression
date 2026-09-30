@@ -341,6 +341,9 @@ class Seq(Iterable[_TSource], PipeMixin):
         """Return the index of the first element matching the predicate, if any."""
         return pipe(self, try_find_index(predicate))
 
+    def try_find(self, predicate: Callable[[_TSource], bool]) -> Option[_TSource]:
+        """Return the first element matching the predicate, if any."""
+        return pipe(self, try_find(predicate))
     def try_pick(self, chooser: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
         """Return the first value produced by the chooser, if any."""
         return pipe(self, try_pick(chooser))
@@ -1018,6 +1021,26 @@ def try_find_index(source: Iterable[_TSource], predicate: Callable[[_TSource], b
 
 
 @curry_flip(1)
+def try_find(source: Iterable[_TSource], predicate: Callable[[_TSource], bool]) -> Option[_TSource]:
+    """Return the first element matching the predicate, if any.
+
+    Evaluation stops as soon as the predicate returns `True`.
+
+    Args:
+        source: The input sequence.
+        predicate: A function to test each element.
+
+    Returns:
+        The first matching element wrapped in `Some`, or `Nothing` when no
+        element matches.
+
+    Example:
+        >>> pipe([1, 2, 3], try_find(lambda value: value % 2 == 0))
+        Some 2
+    """
+    for value in source:
+        if predicate(value):
+            return Some(value)
 def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
     """Return the first value produced by the chooser, if any.
 
@@ -1137,6 +1160,7 @@ __all__ = [
     "sum_by",
     "tail",
     "take",
+    "try_find",
     "take_while",
     "try_find_index",
     "try_pick",
