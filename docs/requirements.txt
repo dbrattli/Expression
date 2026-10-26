@@ -2,8 +2,8 @@ jupyter-book>=2.1.7,<3.0
 jupytext>=1.19.6,<2.0
 linkify-it-py
 myst-nb
-sphinx>=9.1.0,<10
-sphinx-autodoc-typehints>=3.13.9,<4.0
+sphinx>=9.2.0,<10
+sphinx-autodoc-typehints>=3.17.2,<4.0
 sphinx-book-theme
 sphinx-comments
 sphinx-copybutton
