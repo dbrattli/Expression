@@ -3,8 +3,10 @@
   "isRoot": true,
   "tools": {
     "easybuild.shipit": {
-      "version": "3.0.1",
-      "commands": ["shipit"],
+      "version": "3.3.0",
+      "commands": [
+        "shipit"
+      ],
       "rollForward": false
     }
   }
