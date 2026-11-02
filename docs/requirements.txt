@@ -3,7 +3,7 @@ jupytext>=1.19.6,<2.0
 linkify-it-py
 myst-nb
 sphinx>=9.2.0,<10
-sphinx-autodoc-typehints>=3.17.2,<4.0
+sphinx-autodoc-typehints>=3.17.4,<4.0
 sphinx-book-theme
 sphinx-comments
 sphinx-copybutton
