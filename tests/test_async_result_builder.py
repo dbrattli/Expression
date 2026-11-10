@@ -159,7 +159,7 @@ async def test_async_result_unexpected_exception_propagates():
 async def test_async_result_rejects_wrong_family():
     @effect.async_result
     async def computation(scope: ResultScope[str]) -> int:
-        return scope.bind(cast(Result[int, str], Nothing))
+        return scope.bind(cast(Result[int, str], Nothing()))
 
     with pytest.raises(TypeError, match="Ok or Error"):
         await computation()

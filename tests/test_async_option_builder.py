@@ -12,7 +12,7 @@ from expression.effect import OptionScope
 async def test_async_option_scope_binds_awaited_values_and_final_type():
     async def fetch(number: int) -> Option[int]:
         await asyncio.sleep(0)
-        return Some(number) if number > 0 else Nothing
+        return Some(number) if number > 0 else Nothing()
 
     @effect.async_option
     async def computation(scope: OptionScope, number: int) -> str:
@@ -22,7 +22,7 @@ async def test_async_option_scope_binds_awaited_values_and_final_type():
 
     assert_type(await computation(42), Option[str])
     assert await computation(42) == Some("42")
-    assert await computation(0) is Nothing
+    assert await computation(0) is Nothing()
     assert tuple(signature(computation).parameters) == ("number",)
     assert signature(computation).return_annotation is Signature.empty
     assert computation.__annotations__ == {"number": int}
@@ -46,14 +46,14 @@ async def test_async_option_failure_runs_cleanup():
     @effect.async_option
     async def computation(scope: OptionScope) -> int:
         try:
-            scope.bind(Nothing)
+            scope.bind(Nothing())
             trace.append("unreachable")
             return 42
         finally:
             await asyncio.sleep(0)
             trace.append("cleanup")
 
-    assert await computation() is Nothing
+    assert await computation() is Nothing()
     assert trace == ["cleanup"]
 
 
@@ -62,12 +62,12 @@ async def test_async_option_caught_failure_is_terminal():
     @effect.async_option
     async def computation(scope: OptionScope) -> int:
         try:
-            scope.bind(Nothing)
+            scope.bind(Nothing())
         except BaseException:
             pass
         return 42
 
-    assert await computation() is Nothing
+    assert await computation() is Nothing()
 
 
 @pytest.mark.asyncio
@@ -117,9 +117,9 @@ async def test_async_option_calls_have_independent_scopes():
     @effect.async_option
     async def computation(scope: OptionScope, number: int) -> int:
         await asyncio.sleep(0)
-        return scope.bind(Some(number) if number > 0 else Nothing)
+        return scope.bind(Some(number) if number > 0 else Nothing())
 
-    assert await asyncio.gather(computation(1), computation(0), computation(2)) == [Some(1), Nothing, Some(2)]
+    assert await asyncio.gather(computation(1), computation(0), computation(2)) == [Some(1), Nothing(), Some(2)]
 
 
 @pytest.mark.asyncio

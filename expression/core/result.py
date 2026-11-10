@@ -28,7 +28,7 @@ from .tagged_union import TaggedUnion, case, tag
 
 
 if TYPE_CHECKING:
-    from .option import NothingType, Option, Some
+    from .option import Nothing, Option, Some
 
 
 _T = TypeVar("_T", covariant=True, default=Never)
@@ -200,11 +200,11 @@ class Error(PipeMixin, Generic[_E]):
         """Return this case's payload."""
         return self.error
 
-    def to_option(self) -> NothingType:
+    def to_option(self) -> Nothing:
         """Discard the error and return Nothing."""
         from .option import Nothing
 
-        return Nothing
+        return Nothing()
 
     def __iter__(self) -> Iterator[Never]:
         return iter(())
@@ -528,7 +528,7 @@ def to_option(source: Ok[_A]) -> Some[_A]: ...
 
 
 @overload
-def to_option(source: Error[object]) -> NothingType: ...
+def to_option(source: Error[object]) -> Nothing: ...
 
 
 def to_option(source: Result[_A, object]) -> Option[_A]:
@@ -540,7 +540,7 @@ def of_option(value: Some[_A], error: object) -> Ok[_A]: ...
 
 
 @overload
-def of_option(value: NothingType, error: _F) -> Error[_F]: ...
+def of_option(value: Nothing, error: _F) -> Error[_F]: ...
 
 
 def of_option(value: Option[_A], error: _F) -> Result[_A, _F]:
@@ -552,7 +552,7 @@ def of_option_with(value: Some[_A], error: Callable[[], object]) -> Ok[_A]: ...
 
 
 @overload
-def of_option_with(value: NothingType, error: Callable[[], _F]) -> Error[_F]: ...
+def of_option_with(value: Nothing, error: Callable[[], _F]) -> Error[_F]: ...
 
 
 def of_option_with(value: Option[_A], error: Callable[[], _F]) -> Result[_A, _F]:

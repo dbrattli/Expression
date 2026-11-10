@@ -340,7 +340,7 @@ digits = many1(parse_digit)
 
 
 def opt(p: Parser[_A]) -> Parser[Option[_A]]:
-    nothing: Option[_A] = Nothing
+    nothing: Option[_A] = Nothing()
 
     def mapper(a: _A) -> Option[_A]:
         return Some(a)

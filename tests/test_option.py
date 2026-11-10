@@ -24,7 +24,7 @@ from expression import (
     pipe,
     pipe2,
 )
-from expression.core.option import NothingType
+from expression.core.option import Nothing
 from expression.extra.option import pipeline
 
 
@@ -70,8 +70,8 @@ def test_option_apply_nothing():
     value: Option[int] = Some(2)
     function: Option[Callable[[int], int]] = Some(lambda x: x + 1)
 
-    assert Nothing.apply(function) == Nothing
-    assert value.apply(Nothing) == Nothing
+    assert Nothing().apply(function) == Nothing()
+    assert value.apply(Nothing()) == Nothing()
 
 
 def test_option_some_iterate_to_list():
@@ -95,18 +95,18 @@ def test_option_some_iterate():
 
 
 def test_option_none():
-    xs = Nothing
+    xs = Nothing()
 
-    assert isinstance(xs, NothingType)
+    assert isinstance(xs, Nothing)
     assert xs.pipe(option.is_some) is False
     assert xs.pipe(option.is_none) is True
 
 
 def test_option_none_match():
-    xs = Nothing
+    xs = Nothing()
 
     match xs:
-        case x if x is Nothing:
+        case x if x is Nothing():
             assert True
 
         case _:
@@ -114,35 +114,35 @@ def test_option_none_match():
 
 
 def test_option_nothing_iterate():
-    xs = Nothing
+    xs = Nothing()
 
     for _ in option.to_list(xs):
         assert False
 
 
 def test_option_none_equals_none():
-    xs = Nothing
-    ys = Nothing
+    xs = Nothing()
+    ys = Nothing()
 
     assert xs == ys
 
 
 def test_option_none_not_equals_some():
     xs = Some(42)
-    ys = Nothing
+    ys = Nothing()
 
     assert xs != ys
     assert ys != xs
 
 
-@pytest.mark.parametrize("left,right", [(Some(42), Some(41)), (Some(42), Nothing), (Nothing, Nothing)])
+@pytest.mark.parametrize("left,right", [(Some(42), Some(41)), (Some(42), Nothing()), (Nothing(), Nothing())])
 def test_options_have_no_implicit_order(left: Any, right: Any):
     with pytest.raises(TypeError):
         lt(left, right)
 
 
 def test_option_none_default_value():
-    xs: Option[int] = Nothing
+    xs: Option[int] = Nothing()
 
     zs = xs.default_value(42)
 
@@ -157,7 +157,7 @@ def test_option_some_default_value():
 
 
 def test_option_none_default_with():
-    xs = Nothing
+    xs = Nothing()
 
     zs = xs.default_with(lambda: 42)
 
@@ -172,7 +172,7 @@ def test_option_some_default_with():
 
 
 def test_option_none_default_arg():
-    xs = Nothing
+    xs = Nothing()
     zs = option.default_arg(xs, 42)
 
     assert zs == 42
@@ -209,12 +209,12 @@ def test_option_some_map_piped():
 
 
 def test_option_none_map_piped():
-    xs: Option[int] = Nothing
+    xs: Option[int] = Nothing()
     mapper: Callable[[int], int] = lambda x: x + 1
     map = option.map(mapper)
     ys = xs.pipe(map)
 
-    assert ys is Nothing
+    assert ys is Nothing()
 
 
 def test_option_some_map_fluent():
@@ -229,10 +229,10 @@ def test_option_some_map_fluent():
 
 
 def test_option_none_map():
-    xs = Nothing
+    xs = Nothing()
     ys = xs.map(lambda x: x + 1)
 
-    assert ys is Nothing
+    assert ys is Nothing()
 
 
 @given(st.integers(), st.integers())  # type: ignore
@@ -286,20 +286,20 @@ def test_option_some_bind_fluent():
 
 def test_option_some_bind_none_fluent():
     xs = Some(42)
-    ys = xs.bind(lambda x: Nothing)
+    ys = xs.bind(lambda x: Nothing())
 
     match ys:
-        case NothingType():
+        case Nothing():
             assert True
         case _:
             assert False
 
 
 def test_option_none_bind_none_fluent():
-    xs = Nothing
-    ys = xs.bind(lambda x: Nothing)
+    xs = Nothing()
+    ys = xs.bind(lambda x: Nothing())
 
-    assert ys is Nothing
+    assert ys is Nothing()
 
 
 def test_option_some_bind_piped():
@@ -317,18 +317,18 @@ def test_option_some_bind_piped():
 
 
 def test_option_filter_none():
-    xs = Nothing
-    assert xs.filter(lambda x: True) == Nothing
+    xs = Nothing()
+    assert xs.filter(lambda x: True) == Nothing()
 
 
 def test_option_filter_some():
     xs = Some(42)
     assert xs.filter(lambda x: x > 41) == Some(42)
-    assert xs.filter(lambda x: x > 42) == Nothing
+    assert xs.filter(lambda x: x > 42) == Nothing()
 
 
 def test_option_none_to_list():
-    xs = Nothing
+    xs = Nothing()
     assert xs.to_list() == []
 
 
@@ -338,7 +338,7 @@ def test_option_some_to_list():
 
 
 def test_option_none_to_seq():
-    xs = Nothing
+    xs = Nothing()
     assert list(xs.to_seq()) == []
 
 
@@ -348,7 +348,7 @@ def test_option_some_to_seq():
 
 
 def test_option_none_to_str():
-    xs = Nothing
+    xs = Nothing()
     assert str(xs) == "Nothing"
 
 
@@ -358,12 +358,12 @@ def test_option_some_to_str():
 
 
 def test_option_none_is_none():
-    xs = Nothing
+    xs = Nothing()
     assert xs.is_none()
 
 
 def test_option_none_is_some():
-    xs = Nothing
+    xs = Nothing()
     assert not xs.is_some()
 
 
@@ -404,7 +404,7 @@ def test_option_to_result_ok():
 
 
 def test_option_to_result_error():
-    xs = option.to_result(Nothing, "oops")
+    xs = option.to_result(Nothing(), "oops")
     assert xs == Error("oops")
 
 
@@ -417,7 +417,7 @@ def test_option_to_result_with_ok():
 
 
 def test_option_to_result_with_error():
-    xs = option.to_result_with(Nothing, error=lambda: "oops")
+    xs = option.to_result_with(Nothing(), error=lambda: "oops")
     assert xs == Error("oops")
 
 
@@ -427,7 +427,7 @@ def test_option_to_optional_some():
 
 
 def test_option_to_optional_nothing():
-    xs = option.to_optional(Nothing)
+    xs = option.to_optional(Nothing())
     assert xs is None
 
 
@@ -451,14 +451,14 @@ def test_pipeline_works():
 
 def test_pipeline_error():
     fn: Callable[[int], Option[int]] = lambda x: Some(x * 10)
-    gn: Callable[[int], Option[int]] = lambda x: Nothing
+    gn: Callable[[int], Option[int]] = lambda x: Nothing()
 
     hn = pipeline(
         fn,
         gn,
     )
 
-    assert hn(42) == Nothing
+    assert hn(42) == Nothing()
 
 
 PositiveInt = Annotated[int, Field(gt=0)]
@@ -472,13 +472,13 @@ class Username(str):
 
 class Model(BaseModel):
     one: Option[int]
-    two: Option[str] = Nothing
-    three: Option[float] = Nothing
-    annotated_type: Option[PositiveInt] = Nothing
-    annotated_type_none: Option[PositiveInt] = Nothing
+    two: Option[str] = Nothing()
+    three: Option[float] = Nothing()
+    annotated_type: Option[PositiveInt] = Nothing()
+    annotated_type_none: Option[PositiveInt] = Nothing()
 
-    custom_type: Option[Username] = Nothing
-    custom_type_none: Option[Username] = Nothing
+    custom_type: Option[Username] = Nothing()
+    custom_type_none: Option[Username] = Nothing()
 
 
 class TupleModel(BaseModel):
@@ -498,12 +498,12 @@ def test_parse_option_works():
 
     assert model.one.is_some()
     assert model.one.value == 10
-    assert model.two == Nothing
-    assert model.three == Nothing
+    assert model.two == Nothing()
+    assert model.three == Nothing()
     assert model.custom_type == Some("test_user")
     assert model.annotated_type == Some(20)
-    assert model.annotated_type_none == Nothing
-    assert model.custom_type_none == Nothing
+    assert model.annotated_type_none == Nothing()
+    assert model.custom_type_none == Nothing()
 
 
 def test_parse_option_tuple_works():
@@ -528,8 +528,8 @@ def test_serialize_option_works():
 
     assert model_.one.is_some()
     assert model_.one.value == 10
-    assert model_.two == Nothing
-    assert model_.three == Nothing
+    assert model_.two == Nothing()
+    assert model_.three == Nothing()
 
 
 class A:
@@ -551,7 +551,7 @@ def test_pickle_option_works():
     import pickle
 
     x = Some(10)
-    y = Nothing
+    y = Nothing()
     dump_x = pickle.dumps(x)
     load_x = pickle.loads(dump_x)
     dump_y = pickle.dumps(y)
@@ -561,21 +561,24 @@ def test_pickle_option_works():
 
 
 def test_nothing_iteration_is_empty():
-    assert list(Nothing) == []
+    assert list(Nothing()) == []
     assert list(Some(None)) == [None]
 
 
 def test_nothing_is_canonical_across_dataclass_operations():
-    assert NothingType() is Nothing
-    assert copy(Nothing) is Nothing
-    assert deepcopy(Nothing) is Nothing
-    assert replace(Nothing) is Nothing
-    assert pickle.loads(pickle.dumps(Nothing)) is Nothing
+    empty = Nothing()
+    assert isinstance(empty, Nothing)
+    assert Nothing() is empty
+    assert repr(empty) == "Nothing()"
+    assert copy(Nothing()) is Nothing()
+    assert deepcopy(Nothing()) is Nothing()
+    assert replace(Nothing()) is Nothing()
+    assert pickle.loads(pickle.dumps(Nothing())) is Nothing()
 
 
 def test_case_fields_and_frozen_values():
     assert Some.__match_args__ == ("some",)
-    assert NothingType.__match_args__ == ()
+    assert Nothing.__match_args__ == ()
     assert asdict(Some(1)) == {"some": 1, "tag": "some"}
     assert replace(Some(1), some=2) == Some(2)
     assert hash(Some(1)) == hash(Some(1))
@@ -584,26 +587,26 @@ def test_case_fields_and_frozen_values():
     with pytest.raises(FrozenInstanceError):
         setattr(Some(1), "some", 2)
     with pytest.raises(AttributeError):
-        getattr(Nothing, "some")
+        getattr(Nothing(), "some")
     with pytest.raises(ValueError):
-        _ = Nothing.value
+        _ = Nothing().value
 
 
 def test_case_subclassing_is_rejected():
-    for case_type in (Some, NothingType):
+    for case_type in (Some, Nothing):
         with pytest.raises(TypeError, match="final"):
             type("Extra", (case_type,), {})
 
 
 def test_tagged_none_payload_and_nesting_roundtrip():
     adapter = TypeAdapter(Option[Option[int | None]])
-    cases: list[Option[Option[int | None]]] = [Nothing, Some(Nothing), Some(Some(None)), Some(Some(1))]
+    cases: list[Option[Option[int | None]]] = [Nothing(), Some(Nothing()), Some(Some(None)), Some(Some(1))]
     encoded = [adapter.dump_json(value) for value in cases]
     assert len(set(encoded)) == len(cases)
     assert [adapter.validate_json(value) for value in encoded] == cases
-    assert adapter.validate_json(b'{"tag":"none"}') is Nothing
+    assert adapter.validate_json(b'{"tag":"none"}') is Nothing()
     assert option.model_dump(Some(None)) == {"tag": "some", "some": None}
-    assert option.model_dump(Some(Nothing)) == {"tag": "some", "some": {"tag": "none"}}
+    assert option.model_dump(Some(Nothing())) == {"tag": "some", "some": {"tag": "none"}}
     assert option.model_dump(Some(Some(1))) == {"tag": "some", "some": {"tag": "some", "some": 1}}
 
 
@@ -645,7 +648,7 @@ def test_option_container_is_not_awaitable():
     import inspect
 
     assert not inspect.isawaitable(Some(1))
-    assert not inspect.isawaitable(Nothing)
+    assert not inspect.isawaitable(Nothing())
 
 
 def test_option_pipeline_defaults_preserve_payload_and_fallback_types():
@@ -662,7 +665,7 @@ def test_option_pipeline_defaults_preserve_payload_and_fallback_types():
 
     assert consume(Some(42)) == 42
     assert calls == []
-    assert consume(Nothing) == "missing"
+    assert consume(Nothing()) == "missing"
     assert calls == ["fallback", "fallback"]
     assert_type(Some(None).pipe(option.default_with(fallback)), None)
     assert Some(None).pipe(option.default_with(fallback)) is None
@@ -672,14 +675,14 @@ def test_option_pipeline_defaults_preserve_payload_and_fallback_types():
 def test_option_pipeline_empty_channels_and_conversions():
     from expression.collections import Seq
 
-    def absent(value: int) -> NothingType:
-        return Nothing
+    def absent(value: int) -> Nothing:
+        return Nothing()
 
     def consume(value: Option[int]) -> None:
-        assert_type(value.pipe(option.bind(absent)), NothingType)
-        assert value.pipe(option.bind(absent)) is Nothing
-        assert_type(value.pipe(option.apply(Nothing)), NothingType)
-        assert value.pipe(option.apply(Nothing)) is Nothing
+        assert_type(value.pipe(option.bind(absent)), Nothing)
+        assert value.pipe(option.bind(absent)) is Nothing()
+        assert_type(value.pipe(option.apply(Nothing())), Nothing)
+        assert value.pipe(option.apply(Nothing())) is Nothing()
         assert_type(value.pipe(option.to_optional), int | None)
         assert_type(pipe(value, option.to_list), list[int])
         assert_type(pipe(value, option.to_seq), Seq[int])
@@ -689,7 +692,7 @@ def test_option_pipeline_empty_channels_and_conversions():
         assert list(pipe(value, option.to_seq)) == values
 
     consume(Some(42))
-    consume(Nothing)
+    consume(Nothing())
 
 
 def test_option_starmap_typed_callback_preserves_union_payload():
@@ -702,4 +705,4 @@ def test_option_starmap_typed_callback_preserves_union_payload():
         return value.starmap(repeat)
 
     assert consume(Some((3, "x"))) == Some("xxx")
-    assert consume(Nothing) is Nothing
+    assert consume(Nothing()) is Nothing()

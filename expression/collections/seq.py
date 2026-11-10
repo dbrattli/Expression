@@ -1003,7 +1003,7 @@ def try_find_index(source: Iterable[_TSource], predicate: Callable[[_TSource], b
         predicate: A function to test each element.
 
     Returns:
-        The first matching index wrapped in `Some`, or `Nothing` when no
+        The first matching index wrapped in `Some`, or `Nothing()` when no
         element matches.
 
     Example:
@@ -1014,7 +1014,7 @@ def try_find_index(source: Iterable[_TSource], predicate: Callable[[_TSource], b
         if predicate(value):
             return Some(index)
 
-    return Nothing
+    return Nothing()
 
 
 @curry_flip(1)
@@ -1029,8 +1029,8 @@ def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_T
         chooser: A function that transforms elements into optional results.
 
     Returns:
-        The first result wrapped in `Some`, or `Nothing` when the chooser
-        returns `Nothing` for every element.
+        The first result wrapped in `Some`, or `Nothing()` when the chooser
+        returns `Nothing()` for every element.
 
     Example:
         >>> pipe([1, 2, 3], try_pick(lambda value: option.of_obj(value * 10 if value % 2 == 0 else None)))
@@ -1041,7 +1041,7 @@ def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_T
         if result.is_some():
             return result
 
-    return Nothing
+    return Nothing()
 
 
 @curry_flip(1)

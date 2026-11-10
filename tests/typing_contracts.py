@@ -8,7 +8,6 @@ from typing import Generic, Literal, Never, TypeAlias, TypeVar, assert_never, as
 from expression import (
     Error,
     Nothing,
-    NothingType,
     Ok,
     Option,
     Result,
@@ -24,9 +23,11 @@ from expression import (
 
 def option_contract(value: Option[int]) -> None:
     assert_type(Some(42), Some[int])
-    assert_type(Nothing, NothingType)
+    assert_type(Nothing(), Nothing)
+    nothing_ = Nothing()
+    assert_type(nothing_, Nothing)
     assert_type(value.map(str), Option[str])
-    assert_type(Nothing.or_else(Some(42)), Some[int])
+    assert_type(Nothing().or_else(Some(42)), Some[int])
     assert_type(value.pipe(option.map(str)), Option[str])
     items: list[int] = value.to_list()
     assert_type(items, list[int])
@@ -35,7 +36,7 @@ def option_contract(value: Option[int]) -> None:
     match value:
         case Some(payload):
             assert_type(payload, int)
-        case NothingType():
+        case Nothing():
             pass
         case _:
             assert_never(value)

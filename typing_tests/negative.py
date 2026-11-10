@@ -42,7 +42,7 @@ def wrong_error(scope: effect.ResultScope[str]) -> None:
 
 @effect.result
 def wrong_family(scope: effect.ResultScope[str]) -> None:
-    scope.bind(Nothing)  # type-error
+    scope.bind(Nothing())  # type-error
 
 
 @effect.option
@@ -127,3 +127,10 @@ class CustomKeyword:
 
 
 custom_positional_keyword_only = CustomKeyword(1)  # type-error
+
+
+empty_class_is_not_a_value: Option[int] = Nothing  # type-error
+
+
+class ExtraNothing(Nothing):  # type-error
+    pass

@@ -1,6 +1,6 @@
 """Closed optional values and pipe-friendly operations.
 
-``Option[T]`` is the union of ``Some[T]`` and the singleton ``NothingType``.
+``Option[T]`` is the union of ``Some[T]`` and the singleton case ``Nothing``.
 Match the case classes to access their payloads. Iteration yields zero or one
 values; computation scopes provide short-circuit binding separately.
 """
@@ -32,7 +32,7 @@ _TError = TypeVar("_TError")
 _TEmpty = TypeVar("_TEmpty", default=Never)
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
-_TOption = TypeVar("_TOption", bound="Some[object] | NothingType")
+_TOption = TypeVar("_TOption", bound="Some[object] | Nothing")
 _P = TypeVarTuple("_P")
 
 
@@ -82,7 +82,7 @@ class Some(PipeMixin, Generic[_TSourceOut]):
 
     def filter(self, predicate: Callable[[_TSourceOut], bool]) -> Option[_TSourceOut]:
         """Keep the value when the predicate holds."""
-        return self if predicate(self.some) else Nothing
+        return self if predicate(self.some) else Nothing()
 
     def to_list(self) -> list[_TSourceOut]:
         """Return a one-element list."""
@@ -136,13 +136,17 @@ class Some(PipeMixin, Generic[_TSourceOut]):
 
 @final
 @case
-class NothingType(PipeMixin):
-    """The canonical empty option case."""
+class Nothing(PipeMixin):
+    """The empty option case, constructed and matched as ``Nothing()``.
+
+    Construction, copying, pickling, and Option decoding preserve one canonical
+    instance. Callers may cache ``Nothing_ = Nothing()`` for repeated reuse.
+    """
 
     tag: Literal["none"] = tag("none")
-    _instance: ClassVar[NothingType | None] = None
+    _instance: ClassVar[Nothing | None] = None
 
-    def __new__(cls) -> NothingType:
+    def __new__(cls) -> Nothing:
         if cls._instance is None:
             cls._instance = object.__new__(cls)
         return cls._instance
@@ -155,23 +159,23 @@ class NothingType(PipeMixin):
         """Evaluate the fallback factory."""
         return getter()
 
-    def map(self, mapper: Callable[[Never], object]) -> NothingType:
+    def map(self, mapper: Callable[[Never], object]) -> Nothing:
         """Keep the empty option without evaluating the mapper."""
         return self
 
-    def map2(self, mapper: Callable[[Never, _T2], object], other: Option[_T2]) -> NothingType:
+    def map2(self, mapper: Callable[[Never, _T2], object], other: Option[_T2]) -> Nothing:
         """Keep the empty option without evaluating the mapper."""
         return self
 
-    def apply(self, function: Option[Callable[[Never], object]]) -> NothingType:
+    def apply(self, function: Option[Callable[[Never], object]]) -> Nothing:
         """Keep the empty option without invoking the optional function."""
         return self
 
-    def starmap(self, mapper: Callable[..., object]) -> NothingType:
+    def starmap(self, mapper: Callable[..., object]) -> Nothing:
         """Keep the empty option without evaluating the mapper."""
         return self
 
-    def bind(self, mapper: Callable[[Never], _TOption]) -> NothingType:
+    def bind(self, mapper: Callable[[Never], _TOption]) -> Nothing:
         """Keep the empty option without evaluating the continuation."""
         return self
 
@@ -183,7 +187,7 @@ class NothingType(PipeMixin):
         """Evaluate the fallback option factory."""
         return if_none()
 
-    def filter(self, predicate: Callable[[Never], bool]) -> NothingType:
+    def filter(self, predicate: Callable[[Never], bool]) -> Nothing:
         """Keep the empty option without evaluating the predicate."""
         return self
 
@@ -237,16 +241,13 @@ class NothingType(PipeMixin):
         return "Nothing"
 
 
-Nothing = NothingType()
-"""The canonical empty option, also preserved by copying and pickling."""
-
-Option: TypeAlias = Annotated[Some[_TSourceOut] | NothingType, UnionSchema(canonical_values=(Nothing,))]
+Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(Nothing(),))]
 
 
-def bind(mapper: Callable[[_TSource], _TOption]) -> Callable[[Option[_TSource]], _TOption | NothingType]:
+def bind(mapper: Callable[[_TSource], _TOption]) -> Callable[[Option[_TSource]], _TOption | Nothing]:
     """Apply an option-returning function to a present value."""
 
-    def apply(source: Option[_TSource]) -> _TOption | NothingType:
+    def apply(source: Option[_TSource]) -> _TOption | Nothing:
         return source.bind(mapper)
 
     return apply
@@ -260,7 +261,7 @@ class _DefaultValue(Generic[_T1]):
     def __call__(self, source: Some[_TSource]) -> _TSource: ...
 
     @overload
-    def __call__(self, source: NothingType) -> _T1: ...
+    def __call__(self, source: Nothing) -> _T1: ...
 
     def __call__(self, source: Option[_TSource]) -> _TSource | _T1:
         return source.default_value(self._value)
@@ -279,7 +280,7 @@ class _DefaultWith(Generic[_T1]):
     def __call__(self, source: Some[_TSource]) -> _TSource: ...
 
     @overload
-    def __call__(self, source: NothingType) -> _T1: ...
+    def __call__(self, source: Nothing) -> _T1: ...
 
     def __call__(self, source: Option[_TSource]) -> _TSource | _T1:
         return source.default_with(self._getter)
@@ -290,9 +291,9 @@ def default_with(getter: Callable[[], _T1]) -> _DefaultWith[_T1]:
     return _DefaultWith(getter)
 
 
-def is_none(option: Option[object]) -> TypeGuard[NothingType]:
+def is_none(option: Option[object]) -> TypeGuard[Nothing]:
     """Narrow an option to its empty case."""
-    return isinstance(option, NothingType)
+    return isinstance(option, Nothing)
 
 
 def is_some(option: Option[_TSource]) -> TypeGuard[Some[_TSource]]:
@@ -311,7 +312,7 @@ def map2(opt1: Option[_T1], opt2: Option[_T2], mapper: Callable[[_T1, _T2], _TRe
 
 
 @overload
-def apply(function: NothingType) -> Callable[[Option[object]], NothingType]: ...
+def apply(function: Nothing) -> Callable[[Option[object]], Nothing]: ...
 
 
 @overload
@@ -352,7 +353,7 @@ def to_optional(value: Some[_TSource]) -> _TSource: ...
 
 
 @overload
-def to_optional(value: NothingType) -> None: ...
+def to_optional(value: Nothing) -> None: ...
 
 
 def to_optional(value: Option[_TSource]) -> _TSource | None:
@@ -361,7 +362,7 @@ def to_optional(value: Option[_TSource]) -> _TSource | None:
 
 
 @overload
-def of_optional(value: None) -> NothingType: ...
+def of_optional(value: None) -> Nothing: ...
 
 
 @overload
@@ -370,11 +371,11 @@ def of_optional(value: _TSource | None) -> Option[_TSource]: ...
 
 def of_optional(value: _TSource | None) -> Option[_TSource]:
     """Wrap a value, treating None as absence."""
-    return Nothing if value is None else Some(value)
+    return Nothing() if value is None else Some(value)
 
 
 @overload
-def of_obj(value: None) -> NothingType: ...
+def of_obj(value: None) -> Nothing: ...
 
 
 @overload
@@ -391,14 +392,14 @@ def of_result(result: Ok[_TSource]) -> Some[_TSource]: ...
 
 
 @overload
-def of_result(result: Error[object]) -> NothingType: ...
+def of_result(result: Error[object]) -> Nothing: ...
 
 
 def of_result(result: Result[_TSource, object]) -> Option[_TSource]:
     """Keep the successful result payload, or return Nothing."""
     from expression.core.result import Ok
 
-    return Some(result.ok) if isinstance(result, Ok) else Nothing
+    return Some(result.ok) if isinstance(result, Ok) else Nothing()
 
 
 @overload
@@ -406,7 +407,7 @@ def to_result(value: Some[_TSource], error: object) -> Ok[_TSource]: ...
 
 
 @overload
-def to_result(value: NothingType, error: _TError) -> Error[_TError]: ...
+def to_result(value: Nothing, error: _TError) -> Error[_TError]: ...
 
 
 def to_result(value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
@@ -418,7 +419,7 @@ def to_result_with(value: Some[_TSource], error: Callable[[], object]) -> Ok[_TS
 
 
 @overload
-def to_result_with(value: NothingType, error: Callable[[], _TError]) -> Error[_TError]: ...
+def to_result_with(value: Nothing, error: Callable[[], _TError]) -> Error[_TError]: ...
 
 
 def to_result_with(value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
@@ -437,7 +438,6 @@ def default_arg(value: Option[_TSource], default_value: _T1) -> _TSource | _T1:
 
 __all__ = [
     "Nothing",
-    "NothingType",
     "Option",
     "Some",
     "apply",

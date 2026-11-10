@@ -488,7 +488,7 @@ def test_result_of_option_ok():
 
 
 def test_result_of_option_error():
-    xs = result.of_option(Nothing, "oops")
+    xs = result.of_option(Nothing(), "oops")
     assert xs == Error("oops")
 
 
@@ -498,7 +498,7 @@ def test_result_of_option_with_ok():
 
 
 def test_result_of_option_with_error():
-    xs = result.of_option_with(Nothing, error=lambda: "oops")
+    xs = result.of_option_with(Nothing(), error=lambda: "oops")
     assert xs == Error("oops")
 
 
@@ -737,7 +737,7 @@ def result_pipe_type_contract(
     assert_type(Ok(1).pipe(result.apply(Error("failed"))), Error[str])
     assert_type(Ok(2).pipe(result.map2(add)(Ok(1))), Ok[int])
     assert_type(Ok(2).pipe(result.map2(add)(Error("failed"))), Error[str])
-    assert_type(result.of_option(Nothing, "missing"), Error[str])
+    assert_type(result.of_option(Nothing(), "missing"), Error[str])
     assert_type(result.of_option(Some(42), "missing"), Ok[int])
 
 

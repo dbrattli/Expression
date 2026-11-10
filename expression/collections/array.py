@@ -418,7 +418,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
             value = cast("_TSource", self.value[0])
             return Some(value)
 
-        return Nothing
+        return Nothing()
 
     @staticmethod
     def unfold(
@@ -629,7 +629,7 @@ def try_head(source: TypedArray[_TSource]) -> Option[_TSource]:
         source: The input list.
 
     Returns:
-        The first element of the list or `Nothing`.
+        The first element of the list or `Nothing()`.
     """
     return source.try_head()
 

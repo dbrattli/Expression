@@ -307,7 +307,7 @@ The `Option` type is used when a function or method cannot produce a meaningful
 output for a given input.
 
 An option value may have a value of a given type, i.e., `Some(value)`, or it might
-not have any meaningful value, i.e., `Nothing`.
+not have any meaningful value, i.e., `Nothing()`.
 
 ```python
 from expression import Nothing, Option, Some
@@ -317,7 +317,7 @@ def keep_positive(a: int) -> Option[int]:
     if a > 0:
         return Some(a)
 
-    return Nothing
+    return Nothing()
 ```
 
 ```python
@@ -337,7 +337,7 @@ def exists(x: Option[int]) -> bool:
 ### Option as an effect
 
 Typed scopes bind optional values in ordinary functions. Each binding keeps its
-own payload type. Binding `Nothing` ends the computation; returning a value wraps
+own payload type. Binding `Nothing()` ends the computation; returning a value wraps
 it in `Some`, including when that value is `None`.
 
 ```python
@@ -356,10 +356,10 @@ assert fn3() == Some(85)
 
 @effect.option
 def fn4(scope: effect.OptionScope) -> int:
-    return scope.bind(Nothing)
+    return scope.bind(Nothing())
 
 
-assert fn4() is Nothing
+assert fn4() is Nothing()
 ```
 
 
@@ -367,11 +367,11 @@ assert fn4() is Nothing
 
 In functional programming, we sometimes want to combine two Option values into a new
 Option. However, this combination should only happen if both Options are Some. If either
-Option is `Nothing`, the resulting value is also `Nothing`.
+Option is `Nothing()`, the resulting value is also `Nothing()`.
 
 The map2 function allows us to achieve this behavior. It takes two Option values and a
 function as arguments. The function is applied only if both Options are Some, and the
-result becomes the new Some value. Otherwise, map2 returns `Nothing`.
+result becomes the new Some value. Otherwise, map2 returns `Nothing()`.
 
 This approach ensures that our combined value reflects the presence or absence of data
 in the original Options.
@@ -386,14 +386,14 @@ def keep_positive(a: int) -> Option[int]:
     if a > 0:
         return Some(a)
     else:
-        return Nothing
+        return Nothing()
 
 
 def add_options(a: Option[int], b: Option[int]):
     return a.map2(add, b)
 
 
-assert add_options(keep_positive(4), keep_positive(-2)) is Nothing
+assert add_options(keep_positive(4), keep_positive(-2)) is Nothing()
 
 assert add_options(keep_positive(3), keep_positive(2)) == Some(5)
 ```
@@ -409,7 +409,7 @@ For more information about options:
 The `Result[T, TError]` type lets you write error-tolerant code that can be composed. A
 Result works similar to `Option`, but lets you define the value used for errors, e.g.,
 an exception type or similar. This is great when you want to know why some operation
-failed (not just `Nothing`). This type serves the same purpose of an `Either` type where
+failed (not just `Nothing()`). This type serves the same purpose of an `Either` type where
 `Left` is used for the error condition and `Right` for a success value.
 
 ```python

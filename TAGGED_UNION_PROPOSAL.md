@@ -6,7 +6,7 @@
 Expression now represents tagged unions as explicit, frozen, final case classes
 combined in public type aliases. Each case declares only its own payload. The
 same public declaration API defines custom unions and the built-in `Some`,
-`NothingType`, `Ok`, and `Error` cases. Computations use typed scopes with ordinary
+`Nothing`, `Ok`, and `Error` cases. Computations use typed scopes with ordinary
 functions and coroutines.
 
 This document records the implemented design and its tradeoffs. It replaces the
@@ -25,7 +25,7 @@ contract. The decorator also had to implement active-case construction and
 customize dataclass behavior.
 
 The new representation makes the alternatives visible in Python source. A
-`Some[T]` has `.some`; a `NothingType` does not. A checker can narrow the union
+`Some[T]` has `.some`; a `Nothing` does not. A checker can narrow the union
 using class patterns, `isinstance`, or literal tags and verify exhaustive handling.
 The implementation uses Python's dataclass and union typing mechanisms without a
 checker plugin or generated case types hidden behind a decorator.
@@ -114,7 +114,7 @@ Source: [public declarations](expression/core/tagged_union.py),
 ## How Option actually works
 
 `Some` is now a class and constructor, not a factory returning a shared `Option`
-class. `NothingType` is a separate, nongeneric case class; `Nothing` is its
+class. `Nothing` is a separate, nongeneric case class; `Nothing()` is its
 canonical instance. Both classes use the public `@case` decorator and fixed tags.
 
 The following is the declaration structure, with methods and singleton machinery
@@ -139,60 +139,66 @@ class Some(Generic[T]):
 
 @final
 @case
-class NothingType:
+class Nothing:
     tag: Literal["none"] = tag("none")
 
 
-Nothing = NothingType()
 Option: TypeAlias = Annotated[
-    Some[T] | NothingType,
-    UnionSchema(canonical_values=(Nothing,)),
+    Some[T] | Nothing,
+    UnionSchema(canonical_values=(Nothing(),)),
 ]
 ```
 
 The actual classes also inherit `PipeMixin` and implement their fluent methods.
-The alias means `Some[T] | NothingType` to the checker. Its metadata uses the same
+The alias means `Some[T] | Nothing` to the checker. Its metadata uses the same
 schema implementation as `TaggedUnion`, with one deliberate specialization:
-decoding the empty case must restore the canonical `Nothing` instance.
-`NothingType` itself preserves identity through construction, copying, and
+decoding the empty case must restore the canonical `Nothing()` instance.
+`Nothing` itself preserves identity through construction, copying, and
 pickling. Ordinary custom unit cases do not acquire this singleton contract.
 
 Consequently, Option is neither the former single container class nor an erased
-`T | None` representation. `Some(None)`, `Nothing`, and `Some(Nothing)` remain
+`T | None` representation. `Some(None)`, `Nothing()`, and `Some(Nothing())` remain
 three distinct values. The wrapped representation preserves fluent operations
 and nested options without interpreting a payload's value as absence.
 
 ```python
 from typing import assert_never
 
-from expression import Nothing, NothingType, Option, Some
+from expression import Nothing, Option, Some
 
 
 def describe(value: Option[int]) -> str:
     match value:
         case Some(number):
             return str(number)
-        case NothingType():
+        case Nothing():
             return "missing"
         case _:
             assert_never(value)
 
 
 assert describe(Some(42)) == "42"
-assert describe(Nothing) == "missing"
+assert describe(Nothing()) == "missing"
 assert Some(42).map(str) == Some("42")
 ```
 
-Use `NothingType()` in a class pattern. Bare `case Nothing` is a capture pattern;
+`Nothing` is the case class, so construction and matching use the same name:
+`Nothing()` and `case Nothing()`. This avoids a separate `NothingType` pattern
+name. Construction calls the class but reuses its canonical instance; matching
+does not call the constructor. Users who want to avoid repeated calls can define
+`Nothing_ = Nothing()` locally and return that value while still matching
+`case Nothing()`. Expression does not export a second convenience name.
+
+Use `Nothing()` in a class pattern. Bare `case Nothing` is a capture pattern;
 it does not test the singleton. For runtime checks, use case classes such as
-`Some` or `(Some, NothingType)`. `Option[T]` is an annotation, not a nominal class
+`Some` or `(Some, Nothing)`. `Option[T]` is an annotation, not a nominal class
 for construction, subclassing, or runtime instance checks.
 
 The same naming pattern can be used for custom unit cases: export a case class
 and optionally a shared instance under distinct names. Merely assigning an
 instance does not guarantee singleton identity. A class pattern such as
-`case NothingType()` does not invoke the constructor; only an expression such as
-`NothingType()` does. The public `TaggedUnion` API currently supplies ordinary
+`case Nothing()` does not invoke the constructor; only an expression such as
+`Nothing()` does. The public `TaggedUnion` API currently supplies ordinary
 unit cases, not general singleton lifecycle support. See
 [unit cases, shared values, and singletons](docs/guides/migration-major.md#unit-cases-shared-values-and-singletons)
 for the supported custom-union pattern and its tradeoffs.
@@ -211,7 +217,7 @@ argument for a channel it does not contain. `Try[T]` is `Result[T, Exception]`.
 `Success` and `Failure` remain convenience constructors producing `Ok` and `Error`.
 
 Fluent methods have case-specific signatures. For example, `Some.map` returns a
-`Some` of the mapped type, while `Nothing.map` returns `NothingType` without
+`Some` of the mapped type, while `Nothing.map` returns `Nothing` without
 calling the mapper. Similarly, `Ok.map` transforms success and `Error.map`
 preserves the error. Their signatures combine correctly when the receiver is a
 union. Bind and recovery retain the possible outcomes of both the original
@@ -252,7 +258,7 @@ def parse_count(text: str) -> Result[int, str]:
 @effect.result
 def describe_count(scope: effect.ResultScope[str], text: str) -> str:
     count = scope.bind(parse_count(text))  # int
-    label = scope.bind(Ok("items"))        # str
+    label = scope.bind(Ok("items"))  # str
     return f"{count} {label}"
 
 
@@ -265,7 +271,7 @@ assert describe_count("bad") == Error("invalid count")
 obtain a container, then call `scope.bind(container)`. There is no requirement
 that different binds have the same payload type.
 
-Binding `Error` or `Nothing` aborts that invocation using an internal,
+Binding `Error` or `Nothing()` aborts that invocation using an internal,
 owner-specific control signal. Normal `finally` cleanup runs; unrelated
 exceptions and cancellation propagate. The first bound failure remains the
 outcome even if user code catches the internal signal. Each scope checks its
@@ -279,7 +285,7 @@ annotation, which describes the payload rather than the wrapped result; the
 original annotations remain available through `__wrapped__`.
 
 A normal return, including `None`, is success: `Some(None)` or `Ok(None)`.
-Absence and failure require binding `Nothing` or `Error`. Ordinary Python
+Absence and failure require binding `Nothing()` or `Error`. Ordinary Python
 fall-through still returns `None`, so return annotations remain important.
 Containers are no longer awaitable, and iteration simply yields zero or one
 successful payloads; it does not bind an effect.
@@ -302,16 +308,16 @@ The new encoding preserves that distinction and nesting:
 
 | Value | Tagged representation |
 |---|---|
-| `Nothing` | `{"tag": "none"}` |
+| `Nothing()` | `{"tag": "none"}` |
 | `Some(None)` | `{"tag": "some", "some": None}` |
-| `Some(Nothing)` | `{"tag": "some", "some": {"tag": "none"}}` |
+| `Some(Nothing())` | `{"tag": "some", "some": {"tag": "none"}}` |
 | `Ok(42)` | `{"tag": "ok", "ok": 42}` |
 | `Error("failed")` | `{"tag": "error", "error": "failed"}` |
 
 Use a Pydantic field annotated with the public alias, or `TypeAdapter(Option[int])`,
 `TypeAdapter(Result[int, str])`, or `TypeAdapter(Shape)`. The schema requires a
 known tag, rejects extra case fields, validates generic and nested payloads, and
-preserves canonical `Nothing`. Direct adapters for case classes retain ordinary
+preserves canonical `Nothing()`. Direct adapters for case classes retain ordinary
 Pydantic dataclass behavior; they do not supply the union's wire contract.
 
 Custom cases serialize with their declared Python field names. Pydantic field

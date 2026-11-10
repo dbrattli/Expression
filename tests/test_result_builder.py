@@ -134,7 +134,7 @@ def test_recursive_computations_have_independent_scopes():
 def test_result_scope_rejects_other_effect_families_at_runtime():
     @effect.result
     def computation(scope: ResultScope[str]) -> int:
-        return scope.bind(cast(Result[int, str], Nothing))
+        return scope.bind(cast(Result[int, str], Nothing()))
 
     with pytest.raises(TypeError, match="Ok or Error"):
         computation()

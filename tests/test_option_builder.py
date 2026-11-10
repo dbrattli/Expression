@@ -33,13 +33,13 @@ def test_option_scope_short_circuits_and_runs_cleanup():
     @effect.option
     def computation(scope: OptionScope) -> int:
         try:
-            scope.bind(Nothing)
+            scope.bind(Nothing())
             trace.append("unreachable")
             return 1
         finally:
             trace.append("cleanup")
 
-    assert computation() is Nothing
+    assert computation() is Nothing()
     assert trace == ["cleanup"]
 
 
@@ -50,19 +50,19 @@ def test_option_scope_none_is_a_successful_payload():
 
     assert_type(computation(), Option[None])
     assert computation() == Some(None)
-    assert computation() is not Nothing
+    assert computation() is not Nothing()
 
 
 def test_option_scope_preserves_first_failure_when_signal_is_caught():
     @effect.option
     def computation(scope: OptionScope) -> int:
         try:
-            scope.bind(Nothing)
+            scope.bind(Nothing())
         except BaseException:
             pass
         return 42
 
-    assert computation() is Nothing
+    assert computation() is Nothing()
 
 
 def test_option_scope_cannot_bind_after_caught_failure():
@@ -71,14 +71,14 @@ def test_option_scope_cannot_bind_after_caught_failure():
     @effect.option
     def computation(scope: OptionScope) -> int:
         try:
-            scope.bind(Nothing)
+            scope.bind(Nothing())
         except BaseException:
             pass
         value = scope.bind(Some(42))
         trace.append("resumed")
         return value
 
-    assert computation() is Nothing
+    assert computation() is Nothing()
     assert trace == []
 
 
@@ -115,13 +115,13 @@ def test_nested_option_scopes_do_not_consume_outer_failure():
         @effect.option
         def inner(inner_scope: OptionScope) -> int:
             inner_scope.bind(Some(1))
-            return scope.bind(Nothing)
+            return scope.bind(Nothing())
 
         inner()
         trace.append("unreachable")
         return 42
 
-    assert outer() is Nothing
+    assert outer() is Nothing()
     assert trace == []
 
 

@@ -464,7 +464,7 @@ class Block(
             value = self._value[0]
             return Some(value)
 
-        return Nothing
+        return Nothing()
 
     @staticmethod
     def unfold(generator: Callable[[_TState], Option[tuple[_TSource, _TState]]], state: _TState) -> Block[_TSource]:
@@ -989,7 +989,7 @@ def try_head(source: Block[_TSource]) -> Option[_TSource]:
         source: The input list.
 
     Returns:
-        The first element of the list or `Nothing`.
+        The first element of the list or `Nothing()`.
     """
     return source.try_head()
 

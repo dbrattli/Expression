@@ -40,7 +40,7 @@ def maybe_add(scope: effect.OptionScope, left: Option[int], right: Option[int]) 
 
 
 assert maybe_add(Some(2), Some(3)) == Some(5)
-assert maybe_add(Some(2), Nothing) == Nothing
+assert maybe_add(Some(2), Nothing()) == Nothing()
 
 # %% [markdown]
 """

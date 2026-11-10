@@ -7,7 +7,7 @@ import pytest
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 from pydantic.json_schema import JsonSchemaValue
 
-from expression import Nothing, NothingType, Ok, Option, Result, Some, TaggedUnion, case, tag
+from expression import Nothing, Ok, Option, Result, Some, TaggedUnion, case, tag
 from expression.core._union_schema import UnionSchema
 
 
@@ -79,7 +79,7 @@ def test_nested_union_json_schema_keeps_each_case_closed():
     value = adapter.validate_python({"tag": "some", "some": {"tag": "ok", "ok": {"tag": "none"}}})
     assert isinstance(value, Some)
     assert isinstance(value.some, Ok)
-    assert value.some.ok is Nothing
+    assert value.some.ok is Nothing()
 
 
 class SchemaTree(BaseModel):
@@ -96,7 +96,7 @@ def test_recursive_union_json_schema_preserves_model_references():
 
     parsed = SchemaTree.model_validate({"child": {"tag": "some", "some": {"child": {"tag": "none"}}}})
     assert isinstance(parsed.child, Some)
-    assert parsed.child.some.child is Nothing
+    assert parsed.child.some.child is Nothing()
     with pytest.raises(ValidationError):
         SchemaTree.model_validate({"child": {"tag": "some", "some": {"child": {"tag": "none", "some": 1}}}})
 
@@ -114,7 +114,7 @@ def test_union_json_schema_does_not_change_bare_dataclass_schema():
     assert bare["required"] == ["some"]
     assert "additionalProperties" not in bare
     parsed = MixedModel.model_validate({"optional": {"tag": "none"}, "present": {"some": 1}})
-    assert parsed.optional is Nothing
+    assert parsed.optional is Nothing()
     assert parsed.present == Some(1)
 
 
@@ -212,7 +212,7 @@ def test_custom_unit_cases_are_ordinary_values_and_initialize_once():
 def test_nested_tagged_union_aliases_flatten_and_keep_canonical_units():
     adapter = TypeAdapter(TaggedUnion[TaggedUnion[SchemaCircle | SchemaRectangle] | Option[int]])
     assert adapter.validate_python({"tag": "circle", "radius": 2}) == SchemaCircle(2)
-    assert adapter.validate_python({"tag": "none"}) is Nothing
+    assert adapter.validate_python({"tag": "none"}) is Nothing()
     schema = adapter.json_schema()
     assert set(schema["discriminator"]["mapping"]) == {"circle", "rectangle", "some", "none"}
 
@@ -245,10 +245,10 @@ def test_recursive_custom_cases_validate_and_preserve_schema_references():
 
 def test_canonical_units_do_not_leak_between_differently_configured_aliases():
     wire = [{"tag": "none"}, {"tag": "none"}]
-    option_first = TypeAdapter(tuple[Option[int], TaggedUnion[NothingType]]).validate_python(wire)
-    option_last = TypeAdapter(tuple[TaggedUnion[NothingType], Option[int]]).validate_python(wire)
-    assert option_first[0] is Nothing
-    assert option_last[1] is Nothing
+    option_first = TypeAdapter(tuple[Option[int], TaggedUnion[Nothing]]).validate_python(wire)
+    option_last = TypeAdapter(tuple[TaggedUnion[Nothing], Option[int]]).validate_python(wire)
+    assert option_first[0] is Nothing()
+    assert option_last[1] is Nothing()
 
     canonical = SchemaUnit()
     unit_wire = [{"tag": "unit"}, {"tag": "unit"}]

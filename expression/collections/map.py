@@ -476,7 +476,7 @@ def try_find(table: Map[_Key, _Value], key: _Key) -> Option[_Value]:
     """Try to find element with key in map.
 
     Lookup an element in the map, returning a `Some` value if the
-    element is in the domain of the map and `Nothing` if not.
+    element is in the domain of the map and `Nothing()` if not.
 
     Args:
         table: The input map.

@@ -24,11 +24,11 @@ async def async_run_option(body: Callable[[OptionScope], Awaitable[_T]]) -> Opti
     scope = OptionScope(invocation)
     try:
         value = await body(scope)
-        return Nothing if invocation.failed else Some(value)
+        return Nothing() if invocation.failed else Some(value)
     except Abort as signal:
         if signal.owner is not invocation.owner:
             raise
-        return Nothing
+        return Nothing()
     finally:
         invocation.close()
 
