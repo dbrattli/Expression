@@ -9,7 +9,19 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING, Annotated, ClassVar, Generic, Literal, Never, TypeAlias, TypeGuard, final, overload
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    ClassVar,
+    Final,
+    Generic,
+    Literal,
+    Never,
+    TypeAlias,
+    TypeGuard,
+    final,
+    overload,
+)
 
 from typing_extensions import TypeVar, TypeVarTuple, Unpack
 
@@ -82,7 +94,7 @@ class Some(PipeMixin, Generic[_TSourceOut]):
 
     def filter(self, predicate: Callable[[_TSourceOut], bool]) -> Option[_TSourceOut]:
         """Keep the value when the predicate holds."""
-        return self if predicate(self.some) else _nothing
+        return self if predicate(self.some) else _NOTHING
 
     def to_list(self) -> list[_TSourceOut]:
         """Return a one-element list."""
@@ -241,10 +253,10 @@ class Nothing(PipeMixin):
         return "Nothing"
 
 
-_nothing = Nothing()
+_NOTHING: Final = Nothing()
 
 
-Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(_nothing,))]
+Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(_NOTHING,))]
 
 
 def bind(mapper: Callable[[_TSource], _TOption]) -> Callable[[Option[_TSource]], _TOption | Nothing]:
@@ -374,7 +386,7 @@ def of_optional(value: _TSource | None) -> Option[_TSource]: ...
 
 def of_optional(value: _TSource | None) -> Option[_TSource]:
     """Wrap a value, treating None as absence."""
-    return _nothing if value is None else Some(value)
+    return _NOTHING if value is None else Some(value)
 
 
 @overload
@@ -402,7 +414,7 @@ def of_result(result: Result[_TSource, object]) -> Option[_TSource]:
     """Keep the successful result payload, or return Nothing."""
     from expression.core.result import Ok
 
-    return Some(result.ok) if isinstance(result, Ok) else _nothing
+    return Some(result.ok) if isinstance(result, Ok) else _NOTHING
 
 
 @overload

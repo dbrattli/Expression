@@ -28,7 +28,7 @@ import builtins
 import functools
 import itertools
 from collections.abc import Callable, Iterable, Iterator
-from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Final, TypeVar, cast, overload
 
 from expression.core import (
     Nothing,
@@ -44,7 +44,7 @@ from expression.core import (
 )
 
 
-_nothing = Nothing()
+_NOTHING: Final = Nothing()
 
 
 if TYPE_CHECKING:
@@ -1017,7 +1017,7 @@ def try_find_index(source: Iterable[_TSource], predicate: Callable[[_TSource], b
         if predicate(value):
             return Some(index)
 
-    return _nothing
+    return _NOTHING
 
 
 @curry_flip(1)
@@ -1044,7 +1044,7 @@ def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_T
         if result.is_some():
             return result
 
-    return _nothing
+    return _NOTHING
 
 
 @curry_flip(1)
