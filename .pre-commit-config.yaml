@@ -18,9 +18,10 @@ repos:
   - hooks:
       - id: pyright
         name: pyright
-        entry: pyright
+        entry: python scripts/check_typing.py
         language: node
+        language_version: lts
         pass_filenames: false
         types: [python]
-        additional_dependencies: ["pyright@1.1.413"]
+        additional_dependencies: ["pyright@1.1.414"]
     repo: local

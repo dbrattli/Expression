@@ -1,7 +1,7 @@
 """Data structures that can be traversed from left to right, performing an action on each element."""
 
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from expression import effect
 from expression.collections import Block, block, seq
@@ -21,15 +21,17 @@ def traverse(
     Threads an applicative computation though a list of items.
     """
 
-    @effect.result[Block[_TResult], _TError]()
-    def folder(head: _TSource, tail: Result[Block[_TResult], _TError]) -> Any:
+    @effect.result
+    def folder(
+        scope: effect.ResultScope[_TError], head: _TSource, tail: Result[Block[_TResult], _TError]
+    ) -> Block[_TResult]:
         """Fold back function.
 
         Same as:
         >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail))).
         """
-        h: _TResult = yield from fn(head)
-        t: Block[_TResult] = yield from tail
+        h = scope.bind(fn(head))
+        t = scope.bind(tail)
 
         return Block([h]) + t
 

@@ -151,14 +151,14 @@ def starcompose(fn1: Callable[[Unpack[_P]], _A], /) -> Callable[[Unpack[_P]], _A
 
 @overload
 def starcompose(
-    fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]], fn2: Callable[[Unpack[_Y]], _B], /
+    fn1: Callable[[Unpack[_P]], tuple[*_Y]], fn2: Callable[[Unpack[_Y]], _B], /
 ) -> Callable[[Unpack[_P]], _B]: ...
 
 
 @overload
 def starcompose(
-    fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
-    fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
+    fn1: Callable[[Unpack[_P]], tuple[*_Y]],
+    fn2: Callable[[Unpack[_Y]], tuple[*_Z]],
     fn3: Callable[[Unpack[_Z]], _C],
     /,
 ) -> Callable[[Unpack[_P]], _C]: ...
@@ -166,9 +166,9 @@ def starcompose(
 
 @overload
 def starcompose(
-    fn1: Callable[[Unpack[_P]], tuple[Unpack[_Y]]],
-    fn2: Callable[[Unpack[_Y]], tuple[Unpack[_Z]]],
-    fn3: Callable[[Unpack[_Z]], tuple[Unpack[_X]]],
+    fn1: Callable[[Unpack[_P]], tuple[*_Y]],
+    fn2: Callable[[Unpack[_Y]], tuple[*_Z]],
+    fn3: Callable[[Unpack[_Z]], tuple[*_X]],
     fn4: Callable[[Unpack[_X]], _D],
     /,
 ) -> Callable[[Unpack[_P]], _D]: ...

@@ -1,9 +1,16 @@
 from collections.abc import Callable
-from typing import Any, Annotated
+from copy import copy, deepcopy
+from dataclasses import FrozenInstanceError, asdict, replace
+from operator import lt
+import json
+import pickle
+
+import pytest
+from typing import Any, Annotated, assert_type
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
 from pydantic_core import CoreSchema, core_schema
 
 from expression import (
@@ -17,23 +24,23 @@ from expression import (
     pipe,
     pipe2,
 )
-from expression.core.option import Nothing, Option, Some
+from expression.core.option import NothingType
 from expression.extra.option import pipeline
 
 
 def test_option_some():
     xs = Some(42)
 
-    assert isinstance(xs, Option)
+    assert isinstance(xs, Some)
     assert pipe(xs, option.is_some) is True
     assert pipe(xs, option.is_none) is False
 
 
 def test_option_some_match():
-    xs = Option.Some(42)
+    xs = Some(42)
 
     match xs:
-        case Option(tag="some", some=x):
+        case Some(some=x):
             assert x == 42
 
         case _:
@@ -45,7 +52,7 @@ def test_option_some_match_fluent():
     ys = xs.map(lambda x: x + 1)
 
     match ys:
-        case Option(tag="some", some=value):
+        case Some(some=value):
             assert value == 43
         case _:
             assert False
@@ -76,6 +83,7 @@ def test_option_some_iterate_to_list():
     else:
         assert False
 
+
 def test_option_some_iterate():
     xs = Some(42)
 
@@ -89,7 +97,7 @@ def test_option_some_iterate():
 def test_option_none():
     xs = Nothing
 
-    assert isinstance(xs, Option)
+    assert isinstance(xs, NothingType)
     assert xs.pipe(option.is_some) is False
     assert xs.pipe(option.is_none) is True
 
@@ -98,9 +106,6 @@ def test_option_none_match():
     xs = Nothing
 
     match xs:
-        case Option(tag="some"):
-            assert False
-
         case x if x is Nothing:
             assert True
 
@@ -130,27 +135,10 @@ def test_option_none_not_equals_some():
     assert ys != xs
 
 
-def test_option_order_some_some_works():
-    xs = Some(42)
-    ys = Some(41)
-
-    assert xs > ys
-    assert ys < xs
-
-
-def test_option_order_some_none_works():
-    xs = Some(42)
-    ys = Nothing
-
-    assert xs > ys
-    assert ys < xs
-
-
-def test_option_order_none_none_works():
-    xs = Nothing
-    ys = Nothing
-
-    assert not (xs < ys)
+@pytest.mark.parametrize("left,right", [(Some(42), Some(41)), (Some(42), Nothing), (Nothing, Nothing)])
+def test_options_have_no_implicit_order(left: Any, right: Any):
+    with pytest.raises(TypeError):
+        lt(left, right)
 
 
 def test_option_none_default_value():
@@ -214,7 +202,7 @@ def test_option_some_map_piped():
     ys: Option[int] = xs.pipe(option.map(mapper))
 
     match ys:
-        case Option(tag="some", some=y):
+        case Some(some=y):
             assert y == 43
         case _:
             assert False
@@ -234,7 +222,7 @@ def test_option_some_map_fluent():
     ys = xs.map(lambda x: x + 1)
 
     match ys:
-        case Option(tag="some", some=value):
+        case Some(some=value):
             assert value == 43
         case _:
             assert False
@@ -255,7 +243,7 @@ def test_option_some_map2_piped(x: int, y: int):
     zs = pipe2((xs, ys), option.map2(mapper))
 
     match zs:
-        case Option(tag="some", some=value):
+        case Some(some=value):
             assert value == x + y
         case _:
             assert False
@@ -267,7 +255,7 @@ def test_option_starmap_fluent():
     ys = xs.starmap(mapper)
 
     match ys:
-        case Option(tag="some", some=value):
+        case Some(some=value):
             assert value == 85
         case _:
             assert False
@@ -279,7 +267,7 @@ def test_option_starmap_piped():
     ys = pipe(xs, option.starmap(mapper))
 
     match ys:
-        case Option(tag="some", some=value):
+        case Some(some=value):
             assert value == 85
         case _:
             assert False
@@ -290,7 +278,7 @@ def test_option_some_bind_fluent():
     ys = xs.bind(lambda x: Some(x + 1))
 
     match ys:
-        case Option(tag="some", some=value):
+        case Some(some=value):
             assert value == 43
         case _:
             assert False
@@ -301,7 +289,7 @@ def test_option_some_bind_none_fluent():
     ys = xs.bind(lambda x: Nothing)
 
     match ys:
-        case Option(tag="none"):
+        case NothingType():
             assert True
         case _:
             assert False
@@ -311,11 +299,7 @@ def test_option_none_bind_none_fluent():
     xs = Nothing
     ys = xs.bind(lambda x: Nothing)
 
-    match ys:
-        case Option(tag="some"):
-            assert False
-        case _:
-            assert True
+    assert ys is Nothing
 
 
 def test_option_some_bind_piped():
@@ -326,7 +310,7 @@ def test_option_some_bind_piped():
     )
 
     match ys:
-        case Option(tag="some", some=value):
+        case Some(some=value):
             assert value == 43
         case _:
             assert False
@@ -447,7 +431,6 @@ def test_option_to_optional_nothing():
     assert xs is None
 
 
-
 def test_pipeline_none():
     hn = pipeline()
 
@@ -504,7 +487,12 @@ class TupleModel(BaseModel):
 
 def test_parse_option_works():
     obj = dict(
-        one=10, two=None, annotated_type=20, annotated_type_none=None, custom_type="test_user", custom_type_none=None
+        one={"tag": "some", "some": 10},
+        two={"tag": "none"},
+        annotated_type={"tag": "some", "some": 20},
+        annotated_type_none={"tag": "none"},
+        custom_type={"tag": "some", "some": "test_user"},
+        custom_type_none={"tag": "none"},
     )
     model = Model.model_validate(obj)
 
@@ -519,20 +507,24 @@ def test_parse_option_works():
 
 
 def test_parse_option_tuple_works():
-    model = TupleModel.model_validate({"values": [1, 2, 3]})
+    model = TupleModel.model_validate({"values": {"tag": "some", "some": [1, 2, 3]}})
 
     assert model.values == Some((1, 2, 3))
 
 
 def test_serialize_option_works():
     model = Model(one=Some(10))
-    json = model.model_dump_json()
-    assert (
-        json
-        == '{"one":10,"two":null,"three":null,"annotated_type":null,"annotated_type_none":null,"custom_type":null,"custom_type_none":null}'
-    )
-
-    model_ = Model.model_validate_json(json)
+    encoded = model.model_dump_json()
+    assert json.loads(encoded) == {
+        "one": {"tag": "some", "some": 10},
+        "two": {"tag": "none"},
+        "three": {"tag": "none"},
+        "annotated_type": {"tag": "none"},
+        "annotated_type_none": {"tag": "none"},
+        "custom_type": {"tag": "none"},
+        "custom_type_none": {"tag": "none"},
+    }
+    model_ = Model.model_validate_json(encoded)
 
     assert model_.one.is_some()
     assert model_.one.value == 10
@@ -554,6 +546,7 @@ def test_option_covariance() -> None:
 
     assert y.is_some()
 
+
 def test_pickle_option_works():
     import pickle
 
@@ -565,3 +558,148 @@ def test_pickle_option_works():
     load_y = pickle.loads(dump_y)
     assert x == load_x
     assert y == load_y
+
+
+def test_nothing_iteration_is_empty():
+    assert list(Nothing) == []
+    assert list(Some(None)) == [None]
+
+
+def test_nothing_is_canonical_across_dataclass_operations():
+    assert NothingType() is Nothing
+    assert copy(Nothing) is Nothing
+    assert deepcopy(Nothing) is Nothing
+    assert replace(Nothing) is Nothing
+    assert pickle.loads(pickle.dumps(Nothing)) is Nothing
+
+
+def test_case_fields_and_frozen_values():
+    assert Some.__match_args__ == ("some",)
+    assert NothingType.__match_args__ == ()
+    assert asdict(Some(1)) == {"some": 1, "tag": "some"}
+    assert replace(Some(1), some=2) == Some(2)
+    assert hash(Some(1)) == hash(Some(1))
+    with pytest.raises(TypeError):
+        hash(Some([]))
+    with pytest.raises(FrozenInstanceError):
+        setattr(Some(1), "some", 2)
+    with pytest.raises(AttributeError):
+        getattr(Nothing, "some")
+    with pytest.raises(ValueError):
+        _ = Nothing.value
+
+
+def test_case_subclassing_is_rejected():
+    for case_type in (Some, NothingType):
+        with pytest.raises(TypeError, match="final"):
+            type("Extra", (case_type,), {})
+
+
+def test_tagged_none_payload_and_nesting_roundtrip():
+    adapter = TypeAdapter(Option[Option[int | None]])
+    cases: list[Option[Option[int | None]]] = [Nothing, Some(Nothing), Some(Some(None)), Some(Some(1))]
+    encoded = [adapter.dump_json(value) for value in cases]
+    assert len(set(encoded)) == len(cases)
+    assert [adapter.validate_json(value) for value in encoded] == cases
+    assert adapter.validate_json(b'{"tag":"none"}') is Nothing
+    assert option.model_dump(Some(None)) == {"tag": "some", "some": None}
+    assert option.model_dump(Some(Nothing)) == {"tag": "some", "some": {"tag": "none"}}
+    assert option.model_dump(Some(Some(1))) == {"tag": "some", "some": {"tag": "some", "some": 1}}
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {"tag": "some", "some": "bad"},
+        {"tag": "none", "some": 1},
+        {"tag": "unknown", "some": 1},
+        {"tag": "some"},
+        {"some": 1},
+        None,
+        1,
+    ],
+)
+def test_invalid_tagged_options_are_rejected(data: object):
+    with pytest.raises(ValidationError):
+        TypeAdapter(Option[int]).validate_python(data)
+
+
+def test_option_tagged_schema_has_discriminator():
+    schema = TypeAdapter(Option[int]).json_schema()
+    assert schema["discriminator"]["propertyName"] == "tag"
+    assert set(schema["discriminator"]["mapping"]) == {"some", "none"}
+
+
+def test_option_revalidates_existing_generic_payload():
+    with pytest.raises(ValidationError):
+        TypeAdapter(Option[int]).validate_python(Some("not an integer"))
+
+
+def test_constructor_does_not_accept_a_tag():
+    constructor: Any = Some
+    with pytest.raises(TypeError):
+        constructor(1, tag="none")
+
+
+def test_option_container_is_not_awaitable():
+    import inspect
+
+    assert not inspect.isawaitable(Some(1))
+    assert not inspect.isawaitable(Nothing)
+
+
+def test_option_pipeline_defaults_preserve_payload_and_fallback_types():
+    calls: list[str] = []
+
+    def fallback() -> str:
+        calls.append("fallback")
+        return "missing"
+
+    def consume(value: Option[int]) -> int | str:
+        assert_type(value.pipe(option.default_value("missing")), int | str)
+        assert_type(value.pipe(option.default_with(fallback)), int | str)
+        return value.pipe(option.default_with(fallback))
+
+    assert consume(Some(42)) == 42
+    assert calls == []
+    assert consume(Nothing) == "missing"
+    assert calls == ["fallback", "fallback"]
+    assert_type(Some(None).pipe(option.default_with(fallback)), None)
+    assert Some(None).pipe(option.default_with(fallback)) is None
+    assert calls == ["fallback", "fallback"]
+
+
+def test_option_pipeline_empty_channels_and_conversions():
+    from expression.collections import Seq
+
+    def absent(value: int) -> NothingType:
+        return Nothing
+
+    def consume(value: Option[int]) -> None:
+        assert_type(value.pipe(option.bind(absent)), NothingType)
+        assert value.pipe(option.bind(absent)) is Nothing
+        assert_type(value.pipe(option.apply(Nothing)), NothingType)
+        assert value.pipe(option.apply(Nothing)) is Nothing
+        assert_type(value.pipe(option.to_optional), int | None)
+        assert_type(pipe(value, option.to_list), list[int])
+        assert_type(pipe(value, option.to_seq), Seq[int])
+        assert_type(option.to_list(value), list[int])
+        values: list[int] = value.to_list()
+        assert values == pipe(value, option.to_list)
+        assert list(pipe(value, option.to_seq)) == values
+
+    consume(Some(42))
+    consume(Nothing)
+
+
+def test_option_starmap_typed_callback_preserves_union_payload():
+    def repeat(number: int, text: str) -> str:
+        return text * number
+
+    def consume(value: Option[tuple[int, str]]) -> Option[str]:
+        assert_type(value.starmap(repeat), Option[str])
+        assert_type(value.pipe(option.starmap(repeat)), Option[str])
+        return value.starmap(repeat)
+
+    assert consume(Some((3, "x"))) == Some("xxx")
+    assert consume(Nothing) is Nothing

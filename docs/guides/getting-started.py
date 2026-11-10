@@ -2,7 +2,7 @@
 """
 # Getting started
 
-Expression works with Python 3.10 and later. Install it from PyPI:
+Expression works with Python 3.11 and later. Install it from PyPI:
 
 ```console
 python -m pip install expression

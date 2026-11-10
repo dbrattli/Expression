@@ -1,457 +1,212 @@
-"""Tests for async_result builder implementation."""
-
 import asyncio
-from collections.abc import AsyncGenerator
-from typing import List
+from inspect import Signature, signature, unwrap
+from typing import assert_type, cast
 
 import pytest
-from pytest import raises
 
-from expression import effect, Ok, Error, Result
-from tests.utils import CustomException
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_evaluation_order():
-    """Test that async_result builder evaluates computations in the correct order."""
-    evaluated: List[int] = []
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        evaluated.append(1)  # First computation
-        x: int = yield 42
-
-        evaluated.append(2)  # Second computation
-        y: int = yield 43
-
-        evaluated.append(3)  # Final computation
-        yield x + y  # Instead of return, use yield for the final value
-
-    computation = await fn()
-    assert evaluated == [1, 2, 3]  # All computations ran in order
-    assert computation == Ok(85)
+from expression import Error, Nothing, Ok, Result, effect
+from expression.effect import ResultScope
 
 
 @pytest.mark.asyncio
-async def test_async_result_builder_short_circuit():
-    """Test that async_result builder properly short circuits with Error."""
-    evaluated: List[int] = []
+async def test_async_result_scope_binds_awaited_values_and_final_type():
+    async def fetch(number: int) -> Result[int, str]:
+        await asyncio.sleep(0)
+        return Ok(number) if number > 0 else Error("missing")
 
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        evaluated.append(1)  # First computation
-        x: int = yield 42
+    @effect.async_result
+    async def computation(scope: ResultScope[str], number: int) -> str:
+        value = scope.bind(await fetch(number))
+        assert_type(value, int)
+        text = scope.bind(Ok(str(value)))
+        assert_type(text, str)
+        return text + "!"
 
-        evaluated.append(2)  # Should not reach here
-        # Use await with Error to leverage the awaitable functionality
-        y: int = yield await Error("error")  # Short circuits here
-
-        evaluated.append(3)  # Should not reach here
-        yield x + y  # This won't be reached
-
-    computation = await fn()
-    assert evaluated == [1, 2]  # Should run until yield Error
-    assert computation == Error("error")
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_combine():
-    """Test that async_result builder properly combines computations."""
-    evaluated: List[int] = []
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        evaluated.append(1)
-        yield 42  # First computation
-
-        evaluated.append(2)
-        yield 43  # Second computation combined with first
-
-        evaluated.append(3)
-        yield 44  # Final result
-
-    computation = await fn()
-    assert evaluated == [1, 2, 3]  # All computations ran
-    assert computation == Ok(44)  # Returns final value
+    assert_type(await computation(42), Result[str, str])
+    assert await computation(42) == Ok("42!")
+    assert await computation(0) == Error("missing")
+    assert tuple(signature(computation).parameters) == ("number",)
+    assert signature(computation).return_annotation is Signature.empty
+    assert computation.__annotations__ == {"number": int}
+    assert signature(unwrap(computation)).return_annotation is str
 
 
 @pytest.mark.asyncio
-async def test_async_result_builder_return_from():
-    """Test that async_result builder properly handles return! (return_from)."""
+async def test_async_result_none_is_a_successful_payload():
+    @effect.async_result
+    async def computation(scope: ResultScope[str]) -> None:
+        return scope.bind(Ok(None))
 
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        x: int = yield await Ok(42)
-        yield x
-
-    computation = await fn()
-    match computation:
-        case Result(tag="ok", ok=value):
-            assert value == 42
-        case _:
-            assert False
+    assert_type(await computation(), Result[None, str])
+    assert await computation() == Ok(None)
 
 
 @pytest.mark.asyncio
-async def test_async_result_builder_zero():
-    """Test that async_result builder properly handles empty computations."""
+async def test_async_result_failure_runs_cleanup():
+    trace: list[str] = []
+    failure = Error("missing")
 
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        if False:
-            yield 42
-        # No yield should use zero()
+    @effect.async_result
+    async def computation(scope: ResultScope[str]) -> int:
+        try:
+            scope.bind(failure)
+            trace.append("unreachable")
+            return 42
+        finally:
+            await asyncio.sleep(0)
+            trace.append("cleanup")
 
-    computation = await fn()
-    assert computation == Ok(None)  # Assert that zero() returns Ok(None)
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_yield_ok():
-    """Test that async_result builder properly handles yielding Ok."""
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        # Use await with Ok to leverage the awaitable functionality
-        x: int = yield await Ok(42)
-        yield x + 1
-
-    computation = await fn()
-    match computation:
-        case Result(tag="ok", ok=value):
-            assert value == 43
-        case _:
-            assert False
+    assert await computation() is failure
+    assert trace == ["cleanup"]
 
 
 @pytest.mark.asyncio
-async def test_async_result_builder_yield_error():
-    """Test that async_result builder properly handles yielding Error."""
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        # Use await with Error to leverage the awaitable functionality
-        x: int = yield await Error("error")
-        yield x + 1  # Should not reach here
-
-    computation = await fn()
-    match computation:
-        case Result(tag="error", error=err):
-            assert err == "error"
-        case _:
-            assert False
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_multiple_operations():
-    """Test that async_result builder properly handles multiple operations."""
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        x: int = yield 42
-        y: int = yield await Ok(43)
-        z: int = yield 44
-        yield x + y + z
-
-    computation = await fn()
-    match computation:
-        case Result(tag="ok", ok=value):
-            assert value == 129  # 42 + 43 + 44
-        case _:
-            assert False
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_nested():
-    """Test that async_result builder properly handles nested computations."""
-
-    @effect.async_result[int, str]()
-    async def inner(x: int) -> AsyncGenerator[int, int]:
-        y: int = yield x + 1
-        yield y + 1
-
-    @effect.async_result[int, str]()
-    async def outer() -> AsyncGenerator[int, int]:
-        x: int = yield 42
-
-        # Call inner and await its result
-        inner_result = await inner(x)
-        y: int = yield await inner_result  # Then yield the result
-
-        yield y + 1
-
-    computation = await outer()
-    assert computation == Ok(45)  # 42 -> 43 -> 44 -> 45
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_throws():
-    """Test that async_result builder properly handles exceptions."""
-    error = "test error"
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        raise CustomException(error)
-        yield 42  # Should not reach here
-
-    with raises(CustomException) as ex_info:
-        await fn()
-    assert ex_info.value.message == error  # CustomException has message attribute
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_return_ok():
-    """Test that async_result builder properly handles returning Ok."""
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        x: int = yield 42
-        yield x  # Use yield instead of return
-
-    computation = await fn()
-    match computation:
-        case Result(tag="ok", ok=value):
-            assert value == 42  # Value should be wrapped in Ok
-        case _:
-            assert False
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_yield_ok_wrapped():
-    """Test that async_result builder properly handles yielding Ok directly."""
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        x: int = yield await Ok(42)  # Yield Ok directly
-        yield x  # Use yield instead of return
-
-    computation = await fn()
-    match computation:
-        case Result(tag="ok", ok=value):
-            assert value == 42  # Value should be unwrapped
-        case _:
-            assert False
-
-@pytest.mark.asyncio
-async def test_async_result_builder_return_error_wrapped():
-    """Test that async_result builder properly handles returning Error directly."""
-
-    @effect.async_result[Result[int, str], str]()
-    async def fn() -> AsyncGenerator[Result[int, str], Result[int, str]]:
-        yield Error("error")  # Use yield await instead of return
-        # No need for additional yield
-
-    computation = await fn()
-    match computation:
-        case Result(tag="ok", ok=inner_result):  # Match Ok case now
-            match inner_result:
-                case Result(tag="error", error=err):  # Match inner Error case
-                    assert err == "error"  # Assert against inner Error value
-                case _:
-                    assert False  # Inner result should be Error
-        case _:
-            assert False  # Outer result should be Ok
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_yield_value_async():
-    """Test that async_result builder properly handles async-style yields."""
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        yield 42
-        # No need for explicit return None
-
-    computation = await fn()
-    match computation:
-        case Result(tag="ok", ok=value):
-            assert value == 42
-        case _:
-            assert False
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_while():
-    """Test that async_result builder properly handles while loops."""
-    evaluated: List[int] = []
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        i = 0
-        while i < 3:
-            evaluated.append(i)
-            _ = yield i  # Using _ for unused variable
-            i += 1
-        yield i
-
-    computation = await fn()
-    assert evaluated == [0, 1, 2]
-    assert computation == Ok(3)
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_projection_int_str():
-    """Test that async_result builder properly handles type projections."""
-
-    @effect.async_result[str, str]()
-    async def fn() -> AsyncGenerator[str, str]:
-        z: str = "Not found"
-
-        # Iterate over Ok result (since Result is iterable)
-        for x in Ok(42.0):
-            for y in Ok(int(x)):
-                z = yield await Ok(str(y))
-
-        yield z
-
-    computation = await fn()
-    match computation:
-        case Result(tag="ok", ok=value):
-            assert value == "42"
-        case _:
-            assert False
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_yield_error_short_circuit():
-    """Test that yielding Error properly short circuits nested operations."""
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        x = yield await Error("error")  # Short circuits here
-
-        # The rest should not execute
-        y = yield await Ok(43)
-        yield x + y
-
-    computation = await fn()
-    match computation:
-        case Result(tag="error", error=err):
-            assert err == "error"
-        case _:
-            assert False
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_with_async_functions():
-    """Test that async_result builder properly works with async functions."""
-
-    async def async_function(x: int) -> int:
-        await asyncio.sleep(0.01)  # Small delay to simulate async work
-        return x * 2
-
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        x: int = yield 21
-
-        # Call an async function and use its result
-        doubled = await async_function(x)
-        y: int = yield doubled
-
-        yield y
-
-    computation = await fn()
-    assert computation == Ok(42)
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_with_async_result_functions():
-    """Test that async_result builder properly works with functions returning async Results."""
-
-    async def async_ok_function(x: int) -> int:
-        await asyncio.sleep(0.01)  # Small delay to simulate async work
-        return await Ok(x * 2)
-
-    async def async_error_function(msg: str) -> int:
-        await asyncio.sleep(0.01)  # Small delay to simulate async work
-        return await Error(msg)
-
-    @effect.async_result[int, str]()
-    async def success_fn() -> AsyncGenerator[int, int]:
-        x: int = yield 21
-
-        # Call async function and get its result
-        result = await async_ok_function(x)
-        # Then yield the result
-        y: int = yield result
-
-        yield y
-
-    @effect.async_result[int, str]()
-    async def error_fn() -> AsyncGenerator[int, int]:
-        _: int = yield 21
-
-        # Call async function and get its result
-        result = await async_error_function("async error")
-        # Then yield it - this should short-circuit
-        y: int = yield result
-
-        yield y  # Should not reach here
-
-    success_computation = await success_fn()
-    assert success_computation == Ok(42)
-
-    error_computation = await error_fn()
-    assert error_computation == Error("async error")
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_with_nested_async_generators():
-    """Test that async_result builder properly works with nested async generators."""
-
-    @effect.async_result[int, str]()
-    async def inner_gen(x: int) -> AsyncGenerator[int, int]:
-        y: int = yield x + 1
-        yield y + 1
-
-    @effect.async_result[int, str]()
-    async def outer_gen() -> AsyncGenerator[int, int]:
-        x: int = yield 40
-
-        # Call inner_gen and await its result
-        inner_result = await inner_gen(x)
-        # Then yield the result
-        y: int = yield await inner_result
-
-        yield y
-
-    computation = await outer_gen()
-    assert computation == Ok(42)  # 40 -> 41 -> 42
-
-
-@pytest.mark.asyncio
-async def test_async_result_builder_plain_function_body():
-    """A body without a yield statement is treated like a `return` statement."""
-
-    @effect.async_result[int, str]()
-    async def fn() -> int:
-        await asyncio.sleep(0)  # Simulate async work
+async def test_async_result_caught_failure_is_terminal():
+    @effect.async_result
+    async def computation(scope: ResultScope[str]) -> int:
+        try:
+            scope.bind(Error("first"))
+        except BaseException:
+            pass
         return 42
 
-    computation = await fn()
-    assert computation == Ok(42)
+    assert await computation() == Error("first")
 
 
 @pytest.mark.asyncio
-async def test_async_result_builder_plain_function_body_none():
-    """A plain async function body returning None maps to zero()."""
+async def test_async_result_cancellation_propagates_and_closes_scope():
+    ready = asyncio.Event()
+    blocked = asyncio.Event()
+    captured: list[ResultScope[str]] = []
+    trace: list[str] = []
 
-    @effect.async_result[int, str]()
-    async def fn() -> None:
-        return None
+    @effect.async_result
+    async def computation(scope: ResultScope[str]) -> int:
+        captured.append(scope)
+        ready.set()
+        try:
+            await blocked.wait()
+            return scope.bind(Ok(42))
+        finally:
+            trace.append("cleanup")
 
-    computation = await fn()
-    assert computation == Ok(None)
+    task = asyncio.create_task(computation())
+    assert_type(task, asyncio.Task[Result[int, str]])
+    await ready.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert trace == ["cleanup"]
+    with pytest.raises(RuntimeError, match="no longer active"):
+        captured[0].bind(Ok(1))
 
 
 @pytest.mark.asyncio
-async def test_async_result_builder_runtime_error_propagates():
-    """A RuntimeError raised in the body propagates instead of being swallowed."""
+async def test_async_result_scope_rejects_another_task():
+    @effect.async_result
+    async def computation(scope: ResultScope[str]) -> int:
+        async def misuse() -> int:
+            return scope.bind(Ok(42))
 
-    @effect.async_result[int, str]()
-    async def fn() -> AsyncGenerator[int, int]:
-        raise RuntimeError("boom")
-        yield 42  # Should not reach here
+        with pytest.raises(RuntimeError, match="another execution context"):
+            await asyncio.create_task(misuse())
+        return scope.bind(Ok(1))
 
-    with raises(RuntimeError, match="boom"):
-        await fn()
+    assert await computation() == Ok(1)
+
+
+@pytest.mark.asyncio
+async def test_async_result_calls_have_independent_scopes():
+    @effect.async_result
+    async def computation(scope: ResultScope[str], number: int) -> int:
+        await asyncio.sleep(0)
+        return scope.bind(Ok(number) if number > 0 else Error("missing"))
+
+    assert await asyncio.gather(computation(1), computation(0), computation(2)) == [Ok(1), Error("missing"), Ok(2)]
+
+
+@pytest.mark.asyncio
+async def test_nested_async_scopes_preserve_outer_signal_ownership():
+    trace: list[str] = []
+
+    @effect.async_result
+    async def outer(scope: ResultScope[str]) -> int:
+        @effect.async_result
+        async def inner(inner_scope: ResultScope[int]) -> int:
+            inner_scope.bind(Ok(1))
+            return scope.bind(Error("outer"))
+
+        await inner()
+        trace.append("unreachable")
+        return 42
+
+    assert await outer() == Error("outer")
+    assert trace == []
+
+
+@pytest.mark.asyncio
+async def test_async_result_unexpected_exception_propagates():
+    @effect.async_result
+    async def computation(scope: ResultScope[str]) -> int:
+        scope.bind(Ok(1))
+        raise ValueError("unexpected")
+
+    with pytest.raises(ValueError, match="unexpected"):
+        await computation()
+
+
+@pytest.mark.asyncio
+async def test_async_result_rejects_wrong_family():
+    @effect.async_result
+    async def computation(scope: ResultScope[str]) -> int:
+        return scope.bind(cast(Result[int, str], Nothing))
+
+    with pytest.raises(TypeError, match="Ok or Error"):
+        await computation()
+
+
+@pytest.mark.asyncio
+async def test_async_result_callback_supports_bound_methods():
+    class Service:
+        async def compute(self, scope: ResultScope[str]) -> str:
+            await asyncio.sleep(0)
+            return str(scope.bind(Ok(42)))
+
+    assert await effect.async_run_result(Service().compute) == Ok("42")
+
+
+@pytest.mark.asyncio
+async def test_async_try_scope_uses_explicit_exception_errors():
+    failure = ValueError("expected")
+
+    @effect.async_try
+    async def computation(scope: ResultScope[Exception], fail: bool) -> int:
+        if fail:
+            scope.bind(Error(failure))
+        return scope.bind(Ok(42))
+
+    task = asyncio.create_task(computation(False))
+    assert_type(task, asyncio.Task[Result[int, Exception]])
+    assert_type(await task, Result[int, Exception])
+    assert await computation(False) == Ok(42)
+    assert await computation(True) == Error(failure)
+
+
+def test_async_result_coroutine_supports_asyncio_run():
+    @effect.async_result
+    async def computation(scope: ResultScope[str], number: int) -> str:
+        return str(scope.bind(Ok(number)))
+
+    result = asyncio.run(computation(42))
+    assert_type(result, Result[str, str])
+    assert result == Ok("42")
+
+
+def test_async_try_coroutine_supports_asyncio_run():
+    @effect.async_try
+    async def computation(scope: ResultScope[Exception], number: int) -> str:
+        return str(scope.bind(Ok(number)))
+
+    result = asyncio.run(computation(42))
+    assert_type(result, Result[str, Exception])
+    assert result == Ok("42")

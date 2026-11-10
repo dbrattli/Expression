@@ -1,156 +1,59 @@
-"""AsyncResult builder module.
+"""Typed result computations using ordinary coroutine return values."""
 
-The AsyncResult builder allows for composing asynchronous operations that
-may fail, using the Result type. It's similar to the Result builder but
-works with async operations.
-"""
+from __future__ import annotations
 
-from collections.abc import AsyncGenerator, Awaitable, Callable
-from typing import Any, ParamSpec, TypeVar
+from collections.abc import Awaitable, Callable, Coroutine
+from functools import wraps
+from typing import Any, Concatenate, TypeVar
 
-from expression.core import Ok, Result
-from expression.core.async_builder import AsyncBuilder
+from typing_extensions import ParamSpec
+
+from expression.core.result import Ok, Result
+
+from ._scope import Abort, ResultInvocation, hide_scope_parameter
+from .result import ResultScope
 
 
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
-_TError = TypeVar("_TError")
+_T = TypeVar("_T")
+_E = TypeVar("_E")
 _P = ParamSpec("_P")
 
 
-class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
-    """AsyncResult builder.
-
-    The AsyncResult builder allows for composing asynchronous operations that
-    may fail, using the Result type.
-    """
-
-    async def bind(
-        self,
-        xs: Result[_TSource, _TError],
-        fn: Callable[[Any], Awaitable[Result[_TResult, _TError]]],
-    ) -> Result[_TResult, _TError]:
-        """Bind a function to an async result value.
-
-        In F# computation expressions, this corresponds to ``let!`` and enables
-        sequencing of computations.
-
-        Args:
-            xs: The async result value to bind
-            fn: The function to apply to the value if Ok
-
-        Returns:
-            The result of applying fn to the value if Ok, otherwise Error
-        """
-        match xs:
-            case Result(tag="ok", ok=value):
-                return await fn(value)
-            case Result(error=error):
-                return Result[_TResult, _TError].Error(error)
-
-    async def return_(self, x: _TSource) -> Result[_TSource, _TError]:
-        """Wrap a value in an async result.
-
-        In F# computation expressions, this corresponds to ``return`` and lifts
-        a value into the result context.
-
-        Args:
-            x: The value to wrap
-
-        Returns:
-            Ok containing the value
-        """
-        return Ok(x)
-
-    async def return_from(self, xs: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
-        """Return an async result value directly.
-
-        In F# computation expressions, this corresponds to ``return!`` and allows
-        returning an already wrapped value.
-
-        Args:
-            xs: The async result value to return
-
-        Returns:
-            The async result value unchanged
-        """
-        return xs
-
-    async def combine(self, xs: Result[_TSource, _TError], ys: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
-        """Combine two async result computations.
-
-        In F# computation expressions, this enables sequencing multiple
-        expressions where we only care about the final result.
-
-        Args:
-            xs: First async result computation
-            ys: Second async result computation
-
-        Returns:
-            The second computation if first is Ok, otherwise Error
-        """
-        match xs:
-            case Result(tag="ok", ok=_):
-                return ys
-            case Result(error=error):
-                return Result[_TSource, _TError].Error(error)
-
-    async def zero(self) -> Result[Any, _TError]:
-        """Return the zero value for async results.
-
-        In F# computation expressions, this is used when no value is returned,
-        corresponding to Ok(()) in F#.
-
-        Returns:
-            Ok(None)
-        """
-        return Ok(None)
-
-    async def delay(self, fn: Callable[[], Result[_TSource, _TError]]) -> Result[_TSource, _TError]:
-        """Delay the computation.
-
-        Default implementation is to return the result of the function.
-        """
-        return fn()
-
-    async def run(self, computation: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
-        """Run a computation.
-
-        Default implementation is to return the computation as is.
-        """
-        return computation
-
-    def __call__(
-        self,
-        fn: Callable[
-            _P,
-            AsyncGenerator[_TSource, _TSource]
-            | AsyncGenerator[_TSource, None]
-            | Awaitable[_TSource | None]
-            | _TSource
-            | None,
-        ],
-    ) -> Callable[_P, Awaitable[Result[_TSource, _TError]]]:
-        """The builder decorator."""
-        return super().__call__(fn)
+async def async_run_result(body: Callable[[ResultScope[_E]], Awaitable[_T]]) -> Result[_T, _E]:
+    """Await a result computation and close its scope on every exit path."""
+    invocation = ResultInvocation[_E]()
+    scope = ResultScope(invocation)
+    try:
+        value = await body(scope)
+        return invocation.failure if invocation.failure is not None else Ok(value)
+    except Abort as signal:
+        if signal.owner is not invocation.owner or invocation.failure is None:
+            raise
+        return invocation.failure
+    finally:
+        invocation.close()
 
 
-# Create singleton instances
-async_result: AsyncResultBuilder[Any, Any] = AsyncResultBuilder()
+def async_result(
+    body: Callable[Concatenate[ResultScope[_E], _P], Awaitable[_T]],
+) -> Callable[_P, Coroutine[Any, Any, Result[_T, _E]]]:
+    """Decorate a coroutine, inferring its result and error types from the body."""
+
+    @wraps(body)
+    async def run(*args: _P.args, **kwargs: _P.kwargs) -> Result[_T, _E]:
+        def invoke(scope: ResultScope[_E]) -> Awaitable[_T]:
+            return body(scope, *args, **kwargs)
+
+        return await async_run_result(invoke)
+
+    return hide_scope_parameter(run, body)
 
 
-class AsyncTryBuilder(AsyncResultBuilder[_TSource, Exception]):
-    """AsyncTry builder.
-
-    The AsyncTry builder allows for composing asynchronous operations that
-    may throw exceptions, using the Result type with Exception as the error type.
-    """
-
-    pass
+def async_try(
+    body: Callable[Concatenate[ResultScope[Exception], _P], Awaitable[_T]],
+) -> Callable[_P, Coroutine[Any, Any, Result[_T, Exception]]]:
+    """Decorate a coroutine with explicit exception errors; raised exceptions propagate."""
+    return async_result(body)
 
 
-# Create singleton instance
-async_try: AsyncTryBuilder[Any] = AsyncTryBuilder()
-
-
-__all__ = ["AsyncResultBuilder", "AsyncTryBuilder", "async_result", "async_try"]
+__all__ = ["async_result", "async_run_result", "async_try"]

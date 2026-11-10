@@ -1,111 +1,78 @@
-from collections.abc import Callable, Generator
-from typing import Any, TypeVar
+"""Typed scopes for synchronous optional computations."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from functools import wraps
+from typing import Concatenate, Never, TypeVar, final, overload
 
 from typing_extensions import ParamSpec
 
-from expression.core import Builder, Nothing, Option, Some, option
+from expression.core.option import Nothing, NothingType, Option, Some
+
+from ._scope import Abort, OptionInvocation, hide_scope_parameter
 
 
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
+_A = TypeVar("_A")
+_T = TypeVar("_T")
 _P = ParamSpec("_P")
 
 
-class OptionBuilder(Builder[_TSource, Option[Any]]):
-    def bind(self, xs: Option[_TSource], fn: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
-        """Bind a function to an option value.
+@final
+class OptionScope:
+    """Bind optional values inside one computation.
 
-        In F# computation expressions, this corresponds to let! and enables
-        sequencing of computations.
+    Scopes are supplied by :func:`option` and :func:`run_option`. Each call to
+    ``bind`` preserves its payload type; ``Nothing`` ends the computation.
+    A scope cannot be used after its computation ends or from another task.
+    """
 
-        Args:
-            xs: The option value to bind
-            fn: The function to apply to the value if Some
+    def __init__(self, invocation: OptionInvocation) -> None:
+        self._invocation = invocation
 
-        Returns:
-            The result of applying fn to the value if Some, otherwise Nothing
-        """
-        return option.bind(fn)(xs)
+    @overload
+    def bind(self, value: NothingType) -> Never: ...
 
-    def return_(self, x: _TSource) -> Option[_TSource]:
-        """Wrap a value in an option.
+    @overload
+    def bind(self, value: Option[_A]) -> _A: ...
 
-        In F# computation expressions, this corresponds to return and lifts
-        a value into the option context.
+    def bind(self, value: Option[_A]) -> _A:
+        self._invocation.check()
+        if self._invocation.failed:
+            raise Abort(self._invocation.owner)
+        match value:
+            case Some(some):
+                return some
+            case NothingType():
+                self._invocation.failed = True
+                raise Abort(self._invocation.owner)
+            case _:
+                raise TypeError("OptionScope.bind expects Some or Nothing")
 
-        Args:
-            x: The value to wrap
 
-        Returns:
-            Some containing the value
-        """
-        return Some(x)
-
-    def return_from(self, xs: Option[_TSource]) -> Option[_TSource]:
-        """Return an option value directly.
-
-        In F# computation expressions, this corresponds to return! and allows
-        returning an already wrapped value.
-
-        Args:
-            xs: The option value to return
-
-        Returns:
-            The option value unchanged
-        """
-        return xs
-
-    def combine(self, xs: Option[_TSource], ys: Option[_TSource]) -> Option[_TSource]:
-        """Combine two option computations.
-
-        In F# computation expressions, this enables sequencing multiple
-        expressions where we only care about the final result.
-
-        Args:
-            xs: First option computation
-            ys: Second option computation
-
-        Returns:
-            The second computation if first is Some, otherwise Nothing
-        """
-        return xs.bind(lambda _: ys)
-
-    def zero(self) -> Option[_TSource]:
-        """Return the zero value for options.
-
-        In F# computation expressions, this is used when no value is returned,
-        corresponding to None in F#.
-
-        Returns:
-            Nothing
-        """
+def run_option(body: Callable[[OptionScope], _T]) -> Option[_T]:
+    """Run an optional computation, including a bound method or callback."""
+    invocation = OptionInvocation()
+    scope = OptionScope(invocation)
+    try:
+        value = body(scope)
+        return Nothing if invocation.failed else Some(value)
+    except Abort as signal:
+        if signal.owner is not invocation.owner:
+            raise
         return Nothing
-
-    def delay(self, fn: Callable[[], Option[_TSource]]) -> Option[_TSource]:
-        """Delay an option computation.
-
-        In F# computation expressions, delay ensures proper sequencing of effects
-        by controlling when computations are evaluated.
-
-        Args:
-            fn: The computation to delay
-
-        Returns:
-            The result of evaluating the computation
-        """
-        return fn()
-
-    def __call__(
-        self,  # Ignored self parameter
-        fn: Callable[
-            _P,
-            Generator[_TSource | None, _TSource, _TSource | None]
-            | Generator[_TSource | None, None, _TSource | None]
-            | _TSource
-            | None,
-        ],
-    ) -> Callable[_P, Option[_TSource]]:
-        return super().__call__(fn)
+    finally:
+        invocation.close()
 
 
-__all__ = ["OptionBuilder"]
+def option(body: Callable[Concatenate[OptionScope, _P], _T]) -> Callable[_P, Option[_T]]:
+    """Decorate a scoped function, inferring its final optional result type."""
+
+    @wraps(body)
+    def run(*args: _P.args, **kwargs: _P.kwargs) -> Option[_T]:
+        return run_option(lambda scope: body(scope, *args, **kwargs))
+
+    return hide_scope_parameter(run, body)
+
+
+__all__ = ["OptionScope", "option", "run_option"]

@@ -39,7 +39,7 @@ def catch(  # type: ignore
             except exception as exn:
                 return Error(cast(_TError, exn))
             else:
-                if isinstance(out, Result):
+                if isinstance(out, (Ok, Error)):
                     return cast(Result[_TSource, _TError], out)
 
                 return Ok(out)

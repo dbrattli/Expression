@@ -252,7 +252,7 @@ class Block(
         """
         return Block((*builtins.map(mapping, self),))
 
-    def starmap(self: Block[tuple[Unpack[_P]]], mapping: Callable[[Unpack[_P]], _TResult]) -> Block[_TResult]:
+    def starmap(self: Block[tuple[*_P]], mapping: Callable[[Unpack[_P]], _TResult]) -> Block[_TResult]:
         """Starmap source sequence.
 
         Unpack arguments grouped as tuple elements. Builds a new collection
@@ -762,7 +762,7 @@ def reduce(
     return source.tail().fold(reduction, source.head())
 
 
-def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[Unpack[_P]]]], Block[_TResult]]:
+def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[*_P]]], Block[_TResult]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
@@ -776,7 +776,7 @@ def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[U
         Partially applied map function.
     """
 
-    def mapper_(args: tuple[Unpack[_P]]) -> _TResult:
+    def mapper_(args: tuple[*_P]) -> _TResult:
         return mapper(*args)
 
     return map(mapper_)
@@ -822,7 +822,7 @@ def of_seq(xs: Iterable[_TSource]) -> Block[_TSource]:
 
 def of_option(option: Option[_TSource]) -> Block[_TSource]:
     match option:
-        case Option(tag="some", some=value):
+        case Some(some=value):
             return singleton(value)
         case _:
             return empty

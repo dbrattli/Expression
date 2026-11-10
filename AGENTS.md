@@ -26,7 +26,7 @@ release pull requests. Do not hand-edit generated release entries.
 
 ## Coding Style & Naming Conventions
 
-Write Python compatible with 3.10 and follow PEP 8. Ruff enforces a 120-character line
+Write Python compatible with 3.11 and follow PEP 8. Ruff enforces a 120-character line
 limit, import ordering, Google-style docstrings, and the configured lint rules; Pyright
 runs in strict mode. Use four-space indentation, `snake_case` for functions and modules,
 `PascalCase` for classes and tagged-union types, and leading underscores for internal

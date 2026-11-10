@@ -65,9 +65,9 @@ def is_empty(m: MapTree[Any, Any]):
 
 def size_aux(acc: int, m: MapTree[Key, Value]) -> int:
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right)):
+        case Some(some=MapTreeNode(left=left, right=right)):
             return size_aux(size_aux(acc + 1, left), right)
-        case Option(tag="some", some=MapTreeLeaf()):
+        case Some(some=MapTreeLeaf()):
             return acc + 1
         case _:
             return acc
@@ -79,9 +79,9 @@ def size(x: MapTree[Any, Any]):
 
 def height(m: MapTree[Key, Value]) -> int:
     match m:
-        case Option(tag="some", some=MapTreeNode(height=height)):
+        case Some(some=MapTreeNode(height=height)):
             return height
-        case Option(tag="some", some=MapTreeLeaf()):
+        case Some(some=MapTreeLeaf()):
             return 1
         case _:
             return 0
@@ -148,14 +148,14 @@ def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
 
 def add(k: Key, v: Value, m: MapTree[Key, Value]) -> MapTree[Key, Value]:
     match m:
-        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right, height=height)):
+        case Some(some=MapTreeNode(key=key, value=value, left=left, right=right, height=height)):
             if k < key:
                 return rebalance(add(k, v, left), key, value, right)
             elif k == key:
                 return Some(MapTreeNode(k, v, left, right, height))
             else:
                 return rebalance(left, key, value, add(k, v, right))
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             if k < key:
                 node = MapTreeNode(k, v, empty, m, 2)
                 return Some(node)
@@ -208,11 +208,11 @@ def partition_aux(
     acc: tuple[MapTree[Key, Value], MapTree[Key, Value]],
 ) -> tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     match m:
-        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+        case Some(some=MapTreeNode(key=key, value=value, left=left, right=right)):
             acc = partition_aux(predicate, right, acc)
             acc = partition1(predicate, key, value, acc)
             return partition_aux(predicate, left, acc)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return partition1(predicate, key, value, acc)
         case _:
             return acc
@@ -237,11 +237,11 @@ def filter_aux(
     acc: MapTree[Key, Value],
 ) -> MapTree[Key, Value]:
     match m:
-        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+        case Some(some=MapTreeNode(key=key, value=value, left=left, right=right)):
             acc = filter_aux(predicate, left, acc)
             acc = filter1(predicate, key, value, acc)
             return filter_aux(predicate, right, acc)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return filter1(predicate, key, value, acc)
         case _:
             return acc
@@ -253,13 +253,13 @@ def filter(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> MapTree[K
 
 def splice_out_successor(m: MapTree[Key, Value]) -> tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
     match m:
-        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+        case Some(some=MapTreeNode(key=key, value=value, left=left, right=right)):
             if is_empty(left):
                 return key, value, right
             else:
                 k3, v3, l_ = splice_out_successor(left)
                 return k3, v3, mk(l_, key, value, right)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return key, value, empty
         case _:
             failwith("internal error: Map.splice_out_successor")
@@ -267,7 +267,7 @@ def splice_out_successor(m: MapTree[Key, Value]) -> tuple[Key, Value, Option[Map
 
 def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
     match m:
-        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right)):
+        case Some(some=MapTreeNode(key=key, value=value, left=left, right=right)):
             if k < key:
                 return rebalance(remove(k, left), key, value, right)
             elif k == key:
@@ -280,7 +280,7 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
                     return mk(left, sk, sv, r_)
             else:
                 return rebalance(left, key, value, remove(k, right))
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             if k == key:
                 return empty
             else:
@@ -291,7 +291,7 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
 
 def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
     match m:
-        case Option(tag="some", some=MapTreeNode(key=key, value=value, left=left, right=right, height=height)):
+        case Some(some=MapTreeNode(key=key, value=value, left=left, right=right, height=height)):
             if k < key:
                 return rebalance(change(k, u, left), key, value, right)
             elif k == key:
@@ -307,7 +307,7 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
                         return mk(left, sk, sv, r_)
             else:
                 return rebalance(left, key, value, change(k, u, right))
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             if k < key:
                 for v in u(Nothing).to_list():
                     return Some(MapTreeNode(k, v, empty, m, 2))
@@ -333,12 +333,12 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
 
 def mem(k: Key, m: MapTree[Key, Value]) -> bool:
     match m:
-        case Option(tag="some", some=MapTreeNode(key=key, left=left, right=right)):
+        case Some(some=MapTreeNode(key=key, left=left, right=right)):
             if k < key:
                 return mem(k, left)
             else:
                 return k == key or mem(k, right)
-        case Option(tag="some", some=MapTreeLeaf(key=key)):
+        case Some(some=MapTreeLeaf(key=key)):
             return k == key
         case _:
             return False
@@ -347,11 +347,11 @@ def mem(k: Key, m: MapTree[Key, Value]) -> bool:
 def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
     """Iterate maptree."""
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+        case Some(some=MapTreeNode(left=left, right=right, key=key, value=value)):
             iter(fn, left)
             fn(key, value)
             iter(fn, right)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             fn(key, value)
         case _:
             pass
@@ -359,7 +359,7 @@ def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
 
 def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) -> Option[Result]:
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+        case Some(some=MapTreeNode(left=left, right=right, key=key, value=value)):
             res = try_pick(f, left)
             if res.is_some():
                 return res
@@ -369,7 +369,7 @@ def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) 
                     return res
                 else:
                     return try_pick(f, right)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return f(key, value)
         case _:
             return Nothing
@@ -377,9 +377,9 @@ def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) 
 
 def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+        case Some(some=MapTreeNode(left=left, right=right, key=key, value=value)):
             return exists(f, left) or f(key, value) or exists(f, right)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return f(key, value)
         case _:
             return False
@@ -387,9 +387,9 @@ def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
 
 def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+        case Some(some=MapTreeNode(left=left, right=right, key=key, value=value)):
             return forall(f, left) and f(key, value) and forall(f, right)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return f(key, value)
         case _:
             return True
@@ -397,12 +397,12 @@ def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
 
 def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value, height=height)):
+        case Some(some=MapTreeNode(left=left, right=right, key=key, value=value, height=height)):
             l2 = map(f, left)
             v2 = f(key, value)
             r2 = map(f, right)
             return Some(MapTreeNode(key, v2, l2, r2, height))
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return Some(MapTreeLeaf(key, f(key, value)))
         case _:
             return empty
@@ -410,11 +410,11 @@ def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Ke
 
 def fold_back(f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result) -> Result:
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+        case Some(some=MapTreeNode(left=left, right=right, key=key, value=value)):
             x = fold_back(f, right, x)
             x = f((key, value), x)
             return fold_back(f, left, x)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return f((key, value), x)
         case _:
             return x
@@ -422,11 +422,11 @@ def fold_back(f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, 
 
 def fold(f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]) -> Result:
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+        case Some(some=MapTreeNode(left=left, right=right, key=key, value=value)):
             x = fold(f, x, left)
             x = f(x, (key, value))
             return fold(f, x, right)
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return f(x, (key, value))
         case _:
             return x
@@ -435,9 +435,9 @@ def fold(f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree
 def to_list(m: MapTree[Key, Value]) -> Block[tuple[Key, Value]]:
     def loop(m: MapTree[Key, Value], acc: Block[tuple[Key, Value]]) -> Block[tuple[Key, Value]]:
         match m:
-            case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+            case Some(some=MapTreeNode(left=left, right=right, key=key, value=value)):
                 return loop(left, loop(right, acc).cons((key, value)))
-            case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            case Some(some=MapTreeLeaf(key=key, value=value)):
                 return acc.cons((key, value))
             case _:
                 return acc
@@ -478,10 +478,10 @@ def collapseLHS(stack: Block[MapTree[Key, Value]]) -> Block[MapTree[Key, Value]]
         return block.empty
     m, rest = stack.head(), stack.tail()
     match m:
-        case Option(tag="some", some=MapTreeNode(left=left, right=right, key=key, value=value)):
+        case Some(some=MapTreeNode(left=left, right=right, key=key, value=value)):
             tree = Some(MapTreeLeaf(key, value))
             return collapseLHS(rest.cons(right).cons(tree).cons(left))
-        case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+        case Some(some=MapTreeLeaf(key=key, value=value)):
             return stack
         case _:
             return collapseLHS(rest)
@@ -497,9 +497,9 @@ class MkIterator(Iterator[tuple[Key, Value]]):
 
         rest = self.stack.tail()
         match self.stack.head():
-            case Option(tag="some", some=MapTreeNode()):
+            case Some(some=MapTreeNode()):
                 failwith("Please report error: Map iterator, unexpected stack for next()")
-            case Option(tag="some", some=MapTreeLeaf(key=key, value=value)):
+            case Some(some=MapTreeLeaf(key=key, value=value)):
                 self.stack = collapseLHS(rest)
                 return key, value
             case _:

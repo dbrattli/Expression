@@ -1,518 +1,574 @@
-"""Result module.
+"""Closed result cases and pipe-friendly operations.
 
-The Result[TSource,TError] type lets you write error-tolerant code that
-can be composed. The Result type is typically used in monadic
-error-handling, which is often referred to as Railway-oriented
-Programming.
-
-There is also a simplified alias of this type called `Try` that pins
-the Result type to Exception.
+``Result[T, E]`` is the union of ``Ok[T]`` and ``Error[E]``. Match the
+case classes to access their payloads; use a result scope for computations.
 """
 
 from __future__ import annotations
 
 import builtins
-from collections.abc import Awaitable, Callable, Generator, Iterable
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
-    Any,
+    Annotated,
+    ClassVar,
     Generic,
     Literal,
+    Never,
+    Protocol,
+    TypeAlias,
     TypeGuard,
-    TypeVar,
-    cast,
-    get_args,
-    get_origin,
+    final,
+    overload,
 )
+
+from typing_extensions import TypeVar
+
+from ._serialization import encode
+from ._union_schema import UnionSchema
+from .pipe import PipeMixin
 
 
 if TYPE_CHECKING:
-    from pydantic import GetCoreSchemaHandler
-    from pydantic_core import CoreSchema
-
-    from expression.core.option import Option
-
-from .curry import curry_flip
-from .error import EffectError
-from .pipe import PipeMixin
-from .tagged_union import case, tag, tagged_union
+    from .option import NothingType, Option, Some
 
 
-_TSource = TypeVar("_TSource")
-_TSourceOut = TypeVar("_TSourceOut", covariant=True)
-_TOther = TypeVar("_TOther")
-_TResult = TypeVar("_TResult")
-_TError = TypeVar("_TError")
-_TErrorOut = TypeVar("_TErrorOut", covariant=True)
+_T = TypeVar("_T", covariant=True, default=Never)
+_E = TypeVar("_E", covariant=True, default=Never)
+_A = TypeVar("_A", default=object)
+_B = TypeVar("_B", default=object)
+_U = TypeVar("_U", default=Never)
+_F = TypeVar("_F", default=Never)
+_R = TypeVar("_R", bound="Ok[object] | Error[object]", default=Never)
+_Input = TypeVar("_Input", contravariant=True)
+_Output = TypeVar("_Output", covariant=True)
+_Failure = TypeVar("_Failure", covariant=True)
 
 
-@tagged_union(frozen=True, order=True)
-class Result(
-    Iterable[_TSourceOut],
-    Awaitable[_TSourceOut],
-    PipeMixin,
-    Generic[_TSourceOut, _TErrorOut],
-):
-    """The result class."""
+@final
+@dataclass(frozen=True)
+class Ok(PipeMixin, Generic[_T]):
+    """A successful result containing a value."""
 
-    tag: Literal["ok", "error"] = tag()
+    __pydantic_config__: ClassVar[builtins.dict[str, str]] = {"revalidate_instances": "always"}
 
-    ok: _TSourceOut = case()
-    error: _TErrorOut = case()
+    ok: _T
+    tag: Literal["ok"] = field(default="ok", init=False, repr=False)
 
-    @staticmethod
-    def Ok(value: _TResult) -> Result[_TResult, _TErrorOut]:
-        """Create a new Ok result."""
-        return Result(tag="ok", ok=value)
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        raise TypeError("Ok is final")
 
-    @staticmethod
-    def Error(error: _TError) -> Result[_TSourceOut, _TError]:
-        """Create a new Error result."""
-        return Result(tag="error", error=error)
+    def default_value(self, value: object) -> _T:
+        """Return the successful value."""
+        return self.ok
 
-    def default_value(self, value: _TSource) -> _TSourceOut | _TSource:
-        """Get with default value.
+    def default_with(self, getter: Callable[[Never], object]) -> _T:
+        """Return the successful value without evaluating the fallback."""
+        return self.ok
 
-        Gets the value of the result if the result is Ok, otherwise
-        returns the specified default value.
-        """
-        match self:
-            case Result(tag="ok", ok=ok):
-                return ok
-            case _:
-                return value
+    def map(self, mapper: Callable[[_T], _U]) -> Ok[_U]:
+        """Transform the successful value."""
+        return Ok(mapper(self.ok))
 
-    def default_with(self, getter: Callable[[_TErrorOut], _TSource]) -> _TSource | _TSourceOut:
-        """Get with default value lazily.
+    def map2(self, other: Result[_A, _F], mapper: Callable[[_T, _A], _U]) -> Result[_U, _F]:
+        """Map two successful results, preserving the other result's error."""
+        return other.map(lambda value: mapper(self.ok, value))
 
-        Gets the value of the result if the result is Ok, otherwise
-        returns the value produced by the getter
-        """
-        match self:
-            case Result(tag="ok", ok=value):
-                return value
-            case Result(error=error):
-                return getter(error)
+    def apply(self, function: Result[Callable[[_T], _U], _F]) -> Result[_U, _F]:
+        """Apply a successful function to the value."""
+        return function.map(lambda mapper: mapper(self.ok))
 
-    def map(self, mapper: Callable[[_TSourceOut], _TResult]) -> Result[_TResult, _TErrorOut]:
-        """Map result.
+    def map_error(self, mapper: Callable[[Never], _F]) -> Ok[_T]:
+        """Preserve this successful result."""
+        return self
 
-        Return a result of the value after applying the mapping
-        function, or Error if the input is Error.
-        """
-        match self:
-            case Result(tag="ok", ok=value):
-                return Result[_TResult, _TErrorOut].Ok(mapper(value))
-            case Result(error=error):
-                return Result[_TResult, _TErrorOut].Error(error)
+    def bind(self, mapper: Callable[[_T], _R]) -> _R:
+        """Apply a result-returning function to the value."""
+        return mapper(self.ok)
 
-    def map2(
-        self,
-        other: Result[_TOther, _TErrorOut],
-        mapper: Callable[[_TSourceOut, _TOther], _TResult],
-    ) -> Result[_TResult, _TErrorOut]:
-        """Map result.
+    def is_error(self) -> Literal[False]:
+        return False
 
-        Return a result of the value after applying the mapping
-        function, or Error if the input is Error.
-        """
-        match self:
-            case Result(tag="ok", ok=value):
-                return other.map(lambda value_: mapper(value, value_))
-            case Result(error=error):
-                return Result(error=error)
+    def is_ok(self) -> Literal[True]:
+        return True
 
-    def apply(
-        self,
-        function: Result[Callable[[_TSourceOut], _TResult], _TErrorOut],
-    ) -> Result[_TResult, _TErrorOut]:
-        """Apply a function in a Result to this Result's value.
+    def filter(self, predicate: Callable[[_T], bool], default: _F) -> Result[_T, _F]:
+        """Keep a value satisfying the predicate or return the supplied error."""
+        return self if predicate(self.ok) else Error(default)
 
-        If both Results are Ok, apply the function. If either Result is an
-        Error, return that error; the function Result takes precedence when
-        both are errors.
-        """
-        match function:
-            case Result(tag="ok", ok=mapper):
-                return self.map(mapper)
-            case Result(error=error):
-                return Result[_TResult, _TErrorOut].Error(error)
+    def filter_with(self, predicate: Callable[[_T], bool], default: Callable[[_T], _F]) -> Result[_T, _F]:
+        """Keep a value satisfying the predicate or compute an error."""
+        return self if predicate(self.ok) else Error(default(self.ok))
 
-    def map_error(self, mapper: Callable[[_TErrorOut], _TResult]) -> Result[_TSourceOut, _TResult]:
-        """Map error.
+    def dict(self) -> builtins.dict[str, object]:
+        """Encode this case and its payload as a tagged mapping."""
+        return {"tag": "ok", "ok": encode(self.ok)}
 
-        Return a result of the error value after applying the mapping
-        function, or Ok if the input is Ok.
-        """
-        match self:
-            case Result(tag="ok", ok=value):
-                return Result[_TSourceOut, _TResult].Ok(value)
-            case Result(error=error):
-                return Result[_TSourceOut, _TResult].Error(mapper(error))
+    def swap(self) -> Error[_T]:
+        """Move the successful value into the error channel."""
+        return Error(self.ok)
 
-    def bind(self, mapper: Callable[[_TSourceOut], Result[_TResult, _TErrorOut]]) -> Result[_TResult, _TErrorOut]:
-        """Bind result.
+    def or_else(self, other: Result[object, object]) -> Ok[_T]:
+        """Preserve this successful result."""
+        return self
 
-        Return a result of the value after applying the mapping
-        function, or Error if the input is Error.
-        """
-        match self:
-            case Result(tag="ok", ok=value):
-                return mapper(value)
-            case Result(error=error):
-                return Result[_TResult, _TErrorOut].Error(error)
+    def or_else_with(self, other: Callable[[Never], Result[object, object]]) -> Ok[_T]:
+        """Preserve this result without evaluating the fallback."""
+        return self
 
-    def is_error(self) -> bool:
-        """Returns `True` if the result is an `Error` value."""
-        return self.tag == "error"
+    def merge(self) -> _T:
+        """Return this case's payload."""
+        return self.ok
 
-    def is_ok(self) -> bool:
-        """Return `True` if the result is an `Ok` value."""
-        return self.tag == "ok"
+    def to_option(self) -> Some[_T]:
+        """Wrap the value in Some."""
+        from .option import Some
 
-    def filter(
-        self, predicate: Callable[[_TSourceOut], bool], default: _TError
-    ) -> Result[_TSourceOut, _TError | _TErrorOut]:
-        """Filter result.
+        return Some(self.ok)
 
-        Returns the input if the predicate evaluates to true, otherwise
-        returns the `default`
-        """
-        match self:
-            case Result(tag="ok", ok=value) if predicate(value):
-                return self
-            case Result(tag="error"):
-                return self
-            case _:
-                return Error(default)
-
-    def filter_with(
-        self,
-        predicate: Callable[[_TSourceOut], bool],
-        default: Callable[[_TSourceOut], _TErrorOut],
-    ) -> Result[_TSourceOut, _TErrorOut]:
-        """Filter result.
-
-        Returns the input if the predicate evaluates to true, otherwise
-        returns the `default` using the value as input
-        """
-        match self:
-            case Result(tag="ok", ok=value) if predicate(value):
-                return self
-            case Result(tag="ok", ok=value):
-                return Error(default(value))
-            case Result():
-                return self
-
-    def dict(self) -> builtins.dict[str, _TSourceOut | _TErrorOut | Literal["ok", "error"]]:
-        """Return a json serializable representation of the result."""
-        match self:
-            case Result(tag="ok", ok=value):
-                attr = getattr(value, "model_dump", None) or getattr(value, "dict", None)
-                if attr and callable(attr):
-                    value = cast(_TSourceOut, attr())
-                return {"tag": "ok", "ok": value}
-            case Result(error=error):
-                attr = getattr(error, "model_dump", None) or getattr(error, "dict", None)
-                if attr and callable(attr):
-                    error = cast(_TErrorOut, attr())
-                return {"tag": "error", "error": error}
-
-    def swap(self) -> Result[_TErrorOut, _TSourceOut]:
-        """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
-        match self:
-            case Result(tag="ok", ok=value):
-                return Result(error=value)
-            case Result(error=error):
-                return Result(ok=error)
-
-    def or_else(self, other: Result[_TSourceOut, _TErrorOut]) -> Result[_TSourceOut, _TErrorOut]:
-        """Return the result if it is Ok, otherwise return the other result."""
-        return self if self.is_ok() else other
-
-    def or_else_with(
-        self, other: Callable[[_TErrorOut], Result[_TSourceOut, _TErrorOut]]
-    ) -> Result[_TSourceOut, _TErrorOut]:
-        """Return the result if it is Ok, otherwise return the result of the other function."""
-        return self if self.is_ok() else other(self.error)
-
-    def merge(self: Result[_TSource, _TSource]) -> _TSource:
-        """Merge the ok and error values into a single value.
-
-        This method is only available on Results where _TSource and _TError are the same type.
-        """
-        return self.default_with(lambda x: x)
-
-    def to_option(self) -> Option[_TSourceOut]:
-        """Convert result to an option."""
-        match self:
-            case Result(tag="ok", ok=value):
-                from expression.core.option import Some
-
-                return Some(value)
-            case _:
-                from expression.core.option import Nothing
-
-                return Nothing
-
-    @classmethod
-    def of_option(cls, value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
-        """Convert option to a result."""
-        return of_option(value, error)
-
-    @classmethod
-    def of_option_with(cls, value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
-        """Convert option to a result."""
-        return of_option_with(value, error)
-
-    def __iter__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
-        match self:
-            case Result(tag="ok", ok=value):
-                return (yield value)
-            case _:
-                raise EffectError(self)
-
-    def __await__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
-        """Make Result awaitable by delegating to __iter__."""
-        match self:
-            case Result(tag="ok", ok=value):
-                return value
-            case _:
-                raise EffectError(self)
-
-        yield None
+    def __iter__(self) -> Iterator[_T]:
+        return iter((self.ok,))
 
     def __str__(self) -> str:
-        match self:
-            case Result(tag="ok", ok=value):
-                return f"Ok {value}"
-            case Result(error=error):
-                return f"Error {error}"
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        from pydantic import ValidatorFunctionWrapHandler
-        from pydantic_core import core_schema
-
-        origin = get_origin(source_type)
-        if origin is None:  # used as `x: Result` without params
-            origin = source_type
-            type_vars = (Any, Any)
-        else:
-            type_vars = get_args(source_type)
-
-        ok_schema = handler.generate_schema(type_vars[0])
-        error_schema = handler.generate_schema(type_vars[1])
-
-        def validate_ok(v: Any, handler: ValidatorFunctionWrapHandler) -> Result[_TSourceOut, _TErrorOut]:
-            if "ok" not in v:
-                raise ValueError("Missing ok field")
-            value = handler(v["ok"])
-            return cls(ok=value)
-
-        def validate_error(v: Any, handler: ValidatorFunctionWrapHandler) -> Result[_TSourceOut, _TErrorOut]:
-            if "error" not in v:
-                raise ValueError("Missing error field")
-
-            value = handler(v["error"])
-            return cls(error=value)
-
-        python_schema = core_schema.union_schema(
-            [
-                core_schema.is_instance_schema(cls),
-                core_schema.no_info_wrap_validator_function(validate_error, error_schema),
-                core_schema.no_info_wrap_validator_function(validate_ok, ok_schema),
-            ]
-        )
-        json_schema = core_schema.chain_schema(
-            [
-                core_schema.union_schema(
-                    [
-                        core_schema.typed_dict_schema(
-                            {
-                                "tag": core_schema.typed_dict_field(core_schema.str_schema()),
-                                "ok": core_schema.typed_dict_field(ok_schema),
-                            }
-                        ),
-                        core_schema.typed_dict_schema(
-                            {
-                                "tag": core_schema.typed_dict_field(core_schema.str_schema()),
-                                "error": core_schema.typed_dict_field(error_schema),
-                            }
-                        ),
-                    ]
-                ),
-                # after validating the json data convert it to python
-                core_schema.no_info_before_validator_function(
-                    lambda data: cls(data),
-                    python_schema,
-                ),
-            ]
-        )
-
-        return core_schema.json_or_python_schema(
-            json_schema=json_schema,
-            python_schema=python_schema,
-            serialization=core_schema.plain_serializer_function_ser_schema(lambda instance: instance.dict()),
-        )
+        return f"Ok {self.ok}"
 
 
-def Error(error: _TError) -> Result[Any, _TError]:
-    return Result[Any, _TError].Error(error)
+@final
+@dataclass(frozen=True)
+class Error(PipeMixin, Generic[_E]):
+    """A failed result containing an error."""
+
+    __pydantic_config__: ClassVar[builtins.dict[str, str]] = {"revalidate_instances": "always"}
+
+    error: _E
+    tag: Literal["error"] = field(default="error", init=False, repr=False)
+
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        raise TypeError("Error is final")
+
+    def default_value(self, value: _U) -> _U:
+        """Return the fallback value."""
+        return value
+
+    def default_with(self, getter: Callable[[_E], _U]) -> _U:
+        """Compute a fallback from the error."""
+        return getter(self.error)
+
+    def map(self, mapper: Callable[[Never], _U]) -> Error[_E]:
+        """Preserve the error without evaluating the mapper."""
+        return self
+
+    def map2(self, other: Result[_A, _F], mapper: Callable[[Never, _A], _U]) -> Error[_E]:
+        """Preserve this error without evaluating the mapper."""
+        return self
+
+    def apply(self, function: Result[Callable[[Never], object], _F]) -> Error[_E] | Error[_F]:
+        """Preserve the error, preferring a function error when both fail."""
+        match function:
+            case Error():
+                return function
+            case Ok():
+                return self
+
+    def map_error(self, mapper: Callable[[_E], _F]) -> Error[_F]:
+        """Transform the error."""
+        return Error(mapper(self.error))
+
+    def bind(self, mapper: Callable[[Never], _R]) -> Error[_E]:
+        """Preserve the error without evaluating the continuation."""
+        return self
+
+    def is_error(self) -> Literal[True]:
+        return True
+
+    def is_ok(self) -> Literal[False]:
+        return False
+
+    def filter(self, predicate: Callable[[Never], bool], default: object) -> Error[_E]:
+        """Preserve the existing error."""
+        return self
+
+    def filter_with(self, predicate: Callable[[Never], bool], default: Callable[[Never], object]) -> Error[_E]:
+        """Preserve the existing error without evaluating callbacks."""
+        return self
+
+    def dict(self) -> builtins.dict[str, object]:
+        """Encode this case and its payload as a tagged mapping."""
+        return {"tag": "error", "error": encode(self.error)}
+
+    def swap(self) -> Ok[_E]:
+        """Move the error into the success channel."""
+        return Ok(self.error)
+
+    def or_else(self, other: _R) -> _R:
+        """Return the fallback result."""
+        return other
+
+    def or_else_with(self, other: Callable[[_E], _R]) -> _R:
+        """Compute a fallback result from the error."""
+        return other(self.error)
+
+    def merge(self) -> _E:
+        """Return this case's payload."""
+        return self.error
+
+    def to_option(self) -> NothingType:
+        """Discard the error and return Nothing."""
+        from .option import Nothing
+
+        return Nothing
+
+    def __iter__(self) -> Iterator[Never]:
+        return iter(())
+
+    def __str__(self) -> str:
+        return f"Error {self.error}"
 
 
-def Ok(value: _TSource) -> Result[_TSource, Any]:
-    return Result[_TSource, Any].Ok(value)
+Result: TypeAlias = Annotated[Ok[_T] | Error[_E], UnionSchema()]
 
 
-class ResultException(EffectError):
-    """Makes the Error case a valid exception for effect handling.
+# Case-specific callable overloads preserve the untouched channel when a pipe
+# dispatches over a union. A generic closure instead leaks unsolved type variables.
+class _DefaultValue(Generic[_U]):
+    def __init__(self, value: _U) -> None:
+        self._value = value
 
-    Do not use directly.
-    """
+    @overload
+    def __call__(self, source: Ok[_A]) -> _A: ...
 
-    def __init__(self, message: str):
-        self.message = message
+    @overload
+    def __call__(self, source: Error[object]) -> _U: ...
 
-
-def default_value(value: _TSource) -> Callable[[Result[_TSource, Any]], _TSource]:
-    """Get the value or default value.
-
-    Gets the value of the result if the result is Ok, otherwise
-    returns the specified default value.
-    """
-
-    def _default_value(result: Result[_TSource, Any]) -> _TSource:
-        return result.default_value(value)
-
-    return _default_value
+    def __call__(self, source: Result[_A, object]) -> _A | _U:
+        return source.default_value(self._value)
 
 
-def default_with(getter: Callable[[_TError], _TSource]) -> Callable[[Result[_TSource, _TError]], _TSource]:
-    """Get with default value lazily.
-
-    Gets the value of the option if the option is Some, otherwise
-    returns the value produced by the getter
-    """
-
-    def _default_with(result: Result[_TSource, _TError]) -> _TSource:
-        return result.default_with(getter)
-
-    return _default_with
+def default_value(value: _U) -> _DefaultValue[_U]:
+    """Return an operation selecting the value or a fallback."""
+    return _DefaultValue(value)
 
 
-@curry_flip(1)
-def map(result: Result[_TSource, _TError], mapper: Callable[[_TSource], _TResult]) -> Result[_TResult, _TError]:
-    return result.map(mapper)
+class _DefaultWith(Generic[_A, _U]):
+    def __init__(self, getter: Callable[[_A], _U]) -> None:
+        self._getter = getter
+
+    @overload
+    def __call__(self, source: Ok[_B]) -> _B: ...
+
+    @overload
+    def __call__(self, source: Error[_A]) -> _U: ...
+
+    def __call__(self, source: Result[_B, _A]) -> _B | _U:
+        return source.default_with(self._getter)
 
 
-@curry_flip(2)
-def map2(
-    x: Result[_TSource, _TError],
-    y: Result[_TOther, _TError],
-    mapper: Callable[[_TSource, _TOther], _TResult],
-) -> Result[_TResult, _TError]:
-    return x.map2(y, mapper)
+def default_with(getter: Callable[[_A], _U]) -> _DefaultWith[_A, _U]:
+    """Return an operation selecting the value or computing a fallback."""
+    return _DefaultWith(getter)
 
 
-@curry_flip(1)
-def apply(
-    value: Result[_TSource, _TError],
-    function: Result[Callable[[_TSource], _TResult], _TError],
-) -> Result[_TResult, _TError]:
-    """Apply a function Result to a value Result.
+class _Map(Generic[_A, _U]):
+    def __init__(self, mapper: Callable[[_A], _U]) -> None:
+        self._mapper = mapper
 
-    The function Result takes precedence when both inputs are errors. The
-    curried form supports ``value.pipe(result.apply(function))``.
-    """
-    return value.apply(function)
+    @overload
+    def __call__(self, source: Ok[_A]) -> Ok[_U]: ...
 
+    @overload
+    def __call__(self, source: Error[_F]) -> Error[_F]: ...
 
-@curry_flip(1)
-def map_error(result: Result[_TSource, _TError], mapper: Callable[[_TError], _TResult]) -> Result[_TSource, _TResult]:
-    return result.map_error(mapper)
+    def __call__(self, source: Result[_A, _F]) -> Result[_U, _F]:
+        return source.map(self._mapper)
 
 
-@curry_flip(1)
-def bind(
-    result: Result[_TSource, _TError],
-    mapper: Callable[[_TSource], Result[_TResult, Any]],
-) -> Result[_TResult, _TError]:
-    return result.bind(mapper)
+def map(mapper: Callable[[_A], _U]) -> _Map[_A, _U]:
+    return _Map(mapper)
 
 
-def dict(source: Result[_TSource, _TError]) -> builtins.dict[str, _TSource | _TError | Literal["ok", "error"]]:
+class _ResultOperation(Protocol[_Input, _Output, _Failure]):
+    @overload
+    def __call__(self, source: Ok[_Input], /) -> Result[_Output, _Failure]: ...
+
+    @overload
+    def __call__(self, source: Error[_E], /) -> Error[_E] | Error[_Failure]: ...
+
+
+class _Map2Ok(_ResultOperation[_B, _U, Never], Generic[_A, _B, _U]):
+    def __init__(self, value: _A, mapper: Callable[[_A, _B], _U]) -> None:
+        self._value = value
+        self._mapper = mapper
+
+    @overload
+    def __call__(self, other: Ok[_B]) -> Ok[_U]: ...
+
+    @overload
+    def __call__(self, other: Error[_F]) -> Error[_F]: ...
+
+    def __call__(self, other: Result[_B, _F]) -> Result[_U, _F]:
+        return other.map(lambda value: self._mapper(self._value, value))
+
+
+class _Map2Error(_ResultOperation[object, Never, _E], Generic[_E]):
+    def __init__(self, source: Error[_E]) -> None:
+        self._source = source
+
+    def __call__(self, other: Result[object, object]) -> Error[_E]:
+        return self._source
+
+
+class _Map2(Generic[_A, _B, _U]):
+    def __init__(self, mapper: Callable[[_A, _B], _U]) -> None:
+        self._mapper = mapper
+
+    @overload
+    def __call__(self, source: Ok[_A]) -> _Map2Ok[_A, _B, _U]: ...
+
+    @overload
+    def __call__(self, source: Error[_E]) -> _Map2Error[_E]: ...
+
+    @overload
+    def __call__(self, source: Result[_A, _E]) -> _ResultOperation[_B, _U, _E]: ...
+
+    def __call__(self, source: Result[_A, _E]) -> _ResultOperation[_B, _U, _E]:
+        match source:
+            case Ok(value):
+                return _Map2Ok(value, self._mapper)
+            case Error():
+                return _Map2Error(source)
+
+
+def map2(mapper: Callable[[_A, _B], _U]) -> _Map2[_A, _B, _U]:
+    """Map two results in source order, preserving the first error."""
+    return _Map2(mapper)
+
+
+class _ApplyOk(_ResultOperation[_A, _U, Never], Generic[_A, _U]):
+    def __init__(self, mapper: Callable[[_A], _U]) -> None:
+        self._mapper = mapper
+
+    @overload
+    def __call__(self, source: Ok[_A]) -> Ok[_U]: ...
+
+    @overload
+    def __call__(self, source: Error[_E]) -> Error[_E]: ...
+
+    def __call__(self, source: Result[_A, _E]) -> Result[_U, _E]:
+        return source.map(self._mapper)
+
+
+class _ApplyError(_ResultOperation[object, Never, _F], Generic[_F]):
+    def __init__(self, error: Error[_F]) -> None:
+        self._error = error
+
+    def __call__(self, source: Result[object, object]) -> Error[_F]:
+        return self._error
+
+
+@overload
+def apply(function: Ok[Callable[[_A], _U]]) -> _ApplyOk[_A, _U]: ...
+
+
+@overload
+def apply(function: Error[_F]) -> _ApplyError[_F]: ...
+
+
+@overload
+def apply(function: Result[Callable[[_A], _U], _F]) -> _ResultOperation[_A, _U, _F]: ...
+
+
+def apply(function: Result[Callable[[_A], _U], _F]) -> _ResultOperation[_A, _U, _F]:
+    """Apply a function result, preferring its error when both inputs fail."""
+    match function:
+        case Ok(mapper):
+            return _ApplyOk(mapper)
+        case Error():
+            return _ApplyError(function)
+
+
+class _MapError(Generic[_A, _U]):
+    def __init__(self, mapper: Callable[[_A], _U]) -> None:
+        self._mapper = mapper
+
+    @overload
+    def __call__(self, source: Ok[_B]) -> Ok[_B]: ...
+
+    @overload
+    def __call__(self, source: Error[_A]) -> Error[_U]: ...
+
+    def __call__(self, source: Result[_B, _A]) -> Result[_B, _U]:
+        return source.map_error(self._mapper)
+
+
+def map_error(mapper: Callable[[_A], _U]) -> _MapError[_A, _U]:
+    return _MapError(mapper)
+
+
+class _Bind(Generic[_A, _R]):
+    def __init__(self, mapper: Callable[[_A], _R]) -> None:
+        self._mapper = mapper
+
+    @overload
+    def __call__(self, source: Ok[_A]) -> _R: ...
+
+    @overload
+    def __call__(self, source: Error[_F]) -> Error[_F]: ...
+
+    def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]:
+        return source.bind(self._mapper)
+
+
+def bind(mapper: Callable[[_A], _R]) -> _Bind[_A, _R]:
+    """Bind a result while retaining both possible error channels."""
+    return _Bind(mapper)
+
+
+def dict(source: Result[object, object]) -> builtins.dict[str, object]:
     return source.dict()
 
 
-def is_ok(result: Result[_TSource, _TError]) -> TypeGuard[Result[_TSource, _TError]]:
-    """Returns `True` if the result is an `Ok` value."""
-    return result.is_ok()
+def is_ok(source: Result[_A, object]) -> TypeGuard[Ok[_A]]:
+    """Narrow a result to its successful case."""
+    return isinstance(source, Ok)
 
 
-def is_error(result: Result[_TSource, _TError]) -> TypeGuard[Result[_TSource, _TError]]:
-    """Returns `True` if the result is an `Error` value."""
-    return result.is_error()
+def is_error(source: Result[object, _F]) -> TypeGuard[Error[_F]]:
+    """Narrow a result to its error case."""
+    return isinstance(source, Error)
 
 
-@curry_flip(1)
-def filter(
-    result: Result[_TSource, _TError],
-    predicate: Callable[[_TSource], bool],
-    default: _TError,
-) -> Result[_TSource, _TError]:
-    return result.filter(predicate, default)
+class _Filter(Generic[_A, _F]):
+    def __init__(self, predicate: Callable[[_A], bool], default: _F) -> None:
+        self._predicate = predicate
+        self._default = default
+
+    @overload
+    def __call__(self, source: Ok[_A]) -> Result[_A, _F]: ...
+
+    @overload
+    def __call__(self, source: Error[_E]) -> Error[_E]: ...
+
+    def __call__(self, source: Result[_A, _E]) -> Result[_A, _F | _E]:
+        return source.filter(self._predicate, self._default)
 
 
-@curry_flip(1)
-def filter_with(
-    result: Result[_TSource, _TError],
-    predicate: Callable[[_TSource], bool],
-    default: Callable[[_TSource], _TError],
-) -> Result[_TSource, _TError]:
-    return result.filter_with(predicate, default)
+def filter(predicate: Callable[[_A], bool], default: _F) -> _Filter[_A, _F]:
+    return _Filter(predicate, default)
 
 
-def swap(result: Result[_TSource, _TError]) -> Result[_TError, _TSource]:
-    """Swaps the value in the result so an Ok becomes an Error and an Error becomes an Ok."""
-    return result.swap()
+class _FilterWith(Generic[_A, _F]):
+    def __init__(self, predicate: Callable[[_A], bool], default: Callable[[_A], _F]) -> None:
+        self._predicate = predicate
+        self._default = default
+
+    @overload
+    def __call__(self, source: Ok[_A]) -> Result[_A, _F]: ...
+
+    @overload
+    def __call__(self, source: Error[_E]) -> Error[_E]: ...
+
+    def __call__(self, source: Result[_A, _E]) -> Result[_A, _F | _E]:
+        return source.filter_with(self._predicate, self._default)
 
 
-@curry_flip(1)
-def or_else(result: Result[_TSource, _TError], other: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
-    return result.or_else(other)
+def filter_with(predicate: Callable[[_A], bool], default: Callable[[_A], _F]) -> _FilterWith[_A, _F]:
+    return _FilterWith(predicate, default)
 
 
-@curry_flip(1)
-def or_else_with(
-    result: Result[_TSource, _TError],
-    other: Callable[[_TError], Result[_TSource, _TError]],
-) -> Result[_TSource, _TError]:
-    return result.or_else_with(other)
+@overload
+def swap(source: Ok[_A]) -> Error[_A]: ...
 
 
-def merge(result: Result[_TSource, _TSource]) -> _TSource:
-    return result.merge()
+@overload
+def swap(source: Error[_F]) -> Ok[_F]: ...
 
 
-def to_option(result: Result[_TSource, Any]) -> Option[_TSource]:
-    from expression.core.option import Nothing, Some
-
-    match result:
-        case Result(tag="ok", ok=value):
-            return Some(value)
-        case _:
-            return Nothing
+def swap(source: Result[_A, _F]) -> Result[_F, _A]:
+    return source.swap()
 
 
-def of_option(value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
+class _OrElse(Generic[_R]):
+    def __init__(self, other: _R) -> None:
+        self._other = other
+
+    @overload
+    def __call__(self, source: Ok[_A]) -> Ok[_A]: ...
+
+    @overload
+    def __call__(self, source: Error[object]) -> _R: ...
+
+    def __call__(self, source: Result[_A, object]) -> Ok[_A] | _R:
+        return source.or_else(self._other)
+
+
+def or_else(other: _R) -> _OrElse[_R]:
+    return _OrElse(other)
+
+
+class _OrElseWith(Generic[_A, _R]):
+    def __init__(self, other: Callable[[_A], _R]) -> None:
+        self._other = other
+
+    @overload
+    def __call__(self, source: Ok[_B]) -> Ok[_B]: ...
+
+    @overload
+    def __call__(self, source: Error[_A]) -> _R: ...
+
+    def __call__(self, source: Result[_B, _A]) -> Ok[_B] | _R:
+        return source.or_else_with(self._other)
+
+
+def or_else_with(other: Callable[[_A], _R]) -> _OrElseWith[_A, _R]:
+    return _OrElseWith(other)
+
+
+@overload
+def merge(source: Ok[_A]) -> _A: ...
+
+
+@overload
+def merge(source: Error[_B]) -> _B: ...
+
+
+def merge(source: Result[_A, _B]) -> _A | _B:
+    return source.merge()
+
+
+@overload
+def to_option(source: Ok[_A]) -> Some[_A]: ...
+
+
+@overload
+def to_option(source: Error[object]) -> NothingType: ...
+
+
+def to_option(source: Result[_A, object]) -> Option[_A]:
+    return source.to_option()
+
+
+@overload
+def of_option(value: Some[_A], error: object) -> Ok[_A]: ...
+
+
+@overload
+def of_option(value: NothingType, error: _F) -> Error[_F]: ...
+
+
+def of_option(value: Option[_A], error: _F) -> Result[_A, _F]:
     return value.to_result(error)
 
 
-def of_option_with(value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
+@overload
+def of_option_with(value: Some[_A], error: Callable[[], object]) -> Ok[_A]: ...
+
+
+@overload
+def of_option_with(value: NothingType, error: Callable[[], _F]) -> Error[_F]: ...
+
+
+def of_option_with(value: Option[_A], error: Callable[[], _F]) -> Result[_A, _F]:
     return value.to_result_with(error)
 
 

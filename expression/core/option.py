@@ -1,449 +1,313 @@
-"""Option module.
+"""Closed optional values and pipe-friendly operations.
 
-Contains a collection of static methods (functions) for operating on
-options. All functions takes the source as the last curried argument,
-i.e all functions returns a function that takes the source sequence as
-the only argument.
+``Option[T]`` is the union of ``Some[T]`` and the singleton ``NothingType``.
+Match the case classes to access their payloads. Iteration yields zero or one
+values; computation scopes provide short-circuit binding separately.
 """
 
 from __future__ import annotations
 
 import builtins
-from collections.abc import Awaitable, Callable, Generator, Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, cast, get_args, get_origin
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Annotated, ClassVar, Generic, Literal, Never, TypeAlias, TypeGuard, final, overload
 
-from typing_extensions import TypeVarTuple, Unpack
+from typing_extensions import TypeVar, TypeVarTuple, Unpack
 
+from ._serialization import encode
+from ._union_schema import UnionSchema
 from .curry import curry_flip
-from .error import EffectError
 from .pipe import PipeMixin
-from .tagged_union import case, tag, tagged_union
 
 
 if TYPE_CHECKING:
-    # The following imports are only used for type checking and will be lazy imported.
-    from pydantic import GetCoreSchemaHandler
-    from pydantic_core import CoreSchema
-
     from expression.collections.seq import Seq
-    from expression.core.result import Result
+    from expression.core.result import Error, Ok, Result
 
 
 _TSourceOut = TypeVar("_TSourceOut", covariant=True)
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
 _TError = TypeVar("_TError")
-
+_TEmpty = TypeVar("_TEmpty", default=Never)
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
+_TOption = TypeVar("_TOption", bound="Some[object] | NothingType")
 _P = TypeVarTuple("_P")
 
 
-@tagged_union(frozen=True, order=True)
-class Option(
-    Iterable[_TSourceOut],
-    Awaitable[_TSourceOut],
-    PipeMixin,
-):
-    """Option class."""
+@final
+@dataclass(frozen=True)
+class Some(PipeMixin, Generic[_TSourceOut]):
+    """An optional value that is present, including when its payload is None."""
 
-    tag: Literal["some", "none"] = tag()
+    __pydantic_config__: ClassVar[builtins.dict[str, str]] = {"revalidate_instances": "always"}
 
-    none: None = case()
-    some: _TSourceOut = case()
+    some: _TSourceOut
+    tag: Literal["some"] = field(default="some", init=False)
 
-    @staticmethod
-    def Some(value: _TResult) -> Option[_TResult]:
-        """Create a Some option."""
-        return Option(some=value)
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        raise TypeError("Some is final")
 
-    @staticmethod
-    def Nothing() -> Option[_TSourceOut]:
-        """Create a None option."""
-        return Option(none=None)
+    def default_value(self, value: object) -> _TSourceOut:
+        """Return the present value."""
+        return self.some
 
-    def default_value(self, value: _TSource) -> _TSourceOut | _TSource:
-        """Get with default value.
+    def default_with(self, getter: Callable[[], object]) -> _TSourceOut:
+        """Return the present value without evaluating the fallback."""
+        return self.some
 
-        Gets the value of the option if the option is Some, otherwise
-        returns the specified default value.
-        """
-        match self:
-            case Option(tag="some", some=some):
-                return some
-            case _:
-                return value
-
-    def default_with(self, getter: Callable[[], _TSource]) -> _TSourceOut | _TSource:
-        """Get with default value lazily.
-
-        Gets the value of the option if the option is Some, otherwise
-        returns the value produced by the getter
-        """
-        match self:
-            case Option(tag="some", some=some):
-                return some
-            case _:
-                return getter()
-
-    def map(self, mapper: Callable[[_TSourceOut], _TResult]) -> Option[_TResult]:
-        """Map option.
-
-        Applies the mapper to the value if the option is Some, otherwise
-        returns `Nothing`.
-        """
-        match self:
-            case Option(tag="some", some=some):
-                return Some(mapper(some))
-            case _:
-                return Nothing
+    def map(self, mapper: Callable[[_TSourceOut], _TResult]) -> Some[_TResult]:
+        """Transform the present value."""
+        return Some(mapper(self.some))
 
     def map2(self, mapper: Callable[[_TSourceOut, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
-        """Map2 option.
-
-        Applies the mapper to the values if both options are Some,
-        otherwise returns `Nothing`.
-        """
-        match self, other:
-            case Option(tag="some", some=some), Option(tag="some", some=other_value):
-                return Some(mapper(some, other_value))
-            case _:
-                return Nothing
+        """Transform two present values, or return Nothing."""
+        return other.map(lambda value: mapper(self.some, value))
 
     def apply(self, function: Option[Callable[[_TSourceOut], _TResult]]) -> Option[_TResult]:
-        """Apply a function in an Option to this Option's value.
+        """Apply an optional function to the present value."""
+        return function.map(lambda mapper: mapper(self.some))
 
-        Returns `Some` when both Options are `Some`; otherwise returns
-        `Nothing`.
-        """
-        match function:
-            case Option(tag="some", some=mapper):
-                return self.map(mapper)
-            case _:
-                return Nothing
+    def starmap(self: Some[tuple[*_P]], mapper: Callable[[Unpack[_P]], _TResult]) -> Some[_TResult]:
+        """Apply a function to the unpacked tuple payload."""
+        return Some(mapper(*self.some))
 
-    def starmap(self: Option[tuple[Unpack[_P]]], mapper: Callable[[Unpack[_P]], _TResult]) -> Option[_TResult]:
-        """Starmap option.
+    def bind(self, mapper: Callable[[_TSourceOut], _TOption]) -> _TOption:
+        """Apply a function returning another option."""
+        return mapper(self.some)
 
-        Applies the mapper to the values if the option is Some,
-        otherwise returns `Nothing`. The tuple is unpacked before
-        applying the mapper.
-        """
-        match self:
-            case Option(tag="some", some=some):
-                return Some(mapper(*some))
-            case _:
-                return Nothing
+    def or_else(self, if_none: Option[object]) -> Some[_TSourceOut]:
+        """Keep the present value."""
+        return self
 
-    def bind(self, mapper: Callable[[_TSourceOut], Option[_TResult]]) -> Option[_TResult]:
-        """Bind option.
-
-        Applies and returns the result of the mapper if the value is
-        `Some`. If the value is `Nothing` then `Nothing` is returned.
-
-        Args:
-            mapper: A function that takes the value of type TSource from
-                an option and transforms it into an option containing a
-                value of type TResult.
-
-        Returns:
-            An option of the output type of the mapper.
-        """
-        match self:
-            case Option(tag="some", some=some):
-                return mapper(some)
-            case _:
-                return Nothing
-
-    def or_else(self, if_none: Option[_TSourceOut]) -> Option[_TSourceOut]:
-        """Returns option if it is Some, otherwise returns `if_one`."""
-        match self:
-            case Option(tag="some"):
-                return self
-            case _:
-                return if_none
-
-    def or_else_with(self, if_none: Callable[[], Option[_TSourceOut]]) -> Option[_TSourceOut]:
-        """Or-else-with.
-
-        Returns option if it is Some,
-        otherwise evaluates the given function and returns the result.
-        """
-        match self:
-            case Option(tag="some"):
-                return self
-            case _:
-                return if_none()
+    def or_else_with(self, if_none: Callable[[], Option[object]]) -> Some[_TSourceOut]:
+        """Keep the present value without evaluating the fallback."""
+        return self
 
     def filter(self, predicate: Callable[[_TSourceOut], bool]) -> Option[_TSourceOut]:
-        """Filter option.
-
-        Returns the input if the predicate evaluates to true, otherwise
-        returns `Nothing`.
-        """
-        match self:
-            case Option(tag="some", some=some) if predicate(some):
-                return self
-            case _:
-                return Nothing
+        """Keep the value when the predicate holds."""
+        return self if predicate(self.some) else Nothing
 
     def to_list(self) -> list[_TSourceOut]:
-        """Convert option to list."""
-        match self:
-            case Option(tag="some", some=value):
-                return [value]
-            case _:
-                return []
+        """Return a one-element list."""
+        return [self.some]
 
     def to_seq(self) -> Seq[_TSourceOut]:
-        """Convert option to sequence."""
-        # deferred import to avoid circular dependencies
+        """Return a one-element sequence."""
         from expression.collections.seq import Seq
 
-        match self:
-            case Option(tag="some", some=value):
-                return Seq[_TSourceOut].of(value)
-            case _:
-                return Seq()
+        return Seq.of(self.some)
 
     def is_some(self) -> bool:
-        """Returns true if the option is not Nothing."""
-        match self:
-            case Option(tag="some"):
-                return True
-            case _:
-                return False
+        """Return True; use isinstance or the free guard for narrowing."""
+        return True
 
     def is_none(self) -> bool:
-        """Returns true if the option is Nothing."""
-        match self:
-            case Option(tag="some"):
-                return False
-            case _:
-                return True
+        """Return False."""
+        return False
 
-    @staticmethod
-    def of_obj(value: _TSource) -> Option[_TSource]:
-        """Convert object to an option."""
-        return of_optional(value)
+    def to_optional(self) -> _TSourceOut:
+        """Return the present value, erasing the option wrapper."""
+        return self.some
 
-    @staticmethod
-    def of_optional(value: _TSource | None) -> Option[_TSource]:
-        """Convert optional value to an option."""
-        return of_optional(value)
+    def to_result(self, error: object) -> Ok[_TSourceOut]:
+        """Return the present value as a successful result."""
+        from expression.core.result import Ok
 
-    @staticmethod
-    def of_result(result: Result[_TSource, Any]) -> Option[_TSource]:
-        """Convert result to an option."""
-        return of_result(result)
+        return Ok(self.some)
 
-    def to_optional(self) -> _TSourceOut | None:
-        """Convert option to an optional."""
-        match self:
-            case Option(tag="some", some=some):
-                return some
-            case _:
-                return None
+    def to_result_with(self, error: Callable[[], object]) -> Ok[_TSourceOut]:
+        """Return a successful result without evaluating the error factory."""
+        from expression.core.result import Ok
 
-    def to_result(self, error: _TError) -> Result[_TSourceOut, _TError]:
-        """Convert option to a result."""
-        from expression.core.result import Result
+        return Ok(self.some)
 
-        match self:
-            case Option(tag="some", some=some):
-                return Result(ok=some)
-            case _:
-                return Result(error=error)
-
-    def to_result_with(self, error: Callable[[], _TError]) -> Result[_TSourceOut, _TError]:
-        """Convert option to a result."""
-        from expression.core.result import Result
-
-        match self:
-            case Option(tag="some", some=some):
-                return Result(ok=some)
-            case _:
-                return Result(error=error())
-
-    def dict(self) -> _TSourceOut | None:
-        """Returns a json string representation of the option."""
-        match self:
-            case Option(tag="some", some=value):
-                attr = getattr(value, "model_dump", None) or getattr(value, "dict", None)
-                if attr and callable(attr):
-                    value = cast(_TSourceOut, attr())
-
-                return value
-            case _:
-                return None
+    def dict(self) -> builtins.dict[str, object]:
+        """Encode a tagged value, preserving None and nested option cases."""
+        return {"tag": "some", "some": encode(self.some)}
 
     @property
     def value(self) -> _TSourceOut:
-        """Returns the value wrapped by the option.
+        """Return the payload; use matching when the case is not known."""
+        return self.some
 
-        A `ValueError` is raised if the option is `Nothing`.
-        """
-        match self:
-            case Option(tag="some", some=some):
-                return some
-            case _:
-                raise ValueError("There is no value.")
-
-    def __eq__(self, o: Any) -> bool:
-        return isinstance(o, Option) and self.tag == o.tag and getattr(self, self.tag) == getattr(o, self.tag)  # type: ignore
-
-    def __iter__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
-        match self:
-            case Option(tag="some", some=value):
-                return (yield value)
-            case _:
-                raise EffectError(Nothing)
+    def __iter__(self) -> Iterator[_TSourceOut]:
+        yield self.some
 
     def __str__(self) -> str:
-        match self:
-            case Option(tag="some", some=some):
-                return f"Some {some}"
-            case _:
-                return "Nothing"
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    def __await__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
-        """Make Option awaitable by delegating to __iter__."""
-        match self:
-            case Option(tag="some", some=value):
-                return value
-            case _:
-                raise EffectError(self)
-
-        yield None
-
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        from pydantic import ValidatorFunctionWrapHandler
-        from pydantic_core import core_schema
-
-        origin = get_origin(source_type)
-        if origin is None:  # used as `x: Owner` without params
-            origin = source_type
-            item_tp = Any
-        else:
-            item_tp = get_args(source_type)[0]
-
-        value_schema = handler.generate_schema(item_tp)
-        none_schema = handler.generate_schema(None)
-
-        def validate_some(v: Any, handler: ValidatorFunctionWrapHandler) -> Option[Any]:
-            value = handler(v)
-            return Some(value)
-
-        def validate_none(v: Any, handler: ValidatorFunctionWrapHandler) -> Option[Any]:
-            _ = handler(v)
-            return Nothing
-
-        python_schema = core_schema.union_schema(
-            [
-                core_schema.is_instance_schema(Option),
-                core_schema.chain_schema(
-                    [
-                        core_schema.none_schema(),
-                        core_schema.no_info_wrap_validator_function(validate_none, none_schema),
-                    ]
-                ),
-                core_schema.chain_schema(
-                    [
-                        # item_tp's schema should ensure the value is an instance of _T
-                        # is_instance_schema doesn't work for Annotated[_T, ...]
-                        # Use the value_schema to validate `values`
-                        core_schema.no_info_wrap_validator_function(validate_some, value_schema),
-                    ]
-                ),
-            ]
-        )
-
-        return core_schema.json_or_python_schema(
-            json_schema=core_schema.chain_schema(
-                [
-                    core_schema.any_schema(),
-                    # after validating the json data convert it to python
-                    core_schema.no_info_before_validator_function(
-                        lambda data: cls(some=data) if data is not None else cls(none=data),
-                        python_schema,
-                    ),
-                ]
-            ),
-            python_schema=python_schema,
-            serialization=core_schema.plain_serializer_function_ser_schema(lambda instance: instance.dict()),
-        )
+        return f"Some {self.some}"
 
 
-# # The singleton None class. We use the name 'Nothing' here instead of `None` to
-# # avoid conflicts with the builtin `None` value in Python.
-# TODO: also allow None here?
-Nothing: Option[Any] = Option[Any].Nothing()
-"""Singleton `Nothing` object.
+@final
+@dataclass(frozen=True)
+class NothingType(PipeMixin):
+    """The canonical empty option case."""
 
-Since Nothing is a singleton it can be tested e.g using `is`:
-    >>> if xs is Nothing:
-    ...     return True
-"""
+    __pydantic_config__: ClassVar[builtins.dict[str, str]] = {"revalidate_instances": "always"}
+
+    tag: Literal["none"] = field(default="none", init=False)
+    _instance: ClassVar[NothingType | None] = None
+
+    def __new__(cls) -> NothingType:
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
+        return cls._instance
+
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        raise TypeError("NothingType is final")
+
+    def default_value(self, value: _TResult) -> _TResult:
+        """Return the fallback value."""
+        return value
+
+    def default_with(self, getter: Callable[[], _TResult]) -> _TResult:
+        """Evaluate the fallback factory."""
+        return getter()
+
+    def map(self, mapper: Callable[[Never], object]) -> NothingType:
+        """Keep the empty option without evaluating the mapper."""
+        return self
+
+    def map2(self, mapper: Callable[[Never, _T2], object], other: Option[_T2]) -> NothingType:
+        """Keep the empty option without evaluating the mapper."""
+        return self
+
+    def apply(self, function: Option[Callable[[Never], object]]) -> NothingType:
+        """Keep the empty option without invoking the optional function."""
+        return self
+
+    def starmap(self, mapper: Callable[..., object]) -> NothingType:
+        """Keep the empty option without evaluating the mapper."""
+        return self
+
+    def bind(self, mapper: Callable[[Never], _TOption]) -> NothingType:
+        """Keep the empty option without evaluating the continuation."""
+        return self
+
+    def or_else(self, if_none: _TOption) -> _TOption:
+        """Return the fallback option."""
+        return if_none
+
+    def or_else_with(self, if_none: Callable[[], _TOption]) -> _TOption:
+        """Evaluate the fallback option factory."""
+        return if_none()
+
+    def filter(self, predicate: Callable[[Never], bool]) -> NothingType:
+        """Keep the empty option without evaluating the predicate."""
+        return self
+
+    def to_list(self) -> list[_TEmpty]:
+        """Return an empty list."""
+        return []
+
+    def to_seq(self) -> Seq[_TEmpty]:
+        """Return an empty sequence."""
+        from expression.collections.seq import Seq
+
+        return Seq()
+
+    def is_some(self) -> bool:
+        """Return False."""
+        return False
+
+    def is_none(self) -> bool:
+        """Return True; use isinstance or the free guard for narrowing."""
+        return True
+
+    def to_optional(self) -> None:
+        """Return None."""
+        return None
+
+    def to_result(self, error: _TError) -> Error[_TError]:
+        """Return the supplied error as a failed result."""
+        from expression.core.result import Error
+
+        return Error(error)
+
+    def to_result_with(self, error: Callable[[], _TError]) -> Error[_TError]:
+        """Evaluate the error factory and return a failed result."""
+        from expression.core.result import Error
+
+        return Error(error())
+
+    def dict(self) -> builtins.dict[str, object]:
+        """Encode the empty case with an explicit tag."""
+        return {"tag": "none"}
+
+    @property
+    def value(self) -> Never:
+        """Raise ValueError because this option has no payload."""
+        raise ValueError("There is no value.")
+
+    def __iter__(self) -> Iterator[Never]:
+        return iter(())
+
+    def __str__(self) -> str:
+        return "Nothing"
 
 
-def Some(value: _T1) -> Option[_T1]:
-    """Create a Some option."""
-    return Option[_T1].Some(value)
+Nothing = NothingType()
+"""The canonical empty option, also preserved by copying and pickling."""
+
+Option: TypeAlias = Annotated[Some[_TSourceOut] | NothingType, UnionSchema()]
 
 
-@curry_flip(1)
-def bind(option: Option[_TSource], mapper: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
-    """Bind option.
+def bind(mapper: Callable[[_TSource], _TOption]) -> Callable[[Option[_TSource]], _TOption | NothingType]:
+    """Apply an option-returning function to a present value."""
 
-    Applies and returns the result of the mapper if the value is
-    `Some`. If the value is `Nothing` then `Nothing` is returned.
+    def apply(source: Option[_TSource]) -> _TOption | NothingType:
+        return source.bind(mapper)
 
-    Args:
-        option: Source option to bind.
-        mapper: A function that takes the value of type _TSource from
-            an option and transforms it into an option containing a
-            value of type TResult.
-
-    Returns:
-        A partially applied function that takes an option and returns an
-        option of the output type of the mapper.
-    """
-    return option.bind(mapper)
+    return apply
 
 
-@curry_flip(1)
-def default_value(option: Option[_TSource], value: _T1) -> _TSource | _T1:
-    """Get value or default value.
+class _DefaultValue(Generic[_T1]):
+    def __init__(self, value: _T1) -> None:
+        self._value = value
 
-    Gets the value of the option if the option is Some, otherwise
-    returns the specified default value.
-    """
-    return option.default_value(value)
+    @overload
+    def __call__(self, source: Some[_TSource]) -> _TSource: ...
 
+    @overload
+    def __call__(self, source: NothingType) -> _T1: ...
 
-def default_with(getter: Callable[[], _TSource]) -> Callable[[Option[_TSource]], _TSource]:
-    """Get with default value lazily.
-
-    Gets the value of the option if the option is Some, otherwise
-    returns the value produced by the getter
-    """
-
-    def _default_with(option: Option[_TSource]) -> _TSource:
-        return option.default_with(getter)
-
-    return _default_with
+    def __call__(self, source: Option[_TSource]) -> _TSource | _T1:
+        return source.default_value(self._value)
 
 
-def is_none(option: Option[_TSource]) -> TypeGuard[Option[_TSource]]:
-    return option.is_none()
+def default_value(value: _T1) -> _DefaultValue[_T1]:
+    """Return an operation selecting the payload or a fallback value."""
+    return _DefaultValue(value)
 
 
-def is_some(option: Option[_TSource]) -> TypeGuard[Option[_TSource]]:
-    return option.is_some()
+class _DefaultWith(Generic[_T1]):
+    def __init__(self, getter: Callable[[], _T1]) -> None:
+        self._getter = getter
+
+    @overload
+    def __call__(self, source: Some[_TSource]) -> _TSource: ...
+
+    @overload
+    def __call__(self, source: NothingType) -> _T1: ...
+
+    def __call__(self, source: Option[_TSource]) -> _TSource | _T1:
+        return source.default_with(self._getter)
+
+
+def default_with(getter: Callable[[], _T1]) -> _DefaultWith[_T1]:
+    """Return an operation selecting the payload or evaluating a fallback."""
+    return _DefaultWith(getter)
+
+
+def is_none(option: Option[object]) -> TypeGuard[NothingType]:
+    """Narrow an option to its empty case."""
+    return isinstance(option, NothingType)
+
+
+def is_some(option: Option[_TSource]) -> TypeGuard[Some[_TSource]]:
+    """Narrow an option to its present case."""
+    return isinstance(option, Some)
 
 
 @curry_flip(1)
@@ -456,114 +320,134 @@ def map2(opt1: Option[_T1], opt2: Option[_T2], mapper: Callable[[_T1, _T2], _TRe
     return opt1.map2(mapper, opt2)
 
 
+@overload
+def apply(function: NothingType) -> Callable[[Option[object]], NothingType]: ...
+
+
+@overload
+def apply(function: Option[Callable[[_TSource], _TResult]]) -> Callable[[Option[_TSource]], Option[_TResult]]: ...
+
+
+def apply(function: Option[Callable[[_TSource], _TResult]]) -> Callable[[Option[_TSource]], Option[_TResult]]:
+    """Apply an optional function to an optional value."""
+
+    def apply(source: Option[_TSource]) -> Option[_TResult]:
+        return source.apply(function)
+
+    return apply
+
+
 @curry_flip(1)
-def apply(
-    value: Option[_TSource],
-    function: Option[Callable[[_TSource], _TResult]],
-) -> Option[_TResult]:
-    """Apply a function Option to a value Option.
-
-    The curried form supports ``value.pipe(option.apply(function))``.
-    """
-    return value.apply(function)
-
-
-@curry_flip(1)
-def starmap(option: Option[tuple[Unpack[_P]]], mapper: Callable[[*_P], _TResult]) -> Option[_TResult]:
+def starmap(option: Option[tuple[*_P]], mapper: Callable[[Unpack[_P]], _TResult]) -> Option[_TResult]:
     return option.starmap(mapper)
 
 
-def or_else(
-    option: Option[_TSource],
-    if_none: Option[_TSource],
-) -> Option[_TSource]:
-    """Returns option if it is Some, otherwise returns `if_none`."""
+def or_else(option: Option[_TSource], if_none: Option[_TResult]) -> Option[_TSource | _TResult]:
+    """Return the first present option, allowing a different fallback type."""
     return option.or_else(if_none)
 
 
-def to_list(option: Option[_TSource]) -> list[_TSource]:
-    return option.to_list()
+def to_list(option: Option[_TEmpty]) -> list[_TEmpty]:
+    return list(option)
 
 
-def to_seq(option: Option[_TSource]) -> Seq[_TSource]:
-    return option.to_seq()
+def to_seq(option: Option[_TEmpty]) -> Seq[_TEmpty]:
+    from expression.collections.seq import Seq
+
+    return Seq(option)
+
+
+@overload
+def to_optional(value: Some[_TSource]) -> _TSource: ...
+
+
+@overload
+def to_optional(value: NothingType) -> None: ...
 
 
 def to_optional(value: Option[_TSource]) -> _TSource | None:
-    """Convert an option value to an optional.
-
-    Args:
-        value: The input option value.
-
-    Return:
-        The result optional.
-    """
+    """Erase the option wrapper, mapping Nothing to None."""
     return value.to_optional()
 
 
+@overload
+def of_optional(value: None) -> NothingType: ...
+
+
+@overload
+def of_optional(value: _TSource | None) -> Option[_TSource]: ...
+
+
 def of_optional(value: _TSource | None) -> Option[_TSource]:
-    """Convert an optional value to an option.
-
-    Args:
-        value: The input optional value.
-
-    Return:
-        The result option.
-    """
-    if value is None:
-        return Nothing
-
-    return Some(value)
+    """Wrap a value, treating None as absence."""
+    return Nothing if value is None else Some(value)
 
 
-def of_obj(value: Any) -> Option[Any]:
-    """Convert object to an option.
+@overload
+def of_obj(value: None) -> NothingType: ...
 
-    Convert a value that could be `None` into an `Option` value.
 
-    Args:
-        value: The input object.
+@overload
+def of_obj(value: _TSource | None) -> Option[_TSource]: ...
 
-    Return:
-        The result option.
-    """
+
+def of_obj(value: _TSource | None) -> Option[_TSource]:
+    """Wrap a value, treating None as absence."""
     return of_optional(value)
 
 
-def of_result(result: Result[_TSource, Any]) -> Option[_TSource]:
-    from expression.core.result import Result
+@overload
+def of_result(result: Ok[_TSource]) -> Some[_TSource]: ...
 
-    match result:
-        case Result(tag="ok", ok=value):
-            return Some(value)
-        case _:
-            return Nothing
+
+@overload
+def of_result(result: Error[object]) -> NothingType: ...
+
+
+def of_result(result: Result[_TSource, object]) -> Option[_TSource]:
+    """Keep the successful result payload, or return Nothing."""
+    from expression.core.result import Ok
+
+    return Some(result.ok) if isinstance(result, Ok) else Nothing
+
+
+@overload
+def to_result(value: Some[_TSource], error: object) -> Ok[_TSource]: ...
+
+
+@overload
+def to_result(value: NothingType, error: _TError) -> Error[_TError]: ...
 
 
 def to_result(value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
     return value.to_result(error)
 
 
+@overload
+def to_result_with(value: Some[_TSource], error: Callable[[], object]) -> Ok[_TSource]: ...
+
+
+@overload
+def to_result_with(value: NothingType, error: Callable[[], _TError]) -> Error[_TError]: ...
+
+
 def to_result_with(value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
     return value.to_result_with(error)
 
 
-def model_dump(value: Option[_TSource]) -> _TSource | builtins.dict[Any, Any] | None:
+def model_dump(value: Option[object]) -> builtins.dict[str, object]:
+    """Encode an option using its tagged wire representation."""
     return value.dict()
 
 
 def default_arg(value: Option[_TSource], default_value: _T1) -> _TSource | _T1:
-    """Specify default argument.
-
-    Used to specify a default value for an optional argument in the
-    implementation of a function. Same as `default_value`, but
-    "uncurried" and with the arguments swapped.
-    """
+    """Return the payload or an uncurried fallback value."""
     return value.default_value(default_value)
 
 
 __all__ = [
     "Nothing",
+    "NothingType",
     "Option",
     "Some",
     "apply",
@@ -580,8 +464,10 @@ __all__ = [
     "of_optional",
     "of_result",
     "or_else",
+    "starmap",
     "to_list",
     "to_optional",
     "to_result",
+    "to_result_with",
     "to_seq",
 ]

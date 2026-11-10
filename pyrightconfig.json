@@ -6,6 +6,8 @@
   ],
   "reportImportCycles": false,
   "reportMissingImports": false,
-  "pythonVersion": "3.10",
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
   "typeCheckingMode": "strict"
 }

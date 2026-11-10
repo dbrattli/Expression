@@ -4,7 +4,7 @@ import string
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from expression import Option, Result, case, pipe, tag, tagged_union
+from expression import Error, Ok, Option, Some, case, pipe, tag, tagged_union
 from expression.collections import Block
 from expression.extra.parser import (
     Parser,
@@ -28,7 +28,7 @@ def test_parse_pchar():
 
     assert result.is_ok()
     match result:
-        case Result(tag="ok", ok=a):
+        case Ok(ok=a):
             assert a == "A"
         case _:
             assert False
@@ -42,7 +42,7 @@ def test_parse_pchar_fluent():
 
     assert result.is_ok()
     match result:
-        case Result(tag="ok", ok=a):
+        case Ok(ok=a):
             assert a == "A"
         case _:
             assert False
@@ -61,7 +61,7 @@ def test_parse_a_then_b():
     result = parseAB(input)
     assert result.is_ok()
     match result:
-        case Result(tag="ok", ok=(a, b)):
+        case Ok(ok=(a, b)):
             assert (a, b) == ("A", "B")
         case _:
             assert False
@@ -74,7 +74,7 @@ def test_parse_a_then_b_fluent():
     result = parseAB(input)
     assert result.is_ok()
     match result:
-        case Result(tag="ok", ok=(a, b)):
+        case Ok(ok=(a, b)):
             assert (a, b) == ("A", "B")
         case _:
             assert False
@@ -86,7 +86,7 @@ def test_pstring():
     ret = parse_abc("ABCDE")  # Success ("ABC", "DE")
     assert ret.is_ok()
     match ret:
-        case Result(tag="ok", ok=success):
+        case Ok(ok=success):
             assert success == "ABC"
         case _:
             assert False
@@ -94,7 +94,7 @@ def test_pstring():
     ret = parse_abc("A|CDE")  # Failure "Expecting 'B'. Got '|'"
     assert ret.is_error()
     match ret:
-        case Result(tag="error", error=error):
+        case Error(error=error):
             assert error == "Expecting 'B'. Got '|'"
         case _:
             assert False
@@ -102,7 +102,7 @@ def test_pstring():
     ret = parse_abc("AB|DE")  # Failure "Expecting 'C'. Got '|'"
     assert ret.is_error()
     match ret:
-        case Result(tag="error", error=error):
+        case Error(error=error):
             assert error == "Expecting 'C'. Got '|'"
         case _:
             assert False
@@ -112,7 +112,7 @@ def test_int():
     ret = pint("123C")
 
     match ret:
-        case Result(tag="ok", ok=success):
+        case Ok(ok=success):
             assert success == 123
         case _:
             assert False
@@ -122,7 +122,7 @@ def test_int_negative():
     ret = pint("-123C")
 
     match ret:
-        case Result(tag="ok", ok=success):
+        case Ok(ok=success):
             assert success == -123
         case _:
             assert False
@@ -132,7 +132,7 @@ def test_float():
     ret = pfloat("123C")
 
     match ret:
-        case Result(tag="ok", ok=success):
+        case Ok(ok=success):
             assert success == 123
         case _:
             assert False
@@ -142,7 +142,7 @@ def test_float_with_decimal():
     ret = pfloat("123.45C")
 
     match ret:
-        case Result(tag="ok", ok=success):
+        case Ok(ok=success):
             assert success == 123.45
         case _:
             assert False
@@ -152,7 +152,7 @@ def test_negative_float_with_decimal():
     ret = pfloat("-123.45C")
 
     match ret:
-        case Result(tag="ok", ok=success):
+        case Ok(ok=success):
             assert success == -123.45
         case _:
             assert False
@@ -235,7 +235,7 @@ def pname() -> Parser[Expression]:
 
     def mapper(first: str, rest: Option[Block[str]]) -> str:
         match rest:
-            case Option(tag="some", some=letters):
+            case Some(some=letters):
                 return first + "".join(letters)
             case _:
                 return first
@@ -262,7 +262,7 @@ def test_parse_name_expr():
 
     assert result.is_ok()
     match result:
-        case Result(tag="ok", ok=Expression(NAME=name)):
+        case Ok(ok=Expression(NAME=name)):
             assert name == "test"
 
         case _:

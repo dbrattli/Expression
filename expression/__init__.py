@@ -1,7 +1,7 @@
 """Expression library.
 
 Expression aims to be a solid, type-safe, pragmatic, and high
-performance library for practical functional programming in Python 3.9+.
+performance library for practical functional programming in Python 3.11+.
 By pragmatic we mean that the goal of the library is to use simple
 abstractions to enable you to do practical and productive functional
 programming in Python.
@@ -19,6 +19,7 @@ from .core import (
     Failure,
     MailboxProcessor,
     Nothing,
+    NothingType,
     Ok,
     Option,
     Result,
@@ -71,6 +72,7 @@ __all__ = [
     "Failure",
     "MailboxProcessor",
     "Nothing",
+    "NothingType",
     "Ok",
     "Option",
     "Result",

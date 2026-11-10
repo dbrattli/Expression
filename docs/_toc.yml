@@ -26,6 +26,7 @@ parts:
 - caption: Advanced
   chapters:
   - file: guides/effects
+  - file: guides/migration-major
   - file: guides/concepts
   - file: tutorial/lambda_calculus
   - file: tutorial/continuations

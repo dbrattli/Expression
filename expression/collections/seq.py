@@ -1033,7 +1033,7 @@ def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_T
         returns `Nothing` for every element.
 
     Example:
-        >>> pipe([1, 2, 3], try_pick(lambda value: Option.of_obj(value * 10 if value % 2 == 0 else None)))
+        >>> pipe([1, 2, 3], try_pick(lambda value: option.of_obj(value * 10 if value % 2 == 0 else None)))
         Some 20
     """
     for value in source:
