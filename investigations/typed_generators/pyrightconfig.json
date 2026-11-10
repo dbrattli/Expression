@@ -1,0 +1,9 @@
+{
+  "include": ["adapter.py", "positive.py", "test_adapter.py"],
+  "extraPaths": ["../.."],
+  "venvPath": "../..",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "strict",
+  "reportImportCycles": false
+}

@@ -350,7 +350,7 @@ Source: [schema construction](expression/core/_union_schema.py),
 | Nominal wrapper containing a case union | Gives accurate narrowing through an extra `.case` layer, but adds indirection and a second representation to the public API. |
 | Case classes with phantom family type parameters | Couples a constructor to types absent from its payload, mainly to accommodate the old computation protocol. |
 | Erasing Option to a payload or `None` | Loses the uniform wrapped API and requires special handling of successful `None` and nesting. |
-| Typed generator adapter | Could be a separate migration facility; it is not needed for typed scopes and was not implemented. |
+| Typed generator adapter | An isolated synchronous prototype recovers typed `yield from bind(...)`; it is not part of the public API. See the [investigation](investigations/typed_generators/README.md) for evidence and limits. |
 
 Explicit cases cost more declaration lines than the old field-marker syntax and
 repeat some fluent methods. We accept that cost because users and type checkers
