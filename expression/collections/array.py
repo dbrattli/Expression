@@ -30,6 +30,9 @@ from expression.core import (
 from . import seq
 
 
+_nothing = Nothing()
+
+
 _TSource = TypeVar("_TSource")
 _TResult = TypeVar("_TResult")
 _TState = TypeVar("_TState")
@@ -418,7 +421,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
             value = cast("_TSource", self.value[0])
             return Some(value)
 
-        return Nothing()
+        return _nothing
 
     @staticmethod
     def unfold(

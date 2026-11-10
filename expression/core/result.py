@@ -23,12 +23,16 @@ from typing import (
 from typing_extensions import TypeVar
 
 from ._serialization import encode
+from .option import Nothing
 from .pipe import PipeMixin
 from .tagged_union import TaggedUnion, case, tag
 
 
+_nothing = Nothing()
+
+
 if TYPE_CHECKING:
-    from .option import Nothing, Option, Some
+    from .option import Option, Some
 
 
 _T = TypeVar("_T", covariant=True, default=Never)
@@ -202,9 +206,7 @@ class Error(PipeMixin, Generic[_E]):
 
     def to_option(self) -> Nothing:
         """Discard the error and return Nothing."""
-        from .option import Nothing
-
-        return Nothing()
+        return _nothing
 
     def __iter__(self) -> Iterator[Never]:
         return iter(())

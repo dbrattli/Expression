@@ -13,6 +13,9 @@ from expression.core.option import Nothing, Option, Some
 from ._scope import Abort, OptionInvocation, hide_scope_parameter
 
 
+_nothing = Nothing()
+
+
 _A = TypeVar("_A")
 _T = TypeVar("_T")
 _P = ParamSpec("_P")
@@ -56,11 +59,11 @@ def run_option(body: Callable[[OptionScope], _T]) -> Option[_T]:
     scope = OptionScope(invocation)
     try:
         value = body(scope)
-        return Nothing() if invocation.failed else Some(value)
+        return _nothing if invocation.failed else Some(value)
     except Abort as signal:
         if signal.owner is not invocation.owner:
             raise
-        return Nothing()
+        return _nothing
     finally:
         invocation.close()
 

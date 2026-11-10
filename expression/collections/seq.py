@@ -44,6 +44,9 @@ from expression.core import (
 )
 
 
+_nothing = Nothing()
+
+
 if TYPE_CHECKING:
     from .block import Block
 
@@ -1014,7 +1017,7 @@ def try_find_index(source: Iterable[_TSource], predicate: Callable[[_TSource], b
         if predicate(value):
             return Some(index)
 
-    return Nothing()
+    return _nothing
 
 
 @curry_flip(1)
@@ -1041,7 +1044,7 @@ def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_T
         if result.is_some():
             return result
 
-    return Nothing()
+    return _nothing
 
 
 @curry_flip(1)

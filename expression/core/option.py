@@ -82,7 +82,7 @@ class Some(PipeMixin, Generic[_TSourceOut]):
 
     def filter(self, predicate: Callable[[_TSourceOut], bool]) -> Option[_TSourceOut]:
         """Keep the value when the predicate holds."""
-        return self if predicate(self.some) else Nothing()
+        return self if predicate(self.some) else _nothing
 
     def to_list(self) -> list[_TSourceOut]:
         """Return a one-element list."""
@@ -241,7 +241,10 @@ class Nothing(PipeMixin):
         return "Nothing"
 
 
-Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(Nothing(),))]
+_nothing = Nothing()
+
+
+Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(_nothing,))]
 
 
 def bind(mapper: Callable[[_TSource], _TOption]) -> Callable[[Option[_TSource]], _TOption | Nothing]:
@@ -371,7 +374,7 @@ def of_optional(value: _TSource | None) -> Option[_TSource]: ...
 
 def of_optional(value: _TSource | None) -> Option[_TSource]:
     """Wrap a value, treating None as absence."""
-    return Nothing() if value is None else Some(value)
+    return _nothing if value is None else Some(value)
 
 
 @overload
@@ -399,7 +402,7 @@ def of_result(result: Result[_TSource, object]) -> Option[_TSource]:
     """Keep the successful result payload, or return Nothing."""
     from expression.core.result import Ok
 
-    return Some(result.ok) if isinstance(result, Ok) else Nothing()
+    return Some(result.ok) if isinstance(result, Ok) else _nothing
 
 
 @overload

@@ -14,6 +14,9 @@ from ._scope import Abort, OptionInvocation, hide_scope_parameter
 from .option import OptionScope
 
 
+_nothing = Nothing()
+
+
 _T = TypeVar("_T")
 _P = ParamSpec("_P")
 
@@ -24,11 +27,11 @@ async def async_run_option(body: Callable[[OptionScope], Awaitable[_T]]) -> Opti
     scope = OptionScope(invocation)
     try:
         value = await body(scope)
-        return Nothing() if invocation.failed else Some(value)
+        return _nothing if invocation.failed else Some(value)
     except Abort as signal:
         if signal.owner is not invocation.owner:
             raise
-        return Nothing()
+        return _nothing
     finally:
         invocation.close()
 

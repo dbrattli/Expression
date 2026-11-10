@@ -8,6 +8,9 @@ from expression.collections import Block, block
 from expression.core import Error, Nothing, Ok, Option, Result, Some, curry, fst, pipe
 
 
+_nothing = Nothing()
+
+
 _A = TypeVar("_A")
 _B = TypeVar("_B")
 _C = TypeVar("_C")
@@ -340,7 +343,7 @@ digits = many1(parse_digit)
 
 
 def opt(p: Parser[_A]) -> Parser[Option[_A]]:
-    nothing: Option[_A] = Nothing()
+    nothing: Option[_A] = _nothing
 
     def mapper(a: _A) -> Option[_A]:
         return Some(a)

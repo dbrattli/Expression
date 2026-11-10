@@ -47,6 +47,9 @@ from expression.core import (
 from . import seq
 
 
+_nothing = Nothing()
+
+
 _TSource = TypeVar("_TSource")
 _TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
 _TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
@@ -464,7 +467,7 @@ class Block(
             value = self._value[0]
             return Some(value)
 
-        return Nothing()
+        return _nothing
 
     @staticmethod
     def unfold(generator: Callable[[_TState], Option[tuple[_TSource, _TState]]], state: _TState) -> Block[_TSource]:
