@@ -225,3 +225,69 @@ annotations are static contracts;
 use a decoding boundary to validate external data.
 
 The sequence builder retains its existing generator protocol.
+
+## Unit cases, shared values, and singletons
+
+A case with no payload is a **unit case**. `TaggedUnion` includes its class in
+an alias exactly as it includes a case with payloads. A shared instance is an
+optional convenience for callers:
+
+```python
+from typing import Final, Literal, TypeAlias, final
+from expression import TaggedUnion, case, tag
+
+@final
+@case
+class MissingType:
+    tag: Literal["missing"] = tag("missing")
+
+@final
+@case
+class Found:
+    value: str
+    tag: Literal["found"] = tag("found")
+
+Missing: Final = MissingType()
+Lookup: TypeAlias = TaggedUnion[Found | MissingType]
+
+def describe_lookup(value: Lookup) -> str:
+    match value:
+        case Found(text):
+            return text
+        case MissingType():
+            return "missing"
+
+value: Lookup = Missing  # Reuse the existing object; no constructor call.
+assert describe_lookup(value) == "missing"
+```
+
+`MissingType()` in an expression calls the constructor and normally allocates a
+new case. `case MissingType():` is a class pattern: it checks the subject's type
+without calling the constructor or allocating a case. The matching syntax has
+no constructor-call cost. See Python's
+[class pattern semantics](https://docs.python.org/3/reference/compound_stmts.html#class-patterns).
+
+You can instead name the class `Missing` and use `Missing()` in both construction
+expressions and class patterns. Only the construction expressions make calls.
+If repeated construction matters, export a shared instance under another name,
+such as `MISSING`, and return that value. The class and instance need distinct
+names if both are exposed in the same namespace. Do not overwrite the case class
+with an instance and then try to use that instance in a class pattern.
+
+A shared constant is not a guaranteed singleton: `MissingType() == Missing`, but
+`MissingType() is not Missing`. Copies, pickle roundtrips, and decoding need not
+preserve its identity. Use class patterns or equality for ordinary unit cases.
+`Final` prevents reassignment statically; it does not prevent other instances.
+A qualified constant such as `lookup.Missing` can also be used as a value pattern,
+which compares by equality. Bare `case Missing` captures a name and matches any
+subject; it does not compare with the shared instance. Prefer the class pattern
+for explicit case narrowing and exhaustive union handling.
+
+Expression's `Nothing` is a stronger, specialized contract: `NothingType`
+canonicalizes construction, and Option's schema metadata restores the canonical
+value after validation. Thus `Nothing = NothingType()` is only the public value
+binding, not the whole singleton implementation. The general `@case` /
+`TaggedUnion` API does not currently provide a singleton option. For custom
+unions, prefer ordinary unit cases and optionally a shared constant; guaranteeing
+identity across construction and serialization would require additional,
+explicitly supported lifecycle behavior.

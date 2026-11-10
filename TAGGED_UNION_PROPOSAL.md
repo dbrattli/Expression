@@ -188,6 +188,15 @@ it does not test the singleton. For runtime checks, use case classes such as
 `Some` or `(Some, NothingType)`. `Option[T]` is an annotation, not a nominal class
 for construction, subclassing, or runtime instance checks.
 
+The same naming pattern can be used for custom unit cases: export a case class
+and optionally a shared instance under distinct names. Merely assigning an
+instance does not guarantee singleton identity. A class pattern such as
+`case NothingType()` does not invoke the constructor; only an expression such as
+`NothingType()` does. The public `TaggedUnion` API currently supplies ordinary
+unit cases, not general singleton lifecycle support. See
+[unit cases, shared values, and singletons](docs/guides/migration-major.md#unit-cases-shared-values-and-singletons)
+for the supported custom-union pattern and its tradeoffs.
+
 Source: [Option and its cases](expression/core/option.py).
 
 ## Result, Try, and precise fluent operations
