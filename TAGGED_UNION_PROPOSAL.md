@@ -185,9 +185,10 @@ assert Some(42).map(str) == Some("42")
 `Nothing` is the case class, so construction and matching use the same name:
 `Nothing()` and `case Nothing()`. This avoids a separate `NothingType` pattern
 name. Construction calls the class but reuses its canonical instance; matching
-does not call the constructor. Users who want to avoid repeated calls can define
-`Nothing_ = Nothing()` locally and return that value while still matching
-`case Nothing()`. Expression does not export a second convenience name.
+does not call the constructor. `NOTHING: Final = Nothing()` is defined once in
+`option.py` and exported from `expression` as the shared value. Library operations and callers can return
+`NOTHING` without a constructor call while still matching `case Nothing()`.
+A local alias such as `Nothing_ = NOTHING` is also possible.
 
 Use `Nothing()` in a class pattern. Bare `case Nothing` is a capture pattern;
 it does not test the singleton. For runtime checks, use case classes such as

@@ -12,6 +12,7 @@ GitHub: https://github.com/cognitedata/Expression
 from . import collections, core, effect
 from ._version import __version__
 from .core import (
+    NOTHING,
     AsyncReplyChannel,
     Builder,
     EffectError,
@@ -65,6 +66,7 @@ Will be removed in next major version. Use curry_flip instead.
 """
 
 __all__ = [
+    "NOTHING",
     "AsyncReplyChannel",
     "Builder",
     "EffectError",

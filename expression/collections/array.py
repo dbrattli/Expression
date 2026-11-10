@@ -14,10 +14,10 @@ import builtins
 import functools
 from collections.abc import Callable, Iterable, Iterator, MutableSequence
 from enum import Enum
-from typing import Any, Final, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from expression.core import (
-    Nothing,
+    NOTHING,
     Option,
     PipeMixin,
     Some,
@@ -28,9 +28,6 @@ from expression.core import (
 )
 
 from . import seq
-
-
-_NOTHING: Final = Nothing()
 
 
 _TSource = TypeVar("_TSource")
@@ -421,7 +418,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
             value = cast("_TSource", self.value[0])
             return Some(value)
 
-        return _NOTHING
+        return NOTHING
 
     @staticmethod
     def unfold(

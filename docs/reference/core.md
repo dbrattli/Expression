@@ -4,7 +4,7 @@ The `expression` package exports the core types used by most applications.
 
 | API | Use it for |
 | --- | --- |
-| `Option`, `Some`, `Nothing` | A value that may be absent. |
+| `Option`, `Some`, `Nothing`, `NOTHING` | A value that may be absent; `NOTHING` is the shared empty instance. |
 | `Result`, `Ok`, `Error` | An expected success or failure with a reason. |
 | `Try`, `Success`, `Failure` | A `Result` whose error is an exception. |
 | `pipe`, `compose` | Readable value transformations and reusable workflows. |

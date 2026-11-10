@@ -6,6 +6,7 @@ from dataclasses import field
 from typing import Generic, Literal, Never, TypeAlias, TypeVar, assert_never, assert_type, final
 
 from expression import (
+    NOTHING,
     Error,
     Nothing,
     Ok,
@@ -24,6 +25,7 @@ from expression import (
 def option_contract(value: Option[int]) -> None:
     assert_type(Some(42), Some[int])
     assert_type(Nothing(), Nothing)
+    assert_type(NOTHING, Nothing)
     nothing_ = Nothing()
     assert_type(nothing_, Nothing)
     assert_type(value.map(str), Option[str])

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, Valida
 from pydantic_core import CoreSchema, core_schema
 
 from expression import (
+    NOTHING,
     Error,
     Nothing,
     Ok,
@@ -569,6 +570,8 @@ def test_nothing_is_canonical_across_dataclass_operations():
     empty = Nothing()
     assert isinstance(empty, Nothing)
     assert Nothing() is empty
+    assert NOTHING is empty
+    assert option.NOTHING is empty
     assert repr(empty) == "Nothing()"
     assert copy(Nothing()) is Nothing()
     assert deepcopy(Nothing()) is Nothing()

@@ -2,13 +2,10 @@ from __future__ import annotations
 
 import string
 from collections.abc import Callable
-from typing import Any, Final, Generic, TypeVar, overload
+from typing import Any, Generic, TypeVar, overload
 
 from expression.collections import Block, block
-from expression.core import Error, Nothing, Ok, Option, Result, Some, curry, fst, pipe
-
-
-_NOTHING: Final = Nothing()
+from expression.core import NOTHING, Error, Ok, Option, Result, Some, curry, fst, pipe
 
 
 _A = TypeVar("_A")
@@ -343,7 +340,7 @@ digits = many1(parse_digit)
 
 
 def opt(p: Parser[_A]) -> Parser[Option[_A]]:
-    nothing: Option[_A] = _NOTHING
+    nothing: Option[_A] = NOTHING
 
     def mapper(a: _A) -> Option[_A]:
         return Some(a)

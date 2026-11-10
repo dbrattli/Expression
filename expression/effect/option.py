@@ -4,16 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Concatenate, Final, Never, TypeVar, final, overload
+from typing import Concatenate, Never, TypeVar, final, overload
 
 from typing_extensions import ParamSpec
 
-from expression.core.option import Nothing, Option, Some
+from expression.core.option import NOTHING, Nothing, Option, Some
 
 from ._scope import Abort, OptionInvocation, hide_scope_parameter
-
-
-_NOTHING: Final = Nothing()
 
 
 _A = TypeVar("_A")
@@ -59,11 +56,11 @@ def run_option(body: Callable[[OptionScope], _T]) -> Option[_T]:
     scope = OptionScope(invocation)
     try:
         value = body(scope)
-        return _NOTHING if invocation.failed else Some(value)
+        return NOTHING if invocation.failed else Some(value)
     except Abort as signal:
         if signal.owner is not invocation.owner:
             raise
-        return _NOTHING
+        return NOTHING
     finally:
         invocation.close()
 

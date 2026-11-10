@@ -4,17 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
-from typing import Any, Concatenate, Final, TypeVar
+from typing import Any, Concatenate, TypeVar
 
 from typing_extensions import ParamSpec
 
-from expression.core.option import Nothing, Option, Some
+from expression.core.option import NOTHING, Option, Some
 
 from ._scope import Abort, OptionInvocation, hide_scope_parameter
 from .option import OptionScope
-
-
-_NOTHING: Final = Nothing()
 
 
 _T = TypeVar("_T")
@@ -27,11 +24,11 @@ async def async_run_option(body: Callable[[OptionScope], Awaitable[_T]]) -> Opti
     scope = OptionScope(invocation)
     try:
         value = await body(scope)
-        return _NOTHING if invocation.failed else Some(value)
+        return NOTHING if invocation.failed else Some(value)
     except Abort as signal:
         if signal.owner is not invocation.owner:
             raise
-        return _NOTHING
+        return NOTHING
     finally:
         invocation.close()
 

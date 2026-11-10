@@ -94,7 +94,7 @@ class Some(PipeMixin, Generic[_TSourceOut]):
 
     def filter(self, predicate: Callable[[_TSourceOut], bool]) -> Option[_TSourceOut]:
         """Keep the value when the predicate holds."""
-        return self if predicate(self.some) else _NOTHING
+        return self if predicate(self.some) else NOTHING
 
     def to_list(self) -> list[_TSourceOut]:
         """Return a one-element list."""
@@ -152,7 +152,7 @@ class Nothing(PipeMixin):
     """The empty option case, constructed and matched as ``Nothing()``.
 
     Construction, copying, pickling, and Option decoding preserve one canonical
-    instance. Callers may cache ``Nothing_ = Nothing()`` for repeated reuse.
+    instance. Use ``NOTHING`` to reuse it without calling the constructor.
     """
 
     tag: Literal["none"] = tag("none")
@@ -253,10 +253,11 @@ class Nothing(PipeMixin):
         return "Nothing"
 
 
-_NOTHING: Final = Nothing()
+NOTHING: Final = Nothing()
+"""The canonical empty option, available without a constructor call."""
 
 
-Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(_NOTHING,))]
+Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(NOTHING,))]
 
 
 def bind(mapper: Callable[[_TSource], _TOption]) -> Callable[[Option[_TSource]], _TOption | Nothing]:
@@ -386,7 +387,7 @@ def of_optional(value: _TSource | None) -> Option[_TSource]: ...
 
 def of_optional(value: _TSource | None) -> Option[_TSource]:
     """Wrap a value, treating None as absence."""
-    return _NOTHING if value is None else Some(value)
+    return NOTHING if value is None else Some(value)
 
 
 @overload
@@ -414,7 +415,7 @@ def of_result(result: Result[_TSource, object]) -> Option[_TSource]:
     """Keep the successful result payload, or return Nothing."""
     from expression.core.result import Ok
 
-    return Some(result.ok) if isinstance(result, Ok) else _NOTHING
+    return Some(result.ok) if isinstance(result, Ok) else NOTHING
 
 
 @overload
@@ -452,6 +453,7 @@ def default_arg(value: Option[_TSource], default_value: _T1) -> _TSource | _T1:
 
 
 __all__ = [
+    "NOTHING",
     "Nothing",
     "Option",
     "Some",

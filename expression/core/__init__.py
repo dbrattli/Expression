@@ -8,7 +8,7 @@ from .error import EffectError, failwith
 from .fn import TailCall, TailCallResult, tailrec, tailrec_async
 from .mailbox import AsyncReplyChannel, MailboxProcessor
 from .misc import flip, fst, identity, snd
-from .option import Nothing, Option, Some, default_arg, is_none, is_some
+from .option import NOTHING, Nothing, Option, Some, default_arg, is_none, is_some
 from .pipe import PipeMixin, pipe, pipe2, pipe3
 from .result import Error, Ok, Result, is_error, is_ok
 from .tagged_union import TaggedUnion, case, tag
@@ -25,6 +25,7 @@ from .typing import (
 
 
 __all__ = [
+    "NOTHING",
     "AsyncReplyChannel",
     "Builder",
     "EffectError",

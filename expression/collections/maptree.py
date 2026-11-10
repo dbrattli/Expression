@@ -25,16 +25,13 @@ Do not use directly. Use the `map` module instead.
 import builtins
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
-from typing import Any, Final, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
-from expression.core import Nothing, Option, Some, failwith, pipe
+from expression.core import NOTHING, Option, Some, failwith, pipe
 from expression.core.typing import SupportsLessThanAndHash
 
 from . import block, seq
 from .block import Block
-
-
-_NOTHING: Final = Nothing()
 
 
 Key = TypeVar("Key", bound=SupportsLessThanAndHash)
@@ -59,7 +56,7 @@ class MapTreeNode(MapTreeLeaf[Key, Value]):
     height: int
 
 
-empty: MapTree[Any, Any] = _NOTHING
+empty: MapTree[Any, Any] = NOTHING
 
 
 def is_empty(m: MapTree[Any, Any]):
@@ -179,9 +176,9 @@ def try_find(k: Key, m: MapTree[Key, Value]) -> Option[Value]:
                 mn = m2
                 return try_find(k, mn.left if k < mn.key else mn.right)
             else:
-                return _NOTHING
+                return NOTHING
     else:  # Nothing
-        return _NOTHING
+        return NOTHING
 
 
 def find(k: Key, m: MapTree[Key, Value]) -> Value:
@@ -312,7 +309,7 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
                 return rebalance(left, key, value, change(k, u, right))
         case Some(some=MapTreeLeaf(key=key, value=value)):
             if k < key:
-                for v in u(_NOTHING).to_list():
+                for v in u(NOTHING).to_list():
                     return Some(MapTreeNode(k, v, empty, m, 2))
                 else:
                     return m
@@ -322,13 +319,13 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
                 else:
                     return empty
             else:
-                for v in u(_NOTHING).to_list():
+                for v in u(NOTHING).to_list():
                     return Some(MapTreeNode(k, v, m, empty, 2))
                 else:
                     return m
 
         case _:
-            for v in u(_NOTHING):
+            for v in u(NOTHING):
                 return Some(MapTreeLeaf(k, v))
             else:
                 return m
@@ -375,7 +372,7 @@ def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) 
         case Some(some=MapTreeLeaf(key=key, value=value)):
             return f(key, value)
         case _:
-            return _NOTHING
+            return NOTHING
 
 
 def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
@@ -528,7 +525,7 @@ def to_seq(s: MapTree[Key, Value]) -> Iterable[tuple[Key, Value]]:
         try:
             current = next(it)
         except StopIteration:
-            return _NOTHING
+            return NOTHING
         else:
             return Some((current, it))
 

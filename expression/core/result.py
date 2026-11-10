@@ -10,7 +10,6 @@ import builtins
 from collections.abc import Callable, Iterator
 from typing import (
     TYPE_CHECKING,
-    Final,
     Generic,
     Literal,
     Never,
@@ -24,12 +23,9 @@ from typing import (
 from typing_extensions import TypeVar
 
 from ._serialization import encode
-from .option import Nothing
+from .option import NOTHING, Nothing
 from .pipe import PipeMixin
 from .tagged_union import TaggedUnion, case, tag
-
-
-_NOTHING: Final = Nothing()
 
 
 if TYPE_CHECKING:
@@ -207,7 +203,7 @@ class Error(PipeMixin, Generic[_E]):
 
     def to_option(self) -> Nothing:
         """Discard the error and return Nothing."""
-        return _NOTHING
+        return NOTHING
 
     def __iter__(self) -> Iterator[Never]:
         return iter(())

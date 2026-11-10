@@ -24,7 +24,7 @@ import builtins
 import functools
 import itertools
 from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeVar, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 
 from typing_extensions import TypeVarTuple, Unpack
 
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from pydantic_core import CoreSchema
 
 from expression.core import (
-    Nothing,
+    NOTHING,
     Option,
     PipeMixin,
     Some,
@@ -45,9 +45,6 @@ from expression.core import (
 )
 
 from . import seq
-
-
-_NOTHING: Final = Nothing()
 
 
 _TSource = TypeVar("_TSource")
@@ -467,7 +464,7 @@ class Block(
             value = self._value[0]
             return Some(value)
 
-        return _NOTHING
+        return NOTHING
 
     @staticmethod
     def unfold(generator: Callable[[_TState], Option[tuple[_TSource, _TState]]], state: _TState) -> Block[_TSource]:

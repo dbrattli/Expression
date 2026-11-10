@@ -40,23 +40,25 @@ uses such as `return Nothing` and `Some(Nothing)` with `return Nothing()` and
 use `Nothing` for type annotations and `Nothing()` for construction and matching.
 Repeated construction preserves identity: `Nothing() is Nothing()`.
 
-If you want to avoid repeated constructor calls, define a local convenience:
+Use the shared `NOTHING` constant to avoid constructor calls. It is defined once
+in `option.py` and also exported from `expression`:
 
 ```python
-from expression import Nothing, Option
-
-Nothing_ = Nothing()
+from expression import NOTHING, Nothing, Option
 
 def absent() -> Option[int]:
-    return Nothing_
+    return NOTHING
+
+assert NOTHING is Nothing()
 
 match absent():
     case Nothing():
         pass
 ```
 
-The cached value needs no second exported library name. The class pattern does
-not invoke the constructor, regardless of whether the value was cached.
+`NOTHING` is annotated `Final`; `Nothing` remains the class for construction,
+type annotations, and patterns. Class patterns do not invoke the constructor.
+You can still define a local convenience such as `Nothing_ = NOTHING` if desired.
 
 Use `isinstance(value, Some)` or `isinstance(value, (Some, Nothing))` when a
 runtime class check is necessary. Generic union aliases are not nominal classes
