@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses import Field, dataclass, field, fields, is_dataclass
 from inspect import currentframe, signature
 from typing import (
     Annotated,
@@ -113,12 +113,7 @@ def _validate_case(cls: type[object], namespace: dict[str, object]) -> None:
     if not is_dataclass(cls):
         raise TypeError("A case must be a dataclass")
     declared = fields(cls)
-    discriminator = next((item for item in declared if item.name == "tag"), None)
-    if discriminator is None or discriminator.init or not discriminator.metadata.get("expression.tag"):
-        raise TypeError("A case must declare tag: Literal['name'] = tag('name')")
-    literal = _resolve_tag_annotation(cls, discriminator.type, namespace)
-    if get_origin(literal) is not Literal or get_args(literal) != (discriminator.default,):
-        raise TypeError("The tag annotation must be a single Literal matching its tag() value")
+    discriminator = _case_discriminator(cls, declared, namespace)
     for item in declared:
         if item.name != "tag" and (not item.init or item.metadata.get("expression.tag")):
             raise TypeError(f"Payload field {item.name!r} must be a constructor field; only tag uses tag()")
@@ -127,6 +122,18 @@ def _validate_case(cls: type[object], namespace: dict[str, object]) -> None:
     if any(name not in names for name in constructor_parameters):
         raise TypeError("InitVar fields are not supported in tagged union cases")
     setattr(cls, "__tagged_union_case__", discriminator.default)
+
+
+def _case_discriminator(
+    cls: type[object], declared: tuple[Field[object], ...], namespace: dict[str, object]
+) -> Field[object]:
+    discriminator = next((item for item in declared if item.name == "tag"), None)
+    if discriminator is None or discriminator.init or not discriminator.metadata.get("expression.tag"):
+        raise TypeError("A case must declare tag: Literal['name'] = tag('name')")
+    literal = _resolve_tag_annotation(cls, discriminator.type, namespace)
+    if get_origin(literal) is not Literal or get_args(literal) != (discriminator.default,):
+        raise TypeError("The tag annotation must be a single Literal matching its tag() value")
+    return discriminator
 
 
 def _resolve_tag_annotation(cls: type[object], annotation: object, localns: dict[str, object]) -> object:
