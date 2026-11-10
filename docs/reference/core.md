@@ -8,7 +8,7 @@ The `expression` package exports the core types used by most applications.
 | `Result`, `Ok`, `Error` | An expected success or failure with a reason. |
 | `Try`, `Success`, `Failure` | A `Result` whose error is an exception. |
 | `pipe`, `compose` | Readable value transformations and reusable workflows. |
-| `tagged_union`, `tag`, `case` | Domain alternatives and pattern matching. |
+| `TaggedUnion`, `case`, `tag` | Explicit case classes, domain alternatives, and pattern matching. |
 | `curry`, `curry_flip` | Partial application when integrating with curried APIs. |
 | `tailrec`, `tailrec_async` | Stack-safe recursive algorithms. |
 

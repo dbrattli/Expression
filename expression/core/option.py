@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Annotated, ClassVar, Generic, Literal, Never, TypeAlias, TypeGuard, final, overload
 
 from typing_extensions import TypeVar, TypeVarTuple, Unpack
@@ -18,6 +17,7 @@ from ._serialization import encode
 from ._union_schema import UnionSchema
 from .curry import curry_flip
 from .pipe import PipeMixin
+from .tagged_union import case, tag
 
 
 if TYPE_CHECKING:
@@ -37,17 +37,12 @@ _P = TypeVarTuple("_P")
 
 
 @final
-@dataclass(frozen=True)
+@case
 class Some(PipeMixin, Generic[_TSourceOut]):
     """An optional value that is present, including when its payload is None."""
 
-    __pydantic_config__: ClassVar[builtins.dict[str, str]] = {"revalidate_instances": "always"}
-
     some: _TSourceOut
-    tag: Literal["some"] = field(default="some", init=False)
-
-    def __init_subclass__(cls, **kwargs: object) -> None:
-        raise TypeError("Some is final")
+    tag: Literal["some"] = tag("some")
 
     def default_value(self, value: object) -> _TSourceOut:
         """Return the present value."""
@@ -140,22 +135,17 @@ class Some(PipeMixin, Generic[_TSourceOut]):
 
 
 @final
-@dataclass(frozen=True)
+@case
 class NothingType(PipeMixin):
     """The canonical empty option case."""
 
-    __pydantic_config__: ClassVar[builtins.dict[str, str]] = {"revalidate_instances": "always"}
-
-    tag: Literal["none"] = field(default="none", init=False)
+    tag: Literal["none"] = tag("none")
     _instance: ClassVar[NothingType | None] = None
 
     def __new__(cls) -> NothingType:
         if cls._instance is None:
             cls._instance = object.__new__(cls)
         return cls._instance
-
-    def __init_subclass__(cls, **kwargs: object) -> None:
-        raise TypeError("NothingType is final")
 
     def default_value(self, value: _TResult) -> _TResult:
         """Return the fallback value."""
@@ -250,7 +240,7 @@ class NothingType(PipeMixin):
 Nothing = NothingType()
 """The canonical empty option, also preserved by copying and pickling."""
 
-Option: TypeAlias = Annotated[Some[_TSourceOut] | NothingType, UnionSchema()]
+Option: TypeAlias = Annotated[Some[_TSourceOut] | NothingType, UnionSchema(canonical_values=(Nothing,))]
 
 
 def bind(mapper: Callable[[_TSource], _TOption]) -> Callable[[Option[_TSource]], _TOption | NothingType]:

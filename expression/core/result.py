@@ -8,11 +8,8 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
-    Annotated,
-    ClassVar,
     Generic,
     Literal,
     Never,
@@ -26,8 +23,8 @@ from typing import (
 from typing_extensions import TypeVar
 
 from ._serialization import encode
-from ._union_schema import UnionSchema
 from .pipe import PipeMixin
+from .tagged_union import TaggedUnion, case, tag
 
 
 if TYPE_CHECKING:
@@ -47,17 +44,12 @@ _Failure = TypeVar("_Failure", covariant=True)
 
 
 @final
-@dataclass(frozen=True)
+@case
 class Ok(PipeMixin, Generic[_T]):
     """A successful result containing a value."""
 
-    __pydantic_config__: ClassVar[builtins.dict[str, str]] = {"revalidate_instances": "always"}
-
     ok: _T
-    tag: Literal["ok"] = field(default="ok", init=False, repr=False)
-
-    def __init_subclass__(cls, **kwargs: object) -> None:
-        raise TypeError("Ok is final")
+    tag: Literal["ok"] = tag("ok")
 
     def default_value(self, value: object) -> _T:
         """Return the successful value."""
@@ -135,17 +127,12 @@ class Ok(PipeMixin, Generic[_T]):
 
 
 @final
-@dataclass(frozen=True)
+@case
 class Error(PipeMixin, Generic[_E]):
     """A failed result containing an error."""
 
-    __pydantic_config__: ClassVar[builtins.dict[str, str]] = {"revalidate_instances": "always"}
-
     error: _E
-    tag: Literal["error"] = field(default="error", init=False, repr=False)
-
-    def __init_subclass__(cls, **kwargs: object) -> None:
-        raise TypeError("Error is final")
+    tag: Literal["error"] = tag("error")
 
     def default_value(self, value: _U) -> _U:
         """Return the fallback value."""
@@ -226,7 +213,7 @@ class Error(PipeMixin, Generic[_E]):
         return f"Error {self.error}"
 
 
-Result: TypeAlias = Annotated[Ok[_T] | Error[_E], UnionSchema()]
+Result: TypeAlias = TaggedUnion[Ok[_T] | Error[_E]]
 
 
 # Case-specific callable overloads preserve the untouched channel when a pipe

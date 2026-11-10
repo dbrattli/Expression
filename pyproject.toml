@@ -26,8 +26,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-pydantic = ["pydantic>=2.6.2,<3.0.0"]
-all = ["pydantic>=2.6.2,<3.0.0"]
+pydantic = ["pydantic>=2.10.0,<3.0.0"]
+all = ["pydantic>=2.10.0,<3.0.0"]
 
 [project.urls]
 Homepage = "https://github.com/cognitedata/Expression"

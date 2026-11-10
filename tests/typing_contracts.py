@@ -1,8 +1,25 @@
 """Consumer contracts checked by Pyright alongside the runtime tests."""
 
-from typing import Never, assert_never, assert_type
+from __future__ import annotations
 
-from expression import Error, Nothing, NothingType, Ok, Option, Result, Some, effect, option, result
+from dataclasses import field
+from typing import Generic, Literal, Never, TypeAlias, TypeVar, assert_never, assert_type, final
+
+from expression import (
+    Error,
+    Nothing,
+    NothingType,
+    Ok,
+    Option,
+    Result,
+    Some,
+    TaggedUnion,
+    case,
+    effect,
+    option,
+    result,
+    tag,
+)
 
 
 def option_contract(value: Option[int]) -> None:
@@ -78,3 +95,119 @@ def direct_failure(scope: effect.ResultScope[str]) -> Never:
 
 async def asynchronous_contract() -> None:
     assert_type(await asynchronous_workflow(Ok(1)), Result[bool, str])
+
+
+_T = TypeVar("_T", covariant=True)
+
+
+@final
+@case
+class Circle:
+    radius: float
+    tag: Literal["circle"] = tag("circle")
+
+
+@final
+@case
+class Rectangle:
+    width: float
+    height: float
+    label: str = field(default="", kw_only=True)
+    tag: Literal["rectangle"] = tag("rectangle")
+
+
+Shape: TypeAlias = TaggedUnion[Circle | Rectangle]
+
+
+@final
+@case
+class Just(Generic[_T]):
+    value: _T
+    tag: Literal["just"] = tag("just")
+
+
+@final
+@case
+class Missing:
+    tag: Literal["missing"] = tag("missing")
+
+
+Maybe: TypeAlias = TaggedUnion[Just[_T] | Missing]
+
+
+@final
+@case(kw_only=True)
+class Request:
+    path: str
+    retries: int = 3
+    tag: Literal["request"] = tag("request")
+
+
+def custom_case_construction() -> None:
+    assert_type(Circle(2.0), Circle)
+    assert_type(Rectangle(2.0, 3.0, label="box"), Rectangle)
+    assert_type(Just(42), Just[int])
+    assert_type(Just[int](42), Just[int])
+    assert_type(Missing(), Missing)
+    assert_type(Request(path="/items"), Request)
+
+
+def custom_case_match(value: Shape) -> float:
+    match value:
+        case Circle(radius):
+            assert_type(radius, float)
+            return radius
+        case Rectangle(width, height):
+            assert_type(width, float)
+            assert_type(height, float)
+            return width * height
+        case _:
+            assert_never(value)
+
+
+def custom_generic_match(value: Maybe[int]) -> int:
+    match value:
+        case Just(payload):
+            assert_type(payload, int)
+            return payload
+        case Missing():
+            return 0
+        case _:
+            assert_never(value)
+
+
+def custom_tag_narrowing(value: Maybe[int]) -> int:
+    if value.tag == "just":
+        assert_type(value, Just[int])
+        return value.value
+    assert_type(value, Missing)
+    return 0
+
+
+@final
+@case
+class Branch:
+    children: tuple[Tree, ...]
+    tag: Literal["branch"] = tag("branch")
+
+
+@final
+@case
+class Leaf:
+    value: int
+    tag: Literal["leaf"] = tag("leaf")
+
+
+Tree: TypeAlias = TaggedUnion[Branch | Leaf]
+
+
+def custom_recursive_match(value: Tree) -> int:
+    match value:
+        case Branch(children):
+            assert_type(children, tuple[Tree, ...])
+            return sum(custom_recursive_match(child) for child in children)
+        case Leaf(payload):
+            assert_type(payload, int)
+            return payload
+        case _:
+            assert_never(value)

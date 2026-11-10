@@ -1,6 +1,8 @@
 """Intentional caller errors; scripts/check_typing.py verifies each marked line."""
 
-from expression import Error, Nothing, Ok, Option, Result, Some, effect
+from typing import Generic, Literal, TypeAlias, TypeVar, final
+
+from expression import Error, Nothing, Ok, Option, Result, Some, TaggedUnion, case, effect, tag
 
 
 def unchecked(value: Option[int]) -> None:
@@ -59,3 +61,69 @@ def takes_number(scope: effect.ResultScope[str], number: int) -> bool:
 
 
 takes_number("wrong")  # type-error
+
+
+_T = TypeVar("_T", covariant=True)
+
+
+@final
+@case
+class CustomValue(Generic[_T]):
+    value: _T
+    tag: Literal["value"] = tag("value")
+
+
+@final
+@case
+class CustomEmpty:
+    tag: Literal["empty"] = tag("empty")
+
+
+Custom: TypeAlias = TaggedUnion[CustomValue[_T] | CustomEmpty]
+Untagged: TypeAlias = TaggedUnion[int]  # type-error
+PartlyUntagged: TypeAlias = TaggedUnion[CustomValue[int] | int]  # type-error
+
+
+custom_wrong_payload: Custom[int] = CustomValue("wrong")  # type-error
+custom_missing_payload = CustomValue()  # type-error
+custom_wrong_generic = CustomValue[int]("wrong")  # type-error
+custom_wrong_tag = CustomValue(1, tag="empty")  # type-error
+custom_extra_position = CustomValue(1, "value")  # type-error
+custom_unit_payload = CustomEmpty(1)  # type-error
+
+
+def custom_wrong_access(value: Custom[int]) -> None:
+    _ = value.value  # type-error
+    if value.tag == "empty":
+        _ = value.value  # type-error
+
+
+def custom_incomplete(value: Custom[int]) -> None:
+    match value:  # type-error
+        case CustomValue(payload):
+            _ = payload
+
+
+def custom_mutation(value: CustomValue[int]) -> None:
+    value.value = 2  # type-error
+    value.tag = "value"  # type-error
+
+
+class CustomExtra(CustomValue[int]):  # type-error
+    pass
+
+
+@final
+@case
+class CustomWrongDeclaration:
+    tag: Literal["expected"] = tag("different")  # type-error
+
+
+@final
+@case(kw_only=True)
+class CustomKeyword:
+    value: int
+    tag: Literal["keyword"] = tag("keyword")
+
+
+custom_positional_keyword_only = CustomKeyword(1)  # type-error

@@ -387,8 +387,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pydantic", marker = "extra == 'all'", specifier = ">=2.6.2,<3.0.0" },
-    { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.6.2,<3.0.0" },
+    { name = "pydantic", marker = "extra == 'all'", specifier = ">=2.10.0,<3.0.0" },
+    { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.10.0,<3.0.0" },
     { name = "typing-extensions", specifier = ">=4.6.0" },
 ]
 provides-extras = ["all", "pydantic"]

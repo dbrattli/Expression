@@ -878,9 +878,9 @@ mechanics, then verify these contracts:
   full matrix, actual dependency minimums, current Pyright, and a second checker
   before claiming cross-checker portability.
 
-Start with an isolated Option/Result and computation-protocol implementation.
-Keep user-defined `@tagged_union` migration and sequence-builder changes as
-separate scope decisions. Production delivery requires realistic runtime and
+The implementation covers user-defined tagged unions, Option/Result, and typed
+computation scopes together. Sequence-builder changes remain a separate scope
+decision. Production delivery requires realistic runtime and
 consumer typing regressions, the full suite, repository lint/type checks, public
 examples, and versioned migration guidance.
 
@@ -908,10 +908,12 @@ ordinary dataclass behavior. Existing raw/null Option payloads require migration
 Runtime coverage lives in the case and scope test modules. Consumer typing
 contracts live in [tests/typing_contracts.py](tests/typing_contracts.py) and
 [typing_tests/negative.py](typing_tests/negative.py); the pre-commit hook checks
-that every intentional invalid expression is rejected. The legacy user-defined
-`@tagged_union` and sequence-builder APIs remain outside this change.
+that every intentional invalid expression is rejected. The public custom-union
+API replaces the old one-class `@tagged_union` decorator; sequence-builder
+semantics remain unchanged.
 
-Implementation validation on 2026-11-10:
+Initial built-in-union implementation validation on 2026-11-10 (before the
+custom-union follow-up):
 
 - The complete suite passes with 517 tests on each of Python 3.11, 3.12, 3.13,
   3.14, and 3.15.
@@ -920,8 +922,9 @@ Implementation validation on 2026-11-10:
 - Mypy 2.4.1 accepts the selected consumer contracts, including mixed Result
   pipelines. This is consumer evidence, not a claim that the entire project is
   configured for Mypy.
-- Pydantic 2.6.2 with typing-extensions 4.6.1 passes the schema and scope checks
-  on Python 3.11; current locked dependencies pass the full runtime suite.
+- The initial Pydantic 2.6.2 checks passed, but broader custom-union tests exposed
+  a generic namespace-resolution bug. The supported minimum is now 2.10.0;
+  earlier evidence does not establish correctness for the expanded API.
 - Source and wheel builds succeed; the built wheel imports independently and
   preserves scope behavior and nested tagged Pydantic roundtrips.
 
@@ -930,3 +933,42 @@ their typed alternatives. Async decorators expose coroutine return types for
 `asyncio.create_task` and `asyncio.run`. Runtime introspection exposes external
 parameters and omits the body's now-inaccurate return annotation; static return
 types remain precise, and the original body is available through `__wrapped__`.
+
+
+### Public custom-union API
+
+Custom unions use `@final` and `@case` on each explicit alternative, a fixed
+`tag: Literal["name"] = tag("name")` field, and an explicit alias such as
+`Shape: TypeAlias = TaggedUnion[Circle | Rectangle]`. `TaggedUnion[T]` wraps an
+ordinary type in optional Pydantic metadata; its alternatives stay visible to
+checkers. The lowercase `tagged_union` name is the module namespace, not a
+class-transforming decorator.
+
+`@case` supplies frozen dataclass behavior and runtime closure. Static finality
+uses Python's explicit `@final`: `dataclass_transform` describes generated
+constructors and fields, not final classes or dynamically created alternatives.
+The same decorator now defines Some, NothingType, Ok and Error. Only Nothing
+opts into canonical singleton decoding; user-defined unit cases have ordinary
+value semantics.
+
+The declaration API supports generic and multi-field payloads, defaults,
+keyword-only construction, custom methods and representations. It rejects
+`InitVar`, non-tag nonconstructor fields, custom constructors and dataclass
+inheritance rather than claiming that ignored payloads are validated. The codec
+checks declared cases and duplicate tags. Migration examples cover the old
+field-marker syntax, class patterns and constructor namespaces.
+
+
+The optional Pydantic floor is 2.10.0. A caller-local `_T` or `_E` could shadow
+Expression's deferred generic annotations in 2.9.2 and earlier, causing typed
+payloads to be treated as Any. The regression rejects malformed payloads on
+2.10.0 and current locked dependencies. This dependency requirement keeps
+annotation resolution in Pydantic instead of rewriting user payload annotations.
+
+Custom-union follow-up validation on 2026-11-10: the complete suite passes with
+532 tests on each Python 3.11–3.15 runtime, and with the minimum optional stack
+(Python 3.11, Pydantic 2.10.0, typing-extensions 4.12.2). Strict Pyright accepts
+positive consumers and rejects all 31 marked invalid expressions. Mypy 2.4.1
+accepts the public declaration implementation and consumer contracts. Independent
+JSON-schema checks cover custom and recursive wire objects on the minimum and
+locked Pydantic versions; package builds and public-API wheel smoke checks pass.
