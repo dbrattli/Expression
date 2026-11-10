@@ -1,11 +1,18 @@
+"""Scoped computations: migrated builder behavior and scope ownership contracts.
+
+Generator syntax is replaced by bind and return. An empty body or a final None
+is successful; previously bound values never replace the body's final return.
+"""
+
 from concurrent.futures import ThreadPoolExecutor
 from inspect import Signature, signature, unwrap
 from typing import assert_type, cast
 
 import pytest
 
-from expression import Nothing, Option, Some, effect
+from expression import NOTHING, Nothing, Option, Some, effect
 from expression.effect import OptionScope
+from tests.utils import CustomException
 
 
 def test_option_scope_preserves_intermediate_and_final_types():
@@ -157,3 +164,223 @@ def test_option_scope_rejects_another_thread():
         return scope.bind(Some(1))
 
     assert computation() == Some(1)
+
+
+def test_option_scope_evaluation_order():
+    evaluated: list[int] = []
+
+    @effect.option
+    def computation(scope: OptionScope) -> int:
+        evaluated.append(1)
+        x = scope.bind(Some(42))
+        evaluated.append(2)
+        y = scope.bind(Some(43))
+        evaluated.append(3)
+        return x + y
+
+    assert computation() == Some(85)
+    assert evaluated == [1, 2, 3]
+
+
+def test_option_scope_short_circuits_after_successful_bind():
+    evaluated: list[int] = []
+    failure = NOTHING
+
+    @effect.option
+    def computation(scope: OptionScope) -> int:
+        evaluated.append(1)
+        x = scope.bind(Some(42))
+        evaluated.append(2)
+        y = scope.bind(failure)
+        evaluated.append(3)
+        return x + y
+
+    assert computation() is failure
+    assert evaluated == [1, 2]
+
+
+def test_option_scope_final_return_overrides_discarded_bind_values():
+    evaluated: list[int] = []
+
+    @effect.option
+    def computation(scope: OptionScope) -> int:
+        evaluated.append(1)
+        scope.bind(Some(42))
+        evaluated.append(2)
+        scope.bind(Some(43))
+        evaluated.append(3)
+        return 44
+
+    assert computation() == Some(44)
+    assert evaluated == [1, 2, 3]
+
+
+@pytest.mark.parametrize("payload", [Some(42), NOTHING])
+def test_option_scope_returned_container_is_a_successful_payload(payload: Option[int]):
+    @effect.option
+    def computation(scope: OptionScope) -> Option[int]:
+        return payload
+
+    actual = computation()
+    assert_type(actual, Option[Option[int]])
+    assert isinstance(actual, Some)
+    assert actual.some is payload
+
+
+@pytest.mark.parametrize("payload", [Some(42), NOTHING])
+def test_option_scope_bind_unwraps_exactly_one_layer(payload: Option[int]):
+    @effect.option
+    def computation(scope: OptionScope) -> Option[int]:
+        value = scope.bind(Some(payload))
+        assert_type(value, Option[int])
+        return value
+
+    actual = computation()
+    assert_type(actual, Option[Option[int]])
+    assert isinstance(actual, Some)
+    assert actual.some is payload
+
+
+def test_option_scope_empty_body_returns_successful_none():
+    @effect.option
+    def computation(scope: OptionScope) -> None:
+        pass
+
+    assert computation() == Some(None)
+
+
+def test_option_scope_explicit_none_return_is_successful():
+    @effect.option
+    def computation(scope: OptionScope) -> None:
+        return None
+
+    assert computation() == Some(None)
+
+
+def test_option_scope_none_return_does_not_retain_last_bound_value():
+    @effect.option
+    def computation(scope: OptionScope) -> None:
+        scope.bind(Some(42))
+        return None
+
+    assert computation() == Some(None)
+
+
+def test_option_scope_fallthrough_does_not_retain_last_bound_value():
+    @effect.option
+    def computation(scope: OptionScope) -> None:
+        scope.bind(Some(42))
+
+    assert computation() == Some(None)
+
+
+@pytest.mark.parametrize("increment", [0, 1])
+def test_option_scope_bound_payload_is_unwrapped_and_return_value_is_wrapped(increment: int):
+    @effect.option
+    def computation(scope: OptionScope) -> int:
+        value = scope.bind(Some(42))
+        assert_type(value, int)
+        return value + increment
+
+    assert computation() == Some(42 + increment)
+
+
+def test_option_scope_multiple_operations():
+    @effect.option
+    def computation(scope: OptionScope) -> int:
+        x = scope.bind(Some(42))
+        y = scope.bind(Some(43))
+        z = scope.bind(Some(44))
+        return x + y + z
+
+    assert computation() == Some(129)
+
+
+def test_option_scope_nested_successful_computations():
+    @effect.option
+    def inner(scope: OptionScope, x: int) -> int:
+        y = scope.bind(Some(x + 1))
+        return y + 1
+
+    @effect.option
+    def outer(scope: OptionScope) -> int:
+        x = scope.bind(Some(42))
+        y = scope.bind(inner(x))
+        return y + 1
+
+    assert outer() == Some(45)
+
+
+def test_option_scope_nested_failure_short_circuits_outer_bind():
+    evaluated: list[str] = []
+    failure = NOTHING
+
+    @effect.option
+    def inner(scope: OptionScope) -> int:
+        evaluated.append("inner")
+        return scope.bind(failure)
+
+    @effect.option
+    def outer(scope: OptionScope) -> int:
+        evaluated.append("outer")
+        value = scope.bind(inner())
+        evaluated.append("unreachable")
+        return value
+
+    assert outer() is failure
+    assert evaluated == ["outer", "inner"]
+
+
+@pytest.mark.parametrize("failure_at", [None, 1])
+def test_option_scope_while_loop(failure_at: int | None):
+    evaluated: list[int] = []
+    failure = NOTHING
+
+    @effect.option
+    def computation(scope: OptionScope) -> int:
+        i = 0
+        while i < 3:
+            evaluated.append(i)
+            scope.bind(failure if i == failure_at else Some(i))
+            i += 1
+        return i
+
+    if failure_at is None:
+        assert computation() == Some(3)
+        assert evaluated == [0, 1, 2]
+    else:
+        assert computation() is failure
+        assert evaluated == [0, 1]
+
+
+def test_option_scope_projection_in_nested_for_loops():
+    @effect.option
+    def computation(scope: OptionScope) -> str:
+        text = "Not found"
+        for x in Some(42.0):
+            for y in Some(int(x)):
+                text = scope.bind(Some(str(y)))
+        return text
+
+    assert computation() == Some("42")
+    assert list(computation()) == ["42"]
+
+
+def test_option_scope_plain_return_is_wrapped():
+    @effect.option
+    def computation(scope: OptionScope) -> int:
+        return 42
+
+    assert computation() == Some(42)
+
+
+@pytest.mark.parametrize("error", [CustomException("test error"), RuntimeError("boom")])
+def test_option_scope_preserves_raised_exception_identity(error: Exception):
+    @effect.option
+    def computation(scope: OptionScope) -> int:
+        scope.bind(Some(42))
+        raise error
+
+    with pytest.raises(type(error)) as caught:
+        computation()
+    assert caught.value is error
