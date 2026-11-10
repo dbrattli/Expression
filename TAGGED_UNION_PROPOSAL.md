@@ -1,391 +1,171 @@
-# Tagged Unions and Computational Expressions — Major Version Proposal
+# Tagged unions and typed computations: implementation and rationale
 
-**Status:** Major-version direction selected and implemented in the isolated
-`feat/typed-unions-scopes` change on 2026-11-10. The minimum supported version is
-Python 3.11. See the [migration guide](docs/guides/migration-major.md) for the
-concrete public API. Sections describing the previous design and early probes
-retain their historical context; implementation coverage is recorded below.
+**Status:** Implemented for the next major version of Expression.
+**Minimum Python:** 3.11. **Optional Pydantic:** 2.10 or later, below 3.
 
-**Scope:** `tagged_union`, `Option`, `Result`, construction and matching, and
-computational-expression typing.
+Expression now represents tagged unions as explicit, frozen, final case classes
+combined in public type aliases. Each case declares only its own payload. The
+same public declaration API defines custom unions and the built-in `Some`,
+`NothingType`, `Ok`, and `Error` cases. Computations use typed scopes with ordinary
+functions and coroutines.
 
-**Recommendation:** Use explicit frozen, final case classes with public union
-aliases, together with typed scopes as the primary API for synchronous and
-asynchronous short-circuit computations. Accept breaking changes in a new major
-version: preserving nominal container classes and the old generator protocol
-does not constrain this design. The other candidates document alternatives;
-a typed generator adapter is optional migration work, not part of the required
-new core API.
+This document records the implemented design and its tradeoffs. It replaces the
+candidate comparison from the original proposal: the selected representation was
+previously called **Candidate C**, not Candidate A. The migration steps and
+additional usage examples are in the [migration guide](docs/guides/migration-major.md).
 
-## 1. Requirements and changed priorities
+## Why we changed the representation
 
-`Option` and `Result` should each describe a closed set of alternatives. `Some`
-and `Nothing`, or `Ok` and `Error`, construct values belonging to that type.
-Users should not be able to invent another case by subclassing a public base.
+The previous `@tagged_union` decorator declared every alternative's payload on
+one class, even though an instance held only one alternative. For example,
+`Option[T]` declared both `.some` and `.none`. A type checker could therefore
+accept `.some` on an empty option: the class annotation said that attribute
+existed. Runtime checks could reject the access, but could not repair that static
+contract. The decorator also had to implement active-case construction and
+customize dataclass behavior.
 
-Expression previously used subclasses for `Option` and `Result`. Returning to an
-open hierarchy would reintroduce the problem that motivated moving away from it.
-Separate case classes are only a candidate if we address closure explicitly.
+The new representation makes the alternatives visible in Python source. A
+`Some[T]` has `.some`; a `NothingType` does not. A checker can narrow the union
+using class patterns, `isinstance`, or literal tags and verify exhaustive handling.
+The implementation uses Python's dataclass and union typing mechanisms without a
+checker plugin or generated case types hidden behind a decorator.
 
-We want:
+We accepted breaking changes to runtime identity, construction, matching, and
+computation syntax to make that contract accurate.
 
-- A clear public `Option[T]` / `Result[T, E]` identity and a closed set of cases.
-- Natural construction, fluent and pipe-friendly operations, and readable matching.
-- Useful static checks for construction, case-specific access, and missing cases.
-- Precise intermediate, final-return, and error types in computation expressions.
-- Predictable dataclass, serialization, and tooling behavior on Python 3.11+.
-
-An annotation such as `Option[T]` and a nominal runtime class named `Option` are
-different requirements. A union alias provides the former but not the latter.
-The recommended major version changes `isinstance(value, Option)`, `Option.Some`,
-and `case Option(...)`. The public type is an alias of known case types, with
-module namespaces for constructors and helpers. A closed set of alternatives
-remains a requirement in every candidate.
-
-The Fable-style design was previously rejected for its verbosity. With agents
-writing declarations, that cost is less decisive. Reviewability, type accuracy,
-and runtime simplicity now deserve more weight. Generated source still needs to
-be understandable and maintainable.
-
-## 2. Previous Expression design
-
-The current declaration describes every case field on one class, although only
-one case field exists on each instance. The following excerpt uses `T` for the
-module's existing covariant type variable:
+## The public tagged-union abstraction
 
 ```python
-@tagged_union(frozen=True, order=True)
-class Option(Iterable[T], Awaitable[T], PipeMixin):
-    tag: Literal["some", "none"] = tag()
-    none: None = case()
-    some: T = case()
-```
+from typing import Literal, TypeAlias, final
 
-Current construction and matching:
-
-```python
-value: Option[int] = Some(42)
-empty: Option[int] = Nothing
-mapped = value.map(str)
-
-match value:
-    case Option(tag="some", some=number):
-        print(number)
-    case Option(tag="none"):
-        print("Nothing")
-
-result: Result[int, str] = Ok(42)
-match result:
-    case Result(ok=number):
-        print(number)
-    case Result(error=message):
-        print(message)
-```
-
-Pyright accepts both of these unsafe reads because `.some` is declared on every
-`Option`, including in the known-empty branch:
-
-```python
-def unchecked(value: Option[int]) -> int:
-    return value.some
-
-
-def wrong_case(value: Option[int]) -> int:
-    if value.tag == "none":
-        return value.some
-    return 0
-```
-
-A minimal declaration using the current decorator also accepts `Maybe()` and
-`Maybe(some=1, none=None)` statically, although the runtime rejects both. The
-existing `TypeGuard[Option[T]]` predicates return the same type they receive;
-they do not distinguish the cases for the checker.
-
-The implementation customizes construction, comparisons, freezing, copying,
-pickling, and the active-case view of `__dataclass_fields__`. This machinery is
-part of the complexity under investigation, beyond declaration verbosity.
-
-The checkout contains uncommitted changes for unit-case caching, comparisons,
-field metadata, and inactive-field errors. These are separate existing work,
-not a shipped redesign. Earlier test totals and environment-specific Pyright
-baselines have been removed because they were not revalidated here.
-
-Sources: [tagged union implementation](expression/core/tagged_union.py),
-[Option](expression/core/option.py), [Result](expression/core/result.py).
-
-### Computational-expression typing gaps
-
-`Result.__iter__` exposes `Generator[T, T, T]`, so the error type `E` is absent
-from the generator contract. `ResultBuilder.__call__` also uses one success type
-for yielded, sent, and returned values. This does not describe a workflow that
-binds an `int`, then a `User`, and finally returns a `bool`.
-
-The runner catches `EffectError` and casts `error.args[0]` to its expected
-container. A caller-side probe accepts both of these declarations:
-
-```python
-@effect.result[int, str]()
-def wrong_error_type() -> Generator[int, int, int]:
-    value: int = yield from Error(123)
-    return value
-
-
-@effect.result[int, str]()
-def wrong_family() -> Generator[int, int, int]:
-    value: int = yield from Nothing
-    return value
-```
-
-The declared result does not describe the possible failures. Fixing the union's
-case fields alone cannot fix an error channel that the builder never receives
-statically. `Result.__await__` likewise exposes the success type without `E`.
-
-`None` also has special control-flow meaning today. A plain body returning `None`
-uses `zero()`; a generator ending with `None` retains the accumulated result.
-The new computation contract must distinguish a successful `None` payload from
-absence or an omitted final result.
-
-Sources: [base builder](expression/core/builder.py),
-[result builder](expression/effect/result.py),
-[async builder](expression/core/async_builder.py),
-[result builder tests](tests/test_result_builder.py).
-
-## 3. Current Fable Python design
-
-### General discriminated unions
-
-Fable emits a private common base, an explicit dataclass for each case, and a
-public union alias. For example:
-
-```fsharp
-type Shape =
-    | Circle of radius: float
-    | Rectangle of width: float * height: float
-```
-
-The corresponding Python shape, omitting reflection declarations, is:
-
-```python
-from fable_library.union import Union, tagged_union
-
-
-class _Shape(Union):
-    @staticmethod
-    def cases() -> list[str]:
-        return ["Circle", "Rectangle"]
-
-
-@tagged_union(0)
-class Shape_Circle(_Shape):
-    radius_: float
-
-
-@tagged_union(1)
-class Shape_Rectangle(_Shape):
-    width_: float
-    height_: float
-
-
-type Shape = Shape_Circle | Shape_Rectangle
-```
-
-Handwritten Python can construct and match these cases directly:
-
-```python
-shape: Shape = Shape_Rectangle(10.0, 20.0)
-
-match shape:
-    case Shape_Circle(radius):
-        print(radius)
-    case Shape_Rectangle(width, height):
-        print(width * height)
-```
-
-These are actual source-level case classes. Fable's `@tagged_union(index)` applies
-`dataclass(eq=False)` to each, sets a numeric tag, and supplies a `fields` property.
-The common `Union` implements F# equality, hashing, ordering, and formatting.
-Expression would not need to adopt all that F# compatibility machinery.
-
-The `type` statement shown here requires Python 3.12+. Expression would use
-Python 3.10-compatible aliases instead.
-
-### Result
-
-The local generated `temp/fable-library-py/fable_library/result.py` contains this
-form, with reflection omitted:
-
-```python
-class _FSharpResult_2[T, TERROR](Union):
-    @staticmethod
-    def cases() -> list[str]:
-        return ["Ok", "Error"]
-
-
-@tagged_union(0)
-class Ok[T, TERROR](_FSharpResult_2[T, TERROR]):
-    result_value: Any
-
-
-@tagged_union(1)
-class Error[T, TERROR](_FSharpResult_2[T, TERROR]):
-    error_value: Any
-
-
-type FSharpResult_2[T, TERROR] = Ok[T, TERROR] | Error[T, TERROR]
-```
-
-The `Any` payloads above are present in the inspected local generated artifact;
-the architecture alone does not guarantee precise payload annotations everywhere.
-Generated functions also use numeric-tag matches with `narrow(Ok, result)` before
-reading fields. `narrow` is an identity function with a typing assertion, not a
-runtime case check. Handwritten class patterns can narrow directly.
-
-### Option is different
-
-Fable's actual core option alias is:
-
-```python
-type Option[T] = option.SomeWrapper[T] | T | None
-```
-
-Options can be erased to a value or `None`, with wrappers where necessary, such
-as nesting. This differs from the per-case representation for general unions and
-`Result`. It is not a direct replacement for Expression's fluent option objects.
-
-Sources: [Fable design](../Fable/src/Fable.Transforms/Python/PYTHON-UNION.md),
-[compiler emission](../Fable/src/Fable.Transforms/Python/Fable2Python.Transforms.fs),
-[runtime decorator](../Fable/src/fable-library-py/fable_library/union.py),
-[option representation](../Fable/src/fable-library-py/fable_library/option.py).
-Fable documents generated-code checking with Pyright's standard settings; the
-strict checks below apply to the isolated Expression prototype.
-
-## 4. Candidate A: one final concrete class and case factories
-
-This keeps the current public model: `Some` is a function returning an `Option`,
-and `Nothing` is an empty `Option` value. All cases use the same concrete class.
-
-The intended usage remains:
-
-```python
-value: Option[int] = Some(42)
-assert isinstance(value, Option)
-
-match value:
-    case Option(tag="some", some=number):
-        print(number)
-    case Option(tag="none"):
-        print("Nothing")
-```
-
-`@final` can reject subclassing statically, and `__init_subclass__` can reject
-ordinary subclass declarations at runtime. This must be implemented; the current
-classes do not enforce that closure.
-
-The unresolved part is improving storage and the static contract. Keeping every
-case field annotated on one class retains the inactive-access problem. Checking
-a `Literal` tag does not turn that class into a different case type. Matching on
-the tag itself can check tag coverage, but does not establish the relationship
-between that tag and case-specific payload attributes.
-
-A plain factory function cannot be used as `case Some(number)`: Python class
-patterns require a class object. This candidate therefore uses `case Option(...)`.
-
-## 5. Candidate B: a closed nominal family with explicit case classes
-
-This retains a public `Option[T]` base for annotations and `isinstance`, with
-known cases implemented as subclasses. An ordinary extensible base is not an
-acceptable solution: the family must be closed after defining its cases.
-
-Illustrative declarations, with shared methods and runtime sealing omitted:
-
-```python
-from dataclasses import dataclass
-from typing import Generic, NoReturn, TypeVar, final
-
-T = TypeVar("T", covariant=True)
-
-
-class Option(Generic[T]): ...  # Shared API; base construction and runtime closure need a design.
+from expression import TaggedUnion, case, tag
 
 
 @final
-@dataclass(frozen=True)
-class Some(Option[T]):
-    some: T
+@case
+class Circle:
+    radius: float
+    tag: Literal["circle"] = tag("circle")
 
 
 @final
-@dataclass(frozen=True)
-class NothingType(Option[NoReturn]):
-    pass
+@case
+class Rectangle:
+    width: float
+    height: float
+    tag: Literal["rectangle"] = tag("rectangle")
 
 
-Nothing = NothingType()
+Shape: TypeAlias = TaggedUnion[Circle | Rectangle]
+
+
+def area(shape: Shape) -> float:
+    match shape:
+        case Circle(radius):
+            return 3.14159 * radius * radius
+        case Rectangle(width, height):
+            return width * height
+
+
+assert area(Rectangle(3.0, 4.0)) == 12.0
 ```
 
-Desired usage:
+The three helpers have distinct responsibilities:
+
+| API | Responsibility |
+|---|---|
+| `@case` | Generate a frozen dataclass, validate the case declaration, and reject ordinary runtime subclassing. |
+| `tag("circle")` | Define a fixed discriminator excluded from constructor arguments and positional class patterns. |
+| `TaggedUnion[Circle \| Rectangle]` | Keep the alternatives visible to checkers and attach metadata for optional Pydantic decoding. |
+
+`@final` remains explicit because `dataclass_transform` describes fields and
+constructors; it cannot tell checkers that a custom decorator makes a class final.
+There are three separate guarantees: the alias enumerates alternatives, `@final`
+rejects subclassing statically, and `@case` rejects it at runtime. Defining another
+case does not add it to an existing alias.
+
+`TaggedUnion` is implemented as `Annotated` metadata over its argument. It does
+not create a nominal class, registry, constructor namespace, or new inheritance
+hierarchy. Its structural typing bound requires a tag, while schema construction
+checks actual `@case` membership and distinct tag values. Static typing alone
+does not prove those runtime declaration properties.
+
+Cases support generics, multiple payload fields, defaults, default factories,
+keyword-only construction, methods, and plain mixins. Recursive payload
+annotations may refer to the union alias declared later. Only the tag annotation
+needs resolving while the decorator runs.
+
+Custom constructors, dataclass inheritance, `InitVar`, and non-tag `init=False`
+fields are rejected. Keeping payloads in the generated constructor gives parsing
+a consistent account of the data being validated. Use `__post_init__` for custom
+payload checks. Frozen cases do not make mutable payloads immutable, and ordinary
+constructor annotations do not validate arbitrary external input.
+
+Cases use ordinary dataclass equality, copying, pickling, and hashing, subject to
+payload hashability. They do not define cross-case ordering. Unit cases have
+value semantics and are not automatically singletons. The implementation does
+not request slots: built-in cases inherit `PipeMixin`, which already supplies an
+instance dictionary, and the nonslotted representation supports generic
+construction across the supported runtimes.
+
+Source: [public declarations](expression/core/tagged_union.py),
+[schema metadata](expression/core/_union_schema.py).
+
+## How Option actually works
+
+`Some` is now a class and constructor, not a factory returning a shared `Option`
+class. `NothingType` is a separate, nongeneric case class; `Nothing` is its
+canonical instance. Both classes use the public `@case` decorator and fixed tags.
+
+The following is the declaration structure, with methods and singleton machinery
+omitted. `UnionSchema` is an internal implementation detail, not an additional
+helper users need for ordinary custom unions:
 
 ```python
-value: Option[int] = Some(42)
-assert isinstance(value, Option)
+from typing import Annotated, Generic, Literal, TypeAlias, TypeVar, final
 
-match value:
-    case Some(number):
-        print(number)
-    case NothingType():
-        print("Nothing")
-```
-
-Here `Some` doubles as a constructor and a Python case type. Values belong to the
-nominal `Option` family but have different concrete runtime classes. This
-preserves nominal identity, but is an unselected alternative to the recommended
-public union alias.
-
-`@final` on leaves does not stop a new direct subclass of `Option`. Runtime
-sealing must reject new sibling cases, leaf subclasses, and direct base
-construction. That mechanism has not been prototyped here.
-
-Even with runtime sealing, Pyright does not infer a closed set of subclasses
-from `__init_subclass__`. The probe confirmed that handling both known cases
-does not exhaust a parameter annotated with their common base. Case tests can
-narrow, but the base alone does not provide exhaustive union checking.
-
-## 6. Candidate C: explicit cases and a public union alias
-
-This is the preferred general representation. Each case declares only the data
-that exists in that case, and a source-level union lists the alternatives. The
-examples use Python 3.10-compatible syntax; shared methods, singleton handling,
-and runtime closure are omitted from the initial declarations.
-
-### Cases parameterized by their payloads
-
-```python
-from dataclasses import dataclass
-from typing import Generic, NoReturn, TypeAlias, TypeVar, final
+from expression import case, tag
+from expression.core._union_schema import UnionSchema
 
 T = TypeVar("T", covariant=True)
 
 
 @final
-@dataclass(frozen=True)
+@case
 class Some(Generic[T]):
     some: T
+    tag: Literal["some"] = tag("some")
 
 
 @final
-@dataclass(frozen=True)
+@case
 class NothingType:
-    pass
+    tag: Literal["none"] = tag("none")
 
 
 Nothing = NothingType()
-Option: TypeAlias = Some[T] | NothingType
+Option: TypeAlias = Annotated[
+    Some[T] | NothingType,
+    UnionSchema(canonical_values=(Nothing,)),
+]
 ```
 
-Generic annotations and exhaustive matching work:
+The actual classes also inherit `PipeMixin` and implement their fluent methods.
+The alias means `Some[T] | NothingType` to the checker. Its metadata uses the same
+schema implementation as `TaggedUnion`, with one deliberate specialization:
+decoding the empty case must restore the canonical `Nothing` instance.
+`NothingType` itself preserves identity through construction, copying, and
+pickling. Ordinary custom unit cases do not acquire this singleton contract.
+
+Consequently, Option is neither the former single container class nor an erased
+`T | None` representation. `Some(None)`, `Nothing`, and `Some(Nothing)` remain
+three distinct values. The wrapped representation preserves fluent operations
+and nested options without interpreting a payload's value as absence.
 
 ```python
-from typing_extensions import assert_never
+from typing import assert_never
+
+from expression import Nothing, NothingType, Option, Some
 
 
 def describe(value: Option[int]) -> str:
@@ -393,582 +173,208 @@ def describe(value: Option[int]) -> str:
         case Some(number):
             return str(number)
         case NothingType():
-            return "Nothing"
+            return "missing"
         case _:
             assert_never(value)
 
 
-value: Option[int] = Some(42)
-empty: Option[NoReturn] = Nothing
+assert describe(Some(42)) == "42"
+assert describe(Nothing) == "missing"
+assert Some(42).map(str) == Some("42")
 ```
 
-The analogous Result declaration and usage would be:
+Use `NothingType()` in a class pattern. Bare `case Nothing` is a capture pattern;
+it does not test the singleton. For runtime checks, use case classes such as
+`Some` or `(Some, NothingType)`. `Option[T]` is an annotation, not a nominal class
+for construction, subclassing, or runtime instance checks.
+
+Source: [Option and its cases](expression/core/option.py).
+
+## Result, Try, and precise fluent operations
+
+`Ok[T]` contains `.ok`; `Error[E]` contains `.error`. Their implemented alias is
+`Result: TypeAlias = TaggedUnion[Ok[T] | Error[E]]`. Both cases use `@final`,
+`@case`, and a fixed literal tag, just like user-defined cases.
+
+Each class is parameterized only by its own payload. `Ok(42)` infers `Ok[int]`
+and `Error("failed")` infers `Error[str]`; constructing either requires no type
+argument for a channel it does not contain. `Try[T]` is `Result[T, Exception]`.
+`Success` and `Failure` remain convenience constructors producing `Ok` and `Error`.
+
+Fluent methods have case-specific signatures. For example, `Some.map` returns a
+`Some` of the mapped type, while `Nothing.map` returns `NothingType` without
+calling the mapper. Similarly, `Ok.map` transforms success and `Error.map`
+preserves the error. Their signatures combine correctly when the receiver is a
+union. Bind and recovery retain the possible outcomes of both the original
+value and the callback. `Never` describes an impossible callback input where
+appropriate; no phantom success/error parameter is added to the case class.
+
+Functional helpers and piping remain available. Python's contextual inference
+still has limits: complex curried callbacks can require named, annotated
+functions, and empty-case conversion to invariant collections may need a result
+annotation or a free helper. The migration guide documents those forms. Boolean
+instance predicates do not promise to narrow their receiver; use class/tag tests
+or free guards such as `option.is_some` and `result.is_ok`.
+
+Source: [Result](expression/core/result.py), [Try](expression/core/try_.py),
+[consumer typing contracts](tests/typing_contracts.py).
+
+## Why computations use typed scopes
+
+Correct case types alone cannot fix the old generator computation protocol.
+Its yielded, sent, and returned types coupled unrelated intermediate payloads,
+and its Result iteration contract did not carry the error type to the runner.
+That allowed computations to bind the wrong error type or effect family without
+an accurate static description of the resulting failure.
+
+The implemented API uses ordinary functions. A scope fixes the effect family
+and, for Result, the error type. Each call to `bind` independently infers its
+payload type. The body's return annotation describes the final successful value;
+the decorator exposes the corresponding container to callers.
 
 ```python
-E = TypeVar("E", covariant=True)
+from expression import Error, Ok, Result, effect
 
 
-@final
-@dataclass(frozen=True)
-class Ok(Generic[T]):
-    ok: T
+def parse_count(text: str) -> Result[int, str]:
+    return Ok(int(text)) if text.isdigit() else Error("invalid count")
 
 
-@final
-@dataclass(frozen=True)
-class Error(Generic[E]):
-    error: E
-
-
-Result: TypeAlias = Ok[T] | Error[E]
-
-
-def describe_result(value: Result[int, str]) -> str:
-    match value:
-        case Ok(number):
-            return str(number)
-        case Error(message):
-            return message
-        case _:
-            assert_never(value)
-```
-
-`Ok(42)` infers `Ok[int]`; `Error("message")` infers `Error[str]`. Neither
-constructor requires an uninferable type argument for its absent channel.
-An internal method-sharing base can use `Never` for that channel. `Never` is
-available from `typing` on the Python 3.11 minimum.
-
-The alias is a closed list of alternatives for annotations, rather than a public
-nominal runtime class. It changes part of the requested type identity. Cases are
-exposed as Python types as well as constructors.
-
-### Fluent methods need their own typing contract
-
-A shared `.map(...)` proof is insufficient to establish the whole API. With a
-shared base specialized using `Never`, naive `Result[U, F]` callback signatures
-can infer an unknown absent channel. Per-case precise methods worked in the
-prototype: `Ok.map` returns `Ok[U]`, while `Error.map` returns the existing error.
-For `bind`, a bounded result variable preserves the callback's actual result:
-
-```python
-R = TypeVar("R", bound="Ok[object] | Error[object]")
-
-
-# On Ok[T]:
-def bind(self, mapper: Callable[[T], R]) -> R:
-    return mapper(self.ok)
-
-
-# On Error[E]:
-def bind(self, mapper: Callable[[Never], R]) -> Error[E]:
-    return self
-```
-
-These are alternative method bodies, not standalone functions. Tests covered
-callbacks returning only `Ok`, only `Error`, or their union, including chained
-calls and lambda inference. A result containing an existing error and a callback
-introducing another error must retain both possible error types. Recovery must
-also permit `Nothing.or_else(Some(42))` without fixing the payload to `Never`.
-Share implementation only where doing so retains these consumer contracts;
-an internal fold is an experiment, not a required new public abstraction.
-
-### Closure, tags, and matching
-
-An unrelated subclass of a private method-sharing base is not a member of the
-explicit alias. The base therefore does not need a family registration mechanism
-for alias closure. Public leaves need `@final` for static checking and a small
-runtime hook to reject ordinary subclassing:
-
-```python
-@final
-@dataclass(frozen=True, slots=True)
-class Some(Generic[T]):
-    some: T
-    tag: Literal["some"] = field(default="some", init=False)
-
-    def __init_subclass__(cls, **kwargs: object) -> None:
-        raise TypeError("Some is final")
-```
-
-Apply the same closure policy to every case. A fixed tag stays out of constructor
-arguments and positional matching, so callers cannot construct a contradictory
-tag and payload. A field preserves the tag in `asdict`; a `ClassVar` would not.
-`slots=True` is optional and removes instance dictionaries only if the bases also
-avoid them. These mechanisms protect normal use, not adversarial monkey-patching.
-
-Use `case NothingType()` or a qualified constant such as `case option.Nothing`.
-Bare `case Nothing:` captures a name. Pyright's `reportMatchNotExhaustive`, enabled
-in strict mode, checks missing class cases directly; `assert_never` remains a
-useful explicit check. Free predicates can narrow their argument to a case.
-`TypeGuard` / `TypeIs` on an instance method do not narrow its implicit receiver.
-
-### Alternative for compatibility: both parameters on both cases
-
-This is not the recommended major-version representation. Retaining phantom
-parameters is a viable alternative when preserving direct
-`yield from value` inference matters. A phantom parameter describes the family
-but is not represented by that case's stored payload. Defaults avoid unknown
-constructor parameters:
-
-```python
-from typing_extensions import Never, TypeVar
-
-T = TypeVar("T", covariant=True, default=Never)
-E = TypeVar("E", covariant=True, default=Never)
-
-# Each case inherits the same family parameters:
-# Some[T] and NothingType[T] inherit _Option[T].
-# Ok[T, E] and Error[T, E] inherit _Result[T, E].
-Option: TypeAlias = Some[T] | NothingType[T]
-Result: TypeAlias = Ok[T, E] | Error[T, E]
-```
-
-This sketch replaces the earlier case declarations. `Ok(42)` then infers
-`Ok[int, Never]`, and `Error("message")` infers `Error[Never, str]`. On a parameter
-annotated `Result[int, str]`, both alternatives expose the same inherited
-iterator signature, and the probe infers `int` from `yield from value`.
-
-By contrast, the payload-only case prototype inferred `Unknown` from direct
-`yield from` on the union. `yield from value.__iter__()` and `await value` retained
-the success type. The upstream report is
-[Pyright #11881](https://github.com/microsoft/pyright/issues/11881).
-
-This is a local inference result, not proof of compatibility with today's
-builder. The mixed-type probe uses `Generator[int | str, Never, str]`; it does not
-prove the existing runner can send arbitrary bound values into that signature.
-`Generator[T, T, T]` still omits `E`, regardless of which case representation
-exposes it. Verify runtime type-default substitution against the supported Python
-and `typing_extensions` minimum versions before adopting this variant.
-
-## 7. Candidate D: a final nominal wrapper with an explicit case union
-
-This alternative preserves a concrete `Option[T]` class while moving case-specific
-data into an explicit union. The wrapper owns the fluent API and exposes a read-only
-`.case`. In this alternative, `Some` remains a factory returning the wrapper:
-
-```python
-value: Option[int] = Some(42)
-assert isinstance(value, Option)
-
-match value.case:
-    case SomeCase(number):
-        print(number)
-    case NothingCase():
-        print("Nothing")
-```
-
-The wrapper can preserve `Option.Some`, `Option.Nothing`, and existing nominal
-checks. Its `.case` type is `SomeCase[T] | NothingCase`, so matching that property
-is exhaustive and case-specific access is checked. Both the wrapper and its case
-types should be final with ordinary runtime subclass rejection.
-
-The cost is another object layer, distinct names for factories and case types,
-and a changed matching surface. Top-level `Some` cannot also be a class pattern
-when it is a factory. Exhaustiveness is established on `.case`, not on the
-nominal wrapper alone. It would be a fallback if nominal identity were mandatory;
-that constraint has been relaxed for the recommended major version. Candidate B
-adds sealing machinery without the wrapper's static exhaustiveness on `.case`.
-
-## 8. Typed computational expressions
-
-The union representation and the computation protocol should have separate
-contracts. Each bind needs its own payload type; the computation needs a final
-return type and an explicit error type. The proposed APIs below are prototypes,
-not currently exported interfaces. Names and coexistence with the existing
-decorators remain part of migration design.
-
-### Preferred common API: typed scopes
-
-A `ResultScope[E]` owns one computation invocation. Its `bind` accepts
-`Result[A, E]` and returns `A`, with `A` inferred independently on every call.
-The error parameter on the scope is invariant; it is not the covariant variable
-used for immutable case payloads.
-
-```python
 @effect.result
-def can_access(scope: ResultScope[AppError], text: str) -> bool:
-    user_id = scope.bind(parse_id(text))  # int
-    user = scope.bind(load_user(user_id))  # User
-    return user.is_active  # bool
+def describe_count(scope: effect.ResultScope[str], text: str) -> str:
+    count = scope.bind(parse_count(text))  # int
+    label = scope.bind(Ok("items"))        # str
+    return f"{count} {label}"
 
 
-# can_access(text) -> Result[bool, AppError]
+assert describe_count("3") == Ok("3 items")
+assert describe_count("bad") == Error("invalid count")
 ```
 
-`AppError`, `User`, and the domain functions are illustrative. The decorator
-infers `E` from the scope annotation and the final result from the body's return
-type. `ParamSpec` and `Concatenate` preserve the external function parameters
-while supplying the scope internally. No decorator type arguments are needed.
+`@effect.option` supplies `OptionScope`. The async variants are
+`@effect.async_result` and `@effect.async_option`: await the I/O operation to
+obtain a container, then call `scope.bind(container)`. There is no requirement
+that different binds have the same payload type.
 
-Ordinary coroutines use the same binding operation:
+Binding `Error` or `Nothing` aborts that invocation using an internal,
+owner-specific control signal. Normal `finally` cleanup runs; unrelated
+exceptions and cancellation propagate. The first bound failure remains the
+outcome even if user code catches the internal signal. Each scope checks its
+active lifetime, thread, and task, so it cannot be reused after completion or
+bound from another execution context. Nested invocations have separate scopes.
 
-```python
-@effect.async_result
-async def can_access(scope: ResultScope[AppError], text: str) -> bool:
-    user_id = scope.bind(parse_id(text))
-    user = scope.bind(await fetch_user(user_id))
-    return user.is_active
+Callback runners (`run_result`, `run_option`, and their async equivalents)
+support bound methods. Decorators preserve external parameter typing. Runtime
+introspection hides the supplied scope parameter and omits the body's return
+annotation, which describes the payload rather than the wrapped result; the
+original annotations remain available through `__wrapped__`.
 
+A normal return, including `None`, is success: `Some(None)` or `Ok(None)`.
+Absence and failure require binding `Nothing` or `Error`. Ordinary Python
+fall-through still returns `None`, so return annotations remain important.
+Containers are no longer awaitable, and iteration simply yields zero or one
+successful payloads; it does not bind an effect.
 
-# await can_access(text) -> Result[bool, AppError]
-```
+No generator compatibility adapter is included. The sequence computation builder
+retains its existing generator behavior. `effect.try_` and `effect.async_try`
+constrain explicit Result errors to exceptions; they do not automatically catch
+unexpected exceptions from the body.
 
-Async generators have no final return-value channel and cannot use `yield from`.
-Ordinary coroutines retain normal `return`, exception propagation, and cleanup.
-The scope checks the error type at `bind`; awaiting an I/O function alone does
-not perform a result bind.
+Source: [Result scopes](expression/effect/result.py),
+[Option scopes](expression/effect/option.py),
+[invocation ownership](expression/effect/_scope.py).
 
-The prototype stores a typed `Error[E]` on the scope and raises a private
-`BaseException` control signal carrying invocation identity. Only that scope's
-runner handles the signal. Unexpected exceptions propagate, nested runners do
-not consume another scope's signal, and `finally` blocks execute. No erased error
-payload cast or `Any` is needed in the prototype.
+## Serialization is part of the contract
 
-The tradeoffs are the explicit scope parameter and internal nonlocal control
-flow. Production work still needs guards against using an escaped or completed
-scope, cancellation coverage, and a decision about decorated instance methods.
-A `run(body)` callback is another possible entry point for methods. This design
-targets Option/Result short-circuit computations; it is not a replacement for
-the sequence builder or a general effect interpreter. An analogous Option scope
-still needs its own implementation and tests.
+The public union aliases carry optional Pydantic metadata so external data is
+validated as a tagged case, including its payload types. Option's former raw
+payload/null encoding could not distinguish an absent value from `Some(None)`.
+The new encoding preserves that distinction and nesting:
 
-### Optional migration candidate: typed generator adapter
-
-The new core API does not require a generator DSL. If a migration adapter is
-provided for synchronous callers retaining that syntax, use one that
-keeps each payload type local and makes the error type visible to the runner:
-
-```python
-@effect.result
-def can_access(text: str) -> ResultComputation[bool, AppError]:
-    user_id = yield from effect.bind(parse_id(text))
-    user = yield from effect.bind(load_user(user_id))
-    return user.is_active
-```
-
-This is an alternative decorator surface. Its computation type expands to
-`Generator[Result[object, E], None, T]`:
-
-| Channel | Meaning |
+| Value | Tagged representation |
 |---|---|
-| Yielded `Result[object, E]` | Effects checked by the runner, retaining the error type |
-| Sent `None` | Resume execution without sending a differently typed payload |
-| Returned `T` | The final successful result |
+| `Nothing` | `{"tag": "none"}` |
+| `Some(None)` | `{"tag": "some", "some": None}` |
+| `Some(Nothing)` | `{"tag": "some", "some": {"tag": "none"}}` |
+| `Ok(42)` | `{"tag": "ok", "ok": 42}` |
+| `Error("failed")` | `{"tag": "error", "error": "failed"}` |
 
-The adapter captures `Result[A, E]`, yields it, and returns its original payload
-when resumed. The runner advances with `next()`, returns an error without
-resuming that bind, and wraps the final return in `Ok`. It closes the generator
-in `finally`. Using `object` in the yielded success channel loses no information
-needed by the runner: the adapter retains the precise `A`.
+Use a Pydantic field annotated with the public alias, or `TypeAdapter(Option[int])`,
+`TypeAdapter(Result[int, str])`, or `TypeAdapter(Shape)`. The schema requires a
+known tag, rejects extra case fields, validates generic and nested payloads, and
+preserves canonical `Nothing`. Direct adapters for case classes retain ordinary
+Pydantic dataclass behavior; they do not supply the union's wire contract.
 
-The prototype has no public `Any`; an internal cast bridges the standard
-`StopIteration.value` API. Overloads handle direct `Ok` and `Error` constructors
-without an unknown absent channel. A named computation annotation is still
-needed for strict checking of generator bodies.
+Custom cases serialize with their declared Python field names. Pydantic field
+aliases are rejected. Case-level validation metadata is supported; union-level
+validation metadata on an alias nested in another union is rejected rather than
+discarded. Recursive schemas preserve references and closed case shapes.
 
-For Python 3.10, the prototype declares the public parameter order explicitly:
+The built-in `.dict()` methods recursively encode supported containers and
+payloads; arbitrary leaf encoding remains the caller's responsibility. Custom
+cases retain ordinary dataclass facilities such as `asdict` rather than gaining
+a built-in `.dict()` method.
 
-```python
-from typing_extensions import TypeAliasType
+Pydantic is optional. The minimum is 2.10.0 because earlier versions could resolve
+Expression's deferred generic annotations against caller-local type variables,
+silently losing payload validation. A repository regression covers that name
+collision. Old raw/null Option data requires explicit migration; no legacy codec
+is included.
 
-ResultComputation = TypeAliasType(
-    "ResultComputation",
-    Generator[Result[object, E], None, T],
-    type_params=(T, E),
-)
-```
+Source: [schema construction](expression/core/_union_schema.py),
+[built-in encoding](expression/core/_serialization.py),
+[schema regressions](tests/test_union_schema.py).
 
-A plain legacy alias would discover `E` before `T` in this expression. Dependency
-minimums and runtime annotation consumers need checking for the chosen alias
-form. The generator adapter works with payload-only case classes and avoids the
-direct union-iterator inference issue. It is not a drop-in change to today's
-yielded-value, send, or final-result semantics.
+## Alternatives and the choices we made
 
-### Final-return semantics
-
-For either new protocol, `return None` should mean a successful `None` payload.
-An explicit absence or failure operation should express short-circuiting.
-This is a proposed behavior change requiring migration guidance. The final
-return type should determine `Option[T]` or `Result[T, E]`; neither a prior yield
-nor `zero()` should silently manufacture a value outside that annotation.
-
-## 9. Evidence and language boundaries
-
-The original investigation and subsequent review used Pyright **1.1.413** in
-strict mode with a **Python 3.10** target. The key typing probes were then rerun
-on **1.1.414**, with identical diagnostics across ten comparison groups.
-Runtime checks used Python **3.14**; the separate closure and singleton probe also
-ran on **3.11** and **3.12**. No Python 3.10 runtime or
-full supported-version matrix was exercised.
-
-| Probe | Observed result |
+| Alternative | Why it was not selected |
 |---|---|
-| Generic case aliases | `Option[int]` and `Result[int, str]` work |
-| Class patterns and fixed literal tags | Payloads narrow to their declared types |
-| Unchecked and known-empty payload access | Rejected |
-| Missing match cases | Rejected by strict exhaustiveness checking and by `assert_never` |
-| Nominal base with all known subclasses handled | Base remains; not exhaustive |
-| Payload-only cases with precise fluent methods | Maps, binds, recovery, and lambda chains preserve types |
-| Direct `yield from` on the payload-only case union | Result inferred as `Unknown` |
-| Direct `yield from` with shared family parameters and defaults | Success type inferred; existing builder compatibility remains unproven |
-| Current CE with wrong error type or wrong effect family | Accepted, demonstrating the lost error channel |
-| Typed Result scope | Mixed intermediate types, final return, and function parameters preserved |
-| Typed generator adapter | Mixed intermediate types and error channel preserved; invalid yields rejected |
-| Wrapper `.case` | Exhaustive matching and payload narrowing with nominal wrapper identity |
+| One concrete class with case factories (former Candidate A) | Keeps inactive payload attributes in the static class contract; a literal tag does not turn one class into separate payload types. |
+| Public nominal base with sealed subclasses | Runtime sealing does not teach a checker that the base's subclass set is exhaustive. |
+| Nominal wrapper containing a case union | Gives accurate narrowing through an extra `.case` layer, but adds indirection and a second representation to the public API. |
+| Case classes with phantom family type parameters | Couples a constructor to types absent from its payload, mainly to accommodate the old computation protocol. |
+| Erasing Option to a payload or `None` | Loses the uniform wrapped API and requires special handling of successful `None` and nesting. |
+| Typed generator adapter | Could be a separate migration facility; it is not needed for typed scopes and was not implemented. |
 
-### Pyright 1.1.414 comparison
+Explicit cases cost more declaration lines than the old field-marker syntax and
+repeat some fluent methods. We accept that cost because users and type checkers
+see the same payload model, constructors are ordinary class constructors, and
+matching uses standard Python patterns. The common decorator and schema layer
+provide the reusable mechanics without hiding the alternatives.
 
-As checked on 2026-11-10, GitHub identifies
-[1.1.414 as the latest release](https://github.com/microsoft/pyright/releases/tag/1.1.414).
-The original comparison installed 1.1.414 only under `/tmp`. The implementation
-now pins **1.1.414** in [the pre-commit configuration](.pre-commit-config.yaml)
-and checks both valid consumers and intentional type errors.
+## Compatibility and maintained evidence
 
-The release includes fixes for guard narrowing, dataclass field defaults, and
-other typing behavior. They did not change the observed conclusions here:
+This is a breaking major-version change. The old `@tagged_union` decorator and
+`case()` field marker are removed; lowercase `tagged_union` is now a module
+namespace. `Option.Some`, `Result.Ok`, direct union-class construction, and old
+`case Option(...)` / `case Result(...)` patterns must be migrated. Cross-case
+ordering, container awaiting, and generator-based Option/Result computations are
+also removed. See the [migration guide](docs/guides/migration-major.md) for replacements.
 
-- Valid union consumers, precise fluent methods, phantom-parameter inference,
-  typed scopes, the typed generator adapter, and wrapper examples still pass.
-- The corresponding invalid constructions, payload reads, incomplete matches,
-  error types, yields, return types, and function arguments produce the same
-  diagnostics in the compared negative probes.
-- Direct `yield from` on the payload-only case union still infers `Unknown`.
-- The current builder still accepts the wrong-error-type and wrong-family
-  examples from section 2.
+The supported minimum is Python 3.11. The repository pins Pyright **1.1.414** in
+[pre-commit](.pre-commit-config.yaml); the design relies on explicit unions and
+dataclass typing, not on a checker-specific plugin. Versioned dependency
+requirements live in [pyproject.toml](pyproject.toml).
 
-This is a comparison of the design probes, not a claim that every repository
-diagnostic or behavior is unchanged. The complete comparison is temporarily
-recorded in `/tmp/expression-pyright-comparison.json`. A repository tool upgrade
-should be validated separately against the whole project.
+The maintained evidence is executable repository coverage:
 
-### Runtime evidence and remaining limits
+- [Case declarations](tests/test_tagged_union.py): construction, finality,
+  defaults, generics, recursive annotations, dataclass behavior, and invalid declarations.
+- [Option](tests/test_option.py) and [Result](tests/test_result.py): fluent and
+  functional APIs, singleton behavior, nesting, and serialization.
+- [Union schemas](tests/test_union_schema.py): tagged decoding, generic payloads,
+  recursive references, exact fields, metadata isolation, and caller-name collisions.
+- [Synchronous Result](tests/test_result_builder.py) and
+  [Option](tests/test_option_builder.py) computations, their
+  [async Result](tests/test_async_result_builder.py) and
+  [async Option](tests/test_async_option_builder.py) counterparts, and
+  [introspection](tests/test_scope_introspection.py): outcomes, ownership,
+  cleanup, and callable contracts.
+- [Positive typing contracts](tests/typing_contracts.py) and
+  [negative consumers](typing_tests/negative.py), enforced by
+  [the typing check](scripts/check_typing.py): inferred payloads, narrowing,
+  exhaustive matching, invalid construction, and invalid computation bindings.
 
-Runtime probes exercised matching, mapping, nested options, piping, iteration,
-awaiting, copying, pickling, hashing, and ordinary dataclass helpers. A separate
-canonical `NothingType.__new__` probe preserved identity through construction,
-copying, pickling, and `replace`; a plain empty dataclass does not guarantee that.
-Leaf subclass rejection worked with frozen slotted dataclasses. Scope and adapter
-checks covered failure short-circuiting and cleanup; scope checks also covered
-nested ownership and unexpected exception propagation.
-
-These are bounded proofs, not a complete implementation. The fluent prototype
-does not exercise every method or all pipe overloads. Documenting and testing
-removal of implicit cross-case ordering, Pydantic schemas, serialization
-compatibility, scope lifetime, and the full computational-expression API remain
-acceptance work.
-
-Temporary evidence locations:
-
-- `/tmp/expression-union-investigation`: original case-alias and current-design probes.
-- `/tmp/expression-union-review`: consumer checks, direct-iteration limitation,
-  negative typing examples, and runtime tests.
-- `/tmp/expression-runtime-review`: precise fluent methods, phantom parameters,
-  generator adapter, closure, and singleton probes.
-- `/tmp/expression-union-wrapper-review`: nominal wrapper and `.case` checks.
-- `/tmp/expression-ce-review` and `/tmp/expression-scope-review`: current CE gaps
-  and typed scope examples, including negative cases.
-
-These directories may disappear and are not repository regression coverage.
-Before implementation, preserve the chosen positive and negative consumer
-contracts as maintainable project tests.
-
-The following language boundaries still apply:
-
-1. A generic union alias is not a nominal runtime class. Concrete `A | B`
-   `isinstance` behavior does not generalize to parameterized generic aliases.
-2. `dataclass_transform` describes dataclass-like behavior, not arbitrary generated
-   case names or union membership. Explicit source or generated stubs are needed
-   for statically visible cases. The preferred design requires no checker plugin.
-3. Static finality, runtime subclass rejection, and exhaustive union checking
-   are separate properties.
-4. Structural views and explicit guards can improve a one-class API, but do not
-   establish all the desired nominal and exhaustive properties automatically.
-5. Frozen containers do not imply immutable payloads, and static annotations do
-   not replace runtime parsing of untrusted data.
-
-References: [class patterns](https://docs.python.org/3/reference/compound_stmts.html#class-patterns),
-[`final`](https://docs.python.org/3/library/typing.html#typing.final),
-[`__init_subclass__`](https://docs.python.org/3/reference/datamodel.html#object.__init_subclass__),
-[aliases](https://typing.python.org/en/latest/spec/aliases.html),
-[`dataclass_transform`](https://typing.python.org/en/latest/spec/dataclasses.html),
-[type narrowing](https://typing.python.org/en/latest/spec/narrowing.html),
-[generator semantics](https://docs.python.org/3/reference/expressions.html#yield-expressions),
-[`typing_extensions`](https://typing-extensions.readthedocs.io/en/latest/).
-
-## 10. Recommendation and acceptance gates
-
-| Property | A: one class | B: nominal family | C: case alias | D: wrapper |
-|---|---|---|---|---|
-| Public nominal `Option` class | Yes | Yes | No | Yes |
-| `Some(value)` | Factory | Case constructor | Case constructor | Factory |
-| Matching | `Option(...)` | `Some(x)` | `Some(x)` | Match `.case` |
-| Exhaustive checking | Not from class alone | Not from base alone | On alias | On `.case` |
-| Runtime closure | Enforce on class | Seal family and leaves | Enforce on leaves | Enforce on wrapper and leaves |
-| Generic `Option[T]` | Yes | Yes | Yes | Yes |
-
-### Recommended major-version design
-
-Choose **C with payload-only case parameters and typed scopes**. This is the
-design implemented for the next major version:
-
-1. **Ordinary case types:** frozen, statically final dataclasses with runtime
-   leaf-subclass rejection. Declare `Option[T] = Some[T] | NothingType` and
-   `Result[T, E] = Ok[T] | Error[E]` as public aliases. Private implementation
-   sharing is allowed; an extensible public base is not the type model.
-2. **Python construction and matching:** construct `Some(x)`, `Ok(x)`, and
-   `Error(e)`; match their real case classes. Keep a canonical `Nothing` value
-   and a `NothingType()` class pattern. Organize helpers in `option` and `result`
-   modules. Do not reproduce class namespaces through a runtime facade with a
-   different static identity.
-3. **Precise operations:** keep fluent and pipe-friendly APIs, with per-case
-   signatures where they improve inference. Every supported operation must work
-   for consumers without exposing `Any` for an absent channel.
-4. **Typed scopes:** infer the computation's final type from its return annotation
-   and its error type from `ResultScope[E]`. Each bind has an independent payload
-   type. Use ordinary functions and coroutines for the common sync/async API.
-5. **Explicit outcomes:** a returned `None` is a successful payload; absence and
-   failure are explicit. Keep computation binding separate from ordinary
-   iteration and awaiting so those protocols need not encode the builder.
-6. **Deliberate runtime contracts:** use ordinary dataclass equality and hashing
-   behavior, subject to payload hashability. Do not make cross-case ordering a
-   default; callers can use explicit sort keys. Prefer a tagged serialization
-   contract that distinguishes all cases, including `Some(None)` and nesting,
-   with codecs responsible for payload encoding.
-7. **A small core:** treat `Try[T]` as a specialization of Result with exception
-   errors rather than a subclass with another runtime identity. Generator
-   adapters and legacy codecs are optional migration conveniences. They should
-   not dictate the union or scope model.
-
-The phantom-parameter design and nominal wrapper remain documented alternatives,
-not coequal recommendations. Verbosity is acceptable when explicit source gives
-the checker an accurate contract; a declaration helper must not hide case types
-or require a checker plugin.
-
-### Acceptance gates
-
-Before delivering the major version, settle the exact API names and migration
-mechanics, then verify these contracts:
-
-- **Public identity and construction:** account for `Option.Some`,
-  `Option.Nothing`, `Result.Ok`, `Result.Error`, direct keyword construction,
-  `isinstance`, and old class patterns. Modules can provide constructor namespaces;
-  the union alias cannot pretend to be the old class.
-- **Fluent and functional APIs:** retain precise construction, map, bind,
-  recovery, application, pipe overloads, and error-type composition. Test callers,
-  not just the library implementation. Prefer explicit case tests or free guards
-  for narrowing rather than claiming that `.is_some()` narrows its receiver.
-- **Runtime values:** preserve `Nothing` identity deliberately, distinguish
-  `Some(None)` and nested options, verify equality, hashing, copying, and pickling,
-  and document removal of implicit cross-case ordering. `dataclass(order=True)`
-  does not supply the existing `Nothing < Some` ordering across different classes.
-- **Serialization:** plain dataclass unions change Pydantic schemas and wire
-  shapes. Existing Option encoding is raw payload or null and cannot distinguish
-  `Some(None)` from `Nothing`. Define the new tagged codec and nested payload
-  behavior explicitly. Existing Result encoding already uses tagged objects;
-  test the intended wire changes and document any optional legacy codec.
-- **Computation behavior:** preserve existing `EffectError` short-circuit and
-  generator send/return behavior in any compatibility layer. Define new final
-  return and `None` semantics, reject wrong error types and effect families,
-  check direct `scope.bind(Error(...))` and bottom-type inference, and
-  test nesting, cleanup, cancellation, scope escape, and decorated methods.
-- **Try:** replacing today's subclass with `Try[T] = Result[T, Exception]`
-  changes `case Try(...)` and the `Success` / `Failure` representations. Document
-  the new matching surface and decide whether convenience constructors remain.
-- **Supported tools and versions:** check Python 3.11 runtime behavior and the
-  full matrix, actual dependency minimums, current Pyright, and a second checker
-  before claiming cross-checker portability.
-
-The implementation covers user-defined tagged unions, Option/Result, and typed
-computation scopes together. Sequence-builder changes remain a separate scope
-decision. Production delivery requires realistic runtime and
-consumer typing regressions, the full suite, repository lint/type checks, public
-examples, and versioned migration guidance.
-
-
-## 11. Implementation
-
-The core uses payload-only frozen final dataclasses and public aliases with
-`Annotated` metadata for optional Pydantic validation. Cases deliberately omit
-`slots`: `PipeMixin` already provides an instance dictionary, and nonslotted
-frozen cases support generic construction consistently on the supported runtimes.
-`NothingType` canonicalizes construction, copying, pickling, and union decoding.
-
-The public computation entry points are `effect.option`, `effect.result`,
-`effect.async_option`, and `effect.async_result`, with `OptionScope` and
-`ResultScope[E]`. Callback runners support bound methods. Scopes track invocation
-identity, active lifetime, thread, and task; the first bound failure remains the
-outcome if its internal signal is caught. No generator compatibility adapter is
-included. `Try[T]` aliases `Result[T, Exception]`; `Success` and `Failure` remain
-constructor conveniences.
-
-Tagged serialization preserves successful None and nested cases. Public aliases
-provide discriminated Pydantic decoding; direct case adapters retain Pydantic's
-ordinary dataclass behavior. Existing raw/null Option payloads require migration.
-
-Runtime coverage lives in the case and scope test modules. Consumer typing
-contracts live in [tests/typing_contracts.py](tests/typing_contracts.py) and
-[typing_tests/negative.py](typing_tests/negative.py); the pre-commit hook checks
-that every intentional invalid expression is rejected. The public custom-union
-API replaces the old one-class `@tagged_union` decorator; sequence-builder
-semantics remain unchanged.
-
-Initial built-in-union implementation validation on 2026-11-10 (before the
-custom-union follow-up):
-
-- The complete suite passes with 517 tests on each of Python 3.11, 3.12, 3.13,
-  3.14, and 3.15.
-- Repository pre-commit checks pass with Pyright 1.1.414. Fifteen intentionally
-  invalid consumer expressions are rejected by the dedicated negative check.
-- Mypy 2.4.1 accepts the selected consumer contracts, including mixed Result
-  pipelines. This is consumer evidence, not a claim that the entire project is
-  configured for Mypy.
-- The initial Pydantic 2.6.2 checks passed, but broader custom-union tests exposed
-  a generic namespace-resolution bug. The supported minimum is now 2.10.0;
-  earlier evidence does not establish correctness for the expanded API.
-- Source and wheel builds succeed; the built wheel imports independently and
-  preserves scope behavior and nested tagged Pydantic roundtrips.
-
-The migration guide records the remaining contextual-inference limitations and
-their typed alternatives. Async decorators expose coroutine return types for
-`asyncio.create_task` and `asyncio.run`. Runtime introspection exposes external
-parameters and omits the body's now-inaccurate return annotation; static return
-types remain precise, and the original body is available through `__wrapped__`.
-
-
-### Public custom-union API
-
-Custom unions use `@final` and `@case` on each explicit alternative, a fixed
-`tag: Literal["name"] = tag("name")` field, and an explicit alias such as
-`Shape: TypeAlias = TaggedUnion[Circle | Rectangle]`. `TaggedUnion[T]` wraps an
-ordinary type in optional Pydantic metadata; its alternatives stay visible to
-checkers. The lowercase `tagged_union` name is the module namespace, not a
-class-transforming decorator.
-
-`@case` supplies frozen dataclass behavior and runtime closure. Static finality
-uses Python's explicit `@final`: `dataclass_transform` describes generated
-constructors and fields, not final classes or dynamically created alternatives.
-The same decorator now defines Some, NothingType, Ok and Error. Only Nothing
-opts into canonical singleton decoding; user-defined unit cases have ordinary
-value semantics.
-
-The declaration API supports generic and multi-field payloads, defaults,
-keyword-only construction, custom methods and representations. It rejects
-`InitVar`, non-tag nonconstructor fields, custom constructors and dataclass
-inheritance rather than claiming that ignored payloads are validated. The codec
-checks declared cases and duplicate tags. Migration examples cover the old
-field-marker syntax, class patterns and constructor namespaces.
-
-
-The optional Pydantic floor is 2.10.0. A caller-local `_T` or `_E` could shadow
-Expression's deferred generic annotations in 2.9.2 and earlier, causing typed
-payloads to be treated as Any. The regression rejects malformed payloads on
-2.10.0 and current locked dependencies. This dependency requirement keeps
-annotation resolution in Pydantic instead of rewriting user payload annotations.
-
-Custom-union follow-up validation on 2026-11-10: the complete suite passes with
-532 tests on each Python 3.11–3.15 runtime, and with the minimum optional stack
-(Python 3.11, Pydantic 2.10.0, typing-extensions 4.12.2). Strict Pyright accepts
-positive consumers and rejects all 31 marked invalid expressions. Mypy 2.4.1
-accepts the public declaration implementation and consumer contracts. Independent
-JSON-schema checks cover custom and recursive wire objects on the minimum and
-locked Pydantic versions; package builds and public-API wheel smoke checks pass.
+These tests, the implementation, and the migration guide define the delivered
+contract. Historical experiments and their machine-local artifacts are not
+prerequisites for reviewing or maintaining it.
