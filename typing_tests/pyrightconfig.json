@@ -1,0 +1,9 @@
+{
+  "include": ["negative.py"],
+  "extraPaths": [".."],
+  "venvPath": "..",
+  "venv": ".venv",
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.11",
+  "reportMissingImports": false
+}

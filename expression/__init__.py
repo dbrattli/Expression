@@ -1,7 +1,7 @@
 """Expression library.
 
 Expression aims to be a solid, type-safe, pragmatic, and high
-performance library for practical functional programming in Python 3.9+.
+performance library for practical functional programming in Python 3.11+.
 By pragmatic we mean that the goal of the library is to use simple
 abstractions to enable you to do practical and productive functional
 programming in Python.
@@ -12,6 +12,7 @@ GitHub: https://github.com/cognitedata/Expression
 from . import collections, core, effect
 from ._version import __version__
 from .core import (
+    NOTHING,
     AsyncReplyChannel,
     Builder,
     EffectError,
@@ -24,6 +25,7 @@ from .core import (
     Result,
     Some,
     Success,
+    TaggedUnion,
     TailCall,
     TailCallResult,
     Try,
@@ -64,6 +66,7 @@ Will be removed in next major version. Use curry_flip instead.
 """
 
 __all__ = [
+    "NOTHING",
     "AsyncReplyChannel",
     "Builder",
     "EffectError",
@@ -76,6 +79,7 @@ __all__ = [
     "Result",
     "Some",
     "Success",
+    "TaggedUnion",
     "TailCall",
     "TailCallResult",
     "Try",

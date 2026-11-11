@@ -5,38 +5,51 @@
 Use a tagged union when a value is exactly one of several well-defined cases. It makes
 the cases explicit and works naturally with Python structural pattern matching.
 """
+
 # %%
-from typing import Literal
+from typing import Literal, TypeAlias, assert_never, final
 
-from expression import case, tag, tagged_union
+from expression import TaggedUnion, case, tag
 
-@tagged_union
-class Payment:
-    tag: Literal["card", "cash"] = tag()
-    card: str = case()
-    cash: None = case()
 
-    @staticmethod
-    def Card(last_four: str) -> "Payment":
-        return Payment(card=last_four)
+@final
+@case
+class Card:
+    last_four: str
+    tag: Literal["card"] = tag("card")
 
-    @staticmethod
-    def Cash() -> "Payment":
-        return Payment(cash=None)
+
+@final
+@case
+class Cash:
+    tag: Literal["cash"] = tag("cash")
+
+
+Payment: TypeAlias = TaggedUnion[Card | Cash]
+
 
 def describe(payment: Payment) -> str:
     match payment:
-        case Payment(tag="card", card=last_four):
+        case Card(last_four):
             return f"Card ending in {last_four}"
-        case Payment(tag="cash"):
+        case Cash():
             return "Cash"
+        case _:
+            assert_never(payment)
 
-assert describe(Payment.Card("1234")) == "Card ending in 1234"
+
+assert describe(Card("1234")) == "Card ending in 1234"
+assert describe(Cash()) == "Cash"
 
 # %% [markdown]
 """
-Use a dataclass when one record shape is sufficient. Use a tagged union when different
-cases carry different data or require different handling. Keep each case small and make
-constructors descriptive. See [Tagged unions](reference_union) for serialization and
-advanced API details.
+Each case is a frozen dataclass with its own fields and constructor. `@case` rejects
+subclasses at runtime; `@final` also makes a type checker reject them. The literal tag
+is fixed by the declaration, so callers cannot override it. `Cash` has no payload and
+needs no placeholder field.
+
+`Payment` is a type alias used in annotations. Construct and match `Card` or `Cash`
+directly. The `assert_never` branch makes a missing case a type-checking error when the
+alias grows. Use a standard enum when every alternative is just a named constant.
+See [Tagged unions](reference_union) for serialization and the full API.
 """

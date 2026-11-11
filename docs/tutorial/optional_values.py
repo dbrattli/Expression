@@ -14,12 +14,12 @@ from expression import Nothing, Option, Some
 def read_timeout(settings: dict[str, str]) -> Option[int]:
     raw_timeout = settings.get("TIMEOUT_SECONDS")
     if raw_timeout is None or not raw_timeout.isdigit():
-        return Nothing
+        return Nothing()
     return Some(int(raw_timeout))
 
 
 assert read_timeout({"TIMEOUT_SECONDS": "30"}) == Some(30)
-assert read_timeout({"TIMEOUT_SECONDS": "fast"}) is Nothing
+assert read_timeout({"TIMEOUT_SECONDS": "fast"}) is Nothing()
 
 # %% [markdown]
 """
@@ -31,14 +31,14 @@ next step when it can also be absent.
 
 # %%
 def positive(value: int) -> Option[int]:
-    return Some(value) if value > 0 else Nothing
+    return Some(value) if value > 0 else Nothing()
 
 
 timeout = read_timeout({"TIMEOUT_SECONDS": "30"}).bind(positive).map(lambda value: value * 1_000)
 missing_timeout = read_timeout({}).bind(positive)
 
 assert timeout == Some(30_000)
-assert missing_timeout is Nothing
+assert missing_timeout is Nothing()
 
 # %% [markdown]
 """

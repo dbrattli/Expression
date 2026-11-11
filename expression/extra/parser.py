@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import Any, Generic, TypeVar, overload
 
 from expression.collections import Block, block
-from expression.core import Error, Nothing, Ok, Option, Result, Some, curry, fst, pipe
+from expression.core import NOTHING, Error, Ok, Option, Result, Some, curry, fst, pipe
 
 
 _A = TypeVar("_A")
@@ -128,15 +128,15 @@ def and_then(p2: Parser[_B], p1: Parser[_A]) -> Parser[tuple[_A, _B]]:
     def run(input: Remaining) -> ParseResult[tuple[_A, _B]]:
         result1 = p1.run(input)
         match result1:
-            case Result(tag="error", error=error):
+            case Error(error):
                 return Error(error)
-            case Result(ok=(value1, remaining1)):
+            case Ok((value1, remaining1)):
                 result2 = p2.run(remaining1)
 
                 match result2:
-                    case Result(tag="error", error=error):
+                    case Error(error):
                         return Error(error)
-                    case Result(ok=(value2, remaining2)):
+                    case Ok((value2, remaining2)):
                         return Ok(((value1, value2), remaining2))
 
     return Parser(run, f"and_then({p2}, {p1}")
@@ -147,7 +147,7 @@ def or_else(p1: Parser[_A], p2: Parser[_A]) -> Parser[_A]:
     def run(input: Remaining) -> ParseResult[_A]:
         result1 = p1.run(input)
         match result1:
-            case Result(tag="ok"):
+            case Ok():
                 return result1
             case _:
                 result2 = p2.run(input)
@@ -182,12 +182,12 @@ def map(mapper: Callable[[_A], _B], parser: Parser[_A]) -> Parser[_B]:
 
         # test the result for Failure/Success
         match result:
-            case Result(tag="ok", ok=(value, remaining)):
+            case Ok((value, remaining)):
                 # if success, return the value transformed by f
                 new_value = mapper(value)
                 return Ok((new_value, remaining))
 
-            case Result(error=error):
+            case Error(error):
                 # if failed, return the error
                 return Error(error)
 
@@ -283,7 +283,7 @@ def parse_zero_or_more(parser: Parser[_A], input: Remaining) -> tuple[Block[_A],
 
     # test the result for Failure/Success
     match first_result:
-        case Result(tag="ok", ok=(first_value, input_after_first_parse)):
+        case Ok((first_value, input_after_first_parse)):
             # if parse succeeds, call recursively
             # to get the subsequent values
             subsequent_values, remaining_input = parse_zero_or_more(parser, input_after_first_parse)
@@ -308,13 +308,13 @@ def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
         firstResult = parser.run(input)
         # test the result for Failure/Success
         match firstResult:
-            case Result(tag="ok", ok=(first_value, input_after_first_parse)):
+            case Ok((first_value, input_after_first_parse)):
                 # if first found, look for zeroOrMore now
                 subsequent_values, remaining_input = parse_zero_or_more(parser, input_after_first_parse)
                 values = subsequent_values.cons(first_value)
                 return Ok((values, remaining_input))
 
-            case Result(error=err):
+            case Error(err):
                 return Error(err)  # failed
 
     return Parser(run, f"many({parser})")
@@ -340,7 +340,7 @@ digits = many1(parse_digit)
 
 
 def opt(p: Parser[_A]) -> Parser[Option[_A]]:
-    nothing: Option[_A] = Nothing
+    nothing: Option[_A] = NOTHING
 
     def mapper(a: _A) -> Option[_A]:
         return Some(a)
@@ -505,10 +505,10 @@ def bind(f: Callable[[_A], Parser[_B]], p: Parser[_A]) -> Parser[_B]:
     def run(input: Remaining) -> ParseResult[_B]:
         result1 = p.run(input)
         match result1:
-            case Result(tag="ok", ok=(value1, remaning_input)):
+            case Ok((value1, remaning_input)):
                 p2 = f(value1)
                 return p2.run(remaning_input)
-            case Result(error=err):
+            case Error(err):
                 return Error(err)  # failed
             case _:  # type: ignore
                 return Error("parser error")

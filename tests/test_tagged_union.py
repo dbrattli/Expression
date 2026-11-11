@@ -1,392 +1,383 @@
+"""Public case declarations have the same contracts as ordinary frozen dataclasses."""
+
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from typing import Generic, Literal, TypeVar
+from collections.abc import Callable
+from copy import copy, deepcopy
+from dataclasses import FrozenInstanceError, InitVar, asdict, dataclass, field, fields, replace
+from operator import lt
+from pickle import dumps, loads
+from typing import Any, ClassVar, Generic, Literal, TypeAlias, TypeVar, assert_never, assert_type, final
 
 import pytest
 
-from expression import case, tag, tagged_union
-
-_T = TypeVar("_T")
+from expression import TaggedUnion, case, tag
 
 
-@dataclass(unsafe_hash=True)
+_T = TypeVar("_T", covariant=True)
+
+
+@final
+@case
 class Circle:
     radius: float
+    tag: Literal["circle"] = tag("circle")
 
+    def area(self) -> float:
+        return 3.14159 * self.radius**2
 
-@tagged_union(frozen=True)
-class Shape:
-    tag: Literal["circle", "rectangle", "triangle"] = tag()
 
-    circle: Circle = case()
-    rectangle: tuple[float, float] = case()
-    triangle: tuple[float, float] = case()
+@final
+@case
+class Rectangle:
+    width: float
+    height: float
+    tag: Literal["rectangle"] = tag("rectangle")
 
+    def area(self) -> float:
+        return self.width * self.height
 
-def test_union_create_shape_works():
-    shape = Shape(circle=Circle(10.0))
-    assert shape.circle.radius == 10.0
 
+Shape: TypeAlias = TaggedUnion[Circle | Rectangle]
 
-def test_union_shape_tag_is_set():
-    shape = Shape(circle=Circle(10.0))
-    assert shape.tag == "circle"
 
+@final
+@case
+class Just(Generic[_T]):
+    value: _T
+    tag: Literal["just"] = tag("just")
 
-def test_union_shape_circle_pattern_matching_works():
-    shape = Shape(circle=Circle(10.0))
 
-    match shape:
-        case Shape(tag="rectangle", rectangle=(_, _)):
-            raise AssertionError("Should not match")
-        case Shape(tag="circle", circle=Circle(radius=r)):
-            assert r == 10.0
-        case _:
-            assert False
+@final
+@case
+class Missing:
+    tag: Literal["missing"] = tag("missing")
 
 
-def test_shape_rectangle_pattern_matching_works():
-    shape = Shape(rectangle=(10.0, 20.0))
+Maybe: TypeAlias = TaggedUnion[Just[_T] | Missing]
 
-    match shape:
-        case Shape(tag="circle", circle=Circle(radius=_)):
-            raise AssertionError("Should not match")
-        case Shape(tag="rectangle", rectangle=(w, h)):
-            assert w == 10.0
-            assert h == 20.0
-        case _:
-            assert False
 
+# The payload type does not exist when the decorator runs. Only the tag's
+# annotation can be resolved eagerly; payload annotations belong to consumers.
+@final
+@case
+class Folder:
+    name: str
+    children: tuple[Tree, ...]
+    tag: Literal["folder"] = tag("folder")
 
-def test_union_shape_hash_works():
-    shape = Shape(circle=Circle(10.0))
-    assert hash(shape) == hash(("Shape", "circle", Circle(10.0)))
 
+@final
+@case
+class Leaf:
+    name: str
+    tag: Literal["leaf"] = tag("leaf")
 
-def test_union_shape_repr_works():
-    shape = Shape(circle=Circle(10.0))
-    assert repr(shape) == "Shape(circle=Circle(radius=10.0))"
 
+Tree: TypeAlias = TaggedUnion[Folder | Leaf]
 
-def test_union_shape_pickle_works():
-    shape = Shape(circle=Circle(10.0))
-    import pickle, dataclasses
 
-    shape_ser = pickle.dumps(shape)
-    shape_deser = pickle.loads(shape_ser)
-    assert shape == shape_deser
-    assert shape.__dict__ == shape_deser.__dict__
-    assert dataclasses.fields(shape) == dataclasses.fields(shape_deser)
-    assert dataclasses.asdict(shape) == dataclasses.asdict(shape_deser)
+@final
+@case(kw_only=True)
+class Request:
+    path: str
+    retries: int = 3
+    headers: dict[str, str] = field(default_factory=dict[str, str])
+    tag: Literal["request"] = tag("request")
 
 
-def test_union_can_add_custom_attributes_to_shape():
-    shape = Shape(circle=Circle(10.0))
-    setattr(shape, "custom", "rectangle")
-    assert getattr(shape, "custom") == "rectangle"
+@final
+@case
+class Labelled:
+    number: int
+    label: str = field(default="", kw_only=True)
+    tag: Literal["labelled"] = tag("labelled")
 
 
-def test_union_cannot_change_case_value():
-    shape = Shape(circle=Circle(10.0))
-    with pytest.raises(TypeError):
-        shape.circle = Circle(20.0)  # type: ignore
-
-
-def test_union_compare_shapes():
-    shape1 = Shape(circle=Circle(10.0))
-    shape2 = Shape(circle=Circle(10.0))
-    assert shape1 == shape2
-
-    shape3 = Shape(rectangle=(10.0, 20.0))
-    assert shape1 != shape3
-
-
-def test_union_compare_shapes_with_different_tags():
-    shape1 = Shape(circle=Circle(10.0))
-    shape2 = Shape(rectangle=(10.0, 20.0))
-    assert shape1 != shape2
-
-
-@tagged_union(order=True, frozen=True)
-class Maybe(Generic[_T]):
-    tag: Literal["just", "nothing"] = tag()
-
-    nothing: None = case()
-    just: _T = case()
-
-
-def test_maybe_works():
-    xs = Maybe(just=1)
-    match xs:
-        case Maybe(tag="just", just=x):
-            assert x == 1
-        case _:
-            assert False
-
-
-def test_maybe_just_works():
-    xs = Maybe(just=1)
-    match xs:
-        case Maybe(tag="just", just=x):
-            assert x == 1
-        case Maybe(tag="nothing", nothing=None):
-            assert False
-        case _:
-            assert False
-
-
-def test_maybe_nothing_works():
-    xs = Maybe[int](nothing=None)
-    match xs:
-        case Maybe(tag="nothing", nothing=None):
-            assert True
-        case _:
-            assert False
-
-
-def test_maybe_pattern_match_positional_tag_arg_works():
-    xs = Maybe(just=1)
-    match xs:
-        case Maybe("nothing"):
-            assert False
-        case Maybe("just", just=x):
-            assert x == 1
-        case _:
-            assert False
-
-
-def test_nested_unions_works():
-    xs = Maybe(just=Shape(circle=Circle(10.0)))
-    match xs:
-        case Maybe(tag="just", just=Shape(tag="circle", circle=Circle(radius=r))):
-            assert r == 10.0
-        case _:
-            assert False
-
-
-def test_union_order_just_just_works():
-    xs = Maybe(just=1)
-    ys = Maybe(just=2)
-    assert xs < ys
-    assert ys > xs
-
-
-def test_union_order_just_nothing_works():
-    xs = Maybe(just=1)
-    ys = Maybe[int](nothing=None)
-    assert xs > ys
-    assert ys < xs
-
-
-def test_union_order_nothing_just_works():
-    xs = Maybe[int](nothing=None)
-    ys = Maybe(just=1)
-    assert xs < ys
-    assert ys > xs
-
-
-def test_union_order_nothing_nothing_works():
-    xs = Maybe[int](nothing=None)
-    ys = Maybe[int](nothing=None)
-    assert not xs < ys
-    assert not ys < xs
-
-
-def test_union_maybe_asdict_works():
-    xs = Maybe(just=1)
-    assert asdict(xs) == {"tag": "just", "just": 1}
-
-
-def test_unions_can_be_composed():
-    @tagged_union
-    class Weather:
-        tag: Literal["sunny", "rainy"] = tag()
-
-        sunny: Literal[True] = case()
-        rainy: Literal[True] = case()
-
-    @tagged_union
-    class Day:
-        tag: Literal["weekday", "weekend"] = tag()
-
-        weekday: Weather = case()
-        weekend: Weather = case()
-
-    today = Day(weekday=Weather(sunny=True))
-    match today:
-        case Day(tag="weekday", weekday=Weather(tag="sunny", sunny=s)):
-            assert s is True
-        case _:
-            assert False
-
-
-@tagged_union
-class Email:
-    email: str = case()
-
-
-def test_single_case_union_works():
-    email = Email(email="test@test.com")
-
-    # Test attribute access
-    assert email.email == "test@test.com"
-    assert email.tag == "email"  # type: ignore
-
-    # Test pattern matching
-    match email:
-        case Email(email=e):
-            assert e == "test@test.com"
-        case _:  # pyright: ignore
-            assert False
-
-
-@tagged_union(frozen=True, repr=False)
+@final
+@case(repr=False)
 class SecurePassword:
-    password: str = case()
+    password: str
+    tag: Literal["password"] = tag("password")
 
-    # Override __str__ and __repr__ to make sure we don't leak the password in logs
+    def __repr__(self) -> str:
+        return "SecurePassword('********')"
+
     def __str__(self) -> str:
         return "********"
 
-    def __repr__(self) -> str:
-        return "SecurePassword(password='********')"
+
+def describe(shape: Shape) -> str:
+    match shape:
+        case Circle(radius):
+            assert_type(radius, float)
+            return f"circle of radius {radius}"
+        case Rectangle(width, height):
+            assert_type(width, float)
+            assert_type(height, float)
+            return f"rectangle {width} by {height}"
+        case _:
+            assert_never(shape)
 
 
-def test_single_case_union_secure_password_works():
-    password = SecurePassword(password="secret")
-
-    # Test attribute access
-    assert password.password == "secret"
-    assert password.tag == "password"  # type: ignore
-
-    # Test pattern matching
-    match password:
-        case SecurePassword(password=p):
-            assert p == "secret"
-
-    # Test __str__
-    assert str(password) == "********"
-
-    # Test __repr__
-    assert repr(password) == "SecurePassword(password='********')"
+def test_multifield_cases_construct_and_match():
+    assert_type(Circle(2.0), Circle)
+    assert_type(Rectangle(3.0, 4.0), Rectangle)
+    assert describe(Circle(2.0)) == "circle of radius 2.0"
+    assert describe(Rectangle(width=3.0, height=4.0)) == "rectangle 3.0 by 4.0"
+    assert Rectangle(3.0, 4.0).area() == 12.0
+    assert Circle.__match_args__ == ("radius",)
+    assert Rectangle.__match_args__ == ("width", "height")
+    assert Missing.__match_args__ == ()
 
 
-@tagged_union
-class Suit:
-    tag: Literal["spades", "hearts", "clubs", "diamonds"] = tag()
-
-    spades: Literal[True] = case()
-    hearts: Literal[True] = case()
-    clubs: Literal[True] = case()
-    diamonds: Literal[True] = case()
-
-    @staticmethod
-    def Spades() -> Suit:
-        return Suit(spades=True)
-
-    @staticmethod
-    def Hearts() -> Suit:
-        return Suit(hearts=True)
-
-    @staticmethod
-    def Clubs() -> Suit:
-        return Suit(clubs=True)
-
-    @staticmethod
-    def Diamonds() -> Suit:
-        return Suit(diamonds=True)
+def test_case_tag_is_fixed_and_not_a_constructor_argument():
+    value = Rectangle(3.0, 4.0)
+    assert value.tag == "rectangle"
+    assert not next(item for item in fields(value) if item.name == "tag").init
+    with pytest.raises(TypeError):
+        Rectangle(**{"width": 3.0, "height": 4.0, "tag": "circle"})  # type: ignore[arg-type]
+    with pytest.raises(TypeError):
+        Circle(**{"tag": "circle"})  # type: ignore[arg-type]
 
 
-@tagged_union
-class Face:
-    tag: Literal["jack", "queen", "king", "ace"] = tag()
-
-    jack: Literal[True] = case()
-    queen: Literal[True] = case()
-    king: Literal[True] = case()
-    ace: Literal[True] = case()
-
-    @staticmethod
-    def Jack() -> Face:
-        return Face(jack=True)
-
-    @staticmethod
-    def Queen() -> Face:
-        return Face(queen=True)
-
-    @staticmethod
-    def King() -> Face:
-        return Face(king=True)
-
-    @staticmethod
-    def Ace() -> Face:
-        return Face(ace=True)
+def test_generic_cases_preserve_payload_types_and_nesting():
+    assert_type(Just(42), Just[int])
+    assert_type(Just[int](42), Just[int])
+    value: Maybe[Shape] = Just(Rectangle(3.0, 4.0))
+    match value:
+        case Just(Rectangle(width, height)):
+            assert width * height == 12.0
+        case _:
+            pytest.fail("The nested cases did not match")
+    assert Just(None) != Missing()
+    assert Just(Missing()) != Missing()
+    assert Just(Just(None)) != Just(None)
 
 
-@tagged_union
-class Card:
-    tag: Literal["value", "face", "joker"] = tag()
+def test_tags_narrow_to_the_correct_case():
+    def radius(shape: Shape) -> float | None:
+        if shape.tag == "circle":
+            assert_type(shape, Circle)
+            return shape.radius
+        assert_type(shape, Rectangle)
+        return None
 
-    face: tuple[Suit, Face] = case()
-    value: tuple[Suit, int] = case()
-    joker: Literal[True] = case()
-
-    @staticmethod
-    def Face(suit: Suit, face: Face) -> Card:
-        return Card(face=(suit, face))
-
-    @staticmethod
-    def Value(suit: Suit, value: int) -> Card:
-        if value < 1 or value > 10:
-            raise ValueError("Value must be between 1 and 10")
-        return Card(value=(suit, value))
-
-    @staticmethod
-    def Joker() -> Card:
-        return Card(joker=True)
+    assert radius(Circle(2.0)) == 2.0
+    assert radius(Rectangle(3.0, 4.0)) is None
 
 
-def test_rummy_score():
-    def score(card: Card) -> int:
-        match card:
-            case Card(tag="face", face=(Suit(spades=True), Face(queen=True))):
-                return 40
-            case Card(tag="face", face=(_suit, Face(ace=True))):
-                return 15
-            case Card(tag="face", face=(_suit, _face)):
-                return 10
-            case Card(tag="value", value=(_suit, value)):
-                return value
-            case Card(tag="joker", joker=True):
-                return 0
-            case _:
-                raise AssertionError("Should not match")
+def test_dataclass_equality_and_hashing():
+    assert Circle(2.0) == Circle(2.0)
+    assert Circle(2.0) != Circle(3.0)
+    assert Circle(2.0) != Rectangle(2.0, 2.0)
+    assert hash(Circle(2.0)) == hash(Circle(2.0))
+    assert len({Circle(2.0), Circle(2.0), Rectangle(2.0, 2.0)}) == 2
+    with pytest.raises(TypeError):
+        hash(Just([1, 2]))
+    compare: Callable[[Any, Any], bool] = lt
+    with pytest.raises(TypeError):
+        compare(Circle(1.0), Circle(2.0))
+    with pytest.raises(TypeError):
+        compare(Circle(1.0), Rectangle(2.0, 3.0))
 
-    assert score(Card.Face(Suit.Spades(), Face.Jack())) == 10
-    assert score(Card.Value(Suit.Spades(), 5)) == 5
-    assert score(Card.Joker()) == 0
-    assert score(Card.Face(Suit.Spades(), Face.Queen())) == 40
-    assert score(Card.Face(Suit.Spades(), Face.King())) == 10
-    assert score(Card.Face(Suit.Spades(), Face.Ace())) == 15
-    assert score(Card.Face(Suit.Spades(), Face.Ace())) == 15
-    assert score(Card.Face(Suit.Hearts(), Face.Ace())) == 15
-    assert score(Card.Face(Suit.Hearts(), Face.King())) == 10
-    assert score(Card.Face(Suit.Clubs(), Face.Ace())) == 15
-    assert score(Card.Face(Suit.Clubs(), Face.King())) == 10
-    assert score(Card.Face(Suit.Clubs(), Face.Queen())) == 10
-    assert score(Card.Face(Suit.Clubs(), Face.Jack())) == 10
-    assert score(Card.Face(Suit.Diamonds(), Face.Ace())) == 15
-    assert score(Card.Face(Suit.Diamonds(), Face.King())) == 10
-    assert score(Card.Face(Suit.Diamonds(), Face.Queen())) == 10
-    assert score(Card.Face(Suit.Diamonds(), Face.Jack())) == 10
-    assert score(Card.Value(Suit.Hearts(), 1)) == 1
-    assert score(Card.Value(Suit.Hearts(), 2)) == 2
-    assert score(Card.Value(Suit.Hearts(), 3)) == 3
-    assert score(Card.Value(Suit.Hearts(), 4)) == 4
-    assert score(Card.Value(Suit.Hearts(), 5)) == 5
-    assert score(Card.Value(Suit.Hearts(), 6)) == 6
-    assert score(Card.Value(Suit.Hearts(), 7)) == 7
-    assert score(Card.Value(Suit.Hearts(), 8)) == 8
-    assert score(Card.Value(Suit.Hearts(), 9)) == 9
-    assert score(Card.Value(Suit.Hearts(), 10)) == 10
+
+def test_unit_cases_are_ordinary_values_without_automatic_singletons():
+    first = Missing()
+    second = Missing()
+    assert first == second
+    assert first is not second
+    assert asdict(first) == {"tag": "missing"}
+    assert replace(first) == first
+
+
+def test_copy_deepcopy_replace_and_pickle():
+    value = Just([Rectangle(3.0, 4.0)])
+    shallow = copy(value)
+    deep = deepcopy(value)
+    restored = loads(dumps(value))
+    assert shallow == deep == restored == value
+    assert shallow.value is value.value
+    assert deep.value is not value.value
+    assert restored.value is not value.value
+    assert replace(Rectangle(3.0, 4.0), width=5.0) == Rectangle(5.0, 4.0)
+    assert loads(dumps(Missing())) == Missing()
+    assert asdict(value) == {
+        "value": [{"width": 3.0, "height": 4.0, "tag": "rectangle"}],
+        "tag": "just",
+    }
+    with pytest.raises((ValueError, TypeError)):
+        replace(value, tag="missing")
+
+
+def test_cases_are_frozen_including_new_attributes():
+    value = Circle(2.0)
+    for name, replacement in (("radius", 3.0), ("tag", "rectangle"), ("extra", 1)):
+        with pytest.raises(FrozenInstanceError):
+            setattr(value, name, replacement)
+    with pytest.raises(FrozenInstanceError):
+        delattr(value, "radius")
+
+
+def test_runtime_subclassing_is_rejected():
+    for cls in (Circle, Rectangle, Just, Missing):
+        with pytest.raises(TypeError):
+            type("ExtraCase", (cls,), {})
+
+
+def test_defaults_keyword_only_fields_and_custom_representation():
+    first = Request(path="/items")
+    second = Request(path="/items")
+    assert first.retries == 3
+    assert first.headers == {}
+    assert first.headers is not second.headers
+    assert Request.__match_args__ == ()
+    assert Labelled.__match_args__ == ("number",)
+    assert Labelled(1, label="one").label == "one"
+    assert str(SecurePassword("secret")) == "********"
+    assert repr(SecurePassword("secret")) == "SecurePassword('********')"
+    assert "secret" not in repr(SecurePassword("secret"))
+
+
+def test_recursive_payload_annotations_remain_deferred():
+    value: Tree = Folder("root", (Leaf("file"), Folder("empty", ())))
+    assert asdict(value) == {
+        "name": "root",
+        "children": (
+            {"name": "file", "tag": "leaf"},
+            {"name": "empty", "children": (), "tag": "folder"},
+        ),
+        "tag": "folder",
+    }
+    assert loads(dumps(value)) == value
+
+
+def test_plain_mixins_and_post_init_validation_are_supported():
+    class Named:
+        def description(self) -> str:
+            return type(self).__name__
+
+    @final
+    @case
+    class Positive(Named):
+        value: int
+        tag: Literal["positive"] = tag("positive")
+
+        def __post_init__(self) -> None:
+            if self.value <= 0:
+                raise ValueError("Expected a positive value")
+
+    assert Positive(1).description() == "Positive"
+    with pytest.raises(ValueError, match="positive"):
+        Positive(0)
+
+
+def _declaration(annotations: dict[str, object], attributes: dict[str, object]) -> type[object]:
+    return type("Invalid", (), {"__module__": __name__, "__annotations__": annotations, **attributes})
+
+
+@pytest.mark.parametrize(
+    ("annotations", "attributes"),
+    [
+        ({"value": int}, {}),
+        ({"tag": Literal["x"]}, {"tag": "x"}),
+        ({"tag": Literal["x"]}, {"tag": field(default="x", init=False)}),
+        ({"tag": Literal["x"]}, {"tag": tag("y")}),
+        ({"tag": str}, {"tag": tag("x")}),
+        ({"tag": Literal["x", "y"]}, {"tag": tag("x")}),
+        ({"tag": ClassVar[Literal["x"]]}, {"tag": tag("x")}),
+        ({"tag": Literal["x"], "value": int}, {"tag": tag("x"), "value": field(default=1, init=False)}),
+        ({"tag": Literal["x"], "value": InitVar[int]}, {"tag": tag("x")}),
+        ({"tag": Literal["x"], "other": str}, {"tag": tag("x"), "other": tag("other")}),
+    ],
+)
+def test_invalid_case_declarations_are_rejected(annotations: dict[str, object], attributes: dict[str, object]):
+    with pytest.raises(TypeError):
+        case(_declaration(annotations, attributes))
+
+
+def test_already_decorated_dataclasses_are_rejected():
+    @dataclass
+    class Existing:
+        value: int
+        tag: Literal["existing"] = tag("existing")
+
+    with pytest.raises(TypeError):
+        case(Existing)
+    with pytest.raises(TypeError):
+        case(Circle)
+
+
+def test_dataclass_inheritance_is_rejected():
+    @dataclass
+    class Existing:
+        value: int
+
+    class Inherited(Existing):
+        tag: Literal["inherited"] = tag("inherited")
+
+    with pytest.raises(TypeError):
+        case(Inherited)
+
+
+def test_custom_init_is_rejected():
+    class Custom:
+        value: int
+        tag: Literal["custom"] = tag("custom")
+
+        def __init__(self, value: int) -> None:
+            self.value = value
+
+    with pytest.raises(TypeError):
+        case(Custom)
+
+
+def test_local_literal_import_resolves_with_bare_case_decorator():
+    from typing import Literal as L
+
+    @final
+    @case
+    class Local:
+        value: int
+        tag: L["local"] = tag("local")
+
+    assert Local(42).tag == "local"
+
+
+def test_local_literal_import_resolves_with_case_decorator_factory():
+    from typing import Literal as L
+
+    @final
+    @case()
+    class Local:
+        value: int
+        tag: L["local"] = tag("local")
+
+    assert Local(42).tag == "local"
+
+
+def test_reused_case_decorator_resolves_locals_where_each_class_is_declared():
+    decorate = case()
+
+    def first() -> object:
+        from typing import Literal as L
+
+        @final
+        @decorate
+        class First:
+            tag: L["first"] = tag("first")
+
+        return First()
+
+    def second() -> object:
+        from typing import Literal as L
+
+        @final
+        @decorate
+        class Second:
+            tag: L["second"] = tag("second")
+
+        return Second()
+
+    assert getattr(first(), "tag") == "first"
+    assert getattr(second(), "tag") == "second"

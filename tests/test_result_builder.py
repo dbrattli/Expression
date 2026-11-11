@@ -1,7 +1,7 @@
 """Tests for result builder implementation."""
 
 from collections.abc import Generator
-from typing import List
+from typing import List, cast
 
 from pytest import raises
 
@@ -17,6 +17,7 @@ def test_result_builder_evaluation_order():
     def fn() -> Generator[int, int, int]:
         evaluated.append(1)  # First computation
         x: int = yield 42
+        assert x == 42
 
         evaluated.append(2)  # Second computation
         y: int = yield 43
@@ -79,7 +80,7 @@ def test_result_builder_return_from():
 
     computation = fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == Ok(42)
         case _:
             assert False
@@ -108,7 +109,7 @@ def test_result_builder_yield_from_ok():
 
     computation = fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 43
         case _:
             assert False
@@ -124,7 +125,7 @@ def test_result_builder_yield_from_error():
 
     computation = fn()
     match computation:
-        case Result(tag="error", error=err):
+        case Error(err):
             assert err == "error"
         case _:
             assert False
@@ -142,7 +143,7 @@ def test_result_builder_multiple_operations():
 
     computation = fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 129  # 42 + 43 + 44
         case _:
             assert False
@@ -159,7 +160,8 @@ def test_result_builder_nested():
     @effect.result[int, str]()
     def outer() -> Generator[int, int, int]:
         x: int = yield 42
-        y: int = yield from inner(x)  # Nested computation
+        # Pyright #11881 loses the return type for a union of iterable cases.
+        y = cast(int, (yield from inner(x)))  # Nested computation
         return y + 1
 
     computation = outer()
@@ -190,7 +192,7 @@ def test_result_builder_return_ok():
 
     computation = fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 42  # Value should be wrapped in Ok
         case _:
             assert False
@@ -206,7 +208,7 @@ def test_result_builder_yield_ok_wrapped():
 
     computation = fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == Ok(42)  # Value should be wrapped in Ok
         case _:
             assert False
@@ -222,9 +224,9 @@ def test_result_builder_return_error_wrapped():
 
     computation = fn()
     match computation:
-        case Result(tag="ok", ok=inner_result): # Match Ok case now
+        case Ok(inner_result): # Match Ok case now
             match inner_result:
-                case Result(tag="error", error=err): # Match inner Error case
+                case Error(err): # Match inner Error case
                     assert err == "error" # Assert against inner Error value
                 case _:
                     assert False # Inner result should be Error
@@ -242,7 +244,7 @@ def test_result_builder_yield_value_async():
 
     computation = fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 42
         case _:
             assert False
@@ -298,7 +300,7 @@ def test_result_builder_yield_from_error_short_circuit():
 
     computation = fn()
     match computation:
-        case Result(tag="error", error=err):
+        case Error(err):
             assert err == "error"
         case _:
             assert False
@@ -336,3 +338,21 @@ def test_result_builder_runtime_error_propagates():
 
     with raises(RuntimeError, match="boom"):
         fn()
+
+
+def test_result_builder_none_retains_last_yield():
+    @effect.result[int, str]()
+    def fn() -> Generator[int, int, None]:
+        value = yield 42
+        assert value == 42
+        return None
+
+    assert fn() == Ok(42)
+
+
+def test_result_builder_explicit_none_yield_is_success():
+    @effect.result[None, str]()
+    def fn() -> Generator[None, None, None]:
+        yield None
+
+    assert fn() == Ok(None)

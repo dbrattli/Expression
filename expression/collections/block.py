@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from pydantic_core import CoreSchema
 
 from expression.core import (
-    Nothing,
+    NOTHING,
     Option,
     PipeMixin,
     Some,
@@ -252,7 +252,7 @@ class Block(
         """
         return Block((*builtins.map(mapping, self),))
 
-    def starmap(self: Block[tuple[Unpack[_P]]], mapping: Callable[[Unpack[_P]], _TResult]) -> Block[_TResult]:
+    def starmap(self: Block[tuple[*_P]], mapping: Callable[[Unpack[_P]], _TResult]) -> Block[_TResult]:
         """Starmap source sequence.
 
         Unpack arguments grouped as tuple elements. Builds a new collection
@@ -464,7 +464,7 @@ class Block(
             value = self._value[0]
             return Some(value)
 
-        return Nothing
+        return NOTHING
 
     @staticmethod
     def unfold(generator: Callable[[_TState], Option[tuple[_TSource, _TState]]], state: _TState) -> Block[_TSource]:
@@ -762,7 +762,7 @@ def reduce(
     return source.tail().fold(reduction, source.head())
 
 
-def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[Unpack[_P]]]], Block[_TResult]]:
+def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[*_P]]], Block[_TResult]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
@@ -776,7 +776,7 @@ def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[U
         Partially applied map function.
     """
 
-    def mapper_(args: tuple[Unpack[_P]]) -> _TResult:
+    def mapper_(args: tuple[*_P]) -> _TResult:
         return mapper(*args)
 
     return map(mapper_)
@@ -822,7 +822,7 @@ def of_seq(xs: Iterable[_TSource]) -> Block[_TSource]:
 
 def of_option(option: Option[_TSource]) -> Block[_TSource]:
     match option:
-        case Option(tag="some", some=value):
+        case Some(value):
             return singleton(value)
         case _:
             return empty
@@ -989,7 +989,7 @@ def try_head(source: Block[_TSource]) -> Option[_TSource]:
         source: The input list.
 
     Returns:
-        The first element of the list or `Nothing`.
+        The first element of the list or `Nothing()`.
     """
     return source.try_head()
 

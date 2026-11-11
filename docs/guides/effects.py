@@ -8,7 +8,7 @@ when several `Option` or `Result` steps need local variables and early terminati
 # %%
 from collections.abc import Generator
 
-from expression import Error, Nothing, Ok, Option, Result, Some, effect
+from expression import Error, NOTHING, Ok, Option, Result, Some, effect
 
 def parse_count(value: str) -> Result[int, str]:
     return Ok(int(value)) if value.isdigit() else Error("Count must be numeric.")
@@ -36,7 +36,7 @@ def maybe_add(left: Option[int], right: Option[int]) -> Generator[int, int, int]
     yield from (left_value + right_value for left_value in left for right_value in right)
 
 assert maybe_add(Some(2), Some(3)) == Some(5)
-assert maybe_add(Some(2), Nothing) == Nothing
+assert maybe_add(Some(2), NOTHING) == NOTHING
 
 # %% [markdown]
 """

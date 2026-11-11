@@ -17,7 +17,7 @@ from enum import Enum
 from typing import Any, TypeVar, cast
 
 from expression.core import (
-    Nothing,
+    NOTHING,
     Option,
     PipeMixin,
     Some,
@@ -418,7 +418,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
             value = cast("_TSource", self.value[0])
             return Some(value)
 
-        return Nothing
+        return NOTHING
 
     @staticmethod
     def unfold(
@@ -570,7 +570,7 @@ def of_seq(xs: Iterable[_TSource]) -> TypedArray[_TSource]:
 
 def of_option(option: Option[_TSource]) -> TypedArray[_TSource]:
     match option:
-        case Option(tag="some", some=value):
+        case Some(value):
             return singleton(value)
         case _:
             return empty()
@@ -629,7 +629,7 @@ def try_head(source: TypedArray[_TSource]) -> Option[_TSource]:
         source: The input list.
 
     Returns:
-        The first element of the list or `Nothing`.
+        The first element of the list or `Nothing()`.
     """
     return source.try_head()
 

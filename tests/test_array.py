@@ -317,7 +317,7 @@ def test_array_unfold(x: int):
     def unfolder(state: int) -> Option[tuple[int, int]]:
         if state < x:
             return Some((state, state + 1))
-        return Nothing
+        return Nothing()
 
     result = TypedArray[int].unfold(unfolder, 0)
 

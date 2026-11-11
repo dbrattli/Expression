@@ -8,7 +8,7 @@ works with async operations.
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from typing import Any, ParamSpec, TypeVar
 
-from expression.core import Nothing, Option, Some
+from expression.core import NOTHING, Option, Some
 from expression.core.async_builder import AsyncBuilder
 
 
@@ -39,13 +39,13 @@ class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
             fn: The function to apply to the value if Some
 
         Returns:
-            The result of applying fn to the value if Some, otherwise Nothing
+            The result of applying fn to the value if Some, otherwise NOTHING
         """
         match xs:
-            case Option(tag="some", some=value):
+            case Some(value):
                 return await fn(value)
             case _:
-                return Nothing
+                return NOTHING
 
     async def return_(self, x: _TSource) -> Option[_TSource]:
         """Wrap a value in an async option.
@@ -86,13 +86,13 @@ class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
             ys: Second async option computation
 
         Returns:
-            The second computation if first is Some, otherwise Nothing
+            The second computation if first is Some, otherwise NOTHING
         """
         match xs:
-            case Option(tag="some"):
+            case Some():
                 return ys
             case _:
-                return Nothing
+                return NOTHING
 
     async def zero(self) -> Option[Any]:
         """Return the zero value for async options.
@@ -101,9 +101,9 @@ class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
         corresponding to None in F#.
 
         Returns:
-            Nothing
+            NOTHING
         """
-        return Nothing
+        return NOTHING
 
     async def delay(self, fn: Callable[[], Option[_TSource]]) -> Option[_TSource]:
         """Delay the computation.

@@ -1,197 +1,156 @@
-from collections.abc import Callable
-from copy import deepcopy
-from dataclasses import dataclass, field, fields
-from typing import Any, TypeVar, overload
+"""Explicit, closed tagged unions understood by Python type checkers.
 
-from typing_extensions import dataclass_transform
+Declare each alternative with ``@final`` and ``@case``, give it a fixed literal
+``tag``, then combine the alternatives in a ``TaggedUnion[A | B]`` type alias.
+The alias supplies optional Pydantic decoding without hiding its case types.
+"""
+
+from __future__ import annotations
+
+import sys
+from collections.abc import Callable
+from dataclasses import Field, dataclass, field, fields, is_dataclass
+from inspect import currentframe, signature
+from typing import (
+    Annotated,
+    Literal,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    dataclass_transform,
+    final,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
+)
+
+from ._union_schema import UnionSchema
 
 
 _T = TypeVar("_T")
+_Tag = TypeVar("_Tag", bound=str)
+
+
+class _TaggedCase(Protocol):
+    @property
+    def tag(self) -> str: ...
+
+
+_Case = TypeVar("_Case", bound=_TaggedCase)
+TaggedUnion: TypeAlias = Annotated[_Case, UnionSchema()]
+
+
+def tag(value: _Tag, *, init: Literal[False] = False, repr: bool = False) -> _Tag:
+    """Declare a fixed discriminator excluded from a case's constructor.
+
+    Annotate the field as ``tag: Literal['name'] = tag('name')``. The literal
+    remains visible to checkers, while construction cannot override its value.
+    """
+    if type(value) is not str:
+        raise TypeError("A case tag must be a string")
+    if init is not False:
+        raise TypeError("A case tag cannot be a constructor parameter")
+    return field(default=value, init=False, repr=repr, metadata={"expression.tag": True})
 
 
 @overload
-def tagged_union(
-    *,
-    frozen: bool = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-) -> Callable[[type[_T]], type[_T]]: ...
+def case(_cls: type[_T], /, *, repr: bool = True, kw_only: bool = False) -> type[_T]: ...
 
 
 @overload
-def tagged_union(
-    _cls: type[_T],
-    *,
-    frozen: bool = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-) -> type[_T]: ...
+def case(*, repr: bool = True, kw_only: bool = False) -> Callable[[type[_T]], type[_T]]: ...
 
 
-@dataclass_transform()
-def tagged_union(
-    _cls: Any | None = None,
-    *,
-    frozen: bool = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-) -> Any:
-    """Tagged union decorator.
+@dataclass_transform(frozen_default=True, field_specifiers=(tag, field))
+def case(
+    _cls: type[_T] | None = None, /, *, repr: bool = True, kw_only: bool = False
+) -> type[_T] | Callable[[type[_T]], type[_T]]:
+    """Create a frozen case dataclass with runtime subclass rejection.
 
-    A decorator that turns a dataclass into a tagged union.
-
-    Arguments:
-        frozen: Whether the tagged union should be frozen. If True,
-            the __setattr__ and __delattr__ methods will be generated.
-        repr: If True, the __repr__ method will be generated.
-        order: If True, the __lt__ method will be generated. The first
-            case will be considered the smallest with index 0 and the
-            items will be compared as the tuple (index, value)
-        eq: If True, the __eq__ method will be generated.
+    Apply ``@final`` as well for static subclass rejection. Cases have ordinary
+    dataclass equality, hashing, copying and matching. Payload fields participate
+    in construction; only the fixed literal ``tag`` is excluded. Unit cases are
+    ordinary values rather than automatically interned singletons.
     """
 
-    def transform(cls: Any) -> Any:
-        # Create a dataclass that only stores the active case and the tag.
-        cls = dataclass(
-            init=False,
-            repr=False,
-            order=False,
-            eq=False,
-            kw_only=True,
-        )(cls)
+    def transform(cls: type[_T]) -> type[_T]:
+        return apply(cls, _declaration_namespace())
 
-        original_init = cls.__init__
-        field_names = tuple(f.name for f in fields(cls))
+    def apply(cls: type[_T], namespace: dict[str, object]) -> type[_T]:
+        if is_dataclass(cls):
+            raise TypeError("@case requires a new class without a dataclass or case base")
+        if "__init__" in vars(cls):
+            raise TypeError("@case generates __init__; use __post_init__ for payload checks")
+        transformed = dataclass(cls, frozen=True, repr=repr, kw_only=kw_only)
+        _validate_case(transformed, namespace)
+        config = dict(getattr(transformed, "__pydantic_config__", {}))
+        config["revalidate_instances"] = "always"
+        setattr(transformed, "__pydantic_config__", config)
+        setattr(transformed, "__init_subclass__", classmethod(_reject_subclass))
+        return final(transformed)
 
-        # ------------------------------------------------------------------
-        # Pickle support
-        # ------------------------------------------------------------------
-        def __getstate__(self: Any) -> dict[str, Any]:
-            return {f.name: getattr(self, f.name) for f in fields(self)}
-
-        def __setstate__(self: Any, state: dict[str, Any]) -> None:
-            self.__init__(**state)
-
-        cls.__getstate__ = __getstate__
-        cls.__setstate__ = __setstate__
-
-        # ------------------------------------------------------------------
-        # Custom constructor
-        # ------------------------------------------------------------------
-        def __init__(self: Any, **kwargs: Any) -> None:
-            tag = kwargs.pop("tag", None)
-            if not kwargs:
-                raise TypeError("A case must be specified")
-            name, value = next(iter(kwargs.items()))
-            if name not in field_names:
-                raise TypeError(f"Unknown case name: {name}")
-            if len(kwargs) != 1:
-                raise TypeError(f"Only one case may be specified; got {list(kwargs.keys())}")
-
-            # Resolve the tag
-            if tag is None or tag == name:
-                object.__setattr__(self, "tag", name)
-                object.__setattr__(self, name, value)
-                object.__setattr__(self, "_index", field_names.index(name))
-            else:
-                raise TypeError(f"Tag {tag!r} does not match case name {name!r}")
-
-            # Keep only the active fields for dataclasses.asdict
-            union_fields = {f.name: f for f in fields(cls) if f.name in (name, "tag")}
-            object.__setattr__(self, "__dataclass_fields__", union_fields)
-
-            original_init(self)
-
-        cls.__init__ = __init__
-
-        # ------------------------------------------------------------------
-        # Representation
-        # ------------------------------------------------------------------
-        def __repr__(self: Any) -> str:
-            return f"{cls.__name__}({self.tag}={getattr(self, self.tag)!r})"
-
-        if repr:
-            cls.__repr__ = __repr__
-
-        # ------------------------------------------------------------------
-        # Equality
-        # ------------------------------------------------------------------
-        if eq:
-
-            def __eq__(self: Any, other: Any) -> bool:
-                return (
-                    isinstance(other, cls)
-                    and self.tag == getattr(other, "tag")
-                    and getattr(self, self.tag) == getattr(other, self.tag)
-                )
-
-            cls.__eq__ = __eq__
-
-        # ------------------------------------------------------------------
-        # Ordering
-        # ------------------------------------------------------------------
-        if order:
-
-            def __lt__(self: Any, other: Any) -> bool:
-                if not isinstance(other, cls):
-                    return NotImplemented
-                return (self._index, getattr(self, self.tag)) < (other._index, getattr(other, other.tag))
-
-            cls.__lt__ = __lt__
-
-        # ------------------------------------------------------------------
-        # Immutability helpers
-        # ------------------------------------------------------------------
-        if frozen:
-
-            def __hash__(self: Any) -> int:
-                return hash((cls.__name__, self.tag, getattr(self, self.tag)))
-
-            def __setattr__(self: Any, name: str, value: Any) -> None:
-                if name in field_names:
-                    raise TypeError("Cannot change the value of a tagged union case")
-                object.__setattr__(self, name, value)
-
-            def __delattr__(self: Any, name: str) -> None:
-                if name in field_names:
-                    raise TypeError("Cannot delete a tagged union case")
-                object.__delattr__(self, name)
-
-            cls.__hash__ = __hash__
-            cls.__setattr__ = __setattr__
-            cls.__delattr__ = __delattr__
-
-        # ------------------------------------------------------------------
-        # Copy helpers (required by Pydantic)
-        # ------------------------------------------------------------------
-        def __copy__(self: Any) -> Any:
-            return cls(**{self.tag: getattr(self, self.tag)})
-
-        def __deepcopy__(self: Any, memo: dict[int, Any]) -> Any:
-            value = deepcopy(getattr(self, self.tag), memo)
-            return cls(**{self.tag: value})
-
-        cls.__copy__ = __copy__
-        cls.__deepcopy__ = __deepcopy__
-
-        # ------------------------------------------------------------------
-        # Pattern matching support
-        # ------------------------------------------------------------------
-        cls.__match_args__ = field_names
-
-        return cls
-
-    return transform if _cls is None else transform(_cls)
+    return transform if _cls is None else apply(_cls, _declaration_namespace())
 
 
-def case() -> Any:
-    """Marker for a tagged union case."""
-    return field(init=False, kw_only=True)
+def _declaration_namespace() -> dict[str, object]:
+    # Resolve postponed tag annotations at the decorator call site, including
+    # function-local imports and aliases. Copy locals without retaining frames.
+    frame = currentframe()
+    try:
+        if frame is None or frame.f_back is None or frame.f_back.f_back is None:
+            return {}
+        return frame.f_back.f_back.f_locals.copy()
+    finally:
+        del frame
 
 
-def tag() -> Any:
-    """Marker for the tag of a tagged union."""
-    return field(init=False, kw_only=True)
+def _reject_subclass(cls: type[object], /, **kwargs: object) -> None:
+    raise TypeError(f"Tagged union cases are final; cannot define {cls.__name__}")
+
+
+def _validate_case(cls: type[object], namespace: dict[str, object]) -> None:
+    if not is_dataclass(cls):
+        raise TypeError("A case must be a dataclass")
+    declared = fields(cls)
+    discriminator = _case_discriminator(cls, declared, namespace)
+    for item in declared:
+        if item.name != "tag" and (not item.init or item.metadata.get("expression.tag")):
+            raise TypeError(f"Payload field {item.name!r} must be a constructor field; only tag uses tag()")
+    names = {item.name for item in declared}
+    constructor_parameters = tuple(signature(cls.__init__).parameters)[1:]
+    if any(name not in names for name in constructor_parameters):
+        raise TypeError("InitVar fields are not supported in tagged union cases")
+    setattr(cls, "__tagged_union_case__", discriminator.default)
+
+
+def _case_discriminator(
+    cls: type[object], declared: tuple[Field[object], ...], namespace: dict[str, object]
+) -> Field[object]:
+    discriminator = next((item for item in declared if item.name == "tag"), None)
+    if discriminator is None or discriminator.init or not discriminator.metadata.get("expression.tag"):
+        raise TypeError("A case must declare tag: Literal['name'] = tag('name')")
+    literal = _resolve_tag_annotation(cls, discriminator.type, namespace)
+    if get_origin(literal) is not Literal or get_args(literal) != (discriminator.default,):
+        raise TypeError("The tag annotation must be a single Literal matching its tag() value")
+    return discriminator
+
+
+def _resolve_tag_annotation(cls: type[object], annotation: object, localns: dict[str, object]) -> object:
+    # Resolve only the tag: other payloads may refer to this case or to a union
+    # alias that does not exist until after the class declaration.
+    def holder() -> None:
+        pass
+
+    holder.__annotations__ = {"return": annotation}
+    module = sys.modules.get(cls.__module__)
+    namespace = vars(module) if module is not None else {}
+    try:
+        return get_type_hints(holder, globalns=namespace, localns={**localns, **vars(cls)}, include_extras=True)[
+            "return"
+        ]
+    except (NameError, TypeError) as error:
+        raise TypeError("A case tag must use a resolvable Literal annotation") from error
+
+
+__all__ = ["TaggedUnion", "case", "tag"]

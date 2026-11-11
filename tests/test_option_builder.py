@@ -1,11 +1,11 @@
 """Tests for option builder implementation."""
 
 from collections.abc import Generator
-from typing import List
+from typing import List, cast
 
 from pytest import raises
 
-from expression import effect, Some, Nothing, Option
+from expression import effect, Some, NOTHING, Option
 from expression.core.option import Option
 from tests.utils import CustomException
 
@@ -18,6 +18,7 @@ def test_option_builder_evaluation_order():
     def fn() -> Generator[int, int, int]:
         evaluated.append(1)  # First computation
         x: int = yield 42
+        assert x == 42
 
         evaluated.append(2)  # Second computation
         y: int = yield 43
@@ -31,7 +32,7 @@ def test_option_builder_evaluation_order():
 
 
 def test_option_builder_short_circuit():
-    """Test that option builder properly short circuits with Nothing."""
+    """Test that option builder properly short circuits with NOTHING."""
     evaluated: List[int] = []
 
     @effect.option[int]()
@@ -40,14 +41,14 @@ def test_option_builder_short_circuit():
         x: int = yield 42
 
         evaluated.append(2)  # This should be executed
-        y: int = yield from Nothing  # Short circuits here
+        y: int = yield from NOTHING  # Short circuits here
 
         evaluated.append(3)  # This should not be executed
         return x + y
 
     computation = fn()
-    assert evaluated == [1, 2]  # Should run until yield from Nothing
-    assert computation is Nothing
+    assert evaluated == [1, 2]  # Should run until yield from NOTHING
+    assert computation is NOTHING
 
 
 def test_option_builder_combine():
@@ -80,7 +81,7 @@ def test_option_builder_return_from():
 
     computation = fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == Some(42)
         case _:
             assert False
@@ -96,7 +97,7 @@ def test_option_builder_zero():
         # No return or yield, should use zero()
 
     computation = fn()
-    assert computation is Nothing
+    assert computation is NOTHING
 
 
 def test_option_builder_yield_from_some():
@@ -109,22 +110,22 @@ def test_option_builder_yield_from_some():
 
     computation = fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 43
         case _:
             assert False
 
 
 def test_option_builder_yield_from_none():
-    """Test that option builder properly handles yield from Nothing."""
+    """Test that option builder properly handles yield from NOTHING."""
 
     @effect.option[int]()
     def fn() -> Generator[int, int, int]:
-        x: int = yield from Nothing
+        x: int = yield from NOTHING
         return x + 1  # Should not reach here
 
     computation = fn()
-    assert computation is Nothing
+    assert computation is NOTHING
 
 
 def test_option_builder_multiple_operations():
@@ -139,7 +140,7 @@ def test_option_builder_multiple_operations():
 
     computation = fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 129  # 42 + 43 + 44
         case _:
             assert False
@@ -156,7 +157,8 @@ def test_option_builder_nested():
     @effect.option[int]()
     def outer() -> Generator[int, int, int]:
         x: int = yield 42
-        y: int = yield from inner(x)  # Nested computation
+        # Pyright #11881 loses the return type for a union of iterable cases.
+        y = cast(int, (yield from inner(x)))  # Nested computation
         return y + 1
 
     computation = outer()
@@ -187,7 +189,7 @@ def test_option_builder_return_some():
 
     computation = fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 42  # Value should be wrapped in Some
         case _:
             assert False
@@ -203,24 +205,24 @@ def test_option_builder_yield_some_wrapped():
 
     computation = fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == Some(42)  # Value should be wrapped in Some
         case _:
             assert False
 
 
 def test_option_builder_return_nothing():
-    """Test that option builder properly handles returning Nothing directly."""
+    """Test that option builder properly handles returning NOTHING directly."""
 
     @effect.option[Option[int]]()
     def fn() -> Generator[Option[int], Option[int], Option[int]]:
-        return Nothing
+        return NOTHING
         yield  # Should not reach here
 
     computation = fn()
     match computation:
-        case Option(tag="some", some=value):
-            assert value is Nothing
+        case Some(value):
+            assert value is NOTHING
         case _:
             assert False
 
@@ -234,7 +236,7 @@ def test_option_builder_yield_value_async():
 
     computation = fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 42
         case _:
             assert False
@@ -278,18 +280,18 @@ def test_option_builder_projection_int_str():
 
 
 def test_option_builder_yield_from_nothing_short_circuit():
-    """Test that yield from Nothing properly short circuits nested operations."""
+    """Test that yield from NOTHING properly short circuits nested operations."""
 
     @effect.option[int]()
     def fn() -> Generator[int, int, int]:
-        x = yield from Nothing  # Short circuits here
+        x = yield from NOTHING  # Short circuits here
 
         # The rest should not execute
         y = yield from Some(43)
         return x + y
 
     computation = fn()
-    assert computation is Nothing
+    assert computation is NOTHING
 
 
 def test_option_builder_plain_function_body():
@@ -311,7 +313,7 @@ def test_option_builder_plain_function_body_none():
         return None
 
     computation = fn()
-    assert computation is Nothing
+    assert computation is NOTHING
 
 
 def test_option_builder_runtime_error_propagates():
@@ -324,3 +326,21 @@ def test_option_builder_runtime_error_propagates():
 
     with raises(RuntimeError, match="boom"):
         fn()
+
+
+def test_option_builder_none_retains_last_yield():
+    @effect.option[int]()
+    def fn() -> Generator[int, int, None]:
+        value = yield 42
+        assert value == 42
+        return None
+
+    assert fn() == Some(42)
+
+
+def test_option_builder_explicit_none_yield_is_success():
+    @effect.option[None]()
+    def fn() -> Generator[None, None, None]:
+        yield None
+
+    assert fn() == Some(None)

@@ -8,9 +8,9 @@ several alternatives with different data or behaviour.
 
 # %%
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeAlias, assert_never, final
 
-from expression import case, tag, tagged_union
+from expression import TaggedUnion, case, tag
 
 
 @dataclass(frozen=True)
@@ -18,19 +18,21 @@ class Address:
     city: str
 
 
-@tagged_union
-class Delivery:
-    tag: Literal["pickup", "shipping"] = tag()
-    pickup: str = case()
-    shipping: Address = case()
+@final
+@case
+class Pickup:
+    store: str
+    tag: Literal["pickup"] = tag("pickup")
 
-    @staticmethod
-    def Pickup(store: str) -> "Delivery":
-        return Delivery(pickup=store)
 
-    @staticmethod
-    def Shipping(address: Address) -> "Delivery":
-        return Delivery(shipping=address)
+@final
+@case
+class Shipping:
+    address: Address
+    tag: Literal["shipping"] = tag("shipping")
+
+
+Delivery: TypeAlias = TaggedUnion[Pickup | Shipping]
 
 
 # %% [markdown]
@@ -40,20 +42,28 @@ class Delivery:
 Python structural pattern matching makes handling the alternatives direct and explicit.
 """
 
+
 # %%
 def delivery_label(delivery: Delivery) -> str:
     match delivery:
-        case Delivery(tag="pickup", pickup=store):
+        case Pickup(store):
             return f"Collect from {store}"
-        case Delivery(tag="shipping", shipping=Address(city=city)):
+        case Shipping(Address(city)):
             return f"Ship to {city}"
+        case _:
+            assert_never(delivery)
 
 
-assert delivery_label(Delivery.Pickup("Central")) == "Collect from Central"
-assert delivery_label(Delivery.Shipping(Address("Oslo"))) == "Ship to Oslo"
+assert delivery_label(Pickup("Central")) == "Collect from Central"
+assert delivery_label(Shipping(Address("Oslo"))) == "Ship to Oslo"
 
 # %% [markdown]
 """
-Keep constructors descriptive and keep cases small. See the [tagged-union reference](../reference/union)
-for serialization and the full decorator API.
+The case classes are frozen dataclasses. Each constructor accepts only that case's
+payload, and the type alias describes all valid alternatives. `@final` makes static
+checking reject subclasses; `@case` enforces the same restriction at runtime.
+
+The literal tag supports tagged serialization and cannot be passed to the constructor.
+Use ordinary field defaults or `dataclasses.field` for payload defaults. See the
+[tagged-union reference](../reference/union) for serialization and the full API.
 """

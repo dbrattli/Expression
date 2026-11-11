@@ -147,7 +147,7 @@ def test_list_unfold(x: int):
     def unfolder(state: int) -> Option[tuple[int, int]]:
         if state < x:
             return Some((state, state + 1))
-        return Nothing
+        return Nothing()
 
     result = pipe(0, seq.unfold(unfolder))
 
@@ -424,8 +424,8 @@ def test_seq_try_find_index_returns_nothing_without_match():
     always_true: Callable[[int], bool] = lambda _: True
     is_even: Callable[[int], bool] = lambda value: value % 2 == 0
 
-    assert pipe(empty, seq.try_find_index(always_true)) is Nothing
-    assert pipe([1, 3], seq.try_find_index(is_even)) is Nothing
+    assert pipe(empty, seq.try_find_index(always_true)) is Nothing()
+    assert pipe([1, 3], seq.try_find_index(is_even)) is Nothing()
 
 
 def test_seq_try_find_index_stops_after_first_match():
@@ -452,14 +452,14 @@ def test_seq_try_find_index_propagates_predicate_exceptions():
 
 
 def test_seq_try_pick_pipe_returns_first_transformed_value():
-    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing
+    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing()
     result = pipe([1, 2, 4], seq.try_pick(choose_even))
 
     assert result == Some("2")
 
 
 def test_seq_try_pick_fluent():
-    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing
+    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing()
     source = Seq[int].of_iterable([1, 2, 4])
 
     assert source.try_pick(choose_even) == Some("2")
@@ -467,14 +467,14 @@ def test_seq_try_pick_fluent():
 
 def test_seq_try_pick_returns_nothing_without_a_choice():
     empty: list[int] = []
-    never_choose: Callable[[int], Option[str]] = lambda _: Nothing
+    never_choose: Callable[[int], Option[str]] = lambda _: Nothing()
 
-    assert pipe(empty, seq.try_pick(never_choose)) is Nothing
-    assert pipe([1, 2], seq.try_pick(never_choose)) is Nothing
+    assert pipe(empty, seq.try_pick(never_choose)) is Nothing()
+    assert pipe([1, 2], seq.try_pick(never_choose)) is Nothing()
 
 
 def test_seq_try_pick_preserves_some_none():
-    choose_none: Callable[[int], Option[None]] = lambda value: Some(None) if value == 2 else Nothing
+    choose_none: Callable[[int], Option[None]] = lambda value: Some(None) if value == 2 else Nothing()
     result = pipe([1, 2, 3], seq.try_pick(choose_none))
 
     assert result == Some(None)
@@ -482,7 +482,7 @@ def test_seq_try_pick_preserves_some_none():
 
 def test_seq_try_pick_stops_after_first_choice():
     consumed: list[int] = []
-    choose_two: Callable[[int], Option[int]] = lambda value: Some(value * 10) if value == 2 else Nothing
+    choose_two: Callable[[int], Option[int]] = lambda value: Some(value * 10) if value == 2 else Nothing()
 
     def source() -> Iterable[int]:
         for value in [1, 2, 3]:

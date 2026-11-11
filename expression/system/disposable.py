@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from asyncio import iscoroutinefunction
 from collections.abc import Awaitable, Callable
+from inspect import iscoroutinefunction
 from threading import RLock
 from types import TracebackType
 

@@ -1,9 +1,9 @@
 [project]
 name = "Expression"
 dynamic = ["version"]
-description = "Practical functional programming for Python 3.10+"
+description = "Practical functional programming for Python 3.11+"
 readme = "README.md"
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 authors = [
     { name = "Dag Brattli", email = "dag.brattli@cognite.com" },
 ]
@@ -14,7 +14,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -27,8 +26,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-pydantic = ["pydantic>=2.6.2,<3.0.0"]
-all = ["pydantic>=2.6.2,<3.0.0"]
+pydantic = ["pydantic>=2.10.0,<3.0.0"]
+all = ["pydantic>=2.10.0,<3.0.0"]
 
 [project.urls]
 Homepage = "https://github.com/cognitedata/Expression"
@@ -53,7 +52,7 @@ dev = [
 [tool.ruff]
 # Keep in sync with .pre-commit-config.yaml
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 # D100: Missing docstring in public module
 # D104: Missing docstring in public package
 # D105: Missing docstring in magic method

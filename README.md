@@ -11,7 +11,7 @@
 
 
 Expression aims to be a solid, type-safe, pragmatic, and high performance library for
-frictionless and practical functional programming in Python 3.10+.
+frictionless and practical functional programming in Python 3.11+.
 
 By pragmatic, we mean that the goal of the library is to use simple abstractions to
 enable you to do practical and productive functional programming in Python (instead of
@@ -57,13 +57,13 @@ many ways very similar to Python, but F# can also do a lot of things better than
 ## Getting Started
 
 You can install the latest `expression` from PyPI by running `pip` (or
-`pip3`). Note that `expression` only works for Python 3.10+.
+`pip3`). Note that `expression` only works for Python 3.11+.
 
 ```console
 > pip install expression
 ```
 
-To add Pydantic v2 support, install the `pydantic` extra:
+To add Pydantic 2.10+ support, install the `pydantic` extra:
 
 ```console
 > pip install expression[pydantic]
@@ -149,7 +149,7 @@ on-demand as we go along.
   - **AsyncObservable** - Asynchronous observables. Provided separately
     by [aioreactive](https://github.com/dbrattli/aioreactive).
 - **Data Modeling** - sum and product types
-  - **@tagged_union** - A tagged (discriminated) union type decorator.
+  - **TaggedUnion** - Explicit frozen cases with typed union aliases.
 - **Parser Combinators** - A recursive decent string parser combinator
   library.
 - **Effects**: - lightweight computational expressions for Python. This
@@ -307,7 +307,7 @@ The `Option` type is used when a function or method cannot produce a meaningful
 output for a given input.
 
 An option value may have a value of a given type, i.e., `Some(value)`, or it might
-not have any meaningful value, i.e., `Nothing`.
+not have any meaningful value, i.e., `Nothing()`.
 
 ```python
 from expression import Nothing, Option, Some
@@ -317,8 +317,13 @@ def keep_positive(a: int) -> Option[int]:
     if a > 0:
         return Some(a)
 
-    return Nothing
+    return Nothing()
 ```
+
+Note: `Nothing()` always returns the same singleton instance. Expression also exports
+`NOTHING` (`from expression import NOTHING`) for callers who want to reuse that instance
+without a constructor call. Use `Nothing()` in class patterns, such as `case Nothing():`.
+
 
 ```python
 from typing import Literal
@@ -328,7 +333,7 @@ from expression import Ok, Option
 
 def exists(x: Option[int]) -> bool:
     match x:
-        case Option(tag="some"):
+        case Some():
             return True
         case _:
             return False
@@ -358,10 +363,10 @@ xs = fn3()
 ```
 
 This enables ["railway oriented programming"](https://fsharpforfunandprofit.com/rop/),
-e.g., if one part of the function yields from `Nothing` then the function is
+e.g., if one part of the function yields from `Nothing()` then the function is
 side-tracked (short-circuit) and the following statements will never be executed. The
-end result of the expression will be `Nothing`. Thus results from such an option
-decorated function can either be `Ok(value)` or `Error(error_value)`.
+end result of the expression will be `Nothing()`. Thus results from such an option
+decorated function can either be `Some(value)` or `Nothing()`.
 
 ```python
 from collections.abc import Generator
@@ -371,7 +376,7 @@ from expression import Nothing, Some, effect
 
 @effect.option[int]()
 def fn4() -> Generator[int, int, int]:
-    x = yield from Nothing  # or a function returning Nothing
+    x = yield from Nothing()  # or a function returning Nothing()
 
     # -- The rest of the function will never be executed --
     y = yield from Some(43)
@@ -380,18 +385,18 @@ def fn4() -> Generator[int, int, int]:
 
 
 xs = fn4()
-assert xs is Nothing
+assert xs is Nothing()
 ```
 
 ### Option as an applicative
 
 In functional programming, we sometimes want to combine two Option values into a new
 Option. However, this combination should only happen if both Options are Some. If either
-Option is None, the resulting value should also be None.
+Option is `Nothing()`, the resulting value is also `Nothing()`.
 
 The map2 function allows us to achieve this behavior. It takes two Option values and a
 function as arguments. The function is applied only if both Options are Some, and the
-result becomes the new Some value. Otherwise, map2 returns None.
+result becomes the new Some value. Otherwise, map2 returns `Nothing()`.
 
 This approach ensures that our combined value reflects the presence or absence of data
 in the original Options.
@@ -406,14 +411,14 @@ def keep_positive(a: int) -> Option[int]:
     if a > 0:
         return Some(a)
     else:
-        return Nothing
+        return Nothing()
 
 
 def add_options(a: Option[int], b: Option[int]):
     return a.map2(add, b)
 
 
-assert add_options(keep_positive(4), keep_positive(-2)) is Nothing
+assert add_options(keep_positive(4), keep_positive(-2)) is Nothing()
 
 assert add_options(keep_positive(3), keep_positive(2)) == Some(5)
 ```
@@ -429,11 +434,11 @@ For more information about options:
 The `Result[T, TError]` type lets you write error-tolerant code that can be composed. A
 Result works similar to `Option`, but lets you define the value used for errors, e.g.,
 an exception type or similar. This is great when you want to know why some operation
-failed (not just `Nothing`). This type serves the same purpose of an `Either` type where
+failed (not just `Nothing()`). This type serves the same purpose of an `Either` type where
 `Left` is used for the error condition and `Right` for a success value.
 
 ```python
-from expression import Ok, Result, effect
+from expression import Ok, effect
 
 
 @effect.result[int, Exception]()
@@ -444,7 +449,7 @@ def fn5() -> Generator[int, int, int]:
 
 
 xs = fn5()
-assert isinstance(xs, Result)
+assert xs == Ok(52)
 ```
 
 A simplified type called `Try` is also available. It's a result type that is
@@ -526,7 +531,7 @@ or any other I/O-bound tasks that might not produce a meaningful result. The Asy
 builder was added in version 0.25.0.
 
 Similar to the `Option` effect, AsyncOption enables short-circuiting but for asynchronous
-operations. If any part of the function yields `Nothing`, the function is short-circuited
+operations. If any part of the function yields `Nothing()`, the function is short-circuited
 and the following statements will never be executed.
 
 ```python
@@ -542,7 +547,7 @@ async def fn_option() -> AsyncGenerator[int, int]:
 
     # Short-circuit if condition is met
     if x + y > 80:
-        z: int = yield await Nothing  # This will short-circuit
+        z: int = yield await Nothing()  # This will short-circuit
     else:
         z: int = yield 44
 
@@ -551,7 +556,7 @@ async def fn_option() -> AsyncGenerator[int, int]:
 
 # This would be run in an async context
 # result = await fn_option()
-# assert result is Nothing
+# assert result is Nothing()
 ```
 
 AsyncOption works well with other async functions and can be nested:
@@ -615,79 +620,68 @@ assert ys == zs
 
 ## Tagged Unions
 
-Tagged Unions (aka discriminated unions) may look similar to normal Python Unions. But
-they are [different](https://stackoverflow.com/a/61646841) in that the operands in a
-type union `(A | B)` are both types, while the cases in a tagged union type `U = A | B`
-are both constructors for the type U and are not types themselves. One consequence is
-that tagged unions can be nested in a way union types might not.
-
-In Expression you make a tagged union by defining your type similar to a `dataclass` and
-decorate it with `@tagged_union` and add the appropriate generic types that this union
-represent for each case. Then you optionally define static or class-method constructors
-for creating each of the tagged union cases.
+Define each alternative as a frozen case class, then combine the cases in a type alias.
+Each case exposes only its own fields. `Option` and `Result` use this same model.
 
 ```python
-from dataclasses import dataclass
-from typing import Literal
+from dataclasses import asdict
+from typing import Literal, TypeAlias, assert_never, final
 
-from expression import case, tag, tagged_union
+from expression import TaggedUnion, case, tag
 
 
-@dataclass
+@final
+@case
 class Rectangle:
     width: float
     length: float
+    tag: Literal["rectangle"] = tag("rectangle")
 
 
-@dataclass
+@final
+@case
 class Circle:
     radius: float
+    tag: Literal["circle"] = tag("circle")
 
 
-@tagged_union
-class Shape:
-    tag: Literal["rectangle", "circle"] = tag()
-
-    rectangle: Rectangle = case()
-    circle: Circle = case()
-
-    @staticmethod
-    def Rectangle(width: float, length: float) -> "Shape":
-        """Optional static method for creating a tagged union case"""
-        return Shape(rectangle=Rectangle(width, length))
-
-    @staticmethod
-    def Circle(radius: float) -> "Shape":
-        """Optional static method for creating a tagged union case"""
-        return Shape(circle=Circle(radius))
+Shape: TypeAlias = TaggedUnion[Rectangle | Circle]
 ```
 
-Note that the tag field is optional, but recommended. If you don't specify a tag field
-then then it will be created for you, but static type checkers will not be able to type
-check correctly when pattern matching. The `tag` field if specified should be a literal
-type with all the possible values for the tag. This is used by static type checkers to
-check exhaustiveness of pattern matching.
 
-Each case is given the `case()` field initializer. This is optional, but recommended for
-static type checkers to work correctly. It's not required for the code to work properly,
+`@case` creates a frozen dataclass and rejects subclasses at runtime. Use `@final` to
+make type checkers reject subclasses too. The literal `tag` is fixed by the declaration
+and excluded from constructor arguments and positional patterns.
 
-Now you may pattern match the shape to get back the actual value:
+`Shape` is an annotation alias. Construct and match the case classes directly:
 
 ```python
-shape = Shape.Rectangle(2.3, 3.3)
+def area(shape: Shape) -> float:
+    match shape:
+        case Rectangle(width, length):
+            return width * length
+        case Circle(radius):
+            return 3.14159 * radius**2
+        case _:
+            assert_never(shape)
 
-match shape:
-    case Shape(tag="rectangle", rectangle=Rectangle(width=2.3)):
-        assert shape.rectangle.width == 2.3
-    case _:
-        assert False
+
+shape: Shape = Rectangle(2.0, 3.0)
+assert area(shape) == 6.0
+assert asdict(shape) == {"width": 2.0, "length": 3.0, "tag": "rectangle"}
 ```
 
-Note that when matching keyword arguments, then the `tag` keyword argument must be
-specified for static type checkers to check exhaustiveness correctly. It's not required
-for the code to work properly, but it's recommended to avoid typing errors.
+The `assert_never` branch lets static checking catch an unhandled case when the alias
+grows. Use ordinary defaults and `dataclasses.field` for payload fields. A case with no
+payload needs only its tag; use a standard enum for a family of named constants.
 
-<!-- #region -->
+With the optional Pydantic extra, `TypeAdapter(Shape)` validates tagged input and
+preserves nested case identities. It rejects missing or unknown tags and extra fields.
+The lowercase `tagged_union` name is a module namespace containing `TaggedUnion`,
+`case`, and `tag`. See the [migration guide](docs/guides/migration-major.md) when moving
+from the old `@tagged_union` declaration syntax.
+
+
 ## Notable differences between Expression and F\#
 
 In F# modules are capitalized, in Python they are lowercase
@@ -696,16 +690,9 @@ In F# modules are capitalized, in Python they are lowercase
 is `option` and the type is capitalized i.e `Option`.
 
 Thus in Expression you use `option` as the module to access module functions such as
-`option.map` and the name `Option` for the type itself.
+`option.map` and the name `Option[T]` for its type alias. The same convention applies to
+`Result[T, E]` / `result` and `TaggedUnion[...]` / `tagged_union`.
 
-```python
->>> from expression import Option, option
->>> Option
-<class'expression.core.option.Option'>
->>> option
-<module 'expression.core.option' from '/Users/dbrattli/Developer/Github/Expression/expression/core/option.py'>
-```
-<!-- #endregion -->
 
 ## Common Gotchas and Pitfalls
 
