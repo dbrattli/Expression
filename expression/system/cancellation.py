@@ -46,6 +46,8 @@ class CancellationToken:
             raise ObjectDisposedException()
 
     def register(self, callback: Callable[[], None]) -> Disposable:
+        if not self.can_be_canceled:
+            return Disposable.create(lambda: None)
         return self._source.register_internal(callback)
 
     @staticmethod
@@ -78,6 +80,7 @@ class CancellationTokenSource(Disposable):
             if not self._is_disposed:
                 self._is_disposed = True
                 listeners.extend(self._listeners.values())
+                self._listeners.clear()
 
         for listener in listeners:
             try:
@@ -86,17 +89,16 @@ class CancellationTokenSource(Disposable):
                 pass
 
     def register_internal(self, callback: Callable[[], None]) -> Disposable:
-        if self._is_disposed:
-            raise ObjectDisposedException()
-
         with self._lock:
+            if self._is_disposed:
+                raise ObjectDisposedException()
             current = self._id
             self._listeners[current] = callback
             self._id += 1
 
         def dispose():
             with self._lock:
-                del self._listeners[current]
+                self._listeners.pop(current, None)
 
         return Disposable.create(dispose)
 
