@@ -36,8 +36,8 @@ it does not test the empty case.
 
 `Nothing` is now the case class, not a preconstructed value. Replace bare value
 uses such as `return Nothing` and `Some(Nothing)` with `return Nothing()` and
-`Some(Nothing())`. The earlier proposal's `NothingType` name is no longer exposed;
-use `Nothing` for type annotations and `Nothing()` for construction and matching.
+`Some(Nothing())`. Use `Nothing` for type annotations and `Nothing()` for
+construction and matching.
 Repeated construction preserves identity: `Nothing() is Nothing()`.
 
 Use the shared `NOTHING` constant to avoid constructor calls. It is defined once

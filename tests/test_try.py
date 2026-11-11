@@ -13,7 +13,7 @@ def test_try_success():
     xs: Try[int] = Success(10)
 
     match xs:
-        case Ok(ok=x):
+        case Ok(x):
             assert x == 10
         case _:
             assert False
@@ -24,7 +24,7 @@ def test_try_match_failure():
     xs: Try[int] = Failure(error)
 
     match xs:
-        case Error(error=err):
+        case Error(err):
             assert err == error
         case _:
             assert False

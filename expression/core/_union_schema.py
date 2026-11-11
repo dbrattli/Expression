@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler
     from pydantic.json_schema import JsonSchemaValue
     from pydantic_core import CoreSchema
-    from pydantic_core.core_schema import DataclassArgsSchema
 
 
 class UnionSchema:
@@ -111,15 +110,23 @@ def _check_field_aliases(schema: CoreSchema, handler: GetCoreSchemaHandler) -> N
             # Recursive cases are still being built. Their complete schema is
             # checked when the surrounding case finishes generating.
             return
-    if schema["type"] in ("function-before", "function-after", "function-wrap", "default"):
-        _check_field_aliases(cast(Mapping[str, Any], schema)["schema"], handler)
+    if (
+        schema["type"] == "function-before"
+        or schema["type"] == "function-after"
+        or schema["type"] == "function-wrap"
+        or schema["type"] == "default"
+    ):
+        _check_field_aliases(schema["schema"], handler)
         return
     if schema["type"] != "dataclass":
         return
-    arguments = schema["schema"]
+    _check_dataclass_field_aliases(schema["schema"])
+
+
+def _check_dataclass_field_aliases(arguments: CoreSchema) -> None:
     if arguments["type"] != "dataclass-args":
         return
-    for field in cast("DataclassArgsSchema", arguments)["fields"]:
+    for field in arguments["fields"]:
         if field.get("validation_alias") not in (None, field["name"]) or field.get("serialization_alias") not in (
             None,
             field["name"],

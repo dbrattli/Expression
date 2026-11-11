@@ -41,7 +41,7 @@ def test_option_some_match():
     xs = Some(42)
 
     match xs:
-        case Some(some=x):
+        case Some(x):
             assert x == 42
 
         case _:
@@ -53,7 +53,7 @@ def test_option_some_match_fluent():
     ys = xs.map(lambda x: x + 1)
 
     match ys:
-        case Some(some=value):
+        case Some(value):
             assert value == 43
         case _:
             assert False
@@ -203,7 +203,7 @@ def test_option_some_map_piped():
     ys: Option[int] = xs.pipe(option.map(mapper))
 
     match ys:
-        case Some(some=y):
+        case Some(y):
             assert y == 43
         case _:
             assert False
@@ -223,7 +223,7 @@ def test_option_some_map_fluent():
     ys = xs.map(lambda x: x + 1)
 
     match ys:
-        case Some(some=value):
+        case Some(value):
             assert value == 43
         case _:
             assert False
@@ -244,7 +244,7 @@ def test_option_some_map2_piped(x: int, y: int):
     zs = pipe2((xs, ys), option.map2(mapper))
 
     match zs:
-        case Some(some=value):
+        case Some(value):
             assert value == x + y
         case _:
             assert False
@@ -256,7 +256,7 @@ def test_option_starmap_fluent():
     ys = xs.starmap(mapper)
 
     match ys:
-        case Some(some=value):
+        case Some(value):
             assert value == 85
         case _:
             assert False
@@ -268,7 +268,7 @@ def test_option_starmap_piped():
     ys = pipe(xs, option.starmap(mapper))
 
     match ys:
-        case Some(some=value):
+        case Some(value):
             assert value == 85
         case _:
             assert False
@@ -279,7 +279,7 @@ def test_option_some_bind_fluent():
     ys = xs.bind(lambda x: Some(x + 1))
 
     match ys:
-        case Some(some=value):
+        case Some(value):
             assert value == 43
         case _:
             assert False
@@ -311,7 +311,7 @@ def test_option_some_bind_piped():
     )
 
     match ys:
-        case Some(some=value):
+        case Some(value):
             assert value == 43
         case _:
             assert False

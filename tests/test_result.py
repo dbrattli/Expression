@@ -22,7 +22,7 @@ def test_pattern_match_with_alias():
     xs: Result[int, str] = Ok(42)
 
     match xs:
-        case Ok(ok=x):
+        case Ok(x):
             assert x == 42
         case _:
             assert False
@@ -37,7 +37,7 @@ def test_result_ok():
     assert str(xs) == "Ok 42"
 
     match xs:
-        case Ok(ok=x):
+        case Ok(x):
             assert x == 42
         case _:
             assert False
@@ -47,7 +47,7 @@ def test_result_match_ok():
     xs = Ok(42)
 
     match xs:
-        case Ok(ok=x):
+        case Ok(x):
             assert x == 42
         case _:
             assert False
@@ -57,7 +57,7 @@ def test_result_match_error():
     xs: Result[int, str] = Error("err")
 
     match xs:
-        case Error(error=err):
+        case Error(err):
             assert err == "err"
         case _:  # type: ignore
             assert False
@@ -78,7 +78,7 @@ def test_result_error():
     assert str(xs) == f"Error {error}"
 
     match xs:
-        case Error(error=ex):
+        case Error(ex):
             assert ex == error
 
 
@@ -120,7 +120,7 @@ def test_result_map_piped(x: int, y: int):
 
     ys = xs.pipe(result.map(mapper))  # NOTE: shows type error for mypy
     match ys:
-        case Ok(ok=value):
+        case Ok(value):
             assert value == mapper(x)
         case _:
             assert False
@@ -133,7 +133,7 @@ def test_result_map_ok_fluent(x: int, y: int):
 
     ys = xs.map(mapper)
     match ys:
-        case Ok(ok=value):
+        case Ok(value):
             assert value == mapper(x)
         case _:
             assert False
@@ -148,7 +148,7 @@ def test_result_ok_chained_map(x: int, y: int):
     ys = xs.map(mapper1).map(mapper2)
 
     match ys:
-        case Ok(ok=value):
+        case Ok(value):
             assert value == mapper2(mapper1(x))
         case _:
             assert False
@@ -162,7 +162,7 @@ def test_result_map_error_piped(msg: str, y: int):
     ys = xs.pipe(result.map(mapper))
 
     match ys:
-        case Error(error=err):
+        case Error(err):
             assert err == msg
         case _:
             assert False
@@ -175,7 +175,7 @@ def test_result_map_error_fluent(msg: str, y: int):
 
     ys = xs.map(mapper)
     match ys:
-        case Error(error=err):
+        case Error(err):
             assert err == msg
         case _:
             assert False
@@ -189,7 +189,7 @@ def test_result_error_chained_map(msg: str, y: int):
 
     ys = xs.map(mapper1).map(mapper2)
     match ys:
-        case Error(error=err):
+        case Error(err):
             assert err == msg
         case _:
             assert False
@@ -230,7 +230,7 @@ def test_result_bind_piped(x: int, y: int):
 
     ys = xs.pipe(result.bind(mapper))
     match ys:
-        case Ok(ok=value):
+        case Ok(value):
             assert Ok(value) == mapper(x)
         case _:
             assert False
@@ -241,7 +241,7 @@ def test_result_traverse_ok(xs: list[int]):
     ys: Block[Result[int, str]] = Block([Ok(x) for x in xs])
     zs = sequence(ys)
     match zs:
-        case Ok(ok=value):
+        case Ok(value):
             assert sum(value) == sum(xs)
         case _:
             assert False
@@ -254,7 +254,7 @@ def test_result_traverse_error(xs: list[int]):
 
     zs = sequence(ys)
     match zs:
-        case Error(error=err):
+        case Error(err):
             assert err == error
         case _:
             assert False
@@ -408,7 +408,7 @@ def test_ok_from_from_dict_works():
     assert result
     assert isinstance(result, (Ok, Error))
     match result:
-        case Ok(ok=x):
+        case Ok(x):
             assert x == 10
         case _:
             assert False
@@ -422,7 +422,7 @@ def test_error_from_dict_works():
     assert result
     assert isinstance(result, (Ok, Error))
     match result:
-        case Error(error=error):
+        case Error(error):
             assert error.message == "got error"
         case _:
             assert False

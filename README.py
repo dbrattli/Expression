@@ -352,6 +352,14 @@ def keep_positive(a: int) -> Option[int]:
     return Nothing()
 
 
+# %% [markdown]
+"""
+Note: `Nothing()` always returns the same singleton instance. Expression also exports
+`NOTHING` (`from expression import NOTHING`) for callers who want to reuse that instance
+without a constructor call. Use `Nothing()` in class patterns, such as `case Nothing():`.
+"""
+
+
 # %%
 from typing import Literal
 
@@ -394,21 +402,21 @@ xs = fn3()
 # %% [markdown]
 """
 This enables ["railway oriented programming"](https://fsharpforfunandprofit.com/rop/),
-e.g., if one part of the function yields from `NOTHING` then the function is
+e.g., if one part of the function yields from `Nothing()` then the function is
 side-tracked (short-circuit) and the following statements will never be executed. The
-end result of the expression will be `NOTHING`. Thus results from such an option
+end result of the expression will be `Nothing()`. Thus results from such an option
 decorated function can either be `Some(value)` or `Nothing()`.
 """
 
 # %%
 from collections.abc import Generator
 
-from expression import NOTHING, Some, effect
+from expression import Nothing, Some, effect
 
 
 @effect.option[int]()
 def fn4() -> Generator[int, int, int]:
-    x = yield from NOTHING  # or a function returning NOTHING
+    x = yield from Nothing()  # or a function returning Nothing()
 
     # -- The rest of the function will never be executed --
     y = yield from Some(43)
@@ -417,7 +425,7 @@ def fn4() -> Generator[int, int, int]:
 
 
 xs = fn4()
-assert xs is NOTHING
+assert xs is Nothing()
 
 # %% [markdown]
 """
@@ -471,7 +479,7 @@ For more information about options:
 The `Result[T, TError]` type lets you write error-tolerant code that can be composed. A
 Result works similar to `Option`, but lets you define the value used for errors, e.g.,
 an exception type or similar. This is great when you want to know why some operation
-failed (not just `NOTHING`). This type serves the same purpose of an `Either` type where
+failed (not just `Nothing()`). This type serves the same purpose of an `Either` type where
 `Left` is used for the error condition and `Right` for a success value.
 """
 
@@ -579,14 +587,14 @@ or any other I/O-bound tasks that might not produce a meaningful result. The Asy
 builder was added in version 0.25.0.
 
 Similar to the `Option` effect, AsyncOption enables short-circuiting but for asynchronous
-operations. If any part of the function yields `NOTHING`, the function is short-circuited
+operations. If any part of the function yields `Nothing()`, the function is short-circuited
 and the following statements will never be executed.
 """
 
 # %%
 from collections.abc import AsyncGenerator
 
-from expression import Some, effect
+from expression import Nothing, Some, effect
 
 
 @effect.async_option[int]()
@@ -596,7 +604,7 @@ async def fn_option() -> AsyncGenerator[int, int]:
 
     # Short-circuit if condition is met
     if x + y > 80:
-        z: int = yield await NOTHING  # This will short-circuit
+        z: int = yield await Nothing()  # This will short-circuit
     else:
         z: int = yield 44
 
@@ -605,7 +613,7 @@ async def fn_option() -> AsyncGenerator[int, int]:
 
 # This would be run in an async context
 # result = await fn_option()
-# assert result is NOTHING
+# assert result is Nothing()
 
 # %% [markdown]
 """

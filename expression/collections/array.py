@@ -570,7 +570,7 @@ def of_seq(xs: Iterable[_TSource]) -> TypedArray[_TSource]:
 
 def of_option(option: Option[_TSource]) -> TypedArray[_TSource]:
     match option:
-        case Some(some=value):
+        case Some(value):
             return singleton(value)
         case _:
             return empty()

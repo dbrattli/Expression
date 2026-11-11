@@ -822,7 +822,7 @@ def of_seq(xs: Iterable[_TSource]) -> Block[_TSource]:
 
 def of_option(option: Option[_TSource]) -> Block[_TSource]:
     match option:
-        case Some(some=value):
+        case Some(value):
             return singleton(value)
         case _:
             return empty
