@@ -237,7 +237,7 @@ class Map(Mapping[_Key, _Value], PipeMixin):
             else:
                 if kv != kv_other:
                     return False
-        return True
+        return next(iterator, None) is None
 
     def __bool__(self) -> bool:
         return not maptree.is_empty(self._tree)

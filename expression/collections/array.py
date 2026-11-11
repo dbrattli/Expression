@@ -340,7 +340,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         return TypedArray(self.value[count:])
 
     def skip_last(self, count: int) -> TypedArray[_TSource]:
-        return TypedArray(self.value[:-count])
+        return TypedArray(self.value[:-count] if count != 0 else self.value[:])
 
     def sort(self: TypedArray[_TSourceSortable], reverse: bool = False) -> TypedArray[_TSourceSortable]:
         """Sort array directly.
@@ -406,7 +406,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         Returns:
             The result list.
         """
-        return TypedArray(self.value[-count:])
+        return TypedArray(self.value[-count:] if count != 0 else self.value[:0])
 
     def try_head(self) -> Option[_TSource]:
         """Try to return first element.

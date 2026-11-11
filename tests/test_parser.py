@@ -251,3 +251,34 @@ def test_parse_name_expr():
 
         case _:
             assert False
+
+
+def test_many_long_input_preserves_order_and_remaining():
+    from expression.extra.parser import many1, sep_by1
+
+    text = "ab" * 1500 + "!"
+    expected = Ok((Block(text[:-1]), (text, len(text) - 1)))
+    assert many(any_of("ab")).run((text, 0)) == expected
+    assert many1(any_of("ab")).run((text, 0)) == expected
+
+    separated = ",".join("ab" * 750) + "!"
+    assert sep_by1(any_of("ab"), pchar(",")).run((separated, 0)) == Ok(
+        (Block("ab" * 750), (separated, len(separated) - 1))
+    )
+
+
+def test_many_rejects_non_consuming_parser():
+    import pytest
+
+    from expression.extra.parser import many1, preturn
+
+    for repeated in [many(preturn(1)), many1(preturn(1)), many(opt(pchar("a")))]:
+        with pytest.raises(ValueError, match="must consume input"):
+            repeated("")
+
+
+def test_many_preserves_input_on_failure():
+    from expression.extra.parser import many1
+
+    assert many(pchar("a")).run(("b", 0)) == Ok((Block(), ("b", 0)))
+    assert many1(pchar("a"))("b").is_error()

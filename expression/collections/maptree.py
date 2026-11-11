@@ -325,7 +325,7 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
                     return m
 
         case _:
-            for v in u(NOTHING):
+            for v in u(NOTHING).to_list():
                 return Some(MapTreeLeaf(k, v))
             else:
                 return m

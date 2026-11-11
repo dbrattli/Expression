@@ -239,7 +239,7 @@ def test_array_take(xs: list[int], x: int):
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
 def test_array_take_last(xs: list[int], x: int):
-    expected = xs[-x:]
+    expected = xs[len(xs) - min(x, len(xs)) :]
     ys: TypedArray[int]
     ys = array.of_seq(xs).take_last(x)
     assert list(ys) == expected
@@ -257,7 +257,7 @@ def test_array_skip(xs: list[int], x: int):
 
 @given(st.lists(st.integers()), st.integers(min_value=0))  # type: ignore
 def test_array_skip_last(xs: list[int], x: int):
-    expected = xs[:-x]
+    expected = xs[: max(len(xs) - x, 0)]
     ys: TypedArray[int]
     ys = array.of_seq(xs).skip_last(x)
     assert list(ys) == expected
@@ -428,3 +428,10 @@ def test_array_monad_law_associativity_iterable(xs: list[int]):
 
     m = array.of_seq(xs)
     assert m.collect(f).collect(g) == m.collect(lambda x: f(x).collect(g))
+
+
+def test_array_trailing_zero_count():
+    source = array.of_seq([1, 2, 3])
+    assert list(source.take_last(0)) == []
+    assert list(pipe(source, array.take_last(0))) == []
+    assert list(source.skip_last(0)) == [1, 2, 3]

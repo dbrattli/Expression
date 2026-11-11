@@ -150,3 +150,24 @@ def test_expression_issue_105():
     m = m.add("1", 1).add("2", 2).add("3", 3).add("4", 4)
     m = m.change("2", lambda x: x)
     m = m.change("3", lambda x: x)
+
+
+def test_map_equality_checks_both_lengths():
+    empty = Map[int, str].empty()
+    short = Map.of_list([(1, "a")])
+    longer = Map.of_list([(1, "a"), (2, "b")])
+    for left, right in [(empty, short), (short, longer)]:
+        assert left != right
+        assert right != left
+    equal = Map.of_list([(2, "b"), (1, "a")])
+    assert longer == equal
+    assert hash(longer) == hash(equal)
+    assert len({empty, short, longer, equal}) == 3
+
+
+def test_map_change_missing_key_to_nothing():
+    from expression import NOTHING
+
+    for original in [Map[int, int].empty(), Map.of_list([(1, 10), (2, 20), (3, 30)])]:
+        assert original.change(0, lambda _: NOTHING) == original
+        assert pipe(original, map.change(4, lambda _: NOTHING)) == original
