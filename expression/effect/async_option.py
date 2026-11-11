@@ -1,48 +1,141 @@
-"""Typed optional computations using ordinary coroutine return values."""
+"""AsyncOption builder module.
 
-from __future__ import annotations
+The AsyncOption builder allows for composing asynchronous operations that
+may return an optional value, using the Option type. It's similar to the Option builder but
+works with async operations.
+"""
 
-from collections.abc import Awaitable, Callable, Coroutine
-from functools import wraps
-from typing import Any, Concatenate, TypeVar
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from typing import Any, ParamSpec, TypeVar
 
-from typing_extensions import ParamSpec
-
-from expression.core.option import NOTHING, Option, Some
-
-from ._scope import Abort, OptionInvocation, hide_scope_parameter
-from .option import OptionScope
+from expression.core import NOTHING, Option, Some
+from expression.core.async_builder import AsyncBuilder
 
 
-_T = TypeVar("_T")
+_TSource = TypeVar("_TSource")
+_TResult = TypeVar("_TResult")
 _P = ParamSpec("_P")
 
 
-async def async_run_option(body: Callable[[OptionScope], Awaitable[_T]]) -> Option[_T]:
-    """Await an optional computation and close its scope on every exit path."""
-    invocation = OptionInvocation()
-    scope = OptionScope(invocation)
-    try:
-        value = await body(scope)
-        return NOTHING if invocation.failed else Some(value)
-    except Abort as signal:
-        if signal.owner is not invocation.owner:
-            raise
+class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
+    """AsyncOption builder.
+
+    The AsyncOption builder allows for composing asynchronous operations that
+    may return an optional value, using the Option type.
+    """
+
+    async def bind(
+        self,
+        xs: Option[_TSource],
+        fn: Callable[[Any], Awaitable[Option[_TResult]]],
+    ) -> Option[_TResult]:
+        """Bind a function to an async option value.
+
+        In F# computation expressions, this corresponds to ``let!`` and enables
+        sequencing of computations.
+
+        Args:
+            xs: The async option value to bind
+            fn: The function to apply to the value if Some
+
+        Returns:
+            The result of applying fn to the value if Some, otherwise NOTHING
+        """
+        match xs:
+            case Some(value):
+                return await fn(value)
+            case _:
+                return NOTHING
+
+    async def return_(self, x: _TSource) -> Option[_TSource]:
+        """Wrap a value in an async option.
+
+        In F# computation expressions, this corresponds to ``return`` and lifts
+        a value into the option context.
+
+        Args:
+            x: The value to wrap
+
+        Returns:
+            Some containing the value
+        """
+        return Some(x)
+
+    async def return_from(self, xs: Option[_TSource]) -> Option[_TSource]:
+        """Return an async option value directly.
+
+        In F# computation expressions, this corresponds to ``return!`` and allows
+        returning an already wrapped value.
+
+        Args:
+            xs: The async option value to return
+
+        Returns:
+            The async option value unchanged
+        """
+        return xs
+
+    async def combine(self, xs: Option[_TSource], ys: Option[_TSource]) -> Option[_TSource]:
+        """Combine two async option computations.
+
+        In F# computation expressions, this enables sequencing multiple
+        expressions where we only care about the final result.
+
+        Args:
+            xs: First async option computation
+            ys: Second async option computation
+
+        Returns:
+            The second computation if first is Some, otherwise NOTHING
+        """
+        match xs:
+            case Some():
+                return ys
+            case _:
+                return NOTHING
+
+    async def zero(self) -> Option[Any]:
+        """Return the zero value for async options.
+
+        In F# computation expressions, this is used when no value is returned,
+        corresponding to None in F#.
+
+        Returns:
+            NOTHING
+        """
         return NOTHING
-    finally:
-        invocation.close()
+
+    async def delay(self, fn: Callable[[], Option[_TSource]]) -> Option[_TSource]:
+        """Delay the computation.
+
+        Default implementation is to return the result of the function.
+        """
+        return fn()
+
+    async def run(self, computation: Option[_TSource]) -> Option[_TSource]:
+        """Run a computation.
+
+        Default implementation is to return the computation as is.
+        """
+        return computation
+
+    def __call__(
+        self,
+        fn: Callable[
+            _P,
+            AsyncGenerator[_TSource, _TSource]
+            | AsyncGenerator[_TSource, None]
+            | Awaitable[_TSource | None]
+            | _TSource
+            | None,
+        ],
+    ) -> Callable[_P, Awaitable[Option[_TSource]]]:
+        """The builder decorator."""
+        return super().__call__(fn)
 
 
-def async_option(
-    body: Callable[Concatenate[OptionScope, _P], Awaitable[_T]],
-) -> Callable[_P, Coroutine[Any, Any, Option[_T]]]:
-    """Decorate a coroutine that binds optional values through its scope."""
-
-    @wraps(body)
-    async def run(*args: _P.args, **kwargs: _P.kwargs) -> Option[_T]:
-        return await async_run_option(lambda scope: body(scope, *args, **kwargs))
-
-    return hide_scope_parameter(run, body)
+# Create singleton instance
+async_option: AsyncOptionBuilder[Any] = AsyncOptionBuilder()
 
 
-__all__ = ["async_option", "async_run_option"]
+__all__ = ["AsyncOptionBuilder", "async_option"]

@@ -1,13 +1,14 @@
 """Closed result cases and pipe-friendly operations.
 
 ``Result[T, E]`` is the union of ``Ok[T]`` and ``Error[E]``. Match the
-case classes to access their payloads; use a result scope for computations.
+case classes to access their payloads. Iteration and awaiting retain the
+computation-expression protocol, including short-circuiting on Error.
 """
 
 from __future__ import annotations
 
 import builtins
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator
 from typing import (
     TYPE_CHECKING,
     Generic,
@@ -23,6 +24,7 @@ from typing import (
 from typing_extensions import TypeVar
 
 from ._serialization import encode
+from .error import EffectError
 from .option import NOTHING, Nothing
 from .pipe import PipeMixin
 from .tagged_union import TaggedUnion, case, tag
@@ -120,8 +122,12 @@ class Ok(PipeMixin, Generic[_T]):
 
         return Some(self.ok)
 
-    def __iter__(self) -> Iterator[_T]:
-        return iter((self.ok,))
+    def __iter__(self) -> Generator[_T, _T, _T]:
+        return (yield self.ok)
+
+    def __await__(self) -> Generator[_T, _T, _T]:
+        return self.ok
+        yield
 
     def __str__(self) -> str:
         return f"Ok {self.ok}"
@@ -205,8 +211,13 @@ class Error(PipeMixin, Generic[_E]):
         """Discard the error and return Nothing."""
         return NOTHING
 
-    def __iter__(self) -> Iterator[Never]:
-        return iter(())
+    def __iter__(self) -> Generator[Never, object, Never]:
+        raise EffectError(self)
+        yield
+
+    def __await__(self) -> Generator[Never, object, Never]:
+        raise EffectError(self)
+        yield
 
     def __str__(self) -> str:
         return f"Error {self.error}"

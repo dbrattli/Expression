@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from typing import Any
 
 import pytest
@@ -21,7 +22,7 @@ def test_catch_wraps_error():
 
     result = fn()
     match result:
-        case Error(error=ex):
+        case Error(ex):
             assert isinstance(ex, ValueError)
             assert str(ex) == "error"
 
@@ -49,7 +50,7 @@ def test_catch_chained():
 
     result = fn(ValueError("error"))
     match result:
-        case Error(error=ex):
+        case Error(ex):
             assert isinstance(ex, ValueError)
             assert str(ex) == "error"
         case _:
@@ -57,7 +58,7 @@ def test_catch_chained():
 
     result = fn(KeyError("error"))
     match result:
-        case Error(error=ex):
+        case Error(ex):
             assert isinstance(ex, KeyError)
             assert str(ex) == "'error'"
         case _:
@@ -66,9 +67,9 @@ def test_catch_chained():
 
 def test_catch_with_effect_ok():
     @catch(exception=TypeError)
-    @effect.try_
-    def fn(scope: effect.ResultScope[Exception], a: int) -> int:
-        b = scope.bind(Ok(42))
+    @effect.try_[int]()
+    def fn(a: int) -> Generator[int, int, int]:
+        b = yield from Ok(42)
         return a + b
 
     result = fn(1)
@@ -77,14 +78,14 @@ def test_catch_with_effect_ok():
 
 def test_catch_with_effect_error():
     @catch(exception=TypeError)
-    @effect.try_
-    def fn(scope: effect.ResultScope[Exception], a: int) -> int:
-        b = scope.bind(Error(ValueError("failure")))
+    @effect.try_[int]()
+    def fn(a: int) -> Generator[int, int, int]:
+        b = yield from Error(ValueError("failure"))
         return a + b
 
     result = fn(1)
     match result:
-        case Error(error=ex):
+        case Error(ex):
             assert isinstance(ex, ValueError)
             assert str(ex) == "failure"
         case _:
@@ -93,14 +94,14 @@ def test_catch_with_effect_error():
 
 def test_catch_with_effect_exception():
     @catch(exception=TypeError)
-    @effect.result
-    def fn(scope: effect.ResultScope[Exception], a: int) -> str:
-        b = scope.bind(Ok("hello"))
+    @effect.result[str, Exception]()
+    def fn(a: int) -> Generator[str, str, str]:
+        b = yield from Ok("hello")
         return a + b  # type: ignore (by design)
 
     result = fn(1)
     match result:
-        case Error(error=ex):
+        case Error(ex):
             assert isinstance(ex, TypeError)
         case _:
             assert False

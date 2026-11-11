@@ -336,32 +336,52 @@ def exists(x: Option[int]) -> bool:
 
 ### Option as an effect
 
-Typed scopes bind optional values in ordinary functions. Each binding keeps its
-own payload type. Binding `Nothing()` ends the computation; returning a value wraps
-it in `Some`, including when that value is `None`.
+Effects in Expression is implemented as specially decorated coroutines
+([enhanced generators](https://www.python.org/dev/peps/pep-0342/)) using
+`yield`, `yield from` and `return` to consume or generate optional values:
 
 ```python
-from expression import Nothing, Some, effect
+from collections.abc import Generator
+
+from expression import Some, effect
 
 
-@effect.option
-def fn3(scope: effect.OptionScope) -> int:
-    x = scope.bind(Some(42))
-    text = scope.bind(Some("43"))
-    return x + int(text)
+@effect.option[int]()
+def fn3() -> Generator[int, int, int]:
+    x = yield 42
+    y = yield from Some(43)
+
+    return x + y
 
 
-assert fn3() == Some(85)
-
-
-@effect.option
-def fn4(scope: effect.OptionScope) -> int:
-    return scope.bind(Nothing())
-
-
-assert fn4() is Nothing()
+xs = fn3()
 ```
 
+This enables ["railway oriented programming"](https://fsharpforfunandprofit.com/rop/),
+e.g., if one part of the function yields from `NOTHING` then the function is
+side-tracked (short-circuit) and the following statements will never be executed. The
+end result of the expression will be `NOTHING`. Thus results from such an option
+decorated function can either be `Some(value)` or `Nothing()`.
+
+```python
+from collections.abc import Generator
+
+from expression import NOTHING, Some, effect
+
+
+@effect.option[int]()
+def fn4() -> Generator[int, int, int]:
+    x = yield from NOTHING  # or a function returning NOTHING
+
+    # -- The rest of the function will never be executed --
+    y = yield from Some(43)
+
+    return x + y
+
+
+xs = fn4()
+assert xs is NOTHING
+```
 
 ### Option as an applicative
 
@@ -409,17 +429,17 @@ For more information about options:
 The `Result[T, TError]` type lets you write error-tolerant code that can be composed. A
 Result works similar to `Option`, but lets you define the value used for errors, e.g.,
 an exception type or similar. This is great when you want to know why some operation
-failed (not just `Nothing()`). This type serves the same purpose of an `Either` type where
+failed (not just `NOTHING`). This type serves the same purpose of an `Either` type where
 `Left` is used for the error condition and `Right` for a success value.
 
 ```python
-from expression import Ok, Result, effect
+from expression import Ok, effect
 
 
-@effect.result
-def fn5(scope: effect.ResultScope[Exception]) -> int:
-    x = scope.bind(Ok(42))
-    y = scope.bind(Ok(10))
+@effect.result[int, Exception]()
+def fn5() -> Generator[int, int, int]:
+    x = yield from Ok(42)
+    y = yield from Ok(10)
     return x + y
 
 
@@ -433,52 +453,131 @@ pinned to `Exception` i.e., `Result[TSource, Exception]`.
 
 ### AsyncResult
 
-Use an ordinary coroutine to await I/O, then bind the returned result through its
-scope. The error type is checked at each bind, and `return` determines the final
-success type. Unexpected exceptions and cancellation propagate normally.
+The `AsyncResult[T, TError]` type is the asynchronous version of `Result`. It allows you
+to compose asynchronous operations that may fail, using the Result type. This is
+particularly useful for handling errors in asynchronous code, such as API calls,
+database operations, or any other I/O-bound tasks.
+
+Similar to the `Result` effect, AsyncResult enables "railway oriented programming" but
+for asynchronous operations. If any part of the function yields an `Error`, the function
+is short-circuited and the following statements will never be executed.
 
 ```python
-from expression import Error, Ok, Result, effect
+from collections.abc import AsyncGenerator
+
+from expression import Error, Ok, effect
 
 
-async def fetch_count() -> Result[int, str]:
-    return Ok(42)
+@effect.async_result[int, str]()
+async def fn() -> AsyncGenerator[int, int]:
+    x: int = yield 42  # Regular value
+    y: int = yield await Ok(43)  # Awaitable Ok value
+
+    # Short-circuit if condition is met
+    if x + y > 80:
+        z: int = yield await Error("Value too large")  # This will short-circuit
+    else:
+        z: int = yield 44
+
+    yield x + y + z  # Final value
 
 
-@effect.async_result
-async def async_total(scope: effect.ResultScope[str]) -> int:
-    count = scope.bind(await fetch_count())
-    if count > 80:
-        scope.bind(Error("Value too large"))
-    return count + 1
-
-
-# In an async context: await async_total() == Ok(43)
+# This would be run in an async context
+# result = await fn()
+# assert result == Error("Value too large")
 ```
+
+AsyncResult works well with other async functions and can be nested:
+
+```python
+@effect.async_result[int, str]()
+async def inner(x: int) -> AsyncGenerator[int, int]:
+    y: int = yield x + 1
+    yield y + 1  # Final value is y + 1
+
+
+@effect.async_result[int, str]()
+async def outer() -> AsyncGenerator[int, int]:
+    x: int = yield 40
+
+    # Call inner and await its result
+    inner_result = await inner(x)
+    y: int = yield await inner_result
+
+    yield y  # Final value is y
+
+
+# This would be run in an async context
+# result = await outer()
+# assert result == Ok(42)  # 40 -> 41 -> 42
+```
+
+A simplified type called `AsyncTry` is also available. It's an async result type that is
+pinned to `Exception` i.e., `AsyncResult[TSource, Exception]`.
 
 
 ### AsyncOption
 
-Async Option scopes use the same binding operation as synchronous scopes.
-`await` retrieves an optional value from I/O; `scope.bind` checks its case.
+The `AsyncOption[T]` type is the asynchronous version of `Option`. It allows you to
+compose asynchronous operations that may return an optional value, using the Option type.
+This is particularly useful for handling optional values in asynchronous code, such as
+API calls that might not return a value, database queries that might not find a record,
+or any other I/O-bound tasks that might not produce a meaningful result. The AsyncOption
+builder was added in version 0.25.0.
+
+Similar to the `Option` effect, AsyncOption enables short-circuiting but for asynchronous
+operations. If any part of the function yields `NOTHING`, the function is short-circuited
+and the following statements will never be executed.
 
 ```python
-from expression import Option, Some, effect
+from collections.abc import AsyncGenerator
+
+from expression import Some, effect
 
 
-async def fetch_name() -> Option[str]:
-    return Some("Ada")
+@effect.async_option[int]()
+async def fn_option() -> AsyncGenerator[int, int]:
+    x: int = yield 42  # Regular value
+    y: int = yield await Some(43)  # Awaitable Some value
+
+    # Short-circuit if condition is met
+    if x + y > 80:
+        z: int = yield await NOTHING  # This will short-circuit
+    else:
+        z: int = yield 44
+
+    yield x + y + z  # Final value
 
 
-@effect.async_option
-async def greeting(scope: effect.OptionScope) -> str:
-    name = scope.bind(await fetch_name())
-    return f"Hello, {name}"
-
-
-# In an async context: await greeting() == Some("Hello, Ada")
+# This would be run in an async context
+# result = await fn_option()
+# assert result is NOTHING
 ```
 
+AsyncOption works well with other async functions and can be nested:
+
+```python
+@effect.async_option[int]()
+async def inner_option(x: int) -> AsyncGenerator[int, int]:
+    y: int = yield x + 1
+    yield y + 1  # Final value is y + 1
+
+
+@effect.async_option[int]()
+async def outer_option() -> AsyncGenerator[int, int]:
+    x: int = yield 40
+
+    # Call inner and await its result
+    inner_result = await inner_option(x)
+    y: int = yield await inner_result
+
+    yield y  # Final value is y
+
+
+# This would be run in an async context
+# result = await outer_option()
+# assert result == Some(42)  # 40 -> 41 -> 42
+```
 
 ### Sequence
 

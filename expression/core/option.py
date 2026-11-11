@@ -1,14 +1,14 @@
 """Closed optional values and pipe-friendly operations.
 
 ``Option[T]`` is the union of ``Some[T]`` and the singleton case ``Nothing``.
-Match the case classes to access their payloads. Iteration yields zero or one
-values; computation scopes provide short-circuit binding separately.
+Match the case classes to access their payloads. Iteration and awaiting retain
+the computation-expression protocol, including short-circuiting on Nothing.
 """
 
 from __future__ import annotations
 
 import builtins
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -28,6 +28,7 @@ from typing_extensions import TypeVar, TypeVarTuple, Unpack
 from ._serialization import encode
 from ._union_schema import UnionSchema
 from .curry import curry_flip
+from .error import EffectError
 from .pipe import PipeMixin
 from .tagged_union import case, tag
 
@@ -139,8 +140,12 @@ class Some(PipeMixin, Generic[_TSourceOut]):
         """Return the payload; use matching when the case is not known."""
         return self.some
 
-    def __iter__(self) -> Iterator[_TSourceOut]:
-        yield self.some
+    def __iter__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
+        return (yield self.some)
+
+    def __await__(self) -> Generator[_TSourceOut, _TSourceOut, _TSourceOut]:
+        return self.some
+        yield
 
     def __str__(self) -> str:
         return f"Some {self.some}"
@@ -246,8 +251,13 @@ class Nothing(PipeMixin):
         """Raise ValueError because this option has no payload."""
         raise ValueError("There is no value.")
 
-    def __iter__(self) -> Iterator[Never]:
-        return iter(())
+    def __iter__(self) -> Generator[Never, object, Never]:
+        raise EffectError(self)
+        yield
+
+    def __await__(self) -> Generator[Never, object, Never]:
+        raise EffectError(self)
+        yield
 
     def __str__(self) -> str:
         return "Nothing"
@@ -355,13 +365,13 @@ def or_else(option: Option[_TSource], if_none: Option[_TResult]) -> Option[_TSou
 
 
 def to_list(option: Option[_TEmpty]) -> list[_TEmpty]:
-    return list(option)
+    return option.to_list()
 
 
 def to_seq(option: Option[_TEmpty]) -> Seq[_TEmpty]:
     from expression.collections.seq import Seq
 
-    return Seq(option)
+    return Seq(option.to_list())
 
 
 @overload

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from dataclasses import field
-from typing import Generic, Literal, Never, TypeAlias, TypeVar, assert_never, assert_type, final
+from typing import Generic, Literal, TypeAlias, TypeVar, assert_never, assert_type, cast, final
 
 from expression import (
     NOTHING,
@@ -60,44 +61,6 @@ def result_contract(value: Result[int, str]) -> None:
             assert_type(error, str)
         case _:
             assert_never(value)
-
-
-@effect.result
-def workflow(scope: effect.ResultScope[str], number: int, *, suffix: str = "!") -> bool:
-    value = scope.bind(Ok(number))
-    text = scope.bind(Some(str(value)).to_result("missing"))
-    assert_type(value, int)
-    assert_type(text, str)
-    return text.endswith(suffix)
-
-
-@effect.option
-def optional_workflow(scope: effect.OptionScope, value: Option[int]) -> str:
-    number = scope.bind(value)
-    text = scope.bind(Some(str(number)))
-    assert_type(number, int)
-    assert_type(text, str)
-    return text
-
-
-@effect.async_result
-async def asynchronous_workflow(scope: effect.ResultScope[str], value: Result[int, str]) -> bool:
-    number = scope.bind(value)
-    assert_type(number, int)
-    return number > 0
-
-
-def decorated_contracts() -> None:
-    assert_type(workflow(1, suffix="?"), Result[bool, str])
-    assert_type(optional_workflow(Some(42)), Option[str])
-
-
-def direct_failure(scope: effect.ResultScope[str]) -> Never:
-    scope.bind(Error("failed"))
-
-
-async def asynchronous_contract() -> None:
-    assert_type(await asynchronous_workflow(Ok(1)), Result[bool, str])
 
 
 _T = TypeVar("_T", covariant=True)
@@ -214,3 +177,30 @@ def custom_recursive_match(value: Tree) -> int:
             return payload
         case _:
             assert_never(value)
+
+
+@effect.option[int]()
+def optional_computation(value: Option[int]) -> Generator[int, int, int]:
+    # Pyright #11881: unions of iterable classes lose the return type.
+    number = cast(int, (yield from value))
+    direct = yield from Some(1)
+    assert_type(direct, int)
+    return number + direct
+
+
+@effect.result[int, str]()
+def result_computation(value: Result[int, str]) -> Generator[int, int, int]:
+    number = cast(int, (yield from value))
+    direct = yield from Ok(1)
+    assert_type(direct, int)
+    return number + direct
+
+
+def computation_contracts() -> None:
+    assert_type(optional_computation(Some(1)), Option[int])
+    assert_type(result_computation(Ok(1)), Result[int, str])
+
+
+async def await_contracts(option_value: Option[int], result_value: Result[int, str]) -> None:
+    assert_type(await option_value, int)
+    assert_type(await result_value, int)

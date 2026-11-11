@@ -1,4 +1,4 @@
-# Tagged unions and typed computations: implementation and rationale
+# Tagged unions: implementation and rationale
 
 **Status:** Implemented for the next major version of Expression.
 **Minimum Python:** 3.11. **Optional Pydantic:** 2.10 or later, below 3.
@@ -6,25 +6,13 @@
 Expression now represents tagged unions as explicit, frozen, final case classes
 combined in public type aliases. Each case declares only its own payload. The
 same public declaration API defines custom unions and the built-in `Some`,
-`Nothing`, `Ok`, and `Error` cases. Computations use typed scopes with ordinary
-functions and coroutines.
+`Nothing`, `Ok`, and `Error` cases. Existing computation-expression builders
+retain their API and semantics with these new case classes.
 
 This document records the implemented design and its tradeoffs. It replaces the
 candidate comparison from the original proposal: the selected representation was
 previously called **Candidate C**, not Candidate A. The migration steps and
 additional usage examples are in the [migration guide](docs/guides/migration-major.md).
-
-## Follow-up: computation-expression direction
-
-The current code uses typed scopes, but the design goal has been clarified:
-Expression should preserve the meaning of F# computation expressions rather
-than treat scopes as their replacement. The [F# CE investigation](investigations/fsharp_ce/README.md)
-compares executable F# builders with Python computation objects, direct
-`yield from operation()` binding, terminal return/return-from, and the original
-`yield value` spelling. It records both working typed behavior and concrete
-limits involving Zero, Combine, None, and error-channel checking. No new CE API
-has been exported; the scope implementation remains the current implementation
-while that semantic contract is settled.
 
 ## Why we changed the representation
 
@@ -247,20 +235,14 @@ or free guards such as `option.is_some` and `result.is_ok`.
 Source: [Result](expression/core/result.py), [Try](expression/core/try_.py),
 [consumer typing contracts](tests/typing_contracts.py).
 
-## Why computations use typed scopes
+## Existing computation expressions are preserved
 
-Correct case types alone cannot fix the old generator computation protocol.
-Its yielded, sent, and returned types coupled unrelated intermediate payloads,
-and its Result iteration contract did not carry the error type to the runner.
-That allowed computations to bind the wrong error type or effect family without
-an accurate static description of the resulting failure.
-
-The implemented API uses ordinary functions. A scope fixes the effect family
-and, for Result, the error type. Each call to `bind` independently infers its
-payload type. The body's return annotation describes the final successful value;
-the decorator exposes the corresponding container to callers.
+This change improves the tagged-union representation without replacing the
+computation builders. Keep `@effect.option[T]()`, `@effect.result[T, E]()`,
+`@effect.try_[T]()` and their async counterparts.
 
 ```python
+from collections.abc import Generator
 from expression import Error, Ok, Result, effect
 
 
@@ -268,49 +250,51 @@ def parse_count(text: str) -> Result[int, str]:
     return Ok(int(text)) if text.isdigit() else Error("invalid count")
 
 
-@effect.result
-def describe_count(scope: effect.ResultScope[str], text: str) -> str:
-    count = scope.bind(parse_count(text))  # int
-    label = scope.bind(Ok("items"))  # str
-    return f"{count} {label}"
+@effect.result[int, str]()
+def total(text: str) -> Generator[int, int, int]:
+    count = yield from parse_count(text)
+    increment = yield 1
+    return count + increment
 
 
-assert describe_count("3") == Ok("3 items")
-assert describe_count("bad") == Error("invalid count")
+assert total("3") == Ok(4)
+assert total("bad") == Error("invalid count")
 ```
 
-`@effect.option` supplies `OptionScope`. The async variants are
-`@effect.async_result` and `@effect.async_option`: await the I/O operation to
-obtain a container, then call `scope.bind(container)`. There is no requirement
-that different binds have the same payload type.
+The existing builder semantics remain the contract:
 
-Binding `Error` or `Nothing()` aborts that invocation using an internal,
-owner-specific control signal. Normal `finally` cleanup runs; unrelated
-exceptions and cancellation propagate. The first bound failure remains the
-outcome even if user code catches the internal signal. Each scope checks its
-active lifetime, thread, and task, so it cannot be reused after completion or
-bound from another execution context. Nested invocations have separate scopes.
+- `yield value` lifts the value and sends it back into the generator. A final
+  non-`None` `return value` also lifts the value.
+- `yield from Some(value)` / `Ok(value)` binds the payload; `yield from Nothing()`
+  / `Error(error)` short-circuits. Nested decorated computations work the same way.
+- A final `return None` or fall-through retains the last yielded value. With no
+  produced value, Option returns `NOTHING` and Result returns `Ok(None)`.
+- Plain function bodies remain supported. Async builders keep their existing
+  async-generator and coroutine behavior, including awaiting Option/Result values.
+- Ordinary exceptions propagate. `try_` constrains the declared error type to
+  exceptions; use `catch` to convert raised exceptions to results.
 
-Callback runners (`run_result`, `run_option`, and their async equivalents)
-support bound methods. Decorators preserve external parameter typing. Runtime
-introspection hides the supplied scope parameter and omits the body's return
-annotation, which describes the payload rather than the wrapped result; the
-original annotations remain available through `__wrapped__`.
+Iteration therefore remains an effect protocol, not a safe empty collection
+conversion. Use `to_list()` or `to_seq()` to convert an Option to a collection.
 
-A normal return, including `None`, is success: `Some(None)` or `Ok(None)`.
-Absence and failure require binding `Nothing()` or `Error`. Ordinary Python
-fall-through still returns `None`, so return annotations remain important.
-Containers are no longer awaitable, and iteration simply yields zero or one
-successful payloads; it does not bind an effect.
+The tagged-union improvement does not solve all generator typing limitations.
+Python generators have one send type, and the short-circuit exception does not
+carry an effect family or Result error type in the static generator signature.
+Wrong-family or wrong-error bindings are not guaranteed to be rejected. Any
+builder redesign that addresses these limitations belongs in a follow-up PR;
+this PR introduces no scopes, callback runners, or computation adapters.
 
-No generator compatibility adapter is included. The sequence computation builder
-retains its existing generator behavior. `effect.try_` and `effect.async_try`
-constrain explicit Result errors to exceptions; they do not automatically catch
-unexpected exceptions from the body.
+Pyright 1.1.414 also has a separate [union-iteration inference bug](https://github.com/microsoft/pyright/issues/11881):
+`yield from value` can infer `Unknown` when `value` is annotated as an Option or
+Result union, although direct case instances infer correctly. Runtime semantics
+are unaffected. Until the checker fixes this, `cast(T, (yield from value))`
+restores the known payload type at affected call sites. The original nested
+builder tests and internal traversal use this narrow workaround. It is not
+an error-channel guarantee and does not change the public union representation.
 
-Source: [Result scopes](expression/effect/result.py),
-[Option scopes](expression/effect/option.py),
-[invocation ownership](expression/effect/_scope.py).
+Source: [Option builder](expression/effect/option.py),
+[Result builder](expression/effect/result.py), and
+[shared generator runner](expression/core/builder.py).
 
 ## Serialization is part of the contract
 
@@ -362,7 +346,6 @@ Source: [schema construction](expression/core/_union_schema.py),
 | Nominal wrapper containing a case union | Gives accurate narrowing through an extra `.case` layer, but adds indirection and a second representation to the public API. |
 | Case classes with phantom family type parameters | Couples a constructor to types absent from its payload, mainly to accommodate the old computation protocol. |
 | Erasing Option to a payload or `None` | Loses the uniform wrapped API and requires special handling of successful `None` and nesting. |
-| Typed generator adapter | An isolated synchronous prototype recovers typed `yield from bind(...)`; it is not part of the public API. See the [investigation](investigations/typed_generators/README.md) for evidence and limits. |
 
 Explicit cases cost more declaration lines than the old field-marker syntax and
 repeat some fluent methods. We accept that cost because users and type checkers
@@ -376,8 +359,8 @@ This is a breaking major-version change. The old `@tagged_union` decorator and
 `case()` field marker are removed; lowercase `tagged_union` is now a module
 namespace. `Option.Some`, `Result.Ok`, direct union-class construction, and old
 `case Option(...)` / `case Result(...)` patterns must be migrated. Cross-case
-ordering, container awaiting, and generator-based Option/Result computations are
-also removed. See the [migration guide](docs/guides/migration-major.md) for replacements.
+ordering is also removed. Container awaiting and generator-based Option/Result
+computations are preserved. See the [migration guide](docs/guides/migration-major.md) for replacements.
 
 The supported minimum is Python 3.11. The repository pins Pyright **1.1.414** in
 [pre-commit](.pre-commit-config.yaml); the design relies on explicit unions and
@@ -395,13 +378,13 @@ The maintained evidence is executable repository coverage:
 - [Synchronous Result](tests/test_result_builder.py) and
   [Option](tests/test_option_builder.py) computations, their
   [async Result](tests/test_async_result_builder.py) and
-  [async Option](tests/test_async_option_builder.py) counterparts, and
-  [introspection](tests/test_scope_introspection.py): outcomes, ownership,
-  cleanup, and callable contracts.
+  [async Option](tests/test_async_option_builder.py) counterparts: original
+  evaluation order, binding, short-circuiting, nesting, loops, empty bodies,
+  wrapped values, and exception behavior.
 - [Positive typing contracts](tests/typing_contracts.py) and
   [negative consumers](typing_tests/negative.py), enforced by
   [the typing check](scripts/check_typing.py): inferred payloads, narrowing,
-  exhaustive matching, invalid construction, and invalid computation bindings.
+  exhaustive matching, and invalid construction.
 
 These tests, the implementation, and the migration guide define the delivered
 contract. Historical experiments and their machine-local artifacts are not

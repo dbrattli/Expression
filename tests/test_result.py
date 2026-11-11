@@ -657,11 +657,14 @@ def test_result_copy_pickle_and_hash():
         hash(Ok([]))
 
 
-def test_result_is_an_ordinary_iterable_and_not_awaitable():
+def test_result_iteration_and_awaiting_use_effect_protocol():
+    from expression.core.error import EffectError
+
     assert list(Ok(42)) == [42]
-    assert list(Error("bad")) == []
-    assert not hasattr(Ok(42), "__await__")
-    assert not hasattr(Error("bad"), "__await__")
+    with pytest.raises(EffectError):
+        list(Error("bad"))
+    assert hasattr(Ok(42), "__await__")
+    assert hasattr(Error("bad"), "__await__")
 
 
 def test_result_does_not_order_cases():

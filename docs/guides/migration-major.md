@@ -1,4 +1,4 @@
-# Migrating to case unions and typed scopes
+# Migrating to case unions
 
 This major version requires Python 3.11 or later. The optional Pydantic
 integration requires Pydantic 2.10 or later to preserve generic payload
@@ -85,76 +85,28 @@ invariant container's element type. Use `pipe(value, option.to_list)`,
 `option.to_list(value)`, or `items: list[int] = value.to_list()`; the equivalent
 forms work for `to_seq`.
 
-## Bind through scopes
+## Keep existing computation expressions
 
-Replace generator builders and their type arguments with ordinary functions.
-The decorator supplies the first scope argument, infers the final result from
-the return type, and preserves the remaining public call signature.
+The builder API and semantics are unchanged. Keep `@effect.option[T]()`,
+`@effect.result[T, E]()`, `yield`, `yield from`, and the async builders with
+`await`. Update case names and patterns as described above; in particular,
+replace the old `Nothing` value with `Nothing()` or the shared `NOTHING` constant.
 
-Static checking knows the wrapped return type. Runtime introspection exposes
-the external parameters and omits the return annotation, since the body's
-annotation describes the unwrapped payload. The original function and its full
-annotations remain accessible through `__wrapped__`.
+A non-`None` final return is lifted. A final `None` retains the last yielded
+value; an empty Option computation returns `NOTHING`, and an empty Result
+computation returns `Ok(None)`. To produce successful `None` explicitly, use
+`yield None`. Existing generator typing limitations remain; a builder redesign
+is deferred to a separate PR.
 
-```python
-from expression import Error, Ok, Result, effect
+Pyright 1.1.414 has an [open inference bug](https://github.com/microsoft/pyright/issues/11881)
+for `yield from` on a union of iterable case classes. If it reports `Unknown`,
+use `cast(T, (yield from value))` with the known payload type. Direct `Some` and
+`Ok` instances infer correctly; this workaround only addresses checker inference,
+not the existing unchecked effect-family/error-channel limitation.
 
-def parse_count(text: str) -> Result[int, str]:
-    return Ok(int(text)) if text.isdigit() else Error("invalid count")
-
-@effect.result
-def describe_count(scope: effect.ResultScope[str], text: str) -> str:
-    count = scope.bind(parse_count(text))
-    label = scope.bind(Ok("items"))
-    return f"{count} {label}"
-
-assert describe_count("3") == Ok("3 items")
-assert describe_count("bad") == Error("invalid count")
-```
-
-Every binding has its own payload type. The scope's error type constrains every
-bound Result. `OptionScope` accepts only Option cases. Binding an error or
-`Nothing()` ends that invocation and executes normal `finally` cleanup. The first
-failure remains the outcome even if a broad exception handler catches the
-internal control signal. Ordinary exceptions propagate.
-
-A scope belongs to one invocation and execution context. Do not store it for
-later use or pass it into another task or thread; such binds raise `RuntimeError`.
-Nested computations receive independent scopes.
-
-For methods, use `effect.run_result(self.compute)` or `effect.run_option(...)`,
-where the bound method accepts a scope and returns its successful value. Async
-callback runners are `async_run_result` and `async_run_option`.
-
-## Async computations and successful None
-
-Use ordinary coroutines with `@effect.async_result` or `@effect.async_option`.
-Await I/O to retrieve a container, then bind it:
-
-```python
-async def fetch_count() -> Result[int, str]:
-    return Ok(42)
-
-@effect.async_result
-async def positive(scope: effect.ResultScope[str]) -> bool:
-    count = scope.bind(await fetch_count())
-    return count > 0
-
-# await positive() returns Ok(True).
-```
-
-Containers themselves are no longer awaitable. Their iteration is ordinary:
-`list(Some(42)) == [42]`, `list(Nothing()) == []`, `list(Ok(42)) == [42]`, and
-`list(Error("failed")) == []`. Iterating does not perform an effect bind.
-Replace `yield from container` and `yield await container` with `scope.bind`.
-The sequence builder `@effect.seq[T]()` keeps its existing generator behavior.
-
-The final `return` determines the successful payload, including `None`:
-an Option computation returning `None` produces `Some(None)`, and a Result
-computation returning `None` produces `Ok(None)`. Bind `Nothing()` or `Error(...)`
-to express absence or failure. Implicit fall-through also returns `None` under
-ordinary Python rules; annotate the intended return type so the checker catches
-missing returns where appropriate.
+Option/Result iteration still implements computation binding and short-circuits
+on `Nothing()` / `Error(...)`. For ordinary Option collection conversion, use
+`to_list()` or `to_seq()`.
 
 `Try[T]` is now the alias `Result[T, Exception]`. `Success` and `Failure` remain
 convenience constructors returning `Ok` and `Error`; they no longer have a

@@ -561,8 +561,11 @@ def test_pickle_option_works():
     assert y == load_y
 
 
-def test_nothing_iteration_is_empty():
-    assert list(Nothing()) == []
+def test_nothing_iteration_short_circuits():
+    from expression.core.error import EffectError
+
+    with pytest.raises(EffectError):
+        list(Nothing())
     assert list(Some(None)) == [None]
 
 
@@ -647,11 +650,11 @@ def test_constructor_does_not_accept_a_tag():
         constructor(1, tag="none")
 
 
-def test_option_container_is_not_awaitable():
+def test_option_container_is_awaitable():
     import inspect
 
-    assert not inspect.isawaitable(Some(1))
-    assert not inspect.isawaitable(Nothing())
+    assert inspect.isawaitable(Some(1))
+    assert inspect.isawaitable(Nothing())
 
 
 def test_option_pipeline_defaults_preserve_payload_and_fallback_types():

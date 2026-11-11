@@ -8,6 +8,8 @@ behaviour in a direct style.
 """
 
 # %%
+from collections.abc import Generator
+
 from expression import Error, Ok, Result, effect
 
 
@@ -21,10 +23,10 @@ def apply_discount(price: int, percentage: int) -> Result[int, str]:
     return Ok(price * (100 - percentage) // 100)
 
 
-@effect.result
-def discounted_price(scope: effect.ResultScope[str], raw_price: str, percentage: int) -> int:
-    price = scope.bind(parse_price(raw_price))
-    return scope.bind(apply_discount(price, percentage))
+@effect.result[int, str]()
+def discounted_price(raw_price: str, percentage: int) -> Generator[int, int, int]:
+    price = yield from parse_price(raw_price)
+    return (yield from apply_discount(price, percentage))
 
 
 assert discounted_price("120", 25) == Ok(90)
@@ -33,7 +35,7 @@ assert discounted_price("120", 200) == Error("Discount must be between 0 and 100
 
 # %% [markdown]
 """
-The `option`, `async_option`, `async_result`, and `async_try` decorators use typed
-scopes for their respective outcomes. The sequence builder retains generator syntax. Use a builder only when it makes a workflow
+The `option`, `seq`, `async_option`, `async_result`, and `async_try` builders follow the
+same idea for their respective return types. Use a builder only when it makes a workflow
 clearer than a chain of `bind` calls.
 """

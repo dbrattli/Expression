@@ -1,9 +1,0 @@
-{
-  "include": ["computation.py", "positive.py", "test_computation.py"],
-  "extraPaths": ["../.."],
-  "venvPath": "../..",
-  "venv": ".venv",
-  "pythonVersion": "3.11",
-  "typeCheckingMode": "strict",
-  "reportImportCycles": false
-}

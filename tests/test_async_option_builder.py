@@ -1,163 +1,429 @@
+"""Tests for async_option builder implementation."""
+
 import asyncio
-from inspect import Signature, signature, unwrap
-from typing import assert_type, cast
+from collections.abc import AsyncGenerator
+from typing import List
 
 import pytest
+from pytest import raises
 
-from expression import Nothing, Ok, Option, Some, effect
-from expression.effect import OptionScope
-
-
-@pytest.mark.asyncio
-async def test_async_option_scope_binds_awaited_values_and_final_type():
-    async def fetch(number: int) -> Option[int]:
-        await asyncio.sleep(0)
-        return Some(number) if number > 0 else Nothing()
-
-    @effect.async_option
-    async def computation(scope: OptionScope, number: int) -> str:
-        value = scope.bind(await fetch(number))
-        assert_type(value, int)
-        return str(value)
-
-    assert_type(await computation(42), Option[str])
-    assert await computation(42) == Some("42")
-    assert await computation(0) is Nothing()
-    assert tuple(signature(computation).parameters) == ("number",)
-    assert signature(computation).return_annotation is Signature.empty
-    assert computation.__annotations__ == {"number": int}
-    assert signature(unwrap(computation)).return_annotation is str
+from expression import effect, Some, NOTHING
+from tests.utils import CustomException
 
 
 @pytest.mark.asyncio
-async def test_async_option_none_is_a_successful_payload():
-    @effect.async_option
-    async def computation(scope: OptionScope) -> None:
-        return scope.bind(Some(None))
+async def test_async_option_builder_evaluation_order():
+    """Test that async_option builder evaluates computations in the correct order."""
+    evaluated: List[int] = []
 
-    assert_type(await computation(), Option[None])
-    assert await computation() == Some(None)
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        evaluated.append(1)  # First computation
+        x: int = yield 42
 
+        evaluated.append(2)  # Second computation
+        y: int = yield 43
 
-@pytest.mark.asyncio
-async def test_async_option_failure_runs_cleanup():
-    trace: list[str] = []
+        evaluated.append(3)  # Final computation
+        yield x + y  # Instead of return, use yield for the final value
 
-    @effect.async_option
-    async def computation(scope: OptionScope) -> int:
-        try:
-            scope.bind(Nothing())
-            trace.append("unreachable")
-            return 42
-        finally:
-            await asyncio.sleep(0)
-            trace.append("cleanup")
-
-    assert await computation() is Nothing()
-    assert trace == ["cleanup"]
+    computation = await fn()
+    assert evaluated == [1, 2, 3]  # All computations ran in order
+    assert computation == Some(85)
 
 
 @pytest.mark.asyncio
-async def test_async_option_caught_failure_is_terminal():
-    @effect.async_option
-    async def computation(scope: OptionScope) -> int:
-        try:
-            scope.bind(Nothing())
-        except BaseException:
-            pass
+async def test_async_option_builder_short_circuit():
+    """Test that async_option builder properly short circuits with NOTHING."""
+    evaluated: List[int] = []
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        evaluated.append(1)  # First computation
+        x: int = yield 42
+
+        evaluated.append(2)  # Should not reach here
+        # Use await with NOTHING to leverage the awaitable functionality
+        y: int = yield await NOTHING  # Short circuits here
+
+        evaluated.append(3)  # Should not reach here
+        yield x + y  # This won't be reached
+
+    computation = await fn()
+    assert evaluated == [1, 2]  # Should run until yield NOTHING
+    assert computation is NOTHING
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_combine():
+    """Test that async_option builder properly combines computations."""
+    evaluated: List[int] = []
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        evaluated.append(1)
+        yield 42  # First computation
+
+        evaluated.append(2)
+        yield 43  # Second computation combined with first
+
+        evaluated.append(3)
+        yield 44  # Final result
+
+    computation = await fn()
+    assert evaluated == [1, 2, 3]  # All computations ran
+    assert computation == Some(44)  # Returns final value
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_return_from():
+    """Test that async_option builder properly handles return! (return_from)."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        x: int = yield await Some(42)
+        yield x
+
+    computation = await fn()
+    match computation:
+        case Some(value):
+            assert value == 42
+        case _:
+            assert False
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_zero():
+    """Test that async_option builder properly handles empty computations."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        if False:
+            yield 42
+        # No yield should use zero()
+
+    computation = await fn()
+    assert computation is NOTHING  # Assert that zero() returns NOTHING
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_yield_some():
+    """Test that async_option builder properly handles yielding Some."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        # Use await with Some to leverage the awaitable functionality
+        x: int = yield await Some(42)
+        yield x + 1
+
+    computation = await fn()
+    match computation:
+        case Some(value):
+            assert value == 43
+        case _:
+            assert False
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_yield_nothing():
+    """Test that async_option builder properly handles yielding NOTHING."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        # Use await with NOTHING to leverage the awaitable functionality
+        x: int = yield await NOTHING
+        yield x + 1  # Should not reach here
+
+    computation = await fn()
+    assert computation is NOTHING
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_multiple_operations():
+    """Test that async_option builder properly handles multiple operations."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        x: int = yield 42
+        y: int = yield await Some(43)
+        z: int = yield 44
+        yield x + y + z
+
+    computation = await fn()
+    match computation:
+        case Some(value):
+            assert value == 129  # 42 + 43 + 44
+        case _:
+            assert False
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_nested():
+    """Test that async_option builder properly handles nested computations."""
+
+    @effect.async_option[int]()
+    async def inner(x: int) -> AsyncGenerator[int, int]:
+        y: int = yield x + 1
+        yield y + 1
+
+    @effect.async_option[int]()
+    async def outer() -> AsyncGenerator[int, int]:
+        x: int = yield 42
+
+        # Call inner and await its result
+        inner_result = await inner(x)
+        y: int = yield await inner_result  # Then yield the result
+
+        yield y + 1
+
+    computation = await outer()
+    assert computation == Some(45)  # 42 -> 43 -> 44 -> 45
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_throws():
+    """Test that async_option builder properly handles exceptions."""
+    error = "test error"
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        raise CustomException(error)
+        yield 42  # Should not reach here
+
+    with raises(CustomException) as ex_info:
+        await fn()
+    assert ex_info.value.message == error  # CustomException has message attribute
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_return_some():
+    """Test that async_option builder properly handles returning Some."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        x: int = yield 42
+        yield x  # Use yield instead of return
+
+    computation = await fn()
+    match computation:
+        case Some(value):
+            assert value == 42  # Value should be wrapped in Some
+        case _:
+            assert False
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_yield_some_wrapped():
+    """Test that async_option builder properly handles yielding Some directly."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        x: int = yield await Some(42)  # Yield Some directly
+        yield x  # Use yield instead of return
+
+    computation = await fn()
+    match computation:
+        case Some(value):
+            assert value == 42  # Value should be unwrapped
+        case _:
+            assert False
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_yield_value_async():
+    """Test that async_option builder properly handles async-style yields."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        yield 42
+        # No need for explicit return None
+
+    computation = await fn()
+    match computation:
+        case Some(value):
+            assert value == 42
+        case _:
+            assert False
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_while():
+    """Test that async_option builder properly handles while loops."""
+    evaluated: List[int] = []
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        i = 0
+        while i < 3:
+            evaluated.append(i)
+            _ = yield i  # Using _ for unused variable
+            i += 1
+        yield i
+
+    computation = await fn()
+    assert evaluated == [0, 1, 2]
+    assert computation == Some(3)
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_projection_int_str():
+    """Test that async_option builder properly handles type projections."""
+
+    @effect.async_option[str]()
+    async def fn() -> AsyncGenerator[str, str]:
+        z: str = "Not found"
+
+        # Iterate over Some result (since Option is iterable)
+        for x in Some(42.0):
+            for y in Some(int(x)):
+                z = yield await Some(str(y))
+
+        yield z
+
+    computation = await fn()
+    match computation:
+        case Some(value):
+            assert value == "42"
+        case _:
+            assert False
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_yield_nothing_short_circuit():
+    """Test that yielding NOTHING properly short circuits nested operations."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        x = yield await NOTHING  # Short circuits here
+
+        # The rest should not execute
+        y = yield await Some(43)
+        yield x + y
+
+    computation = await fn()
+    assert computation is NOTHING
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_with_async_functions():
+    """Test that async_option builder properly works with async functions."""
+
+    async def async_function(x: int) -> int:
+        await asyncio.sleep(0.01)  # Small delay to simulate async work
+        return x * 2
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        x: int = yield 21
+
+        # Call an async function and use its result
+        doubled = await async_function(x)
+        y: int = yield doubled
+
+        yield y
+
+    computation = await fn()
+    assert computation == Some(42)
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_with_async_option_functions():
+    """Test that async_option builder properly works with functions returning async Options."""
+
+    async def async_some_function(x: int) -> int:
+        await asyncio.sleep(0.01)  # Small delay to simulate async work
+        return await Some(x * 2)
+
+    async def async_nothing_function() -> int:
+        await asyncio.sleep(0.01)  # Small delay to simulate async work
+        return await NOTHING
+
+    @effect.async_option[int]()
+    async def success_fn() -> AsyncGenerator[int, int]:
+        x: int = yield 21
+
+        # Call async function and get its result
+        result = await async_some_function(x)
+        # Then yield the result
+        y: int = yield result
+
+        yield y
+
+    @effect.async_option[int]()
+    async def nothing_fn() -> AsyncGenerator[int, int]:
+        _: int = yield 21
+
+        # Call async function and get its result
+        result = await async_nothing_function()
+        # Then yield it - this should short-circuit
+        y: int = yield result
+
+        yield y  # Should not reach here
+
+    success_computation = await success_fn()
+    assert success_computation == Some(42)
+
+    nothing_computation = await nothing_fn()
+    assert nothing_computation is NOTHING
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_with_nested_async_generators():
+    """Test that async_option builder properly works with nested async generators."""
+
+    @effect.async_option[int]()
+    async def inner_gen(x: int) -> AsyncGenerator[int, int]:
+        y: int = yield x + 1
+        yield y + 1
+
+    @effect.async_option[int]()
+    async def outer_gen() -> AsyncGenerator[int, int]:
+        x: int = yield 40
+
+        # Call inner_gen and await its result
+        inner_result = await inner_gen(x)
+        # Then yield the result
+        y: int = yield await inner_result
+
+        yield y
+
+    computation = await outer_gen()
+    assert computation == Some(42)  # 40 -> 41 -> 42
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_plain_function_body():
+    """A body without a yield statement is treated like a `return` statement."""
+
+    @effect.async_option[int]()
+    async def fn() -> int:
+        await asyncio.sleep(0)  # Simulate async work
         return 42
 
-    assert await computation() is Nothing()
+    computation = await fn()
+    assert computation == Some(42)
 
 
 @pytest.mark.asyncio
-async def test_async_option_cancellation_propagates_and_closes_scope():
-    ready = asyncio.Event()
-    blocked = asyncio.Event()
-    captured: list[OptionScope] = []
-    trace: list[str] = []
+async def test_async_option_builder_plain_function_body_none():
+    """A plain async function body returning None maps to zero()."""
 
-    @effect.async_option
-    async def computation(scope: OptionScope) -> int:
-        captured.append(scope)
-        ready.set()
-        try:
-            await blocked.wait()
-            return scope.bind(Some(42))
-        finally:
-            trace.append("cleanup")
+    @effect.async_option[int]()
+    async def fn() -> None:
+        return None
 
-    task = asyncio.create_task(computation())
-    assert_type(task, asyncio.Task[Option[int]])
-    await ready.wait()
-    task.cancel()
-    with pytest.raises(asyncio.CancelledError):
-        await task
-    assert trace == ["cleanup"]
-    with pytest.raises(RuntimeError, match="no longer active"):
-        captured[0].bind(Some(1))
+    computation = await fn()
+    assert computation is NOTHING
 
 
 @pytest.mark.asyncio
-async def test_async_option_scope_rejects_another_task():
-    @effect.async_option
-    async def computation(scope: OptionScope) -> int:
-        async def misuse() -> int:
-            return scope.bind(Some(42))
+async def test_async_option_builder_runtime_error_propagates():
+    """A RuntimeError raised in the body propagates instead of being swallowed."""
 
-        with pytest.raises(RuntimeError, match="another execution context"):
-            await asyncio.create_task(misuse())
-        return scope.bind(Some(1))
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        raise RuntimeError("boom")
+        yield 42  # Should not reach here
 
-    assert await computation() == Some(1)
-
-
-@pytest.mark.asyncio
-async def test_async_option_calls_have_independent_scopes():
-    @effect.async_option
-    async def computation(scope: OptionScope, number: int) -> int:
-        await asyncio.sleep(0)
-        return scope.bind(Some(number) if number > 0 else Nothing())
-
-    assert await asyncio.gather(computation(1), computation(0), computation(2)) == [Some(1), Nothing(), Some(2)]
-
-
-@pytest.mark.asyncio
-async def test_async_option_unexpected_exception_propagates():
-    @effect.async_option
-    async def computation(scope: OptionScope) -> int:
-        scope.bind(Some(1))
-        raise ValueError("unexpected")
-
-    with pytest.raises(ValueError, match="unexpected"):
-        await computation()
-
-
-@pytest.mark.asyncio
-async def test_async_option_rejects_wrong_family():
-    @effect.async_option
-    async def computation(scope: OptionScope) -> int:
-        return scope.bind(cast(Option[int], Ok(42)))
-
-    with pytest.raises(TypeError, match="Some or Nothing"):
-        await computation()
-
-
-@pytest.mark.asyncio
-async def test_async_option_callback_supports_bound_methods():
-    class Service:
-        async def compute(self, scope: OptionScope) -> str:
-            await asyncio.sleep(0)
-            return str(scope.bind(Some(42)))
-
-    assert await effect.async_run_option(Service().compute) == Some("42")
-
-
-def test_async_option_coroutine_supports_asyncio_run():
-    @effect.async_option
-    async def computation(scope: OptionScope, number: int) -> str:
-        return str(scope.bind(Some(number)))
-
-    result = asyncio.run(computation(42))
-    assert_type(result, Option[str])
-    assert result == Some("42")
+    with raises(RuntimeError, match="boom"):
+        await fn()

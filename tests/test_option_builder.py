@@ -1,386 +1,346 @@
-"""Scoped computations: migrated builder behavior and scope ownership contracts.
+"""Tests for option builder implementation."""
 
-Generator syntax is replaced by bind and return. An empty body or a final None
-is successful; previously bound values never replace the body's final return.
-"""
+from collections.abc import Generator
+from typing import List, cast
 
-from concurrent.futures import ThreadPoolExecutor
-from inspect import Signature, signature, unwrap
-from typing import assert_type, cast
+from pytest import raises
 
-import pytest
-
-from expression import NOTHING, Nothing, Option, Some, effect
-from expression.effect import OptionScope
+from expression import effect, Some, NOTHING, Option
+from expression.core.option import Option
 from tests.utils import CustomException
 
 
-def test_option_scope_preserves_intermediate_and_final_types():
-    @effect.option
-    def computation(scope: OptionScope, number: int, *, suffix: str = "!") -> bool:
-        value = scope.bind(Some(number))
-        text = scope.bind(Some(str(value)))
-        assert_type(value, int)
-        assert_type(text, str)
-        return text + suffix == "42!"
+def test_option_builder_evaluation_order():
+    """Test that option builder evaluates computations in the correct order."""
+    evaluated: List[int] = []
 
-    assert_type(computation(42), Option[bool])
-    assert computation(42) == Some(True)
-    assert computation(1, suffix="?") == Some(False)
-    assert tuple(signature(computation).parameters) == ("number", "suffix")
-    assert signature(computation).return_annotation is Signature.empty
-    assert computation.__annotations__ == {"number": int, "suffix": str}
-    assert signature(unwrap(computation)).return_annotation is bool
-    assert computation.__name__ == "computation"
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        evaluated.append(1)  # First computation
+        x: int = yield 42
+        assert x == 42
 
+        evaluated.append(2)  # Second computation
+        y: int = yield 43
 
-def test_option_scope_short_circuits_and_runs_cleanup():
-    trace: list[str] = []
-
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        try:
-            scope.bind(Nothing())
-            trace.append("unreachable")
-            return 1
-        finally:
-            trace.append("cleanup")
-
-    assert computation() is Nothing()
-    assert trace == ["cleanup"]
-
-
-def test_option_scope_none_is_a_successful_payload():
-    @effect.option
-    def computation(scope: OptionScope) -> None:
-        return scope.bind(Some(None))
-
-    assert_type(computation(), Option[None])
-    assert computation() == Some(None)
-    assert computation() is not Nothing()
-
-
-def test_option_scope_preserves_first_failure_when_signal_is_caught():
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        try:
-            scope.bind(Nothing())
-        except BaseException:
-            pass
-        return 42
-
-    assert computation() is Nothing()
-
-
-def test_option_scope_cannot_bind_after_caught_failure():
-    trace: list[str] = []
-
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        try:
-            scope.bind(Nothing())
-        except BaseException:
-            pass
-        value = scope.bind(Some(42))
-        trace.append("resumed")
-        return value
-
-    assert computation() is Nothing()
-    assert trace == []
-
-
-def test_option_scope_ordinary_exceptions_propagate_and_close_scope():
-    captured: list[OptionScope] = []
-
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        captured.append(scope)
-        raise ValueError("unexpected")
-
-    with pytest.raises(ValueError, match="unexpected"):
-        computation()
-    with pytest.raises(RuntimeError, match="no longer active"):
-        captured[0].bind(Some(1))
-
-
-def test_option_scope_cannot_escape_successful_computation():
-    @effect.option
-    def computation(scope: OptionScope) -> OptionScope:
-        return scope
-
-    escaped = computation()
-    assert isinstance(escaped, Some)
-    with pytest.raises(RuntimeError, match="no longer active"):
-        escaped.some.bind(Some(1))
-
-
-def test_nested_option_scopes_do_not_consume_outer_failure():
-    trace: list[str] = []
-
-    @effect.option
-    def outer(scope: OptionScope) -> int:
-        @effect.option
-        def inner(inner_scope: OptionScope) -> int:
-            inner_scope.bind(Some(1))
-            return scope.bind(Nothing())
-
-        inner()
-        trace.append("unreachable")
-        return 42
-
-    assert outer() is Nothing()
-    assert trace == []
-
-
-def test_option_scope_rejects_other_effect_families_at_runtime():
-    from expression import Ok
-
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        return scope.bind(cast(Option[int], Ok(1)))
-
-    with pytest.raises(TypeError, match="Some or Nothing"):
-        computation()
-
-
-def test_option_callback_supports_bound_methods():
-    class Service:
-        def __init__(self, number: int) -> None:
-            self.number = number
-
-        def compute(self, scope: OptionScope) -> str:
-            return str(scope.bind(Some(self.number)))
-
-    assert effect.run_option(Service(42).compute) == Some("42")
-
-
-def test_option_scope_rejects_another_thread():
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(scope.bind, Some(42))
-            with pytest.raises(RuntimeError, match="another execution context"):
-                future.result()
-        return scope.bind(Some(1))
-
-    assert computation() == Some(1)
-
-
-def test_option_scope_evaluation_order():
-    evaluated: list[int] = []
-
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        evaluated.append(1)
-        x = scope.bind(Some(42))
-        evaluated.append(2)
-        y = scope.bind(Some(43))
-        evaluated.append(3)
+        evaluated.append(3)  # Final computation
         return x + y
 
-    assert computation() == Some(85)
-    assert evaluated == [1, 2, 3]
+    computation = fn()
+    assert evaluated == [1, 2, 3]  # All computations ran in order
+    assert computation == Some(85)
 
 
-def test_option_scope_short_circuits_after_successful_bind():
-    evaluated: list[int] = []
-    failure = NOTHING
+def test_option_builder_short_circuit():
+    """Test that option builder properly short circuits with NOTHING."""
+    evaluated: List[int] = []
 
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        evaluated.append(1)
-        x = scope.bind(Some(42))
-        evaluated.append(2)
-        y = scope.bind(failure)
-        evaluated.append(3)
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        evaluated.append(1)  # First computation
+        x: int = yield 42
+
+        evaluated.append(2)  # This should be executed
+        y: int = yield from NOTHING  # Short circuits here
+
+        evaluated.append(3)  # This should not be executed
         return x + y
 
-    assert computation() is failure
-    assert evaluated == [1, 2]
+    computation = fn()
+    assert evaluated == [1, 2]  # Should run until yield from NOTHING
+    assert computation is NOTHING
 
 
-def test_option_scope_final_return_overrides_discarded_bind_values():
-    evaluated: list[int] = []
+def test_option_builder_combine():
+    """Test that option builder properly combines computations."""
+    evaluated: List[int] = []
 
-    @effect.option
-    def computation(scope: OptionScope) -> int:
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
         evaluated.append(1)
-        scope.bind(Some(42))
+        yield 42  # First computation
+
         evaluated.append(2)
-        scope.bind(Some(43))
+        yield 43  # Second computation combined with first
+
         evaluated.append(3)
-        return 44
+        return 44  # Final result
 
-    assert computation() == Some(44)
-    assert evaluated == [1, 2, 3]
-
-
-@pytest.mark.parametrize("payload", [Some(42), NOTHING])
-def test_option_scope_returned_container_is_a_successful_payload(payload: Option[int]):
-    @effect.option
-    def computation(scope: OptionScope) -> Option[int]:
-        return payload
-
-    actual = computation()
-    assert_type(actual, Option[Option[int]])
-    assert isinstance(actual, Some)
-    assert actual.some is payload
+    computation = fn()
+    assert evaluated == [1, 2, 3]  # All computations ran
+    assert computation == Some(44)  # Returns final value
 
 
-@pytest.mark.parametrize("payload", [Some(42), NOTHING])
-def test_option_scope_bind_unwraps_exactly_one_layer(payload: Option[int]):
-    @effect.option
-    def computation(scope: OptionScope) -> Option[int]:
-        value = scope.bind(Some(payload))
-        assert_type(value, Option[int])
-        return value
+def test_option_builder_return_from():
+    """Test that option builder properly handles return! (return_from)."""
 
-    actual = computation()
-    assert_type(actual, Option[Option[int]])
-    assert isinstance(actual, Some)
-    assert actual.some is payload
+    @effect.option[Option[int]]()
+    def fn() -> Generator[Option[int], Option[int], Option[int]]:
+        x: Option[int] = yield Some(42)
+        return x
 
-
-def test_option_scope_empty_body_returns_successful_none():
-    @effect.option
-    def computation(scope: OptionScope) -> None:
-        pass
-
-    assert computation() == Some(None)
+    computation = fn()
+    match computation:
+        case Some(value):
+            assert value == Some(42)
+        case _:
+            assert False
 
 
-def test_option_scope_explicit_none_return_is_successful():
-    @effect.option
-    def computation(scope: OptionScope) -> None:
-        return None
+def test_option_builder_zero():
+    """Test that option builder properly handles empty computations."""
 
-    assert computation() == Some(None)
+    @effect.option[int]()
+    def fn() -> Generator[int, int, None]:
+        if False:
+            yield 42
+        # No return or yield, should use zero()
 
-
-def test_option_scope_none_return_does_not_retain_last_bound_value():
-    @effect.option
-    def computation(scope: OptionScope) -> None:
-        scope.bind(Some(42))
-        return None
-
-    assert computation() == Some(None)
+    computation = fn()
+    assert computation is NOTHING
 
 
-def test_option_scope_fallthrough_does_not_retain_last_bound_value():
-    @effect.option
-    def computation(scope: OptionScope) -> None:
-        scope.bind(Some(42))
+def test_option_builder_yield_from_some():
+    """Test that option builder properly handles yield from Some."""
 
-    assert computation() == Some(None)
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        x: int = yield from Some(42)
+        return x + 1
 
-
-@pytest.mark.parametrize("increment", [0, 1])
-def test_option_scope_bound_payload_is_unwrapped_and_return_value_is_wrapped(increment: int):
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        value = scope.bind(Some(42))
-        assert_type(value, int)
-        return value + increment
-
-    assert computation() == Some(42 + increment)
+    computation = fn()
+    match computation:
+        case Some(value):
+            assert value == 43
+        case _:
+            assert False
 
 
-def test_option_scope_multiple_operations():
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        x = scope.bind(Some(42))
-        y = scope.bind(Some(43))
-        z = scope.bind(Some(44))
+def test_option_builder_yield_from_none():
+    """Test that option builder properly handles yield from NOTHING."""
+
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        x: int = yield from NOTHING
+        return x + 1  # Should not reach here
+
+    computation = fn()
+    assert computation is NOTHING
+
+
+def test_option_builder_multiple_operations():
+    """Test that option builder properly handles multiple operations."""
+
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        x: int = yield 42
+        y: int = yield from Some(43)
+        z: int = yield 44
         return x + y + z
 
-    assert computation() == Some(129)
+    computation = fn()
+    match computation:
+        case Some(value):
+            assert value == 129  # 42 + 43 + 44
+        case _:
+            assert False
 
 
-def test_option_scope_nested_successful_computations():
-    @effect.option
-    def inner(scope: OptionScope, x: int) -> int:
-        y = scope.bind(Some(x + 1))
+def test_option_builder_nested():
+    """Test that option builder properly handles nested computations."""
+
+    @effect.option[int]()
+    def inner(x: int) -> Generator[int, int, int]:
+        y: int = yield x + 1
         return y + 1
 
-    @effect.option
-    def outer(scope: OptionScope) -> int:
-        x = scope.bind(Some(42))
-        y = scope.bind(inner(x))
+    @effect.option[int]()
+    def outer() -> Generator[int, int, int]:
+        x: int = yield 42
+        # Pyright #11881 loses the return type for a union of iterable cases.
+        y = cast(int, (yield from inner(x)))  # Nested computation
         return y + 1
 
-    assert outer() == Some(45)
+    computation = outer()
+    assert computation == Some(45)  # 42 -> 43 -> 44 -> 45
 
 
-def test_option_scope_nested_failure_short_circuits_outer_bind():
-    evaluated: list[str] = []
-    failure = NOTHING
+def test_option_builder_throws():
+    """Test that option builder properly handles exceptions."""
+    error = "test error"
 
-    @effect.option
-    def inner(scope: OptionScope) -> int:
-        evaluated.append("inner")
-        return scope.bind(failure)
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        raise CustomException(error)
+        yield 42  # Should not reach here
 
-    @effect.option
-    def outer(scope: OptionScope) -> int:
-        evaluated.append("outer")
-        value = scope.bind(inner())
-        evaluated.append("unreachable")
-        return value
-
-    assert outer() is failure
-    assert evaluated == ["outer", "inner"]
+    with raises(CustomException) as ex_info:
+        fn()
+    assert ex_info.value.message == error  # CustomException has message attribute
 
 
-@pytest.mark.parametrize("failure_at", [None, 1])
-def test_option_scope_while_loop(failure_at: int | None):
-    evaluated: list[int] = []
-    failure = NOTHING
+def test_option_builder_return_some():
+    """Test that option builder properly handles returning Some."""
 
-    @effect.option
-    def computation(scope: OptionScope) -> int:
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        x: int = yield 42
+        return x  # Return unwrapped value
+
+    computation = fn()
+    match computation:
+        case Some(value):
+            assert value == 42  # Value should be wrapped in Some
+        case _:
+            assert False
+
+
+def test_option_builder_yield_some_wrapped():
+    """Test that option builder properly handles yielding Some directly."""
+
+    @effect.option[Option[int]]()
+    def fn() -> Generator[Option[int], Option[int], Option[int]]:
+        x: Option[int] = yield Some(42)  # Yield Some directly
+        return x  # Return the wrapped value
+
+    computation = fn()
+    match computation:
+        case Some(value):
+            assert value == Some(42)  # Value should be wrapped in Some
+        case _:
+            assert False
+
+
+def test_option_builder_return_nothing():
+    """Test that option builder properly handles returning NOTHING directly."""
+
+    @effect.option[Option[int]]()
+    def fn() -> Generator[Option[int], Option[int], Option[int]]:
+        return NOTHING
+        yield  # Should not reach here
+
+    computation = fn()
+    match computation:
+        case Some(value):
+            assert value is NOTHING
+        case _:
+            assert False
+
+
+def test_option_builder_yield_value_async():
+    """Test that option builder properly handles async-style yields."""
+
+    @effect.option[int]()
+    def fn() -> Generator[int, None, None]:
+        yield 42
+
+    computation = fn()
+    match computation:
+        case Some(value):
+            assert value == 42
+        case _:
+            assert False
+
+
+def test_option_builder_while():
+    """Test that option builder properly handles while loops."""
+    evaluated: List[int] = []
+
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
         i = 0
         while i < 3:
             evaluated.append(i)
-            scope.bind(failure if i == failure_at else Some(i))
+            _ = yield i  # Using _ for unused variable
             i += 1
         return i
 
-    if failure_at is None:
-        assert computation() == Some(3)
-        assert evaluated == [0, 1, 2]
-    else:
-        assert computation() is failure
-        assert evaluated == [0, 1]
+    computation = fn()
+    assert evaluated == [0, 1, 2]
+    assert computation == Some(3)
 
 
-def test_option_scope_projection_in_nested_for_loops():
-    @effect.option
-    def computation(scope: OptionScope) -> str:
-        text = "Not found"
+def test_option_builder_projection_int_str():
+    """Test that option builder properly handles type projections."""
+
+    @effect.option[str]()
+    def fn() -> Generator[str, str, str]:
+        z: str = "Not found"
         for x in Some(42.0):
             for y in Some(int(x)):
-                text = scope.bind(Some(str(y)))
-        return text
+                z = yield from Some(str(y))
 
-    assert computation() == Some("42")
-    assert list(computation()) == ["42"]
+        return z
+
+    for x in fn():
+        assert x == "42"
+        break
+    else:
+        assert False
 
 
-def test_option_scope_plain_return_is_wrapped():
-    @effect.option
-    def computation(scope: OptionScope) -> int:
+def test_option_builder_yield_from_nothing_short_circuit():
+    """Test that yield from NOTHING properly short circuits nested operations."""
+
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        x = yield from NOTHING  # Short circuits here
+
+        # The rest should not execute
+        y = yield from Some(43)
+        return x + y
+
+    computation = fn()
+    assert computation is NOTHING
+
+
+def test_option_builder_plain_function_body():
+    """A body without a yield statement is treated like a `return` statement."""
+
+    @effect.option[int]()
+    def fn() -> int:
         return 42
 
-    assert computation() == Some(42)
+    computation = fn()
+    assert computation == Some(42)
 
 
-@pytest.mark.parametrize("error", [CustomException("test error"), RuntimeError("boom")])
-def test_option_scope_preserves_raised_exception_identity(error: Exception):
-    @effect.option
-    def computation(scope: OptionScope) -> int:
-        scope.bind(Some(42))
-        raise error
+def test_option_builder_plain_function_body_none():
+    """A plain function body returning None maps to zero()."""
 
-    with pytest.raises(type(error)) as caught:
-        computation()
-    assert caught.value is error
+    @effect.option[int]()
+    def fn() -> None:
+        return None
+
+    computation = fn()
+    assert computation is NOTHING
+
+
+def test_option_builder_runtime_error_propagates():
+    """A RuntimeError raised in the body propagates instead of being swallowed."""
+
+    @effect.option[int]()
+    def fn() -> Generator[int, int, int]:
+        raise RuntimeError("boom")
+        yield 42  # Should not reach here
+
+    with raises(RuntimeError, match="boom"):
+        fn()
+
+
+def test_option_builder_none_retains_last_yield():
+    @effect.option[int]()
+    def fn() -> Generator[int, int, None]:
+        value = yield 42
+        assert value == 42
+        return None
+
+    assert fn() == Some(42)
+
+
+def test_option_builder_explicit_none_yield_is_success():
+    @effect.option[None]()
+    def fn() -> Generator[None, None, None]:
+        yield None
+
+    assert fn() == Some(None)
