@@ -705,6 +705,29 @@ def test_result_schema_discriminates_cases():
     assert set(schema["discriminator"]["mapping"]) == {"ok", "error"}
 
 
+@pytest.mark.parametrize("payload", [42, "text", None, {"nested": [1, 2]}])
+@pytest.mark.parametrize("tag", ["ok", "error"])
+def test_unparameterized_result_pydantic_roundtrip(tag: str, payload: object):
+    class BareResultModel(BaseModel):
+        value: Result
+
+    wire = {"tag": tag, tag: payload}
+    expected = Ok(payload) if tag == "ok" else Error(payload)
+    adapter = TypeAdapter(Result)
+    value = adapter.validate_python(wire)
+    assert value == expected
+    assert adapter.validate_json(adapter.dump_json(value)) == expected
+    assert adapter.dump_python(value) == wire
+    schema = adapter.json_schema()
+    assert set(schema["discriminator"]["mapping"]) == {"ok", "error"}
+
+    model = BareResultModel.model_validate({"value": wire})
+    assert model.value == expected
+    assert model.model_dump() == {"value": wire}
+    assert BareResultModel.model_validate_json(model.model_dump_json()) == model
+    assert "value" in BareResultModel.model_json_schema()["properties"]
+
+
 def result_pipe_type_contract(
     value: Result[int, str], other: Result[int, float], function: Result[Callable[[int], bytes], float]
 ) -> None:

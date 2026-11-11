@@ -34,8 +34,14 @@ if TYPE_CHECKING:
     from .option import Option, Some
 
 
-_T = TypeVar("_T", covariant=True, default=Never)
-_E = TypeVar("_E", covariant=True, default=Never)
+if TYPE_CHECKING:
+    _T = TypeVar("_T", covariant=True, default=Never)
+    _E = TypeVar("_E", covariant=True, default=Never)
+else:
+    # Never supports static inference, but bare Result payloads must remain
+    # unconstrained when Pydantic generates their runtime schemas.
+    _T = TypeVar("_T", covariant=True)
+    _E = TypeVar("_E", covariant=True)
 _A = TypeVar("_A", default=object)
 _B = TypeVar("_B", default=object)
 _U = TypeVar("_U", default=Never)
