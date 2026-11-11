@@ -113,7 +113,15 @@ Other boundaries remain explicit:
   [Python's async generator restrictions](https://docs.python.org/3/reference/expressions.html#asynchronous-generator-functions)
   are also checked with syntax probes in the test suite.
 
-## Recommendation
+## Follow-up: F# CE semantics
+
+The [F# CE investigation](../fsharp_ce/README.md) supersedes the scope-first
+recommendation below as the design direction. It puts delegation on computation
+objects and tests the intended F# operations against explicit reference builders.
+This directory remains evidence for the earlier adapter mechanism, not an
+endorsed final public spelling.
+
+## Original recommendation
 
 Keep scopes as the common synchronous/asynchronous API. If preserving generator
 syntax is valuable, add this as an **optional synchronous adapter**. A distinct

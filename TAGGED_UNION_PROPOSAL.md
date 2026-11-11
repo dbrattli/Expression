@@ -14,6 +14,18 @@ candidate comparison from the original proposal: the selected representation was
 previously called **Candidate C**, not Candidate A. The migration steps and
 additional usage examples are in the [migration guide](docs/guides/migration-major.md).
 
+## Follow-up: computation-expression direction
+
+The current code uses typed scopes, but the design goal has been clarified:
+Expression should preserve the meaning of F# computation expressions rather
+than treat scopes as their replacement. The [F# CE investigation](investigations/fsharp_ce/README.md)
+compares executable F# builders with Python computation objects, direct
+`yield from operation()` binding, terminal return/return-from, and the original
+`yield value` spelling. It records both working typed behavior and concrete
+limits involving Zero, Combine, None, and error-channel checking. No new CE API
+has been exported; the scope implementation remains the current implementation
+while that semantic contract is settled.
+
 ## Why we changed the representation
 
 The previous `@tagged_union` decorator declared every alternative's payload on

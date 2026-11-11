@@ -1,0 +1,4 @@
+{
+  "extends": "./pyrightconfig.json",
+  "include": ["negative.py"]
+}
