@@ -93,3 +93,21 @@ def test_token_cancelled_register_throws():
             token.register(lambda: called.append(True))
 
     assert not called
+
+
+def test_none_token_registration_is_noop():
+    called: list[bool] = []
+    registration = CancellationToken.none().register(lambda: called.append(True))
+    registration.dispose()
+    assert not called
+
+
+def test_registration_disposal_after_cancellation():
+    source = CancellationTokenSource()
+    called: list[bool] = []
+    registration = source.token.register(lambda: called.append(True))
+    source.cancel()
+    registration.dispose()
+    registration.dispose()
+    assert called == [True]
+    assert not source._listeners  # pyright: ignore[reportPrivateUsage]

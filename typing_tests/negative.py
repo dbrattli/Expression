@@ -2,7 +2,7 @@
 
 from typing import Generic, Literal, TypeAlias, TypeVar, final
 
-from expression import Error, Nothing, Option, Result, Some, TaggedUnion, case, tag
+from expression import Error, MailboxProcessor, Nothing, Option, Result, Some, TaggedUnion, case, tag
 
 
 def unchecked(value: Option[int]) -> None:
@@ -106,3 +106,12 @@ empty_class_is_not_a_value: Option[int] = Nothing  # type-error
 
 class ExtraNothing(Nothing):  # type-error
     pass
+
+
+async def integer_mailbox_body(inbox: MailboxProcessor[int]) -> None:
+    await inbox.receive()
+
+
+def invalid_mailbox_message() -> None:
+    agent = MailboxProcessor.start(integer_mailbox_body)
+    agent.post("wrong")  # type-error
