@@ -167,12 +167,14 @@ class AsyncSeq(AsyncIterable[TSource]):
         """Returns the first N elements of the sequence."""
 
         async def _take(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
+            if count <= 0:
+                return
             i = 0
             async for value in source:
-                if i >= count:
-                    break
                 yield value
                 i += 1
+                if i >= count:
+                    break
 
         return pipe(self, _take)
 

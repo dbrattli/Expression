@@ -384,7 +384,7 @@ class Block(
         return Block(self._value[count:])
 
     def skip_last(self, count: int) -> Block[_TSource]:
-        return Block(self._value[:-count])
+        return Block(self._value[:-count] if count != 0 else self._value)
 
     def tail(self) -> Block[_TSource]:
         """Return tail of List."""
@@ -441,7 +441,7 @@ class Block(
         Returns:
             The result list.
         """
-        return Block(self._value[-count:])
+        return Block(self._value[-count:] if count != 0 else ())
 
     def dict(self) -> list[_TSource]:
         """Returns a json serializable representation of the list."""

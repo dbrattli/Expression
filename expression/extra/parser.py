@@ -278,22 +278,22 @@ def pstring(string_input: str) -> Parser[str]:
 
 
 def parse_zero_or_more(parser: Parser[_A], input: Remaining) -> tuple[Block[_A], Remaining]:
-    # run parser with the input
-    first_result = parser.run(input)
-
-    # test the result for Failure/Success
-    match first_result:
-        case Ok((first_value, input_after_first_parse)):
-            # if parse succeeds, call recursively
-            # to get the subsequent values
-            subsequent_values, remaining_input = parse_zero_or_more(parser, input_after_first_parse)
-            values = subsequent_values.cons(first_value)
-            return values, remaining_input
-        case _:
-            return (block.empty, input)
+    values: list[_A] = []
+    remaining = input
+    while True:
+        match parser.run(remaining):
+            case Ok((value, next_input)):
+                if next_input == remaining:
+                    raise ValueError("Repeated parser must consume input")
+                values.append(value)
+                remaining = next_input
+            case Error():
+                return Block(values), remaining
 
 
 def many(parser: Parser[_A]) -> Parser[Block[_A]]:
+    """Parse zero or more occurrences, rejecting success without input consumption."""
+
     def run(input: Remaining) -> ParseResult[Block[_A]]:
         # parse the input -- wrap in Success as it always succeeds
         ok = parse_zero_or_more(parser, input)
@@ -303,6 +303,8 @@ def many(parser: Parser[_A]) -> Parser[Block[_A]]:
 
 
 def many1(parser: Parser[_A]) -> Parser[Block[_A]]:
+    """Parse one or more occurrences, rejecting success without input consumption."""
+
     def run(input: Remaining) -> ParseResult[Block[_A]]:
         # run parser with the input
         firstResult = parser.run(input)
