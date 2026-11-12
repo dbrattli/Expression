@@ -699,14 +699,14 @@ from expression import TaggedUnion, case, tag
 class Rectangle:
     width: float
     length: float
-    tag: Literal["rectangle"] = tag("rectangle")
+    tag: Literal["rectangle"] = tag()
 
 
 @final
 @case
 class Circle:
     radius: float
-    tag: Literal["circle"] = tag("circle")
+    tag: Literal["circle"] = tag()
 
 
 Shape: TypeAlias = TaggedUnion[Rectangle | Circle]
@@ -716,7 +716,9 @@ Shape: TypeAlias = TaggedUnion[Rectangle | Circle]
 """
 `@case` creates a frozen dataclass and rejects subclasses at runtime. Use `@final` to
 make type checkers reject subclasses too. The literal `tag` is fixed by the declaration
-and excluded from constructor arguments and positional patterns.
+and excluded from constructor arguments and positional patterns. `tag()` takes its
+value from the `Literal` annotation, so the string is written only once. This happens
+when the class is declared, normally during module import, rather than per instance.
 
 `Shape` is an annotation alias. Construct and match the case classes directly:
 """

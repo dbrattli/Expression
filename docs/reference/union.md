@@ -15,14 +15,14 @@ from expression import TaggedUnion, case, tag
 @case
 class Circle:
     radius: float
-    tag: Literal["circle"] = tag("circle")
+    tag: Literal["circle"] = tag()
 
 @final
 @case
 class Rectangle:
     width: float
     height: float
-    tag: Literal["rectangle"] = tag("rectangle")
+    tag: Literal["rectangle"] = tag()
 
 Shape: TypeAlias = TaggedUnion[Circle | Rectangle]
 
@@ -47,11 +47,18 @@ narrows the value to that case. Each case has only its own payload fields.
 dataclass equality, representation, copying, pickling, and hashing. Hashing
 requires hashable payloads; ordering is not generated.
 
-Every case declares one `tag: Literal["..."] = tag("...")`. Tags must be unique
-within a union. The tag is excluded from the constructor, representation, and
-positional patterns. Payloads use ordinary annotations and may have defaults
+Every case declares one `tag: Literal["..."] = tag()`. The decorator derives the
+tag value from its annotation; `tag()` does not accept a value argument.
+Tags must be unique within a union. The tag is excluded from the constructor,
+representation, and positional patterns. Payloads use ordinary annotations and may have defaults
 or `dataclasses.field(default_factory=...)`. `InitVar` and payload fields with
 `init=False` are not supported.
+
+The annotation must contain exactly one string literal. Inference happens when
+`@case` executes the class declaration, normally once during module import for
+global cases. Instance construction, tag access, and pattern matching do not
+repeat this work. A class declared inside a function is recreated each time
+execution reaches its declaration.
 
 Use `@case(kw_only=True)` for keyword-only payloads and `@case(repr=False)` when
 providing a custom representation, for example to redact a password. A case

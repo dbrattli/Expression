@@ -152,12 +152,12 @@ from expression import TaggedUnion, case, tag
 @case
 class Card:
     last_four: str
-    tag: Literal["card"] = tag("card")
+    tag: Literal["card"] = tag()
 
 @final
 @case
 class Cash:
-    tag: Literal["cash"] = tag("cash")
+    tag: Literal["cash"] = tag()
 
 Payment: TypeAlias = TaggedUnion[Card | Cash]
 
@@ -172,8 +172,9 @@ def describe(payment: Payment) -> str:
 Construct `Card("1234")` and `Cash()` directly. The alias is a closed list of
 alternatives, not a class or a constructor namespace. `tagged_union` is now the
 module namespace; its old decorator and the old `case()` field marker are
-removed. The `tag` field is required and must declare one matching string literal.
-It is excluded from construction and positional patterns. Use a class pattern or
+removed. The `tag` field is required: write `tag: Literal["name"] = tag()` and
+`@case` derives the value from the annotation. `tag()` no longer accepts an
+explicit value argument. The tag is excluded from construction and positional patterns. Use a class pattern or
 compare `.tag` to narrow the payload type.
 
 `@case` generates a frozen dataclass and rejects runtime subclasses. Keep
@@ -217,13 +218,13 @@ from expression import TaggedUnion, case, tag
 @final
 @case
 class Missing:
-    tag: Literal["missing"] = tag("missing")
+    tag: Literal["missing"] = tag()
 
 @final
 @case
 class Found:
     value: str
-    tag: Literal["found"] = tag("found")
+    tag: Literal["found"] = tag()
 
 Lookup: TypeAlias = TaggedUnion[Found | Missing]
 Missing_ = Missing()  # Optional shared value to avoid repeated construction.

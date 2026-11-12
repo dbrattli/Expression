@@ -22,14 +22,14 @@ class Address:
 @case
 class Pickup:
     store: str
-    tag: Literal["pickup"] = tag("pickup")
+    tag: Literal["pickup"] = tag()
 
 
 @final
 @case
 class Shipping:
     address: Address
-    tag: Literal["shipping"] = tag("shipping")
+    tag: Literal["shipping"] = tag()
 
 
 Delivery: TypeAlias = TaggedUnion[Pickup | Shipping]

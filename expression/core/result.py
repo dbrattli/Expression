@@ -58,7 +58,7 @@ class Ok(PipeMixin, Generic[_T]):
     """A successful result containing a value."""
 
     ok: _T
-    tag: Literal["ok"] = tag("ok")
+    tag: Literal["ok"] = tag()
 
     def default_value(self, value: object) -> _T:
         """Return the successful value."""
@@ -145,7 +145,7 @@ class Error(PipeMixin, Generic[_E]):
     """A failed result containing an error."""
 
     error: _E
-    tag: Literal["error"] = tag("error")
+    tag: Literal["error"] = tag()
 
     def default_value(self, value: _U) -> _U:
         """Return the fallback value."""

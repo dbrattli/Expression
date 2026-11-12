@@ -122,7 +122,7 @@ def test_union_json_schema_does_not_change_bare_dataclass_schema():
 @case
 class SchemaCircle:
     radius: Annotated[float, Field(gt=0)]
-    tag: Literal["circle"] = tag("circle")
+    tag: Literal["circle"] = tag()
 
 
 @final
@@ -133,7 +133,7 @@ class SchemaRectangle:
     width: float
     height: float
     label: str = "rectangle"
-    tag: Literal["rectangle"] = tag("rectangle")
+    tag: Literal["rectangle"] = tag()
 
 
 _SchemaValue = TypeVar("_SchemaValue")
@@ -144,14 +144,14 @@ _SchemaValue = TypeVar("_SchemaValue")
 class SchemaBox(Generic[_SchemaValue]):
     value: _SchemaValue
     notes: list[str] = field(default_factory=list[str])
-    tag: Literal["box"] = tag("box")
+    tag: Literal["box"] = tag()
 
 
 @final
 @case
 class SchemaUnit:
     initialized: ClassVar[list[str]] = []
-    tag: Literal["unit"] = tag("unit")
+    tag: Literal["unit"] = tag()
 
     def __post_init__(self) -> None:
         self.initialized.append("unit")
@@ -221,14 +221,14 @@ def test_nested_tagged_union_aliases_flatten_and_keep_canonical_units():
 @case
 class SchemaLeaf:
     value: int
-    tag: Literal["leaf"] = tag("leaf")
+    tag: Literal["leaf"] = tag()
 
 
 @final
 @case
 class SchemaBranch:
     children: list[TaggedUnion[SchemaLeaf | SchemaBranch]]
-    tag: Literal["branch"] = tag("branch")
+    tag: Literal["branch"] = tag()
 
 
 def test_recursive_custom_cases_validate_and_preserve_schema_references():
@@ -299,7 +299,7 @@ def test_union_rejects_duplicate_tags_and_noncase_members():
     @case
     class OtherCircle:
         diameter: float
-        tag: Literal["circle"] = tag("circle")
+        tag: Literal["circle"] = tag()
 
     @dataclass(frozen=True)
     class PlainDataclass:
@@ -319,14 +319,14 @@ def test_union_rejects_duplicate_tags_and_noncase_members():
 @case
 class SchemaAliased:
     value: Annotated[int, Field(alias="wire_value")]
-    tag: Literal["aliased"] = tag("aliased")
+    tag: Literal["aliased"] = tag()
 
 
 @final
 @case
 class SchemaSerializationAlias:
     value: Annotated[int, Field(serialization_alias="wire_value")]
-    tag: Literal["serialization_alias"] = tag("serialization_alias")
+    tag: Literal["serialization_alias"] = tag()
 
 
 @pytest.mark.parametrize("case_type", [SchemaAliased, SchemaSerializationAlias])

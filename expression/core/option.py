@@ -55,7 +55,7 @@ class Some(PipeMixin, Generic[_TSourceOut]):
     """An optional value that is present, including when its payload is None."""
 
     some: _TSourceOut
-    tag: Literal["some"] = tag("some")
+    tag: Literal["some"] = tag()
 
     def default_value(self, value: object) -> _TSourceOut:
         """Return the present value."""
@@ -160,7 +160,7 @@ class Nothing(PipeMixin):
     instance. Use ``NOTHING`` to reuse it without calling the constructor.
     """
 
-    tag: Literal["none"] = tag("none")
+    tag: Literal["none"] = tag()
     _instance: ClassVar[Nothing | None] = None
 
     def __new__(cls) -> Nothing:

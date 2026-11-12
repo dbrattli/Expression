@@ -45,7 +45,7 @@ from expression import TaggedUnion, case, tag
 @case
 class Circle:
     radius: float
-    tag: Literal["circle"] = tag("circle")
+    tag: Literal["circle"] = tag()
 
 
 @final
@@ -53,7 +53,7 @@ class Circle:
 class Rectangle:
     width: float
     height: float
-    tag: Literal["rectangle"] = tag("rectangle")
+    tag: Literal["rectangle"] = tag()
 
 
 Shape: TypeAlias = TaggedUnion[Circle | Rectangle]
@@ -75,7 +75,7 @@ The three helpers have distinct responsibilities:
 | API | Responsibility |
 |---|---|
 | `@case` | Generate a frozen dataclass, validate the case declaration, and reject ordinary runtime subclassing. |
-| `tag("circle")` | Define a fixed discriminator excluded from constructor arguments and positional class patterns. |
+| `tag()` | Infer a fixed discriminator from the Literal annotation, excluded from constructor arguments and positional class patterns. |
 | `TaggedUnion[Circle \| Rectangle]` | Keep the alternatives visible to checkers and attach metadata for optional Pydantic decoding. |
 
 `@final` remains explicit because `dataclass_transform` describes fields and
@@ -134,13 +134,13 @@ T = TypeVar("T", covariant=True)
 @case
 class Some(Generic[T]):
     some: T
-    tag: Literal["some"] = tag("some")
+    tag: Literal["some"] = tag()
 
 
 @final
 @case
 class Nothing:
-    tag: Literal["none"] = tag("none")
+    tag: Literal["none"] = tag()
 
 
 Option: TypeAlias = Annotated[

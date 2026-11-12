@@ -21,7 +21,7 @@ _T = TypeVar("_T", covariant=True)
 @case
 class Circle:
     radius: float
-    tag: Literal["circle"] = tag("circle")
+    tag: Literal["circle"] = tag()
 
     def area(self) -> float:
         return 3.14159 * self.radius**2
@@ -32,7 +32,7 @@ class Circle:
 class Rectangle:
     width: float
     height: float
-    tag: Literal["rectangle"] = tag("rectangle")
+    tag: Literal["rectangle"] = tag()
 
     def area(self) -> float:
         return self.width * self.height
@@ -45,13 +45,13 @@ Shape: TypeAlias = TaggedUnion[Circle | Rectangle]
 @case
 class Just(Generic[_T]):
     value: _T
-    tag: Literal["just"] = tag("just")
+    tag: Literal["just"] = tag()
 
 
 @final
 @case
 class Missing:
-    tag: Literal["missing"] = tag("missing")
+    tag: Literal["missing"] = tag()
 
 
 Maybe: TypeAlias = TaggedUnion[Just[_T] | Missing]
@@ -64,14 +64,14 @@ Maybe: TypeAlias = TaggedUnion[Just[_T] | Missing]
 class Folder:
     name: str
     children: tuple[Tree, ...]
-    tag: Literal["folder"] = tag("folder")
+    tag: Literal["folder"] = tag()
 
 
 @final
 @case
 class Leaf:
     name: str
-    tag: Literal["leaf"] = tag("leaf")
+    tag: Literal["leaf"] = tag()
 
 
 Tree: TypeAlias = TaggedUnion[Folder | Leaf]
@@ -83,7 +83,7 @@ class Request:
     path: str
     retries: int = 3
     headers: dict[str, str] = field(default_factory=dict[str, str])
-    tag: Literal["request"] = tag("request")
+    tag: Literal["request"] = tag()
 
 
 @final
@@ -91,14 +91,14 @@ class Request:
 class Labelled:
     number: int
     label: str = field(default="", kw_only=True)
-    tag: Literal["labelled"] = tag("labelled")
+    tag: Literal["labelled"] = tag()
 
 
 @final
 @case(repr=False)
 class SecurePassword:
     password: str
-    tag: Literal["password"] = tag("password")
+    tag: Literal["password"] = tag()
 
     def __repr__(self) -> str:
         return "SecurePassword('********')"
@@ -261,7 +261,7 @@ def test_plain_mixins_and_post_init_validation_are_supported():
     @case
     class Positive(Named):
         value: int
-        tag: Literal["positive"] = tag("positive")
+        tag: Literal["positive"] = tag()
 
         def __post_init__(self) -> None:
             if self.value <= 0:
@@ -280,15 +280,17 @@ def _declaration(annotations: dict[str, object], attributes: dict[str, object]) 
     ("annotations", "attributes"),
     [
         ({"value": int}, {}),
+        ({}, {"tag": tag()}),
+        ({"tag": str}, {"tag": tag()}),
+        ({"tag": Literal["x", "y"]}, {"tag": tag()}),
+        ({"tag": Literal[1]}, {"tag": tag()}),
+        ({"tag": ClassVar[Literal["x"]]}, {"tag": tag()}),
+        ({"tag": "Literal[missing]"}, {"tag": tag()}),
         ({"tag": Literal["x"]}, {"tag": "x"}),
         ({"tag": Literal["x"]}, {"tag": field(default="x", init=False)}),
-        ({"tag": Literal["x"]}, {"tag": tag("y")}),
-        ({"tag": str}, {"tag": tag("x")}),
-        ({"tag": Literal["x", "y"]}, {"tag": tag("x")}),
-        ({"tag": ClassVar[Literal["x"]]}, {"tag": tag("x")}),
-        ({"tag": Literal["x"], "value": int}, {"tag": tag("x"), "value": field(default=1, init=False)}),
-        ({"tag": Literal["x"], "value": InitVar[int]}, {"tag": tag("x")}),
-        ({"tag": Literal["x"], "other": str}, {"tag": tag("x"), "other": tag("other")}),
+        ({"tag": Literal["x"], "value": int}, {"tag": tag(), "value": field(default=1, init=False)}),
+        ({"tag": Literal["x"], "value": InitVar[int]}, {"tag": tag()}),
+        ({"tag": Literal["x"], "other": str}, {"tag": tag(), "other": tag()}),
     ],
 )
 def test_invalid_case_declarations_are_rejected(annotations: dict[str, object], attributes: dict[str, object]):
@@ -300,7 +302,7 @@ def test_already_decorated_dataclasses_are_rejected():
     @dataclass
     class Existing:
         value: int
-        tag: Literal["existing"] = tag("existing")
+        tag: Literal["existing"] = tag()
 
     with pytest.raises(TypeError):
         case(Existing)
@@ -314,7 +316,7 @@ def test_dataclass_inheritance_is_rejected():
         value: int
 
     class Inherited(Existing):
-        tag: Literal["inherited"] = tag("inherited")
+        tag: Literal["inherited"] = tag()
 
     with pytest.raises(TypeError):
         case(Inherited)
@@ -323,7 +325,7 @@ def test_dataclass_inheritance_is_rejected():
 def test_custom_init_is_rejected():
     class Custom:
         value: int
-        tag: Literal["custom"] = tag("custom")
+        tag: Literal["custom"] = tag()
 
         def __init__(self, value: int) -> None:
             self.value = value
@@ -339,7 +341,7 @@ def test_local_literal_import_resolves_with_bare_case_decorator():
     @case
     class Local:
         value: int
-        tag: L["local"] = tag("local")
+        tag: L["local"] = tag()
 
     assert Local(42).tag == "local"
 
@@ -351,7 +353,7 @@ def test_local_literal_import_resolves_with_case_decorator_factory():
     @case()
     class Local:
         value: int
-        tag: L["local"] = tag("local")
+        tag: L["local"] = tag()
 
     assert Local(42).tag == "local"
 
@@ -365,7 +367,7 @@ def test_reused_case_decorator_resolves_locals_where_each_class_is_declared():
         @final
         @decorate
         class First:
-            tag: L["first"] = tag("first")
+            tag: L["first"] = tag()
 
         return First()
 
@@ -375,9 +377,49 @@ def test_reused_case_decorator_resolves_locals_where_each_class_is_declared():
         @final
         @decorate
         class Second:
-            tag: L["second"] = tag("second")
+            tag: L["second"] = tag()
 
         return Second()
 
     assert getattr(first(), "tag") == "first"
     assert getattr(second(), "tag") == "second"
+
+
+def test_inferred_tag_precedes_payload_and_keeps_dataclass_contract():
+    @final
+    @case
+    class Identifier:
+        tag: Literal["identifier"] = tag(repr=True)
+        value: int
+
+    identifier = Identifier(42)
+    assert_type(identifier.tag, Literal["identifier"])
+    assert identifier.tag == "identifier"
+    assert Identifier.tag == "identifier"
+    assert fields(Identifier)[0].default == "identifier"
+    assert Identifier.__match_args__ == ("value",)
+    assert asdict(identifier) == {"tag": "identifier", "value": 42}
+    assert repr(identifier).endswith("Identifier(tag='identifier', value=42)")
+
+
+def test_inferred_tag_without_postponed_annotations():
+    namespace: dict[str, Any] = {"__name__": __name__}
+    source = """
+from typing import Literal
+from expression import case, tag
+
+@case
+class Identifier:
+    value: int
+    tag: Literal["identifier"] = tag()
+"""
+    exec(compile(source, "<case-declaration>", "exec", dont_inherit=True), namespace)
+    identifier = namespace["Identifier"](42)
+    assert identifier.tag == "identifier"
+    assert asdict(identifier) == {"value": 42, "tag": "identifier"}
+
+
+def test_tag_rejects_explicit_value_argument():
+    dynamic_tag: Any = tag
+    with pytest.raises(TypeError):
+        dynamic_tag("explicit")

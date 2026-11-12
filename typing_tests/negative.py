@@ -44,13 +44,13 @@ _T = TypeVar("_T", covariant=True)
 @case
 class CustomValue(Generic[_T]):
     value: _T
-    tag: Literal["value"] = tag("value")
+    tag: Literal["value"] = tag()
 
 
 @final
 @case
 class CustomEmpty:
-    tag: Literal["empty"] = tag("empty")
+    tag: Literal["empty"] = tag()
 
 
 Custom: TypeAlias = TaggedUnion[CustomValue[_T] | CustomEmpty]
@@ -89,15 +89,15 @@ class CustomExtra(CustomValue[int]):  # type-error
 
 @final
 @case
-class CustomWrongDeclaration:
-    tag: Literal["expected"] = tag("different")  # type-error
+class CustomExplicitTag:
+    tag: Literal["explicit"] = tag("explicit")  # type-error
 
 
 @final
 @case(kw_only=True)
 class CustomKeyword:
     value: int
-    tag: Literal["keyword"] = tag("keyword")
+    tag: Literal["keyword"] = tag()
 
 
 custom_positional_keyword_only = CustomKeyword(1)  # type-error
