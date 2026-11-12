@@ -239,3 +239,31 @@ def computation_contracts() -> None:
 async def await_contracts(option_value: Option[int], result_value: Result[int, str]) -> None:
     assert_type(await option_value, int)
     assert_type(await result_value, int)
+
+
+def collection_sum_and_index_contract() -> None:
+    from collections.abc import MutableSequence
+
+    from expression.collections import array, block, seq
+
+    def length(value: str) -> int:
+        return len(value)
+
+    def as_float(value: int) -> float:
+        return float(value)
+
+    words = Block(["one", "two"])
+    assert_type(words.sum_by(len), int)
+    assert_type(block.sum_by(length)(words), int)
+    assert_type(Block[int]().sum_by(float), float | Literal[0])
+    assert_type(Seq[int]().sum_by(float), float | Literal[0])
+    assert_type(seq.sum_by(float)([]), float | Literal[0])
+    assert_type(TypedArray[int]().sum_by(float), float | Literal[0])
+    assert_type(array.sum_by(as_float)(TypedArray[int]()), float | Literal[0])
+    assert_type(Seq[float]().sum(), float | Literal[0])
+    assert_type(TypedArray[float]().sum(), float | Literal[0])
+    values = TypedArray[int]([1, 2])
+    assert_type(values[0], int)
+    assert_type(values[:], MutableSequence[int])
+    values[0] = 3
+    values[:] = [4, 5]

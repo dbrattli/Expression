@@ -261,9 +261,7 @@ class Block(Collection[_TSource], PipeMixin):
     def sum[TSourceSum: SupportsSum](self: Block[TSourceSum | Literal[0]]) -> TSourceSum | Literal[0]:
         return builtins.sum(self._value)
 
-    def sum_by[TSourceSum: SupportsSum, TResult](
-        self: Block[TSourceSum], projection: Callable[[TSourceSum], TResult]
-    ) -> TResult:
+    def sum_by[TResult: SupportsSum](self, projection: Callable[[_TSource], TResult]) -> TResult | Literal[0]:
         return pipe(self, sum_by(projection))
 
     def mapi[TResult](self, mapping: Callable[[int, _TSource], TResult]) -> Block[TResult]:
@@ -462,7 +460,7 @@ class Block(Collection[_TSource], PipeMixin):
         return NOTHING
 
     @staticmethod
-    def unfold[TResult, TState](
+    def unfold[TState, TResult](
         generator: Callable[[TState], Option[tuple[TResult, TState]]], state: TState
     ) -> Block[TResult]:
         """Unfold block.
@@ -759,7 +757,7 @@ def reduce[TSource](
     return source.tail().fold(reduction, source.head())
 
 
-def starmap[TResult, *P](mapper: Callable[[Unpack[P]], TResult]) -> Callable[[Block[tuple[*P]]], Block[TResult]]:
+def starmap[*P, TResult](mapper: Callable[[Unpack[P]], TResult]) -> Callable[[Block[tuple[*P]]], Block[TResult]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
@@ -779,13 +777,13 @@ def starmap[TResult, *P](mapper: Callable[[Unpack[P]], TResult]) -> Callable[[Bl
     return map(mapper_)
 
 
-def map2[TResult, T1, T2](
+def map2[T1, T2, TResult](
     mapper: Callable[[T1, T2], TResult],
 ) -> Callable[[Block[tuple[T1, T2]]], Block[TResult]]:
     return starmap(mapper)
 
 
-def map3[TResult, T1, T2, T3](
+def map3[T1, T2, T3, TResult](
     mapper: Callable[[T1, T2, T3], TResult],
 ) -> Callable[[Block[tuple[T1, T2, T3]]], Block[TResult]]:
     return starmap(mapper)
@@ -937,11 +935,11 @@ def sum[TSourceSum: SupportsSum](source: Block[TSourceSum | Literal[0]]) -> TSou
 
 
 @curry_flip(1)
-def sum_by[TSourceSum: SupportsSum, TResult](
-    source: Block[TSourceSum], projection: Callable[[TSourceSum], TResult]
-) -> TResult:
+def sum_by[TSource, TResult: SupportsSum](
+    source: Block[TSource], projection: Callable[[TSource], TResult]
+) -> TResult | Literal[0]:
     xs = source.map(projection)
-    return builtins.sum(xs)  # type: ignore
+    return builtins.sum(xs)
 
 
 def tail[TSource](source: Block[TSource]) -> Block[TSource]:

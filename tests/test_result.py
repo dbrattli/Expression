@@ -776,3 +776,16 @@ def test_curried_binary_operations_preserve_error_precedence():
     assert result.map2(add)(Ok(2))(Error("second")) == Error("second")
     assert Error("value").pipe(result.apply(Error("function"))) == Error("function")
     assert Ok(2).pipe(result.apply(Error("function"))) == Error("function")
+
+
+def test_traverse_preserves_order_and_first_error():
+    from expression.extra.result import traverse
+
+    visited: list[int] = []
+
+    def check(value: int) -> Result[str, str]:
+        visited.append(value)
+        return Error(str(value)) if value < 3 else Ok(str(value))
+
+    assert traverse(check, Block([1, 2, 3])) == Error("1")
+    assert visited == [3, 2, 1]

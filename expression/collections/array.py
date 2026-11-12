@@ -12,9 +12,10 @@ from __future__ import annotations
 import array
 import builtins
 import functools
+import operator
 from collections.abc import Callable, Iterable, Iterator, MutableSequence
 from enum import Enum
-from typing import Any, cast
+from typing import Any, Literal, SupportsIndex, cast, overload
 
 from expression.core import (
     NOTHING,
@@ -30,7 +31,7 @@ from expression.core import (
 from . import seq
 
 
-type _Array[TSourceSum: SupportsSum] = list[TSourceSum] | MutableSequence[TSourceSum]
+type _Array[TSource] = MutableSequence[TSource]
 
 
 class int8(int): ...
@@ -174,7 +175,7 @@ class TypedArray[TSource](MutableSequence[TSource], PipeMixin):
         else:
             arr, typecode = array_from_initializer(initializer)
 
-        self.value: _Array[Any] = arr
+        self.value: _Array[TSource] = arr
         self.typecode = typecode
 
     def map[TResult](self, mapping: Callable[[TSource], TResult]) -> TypedArray[TResult]:
@@ -364,10 +365,10 @@ class TypedArray[TSource](MutableSequence[TSource], PipeMixin):
         """
         return TypedArray(builtins.sorted(self.value, key=func, reverse=reverse))
 
-    def sum[TSourceSum: SupportsSum](self: TypedArray[TSourceSum]) -> int:
+    def sum[TSourceSum: SupportsSum](self: TypedArray[TSourceSum]) -> TSourceSum | Literal[0]:
         return sum(self)
 
-    def sum_by[TSourceSum: SupportsSum](self, projection: Callable[[TSource], TSourceSum]) -> int:
+    def sum_by[TSourceSum: SupportsSum](self, projection: Callable[[TSource], TSourceSum]) -> TSourceSum | Literal[0]:
         return pipe(
             self,
             sum_by(projection),
@@ -410,13 +411,13 @@ class TypedArray[TSource](MutableSequence[TSource], PipeMixin):
         empty.
         """
         if self.value:
-            value = cast("TSource", self.value[0])
+            value = self.value[0]
             return Some(value)
 
         return NOTHING
 
     @staticmethod
-    def unfold[TResult, TState](
+    def unfold[TState, TResult](
         generator: Callable[[TState], Option[tuple[TResult, TState]]], state: TState
     ) -> TypedArray[TResult]:
         """Unfold array.
@@ -451,11 +452,26 @@ class TypedArray[TSource](MutableSequence[TSource], PipeMixin):
     def __iter__(self) -> Iterator[TSource]:
         return iter(self.value)
 
-    def __setitem__(self, key: slice | int, value: Any) -> None:
-        self.value[key] = value
+    @overload
+    def __setitem__(self, key: SupportsIndex, value: TSource) -> None: ...
 
-    def __getitem__(self, key: Any) -> Any:
-        return self.value[key]
+    @overload
+    def __setitem__(self, key: slice, value: Iterable[TSource]) -> None: ...
+
+    def __setitem__(self, key: slice | SupportsIndex, value: TSource | Iterable[TSource]) -> None:
+        if isinstance(key, slice):
+            self.value[key] = cast(Iterable[TSource], value)
+        else:
+            self.value[operator.index(key)] = cast(TSource, value)
+
+    @overload
+    def __getitem__(self, key: SupportsIndex) -> TSource: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> MutableSequence[TSource]: ...
+
+    def __getitem__(self, key: slice | SupportsIndex) -> TSource | MutableSequence[TSource]:
+        return self.value[key] if isinstance(key, slice) else self.value[operator.index(key)]
 
     def __delitem__(self, key: slice | int) -> None:
         del self.value[key]
@@ -575,14 +591,14 @@ def singleton[TSource](value: TSource) -> TypedArray[TSource]:
     return TypedArray((value,))
 
 
-def sum[TSourceSum: SupportsSum](source: TypedArray[TSourceSum]) -> int:
+def sum[TSourceSum: SupportsSum](source: TypedArray[TSourceSum]) -> TSourceSum | Literal[0]:
     return builtins.sum(source.value)
 
 
 @curry_flip(1)
 def sum_by[TSource, TSourceSum: SupportsSum](
     source: TypedArray[TSource], projection: Callable[[TSource], TSourceSum]
-) -> int:
+) -> TSourceSum | Literal[0]:
     return builtins.sum(source.map(projection).value)
 
 

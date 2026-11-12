@@ -576,3 +576,13 @@ def test_of_iterable_preserves_subclass():
     values = IntSeq.of_iterable([1, 2, 3])
     assert isinstance(values, IntSeq)
     assert list(values) == [1, 2, 3]
+
+
+def test_seq_sum_preserves_projection_type_and_empty_zero():
+    from decimal import Decimal
+
+    assert seq.sum_by(Decimal)(["1.5", "2.5"]) == Decimal("4")
+    assert seq.sum([Decimal("1.5")]) == Decimal("1.5")
+    result = seq.sum_by(float)([])
+    assert result == 0
+    assert type(result) is int

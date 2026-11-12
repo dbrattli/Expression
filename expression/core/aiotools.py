@@ -99,12 +99,12 @@ def _start_task[TSource](computation: Awaitable[TSource], token: CancellationTok
     return task
 
 
-def start(computation: Awaitable[Any], token: CancellationToken | None = None) -> None:
+def start(computation: Awaitable[object], token: CancellationToken | None = None) -> None:
     """Schedule a computation on the running event loop."""
     _start_task(computation, token)
 
 
-def start_immediate(computation: Awaitable[Any], token: CancellationToken | None = None) -> None:
+def start_immediate(computation: Awaitable[object], token: CancellationToken | None = None) -> None:
     """Schedule a computation on the running event loop.
 
     Execution begins when the event loop next runs the task.

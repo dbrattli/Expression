@@ -63,7 +63,7 @@ class Some(PipeMixin, Generic[_TSourceOut]):  # noqa: UP046 - Preserve explicit 
         """Transform the present value."""
         return Some(mapper(self.some))
 
-    def map2[TResult, T2](self, mapper: Callable[[_TSourceOut, T2], TResult], other: Option[T2]) -> Option[TResult]:
+    def map2[T2, TResult](self, mapper: Callable[[_TSourceOut, T2], TResult], other: Option[T2]) -> Option[TResult]:
         """Transform two present values, or return Nothing."""
         return other.map(lambda value: mapper(self.some, value))
 
@@ -339,12 +339,12 @@ def apply(function: Nothing) -> Callable[[Option[object]], Nothing]: ...
 
 
 @overload
-def apply[TResult, TSource](
+def apply[TSource, TResult](
     function: Option[Callable[[TSource], TResult]],
 ) -> Callable[[Option[TSource]], Option[TResult]]: ...
 
 
-def apply[TResult, TSource](
+def apply[TSource, TResult](
     function: Option[Callable[[TSource], TResult]],
 ) -> Callable[[Option[TSource]], Option[TResult]]:
     """Apply an optional function to an optional value."""

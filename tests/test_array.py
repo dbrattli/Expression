@@ -435,3 +435,37 @@ def test_array_trailing_zero_count():
     assert list(source.take_last(0)) == []
     assert list(pipe(source, array.take_last(0))) == []
     assert list(source.skip_last(0)) == [1, 2, 3]
+
+
+def test_array_typed_index_and_slice_assignment():
+    class Index:
+        def __index__(self) -> int:
+            return 1
+
+    values = TypedArray[int]([1, 2, 3])
+    assert values[Index()] == 2
+    values[Index()] = 4
+    values[1:] = [5, 6]
+    assert list(values) == [1, 5, 6]
+    assert list(values[1:]) == [5, 6]
+
+
+def test_array_numeric_storage_indexing():
+    values = TypedArray[int]([1, 2, 3], typecode=array.TypeCode.Int32)
+    values[1] = 4
+    assert values[1] == 4
+    assert list(values[1:]) == [4, 3]
+    bytes_values = TypedArray[int](bytearray([1, 2]))
+    bytes_values[0] = 3
+    assert list(bytes_values[:]) == [3, 2]
+
+
+def test_array_sum_preserves_projection_type_and_empty_zero():
+    from decimal import Decimal
+
+    values = TypedArray[str](["1.5", "2.5"])
+    assert values.sum_by(Decimal) == Decimal("4")
+    assert TypedArray[Decimal]([Decimal("1.5")]).sum() == Decimal("1.5")
+    result = TypedArray[int]().sum_by(float)
+    assert result == 0
+    assert type(result) is int
