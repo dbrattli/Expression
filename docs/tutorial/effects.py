@@ -23,10 +23,23 @@ def apply_discount(price: int, percentage: int) -> Result[int, str]:
     return Ok(price * (100 - percentage) // 100)
 
 
+# Preferred direct-style version; restore this when Pyright fixes its known
+# yield-from return-type inference bug for unions such as Result (Ok | Error).
+# The original works at runtime; the comprehension below is a typing workaround.
+#
+# @effect.result[int, str]()
+# def discounted_price(raw_price: str, percentage: int) -> Generator[int, int, int]:
+#     price = yield from parse_price(raw_price)
+#     return (yield from apply_discount(price, percentage))
+
+
 @effect.result[int, str]()
-def discounted_price(raw_price: str, percentage: int) -> Generator[int, int, int]:
-    price = yield from parse_price(raw_price)
-    return (yield from apply_discount(price, percentage))
+def discounted_price(raw_price: str, percentage: int) -> Generator[int, None, None]:
+    yield from (
+        discounted
+        for price in parse_price(raw_price)
+        for discounted in apply_discount(price, percentage)
+    )
 
 
 assert discounted_price("120", 25) == Ok(90)
@@ -35,6 +48,9 @@ assert discounted_price("120", 200) == Error("Discount must be between 0 and 100
 
 # %% [markdown]
 """
+Generator comprehensions keep each binding typed independently. Iterating an
+`Error` short-circuits the builder before subsequent steps run.
+
 The `option`, `seq`, `async_option`, `async_result`, and `async_try` builders follow the
 same idea for their respective return types. Use a builder only when it makes a workflow
 clearer than a chain of `bind` calls.

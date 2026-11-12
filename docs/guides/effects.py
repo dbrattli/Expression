@@ -14,10 +14,8 @@ def parse_count(value: str) -> Result[int, str]:
     return Ok(int(value)) if value.isdigit() else Error("Count must be numeric.")
 
 @effect.result[int, str]()
-def total(left: str, right: str) -> Generator[int, int, int]:
-    first = yield from parse_count(left)
-    second = yield from parse_count(right)
-    return first + second
+def total(left: str, right: str) -> Generator[int, None, None]:
+    yield from (first + second for first in parse_count(left) for second in parse_count(right))
 
 assert total("2", "3") == Ok(5)
 assert total("2", "three") == Error("Count must be numeric.")
@@ -32,7 +30,7 @@ comprehension. Pyright can infer each binding independently:
 """
 # %%
 @effect.option[int]()
-def maybe_add(left: Option[int], right: Option[int]) -> Generator[int, int, int]:
+def maybe_add(left: Option[int], right: Option[int]) -> Generator[int, None, None]:
     yield from (left_value + right_value for left_value in left for right_value in right)
 
 assert maybe_add(Some(2), Some(3)) == Some(5)
@@ -40,7 +38,7 @@ assert maybe_add(Some(2), NOTHING) == NOTHING
 
 # %% [markdown]
 """
-When any yielded `Result` is an `Error`, the remaining statements are skipped. The
+When a `Result` step is an `Error`, the remaining steps are skipped. The
 library also provides `option`, `seq`, `async_option`, `async_result`, and `async_try`
 builders. Use the [effects overview](../reference/effects) to choose one.
 """

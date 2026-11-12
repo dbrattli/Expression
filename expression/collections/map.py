@@ -47,7 +47,7 @@ class Map(Mapping[_Key, _Value], PipeMixin):
         return Map(maptree.add(key, value, self._tree))
 
     @staticmethod
-    def create(ie: Iterable[tuple[_Key, _Value]]) -> Map[_Key, _Value]:
+    def create[TKey: SupportsLessThanAndHash, TValue](ie: Iterable[tuple[TKey, TValue]]) -> Map[TKey, TValue]:
         return create(ie)
 
     def contains_key(self, key: _Key) -> bool:
@@ -166,7 +166,7 @@ class Map(Mapping[_Key, _Value], PipeMixin):
         return Map(maptree.of_seq(args.items()))
 
     @staticmethod
-    def of_block(lst: Block[tuple[_Key, _Value]]) -> Map[_Key, _Value]:
+    def of_block[TKey: SupportsLessThanAndHash, TValue](lst: Block[tuple[TKey, TValue]]) -> Map[TKey, TValue]:
         """Generate map from list.
 
         Returns:

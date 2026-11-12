@@ -1,9 +1,11 @@
 {
   "include": [
     "expression",
+    "scripts",
     "tests",
     "README.py",
-    "docs/guides/getting-started.py"
+    "docs/guides",
+    "docs/tutorial"
   ],
   "reportImportCycles": false,
   "reportMissingImports": false,

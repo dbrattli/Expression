@@ -10,6 +10,8 @@ testable. `pipe` then makes the order of those transformations obvious.
 """
 
 # %%
+from collections.abc import Mapping
+
 from expression import pipe
 from expression.collections import seq
 
@@ -20,11 +22,11 @@ orders = [
 ]
 
 
-def is_paid(order: dict[str, object]) -> bool:
+def is_paid(order: Mapping[str, str | int | bool]) -> bool:
     return order["paid"] is True
 
 
-def amount(order: dict[str, object]) -> int:
+def amount(order: Mapping[str, str | int | bool]) -> int:
     return int(order["amount"])
 
 

@@ -4,6 +4,7 @@ from collections.abc import Awaitable, Callable
 from typing import Generic, Literal, TypeAlias, TypeVar, final
 
 from expression import Error, MailboxProcessor, Nothing, Option, Result, Some, TaggedUnion, apipe, case, tag
+from expression.collections import Block, Map, TypedArray
 from expression.extra import async_result
 
 
@@ -29,6 +30,9 @@ def wrong_case(value: Option[int]) -> None:
 
 wrong_payload: Option[int] = Some("wrong")  # type-error
 wrong_error_payload: Result[int, str] = Error(42)  # type-error
+wrong_block_items: Block[int] = Block.of("wrong")  # type-error
+wrong_array_items: TypedArray[int] = TypedArray.of("wrong")  # type-error
+wrong_map_values: Map[str, int] = Map.create([("key", "wrong")])  # type-error
 missing_payload = Some()  # type-error
 contradictory_tag = Some(1, tag="none")  # type-error
 

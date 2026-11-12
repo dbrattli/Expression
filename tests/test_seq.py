@@ -567,3 +567,12 @@ def test_seq_monad_law_associativity_empty(value: int):
     # Empty list
     m = empty
     assert list(m.collect(f).collect(g)) == list(m.collect(lambda x: f(x).collect(g)))
+
+
+def test_of_iterable_preserves_subclass():
+    class IntSeq(Seq[int]):
+        pass
+
+    values = IntSeq.of_iterable([1, 2, 3])
+    assert isinstance(values, IntSeq)
+    assert list(values) == [1, 2, 3]

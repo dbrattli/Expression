@@ -40,7 +40,7 @@ async def check_load_count() -> None:
     assert await load_count_async() == 42
 
 
-await check_load_count()  # noqa: F704 - valid top-level await in a Jupyter cell
+await check_load_count()  # type: ignore  # noqa: F704 - Jupyter cell
 
 # %% [markdown]
 """
