@@ -1,14 +1,4 @@
-jupyter-book>=2.1.7,<3.0
+# This site uses Jupyter Book's Sphinx backend; version 2 uses MyST instead.
+# Let Jupyter Book select its compatible Sphinx and extension dependencies.
+jupyter-book>=1.0.4,<2.0
 jupytext>=1.19.6,<2.0
-linkify-it-py
-myst-nb
-sphinx>=9.2.0,<10
-sphinx-autodoc-typehints>=3.17.5,<4.0
-sphinx-book-theme
-sphinx-comments
-sphinx-copybutton
-sphinx-external-toc
-sphinx-jupyterbook-latex
-sphinx-panels
-sphinx-thebe
-sphinx-togglebutton
