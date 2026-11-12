@@ -504,3 +504,15 @@ def test_block_trailing_zero_count():
     assert list(pipe(source, block.take_last(0))) == []
     assert list(source.skip_last(0)) == [1, 2, 3]
     assert list(pipe(source, block.skip_last(0))) == [1, 2, 3]
+
+
+def test_block_sum_by_non_numeric_source():
+    words = Block(["one", "four"])
+    assert words.sum_by(len) == 7
+    assert pipe(words, block.sum_by(len)) == 7
+
+
+def test_block_sum_by_empty_returns_integer_zero():
+    result = Block[int]().sum_by(float)
+    assert result == 0
+    assert type(result) is int

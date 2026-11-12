@@ -161,3 +161,11 @@ caught_decorated(1, suffix=2)  # type-error
 caught_direct(1, "!")  # type-error
 caught_decorated(1)  # type-error
 catch(ValueError)  # type-error
+
+
+# Collection element types and summation projections remain checked.
+integers = TypedArray[int]([1, 2])
+integers[0] = "wrong"  # type-error
+integers[:] = ["wrong"]  # type-error
+integers["wrong"]  # type-error
+Block([1]).sum_by(str)  # type-error

@@ -14,6 +14,12 @@ while `skip_last(0)` preserves all elements. For example,
 `AsyncSeq.take(n)` consumes at most `n` source items. Taking zero items does not
 advance the source, and completing the result does not request an extra item.
 
+`sum` and `sum_by` use Python's summation behavior: empty input returns integer
+`0`, even when the element or projection type is `float` or `Decimal`. Their
+return annotations include this empty-input case. `sum_by` requires summable
+projection results, not summable source elements; for example,
+`Block.of("one", "four").sum_by(len)` returns `7`.
+
 ## Additional modules
 
 ```{eval-rst}

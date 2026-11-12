@@ -1,9 +1,7 @@
 """Data structures that can be traversed from left to right, performing an action on each element."""
 
 from collections.abc import Callable
-from typing import Any, cast
 
-from expression import effect
 from expression.collections import Block, block, seq
 from expression.core import Ok, Result, identity, pipe
 
@@ -16,18 +14,13 @@ def traverse[TSource, TResult, TError](
     Threads an applicative computation though a list of items.
     """
 
-    @effect.result[Block[TResult], TError]()
-    def folder(head: TSource, tail: Result[Block[TResult], TError]) -> Any:
-        """Fold back function.
+    def folder(head: TSource, tail: Result[Block[TResult], TError]) -> Result[Block[TResult], TError]:
+        """Prepend a successful result, preserving the first error in input order."""
 
-        Same as:
-        >>> fn(head).bind(lambda head: tail.bind(lambda tail: Ok([head] + tail))).
-        """
-        # Pyright #11881 loses the return type for a union of iterable cases.
-        h = cast(TResult, (yield from fn(head)))
-        t = cast(Block[TResult], (yield from tail))
+        def prepend(h: TResult) -> Result[Block[TResult], TError]:
+            return tail.map(lambda t: Block([h]) + t)
 
-        return Block([h]) + t
+        return fn(head).bind(prepend)
 
     state: Result[Block[TResult], TError] = Ok(block.empty)
     ret = pipe(

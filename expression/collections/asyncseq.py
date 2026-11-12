@@ -14,7 +14,7 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
     async def map[TResult](self, mapper: Callable[[TSource], TResult]) -> "AsyncSeq[TResult]":
         # Use the module-level `map` function defined later to transform the
         # underlying async iterable and wrap the result back into an AsyncSeq.
-        return AsyncSeq(pipe(self._ai, map(mapper)))  # type: ignore[arg-type]
+        return AsyncSeq(pipe(self._ai, map(mapper)))
 
     @classmethod
     def empty(cls) -> "AsyncSeq[Any]":
@@ -279,7 +279,7 @@ def filter[TSource](predicate: Callable[[TSource], bool]) -> Callable[[AsyncIter
     return _filter
 
 
-def map[TResult, TSource](
+def map[TSource, TResult](
     mapper: Callable[[TSource], TResult],
 ) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     async def _map(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
