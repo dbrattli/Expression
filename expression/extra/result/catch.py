@@ -2,42 +2,54 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, cast, overload
+from typing import Any, Never, ParamSpec, Protocol, cast, overload
+
+from typing_extensions import TypeVar
 
 from expression.core import Error, Ok, Result
 
 
-@overload
-def catch[TError_: Exception, TSource, TError: Exception](
-    exception: type[TError_],
-) -> Callable[
-    [Callable[..., TSource | Result[TSource, TError]]],
-    Callable[..., Result[TSource, TError | TError_]],
-]: ...
+# Use typing_extensions.TypeVar because type parameter defaults require Python 3.13 syntax.
+# Keep Python 3.12 support while defaulting to Never so plain returns do not infer an Unknown error channel.
+_TSource = TypeVar("_TSource")
+_TExisting = TypeVar("_TExisting", default=Never)
+_TError = TypeVar("_TError", bound=Exception, covariant=True, default=Exception)
+_P = ParamSpec("_P")
+
+
+class _Catch(Protocol[_TError]):
+    def __call__(
+        self, fn: Callable[_P, _TSource | Result[_TSource, _TExisting]]
+    ) -> Callable[_P, Result[_TSource, _TExisting | _TError]]: ...
 
 
 @overload
-def catch[TSource, TError: Exception](
-    f: Callable[..., TSource], *, exception: type[TError]
-) -> Callable[..., Result[TSource, TError]]: ...
+def catch[TError: Exception](*, exception: type[TError]) -> _Catch[TError]: ...
 
 
-def catch[TSource, TError: Exception](  # type: ignore
-    f: Callable[..., TSource] | None = None, *, exception: type[TError]
-) -> Callable[
-    [Callable[..., TSource]],
-    Callable[..., Result[TSource, TError]] | Result[TSource, TError],
-]:
-    def decorator(fn: Callable[..., TSource]) -> Callable[..., Result[TSource, TError]]:
+@overload
+def catch(
+    f: Callable[_P, _TSource | Result[_TSource, _TExisting]], *, exception: type[_TError]
+) -> Callable[_P, Result[_TSource, _TExisting | _TError]]: ...
+
+
+def catch[TError: Exception](
+    f: Callable[..., Any] | None = None, *, exception: type[TError]
+) -> _Catch[TError] | Callable[..., Result[Any, Any]]:
+    """Catch the selected exception, preserving arguments and existing Result values."""
+
+    def decorator(
+        fn: Callable[_P, _TSource | Result[_TSource, _TExisting]],
+    ) -> Callable[_P, Result[_TSource, _TExisting | TError]]:
         @wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Result[TSource, TError]:
+        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> Result[_TSource, _TExisting | TError]:
             try:
                 out = fn(*args, **kwargs)
             except exception as exn:
-                return Error(cast(TError, exn))
+                return Error(exn)
             else:
                 if isinstance(out, (Ok, Error)):
-                    return cast(Result[TSource, TError], out)
+                    return cast(Result[_TSource, _TExisting], out)
 
                 return Ok(out)
 
