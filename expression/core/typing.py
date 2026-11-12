@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
-from typing import Any, Protocol, get_origin
+from typing import Any, Protocol
 
 
 class SupportsLessThan(Protocol):
@@ -52,39 +52,45 @@ class ModelField:
     def validate(self, value: Any, values: dict[str, str], loc: str) -> tuple[Any, Any]: ...
 
 
-def upcast[Base](type: type[Base], expr: Base) -> Base:
-    """Upcast expression from a `Derived` to `Base`.
+# TODO: In the next major Expression release, use upcast(Base)(value) so the
+# target type is fixed before checking the value, allowing static rejection
+# of invalid upcasts. Keep the uncurried API for compatibility in this release.
+def upcast[Base](type: type[Base], expr: object) -> Base:
+    """View a value as the requested base type without converting it.
 
-    Note: F# `:>` or `upcast`.
+    The target alone determines the return type. Python's type inference
+    cannot enforce the widening relationship in this two-argument API,
+    so compatibility is checked at runtime using `downcast`. A mismatch
+    raises `TypeError`, including under `python -O`.
+
+    Targets must support `isinstance`; parameterized generics are unsupported.
     """
-    return expr
+    return downcast(type, expr)
 
 
 def downcast[Derived](type: type[Derived], expr: object) -> Derived:
-    """Downcast expression `Derived` to `Base`.
+    """Narrow a value to the requested runtime type without converting it.
 
-    Checks at compile time that the type of expression Base is a
-    supertype of Derived, and checks at runtime that Base is in fact an
-    instance of Derived.
+    Return the original value if it is an instance of the target type;
+    otherwise raise `TypeError`. The check remains active under `python -O`.
+    The source and target inheritance relationship is not checked statically.
 
-    Note: F# `:?>` or `downcast`.
+    Targets must support `isinstance`. Parameterized generics such as
+    `list[int]` are unsupported and raise `TypeError`.
     """
-    assert isinstance(expr, type), f"The type of expression {expr} is not a supertype of {type}"
-    return expr
+    if isinstance(expr, type):
+        return expr
+    raise TypeError(f"Cannot cast value to {type!r}: incompatible runtime type")
 
 
 def try_downcast[Derived](type_: type[Derived], expr: object) -> Derived | None:
-    """Downcast expression `Base` to `Derived`.
+    """Return the original value if it matches the target type, or `None`.
 
-    Check that the `Derived` type is a supertype of `Base`.
-
-    NOTE: Supports generic types.
-
-    Returns:
-        None if `Derived` is not a supertype of `Base`.
+    Targets follow the same `isinstance` rules as `downcast`. Unsupported
+    targets, including parameterized generics, raise `TypeError` rather
+    than being treated as a value mismatch. Generic arguments are not erased.
     """
-    origin: type[Derived] | None = get_origin(type_) or type_
-    if origin is not None and isinstance(expr, origin):
+    if isinstance(expr, type_):
         return expr
 
     return None
