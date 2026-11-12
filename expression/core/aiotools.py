@@ -12,17 +12,15 @@ import asyncio
 from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
 from inspect import iscoroutine
-from typing import Any, TypeVar
+from typing import Any
 
 from expression.system import CancellationToken, ObjectDisposedException, OperationCanceledError
 
 
-_TSource = TypeVar("_TSource")
-
-Continuation = Callable[[_TSource], None]
-Callbacks = Callable[
+type Continuation[TSource] = Callable[[TSource], None]
+type Callbacks[TSource] = Callable[
     [
-        Continuation[_TSource],
+        Continuation[TSource],
         Continuation[Exception],
         Continuation[OperationCanceledError],
     ],
@@ -30,7 +28,7 @@ Callbacks = Callable[
 ]
 
 
-def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
+def from_continuations[TSource](callback: Callbacks[TSource]) -> Awaitable[TSource]:
     """Create async computation from continuations.
 
     Creates an asynchronous computation that captures the current
@@ -45,9 +43,9 @@ def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
         An asynchronous computation that provides the callback with the
         current continuations.
     """
-    future: Future[_TSource] = asyncio.Future()
+    future: Future[TSource] = asyncio.Future()
 
-    def done(value: _TSource) -> None:
+    def done(value: TSource) -> None:
         if not future.done():
             future.set_result(value)
 
@@ -69,8 +67,8 @@ def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
 __running_tasks: set[Task[Any]] = set()
 
 
-def _start_task(computation: Awaitable[_TSource], token: CancellationToken | None = None) -> Task[_TSource]:
-    async def runner() -> _TSource:
+def _start_task[TSource](computation: Awaitable[TSource], token: CancellationToken | None = None) -> Task[TSource]:
+    async def runner() -> TSource:
         if token is not None and token.is_cancellation_requested:
             raise asyncio.CancelledError()
         return await computation
@@ -89,7 +87,7 @@ def _start_task(computation: Awaitable[_TSource], token: CancellationToken | Non
         except ObjectDisposedException:
             cancel()
 
-    def cleanup(completed: Task[_TSource]) -> None:
+    def cleanup(completed: Task[TSource]) -> None:
         __running_tasks.discard(completed)
         if registration is not None:
             registration.dispose()
@@ -114,16 +112,16 @@ def start_immediate(computation: Awaitable[Any], token: CancellationToken | None
     _start_task(computation, token)
 
 
-def run_synchronously(computation: Awaitable[_TSource]) -> _TSource:
+def run_synchronously[TSource](computation: Awaitable[TSource]) -> TSource:
     """Runs the asynchronous computation and await its result."""
 
-    async def runner() -> _TSource:
+    async def runner() -> TSource:
         return await computation
 
     return asyncio.run(runner())
 
 
-async def singleton(value: _TSource) -> _TSource:
+async def singleton[TSource](value: TSource) -> TSource:
     """Async function that returns a single value."""
     return value
 
@@ -143,14 +141,14 @@ async def empty() -> None:
     """Async no-op."""
 
 
-def from_result(result: _TSource) -> Awaitable[_TSource]:
+def from_result[TSource](result: TSource) -> Awaitable[TSource]:
     """Awaitable from result.
 
     Creates a async operation that's completed successfully with the
     specified result.
     """
 
-    async def from_result(result: _TSource) -> _TSource:
+    async def from_result(result: TSource) -> TSource:
         """Async return value."""
         return result
 

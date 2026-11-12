@@ -29,18 +29,11 @@ from .maptree import MapTree
 
 
 _Key = TypeVar("_Key", bound=SupportsLessThanAndHash)
-_Key_ = TypeVar("_Key_", bound=SupportsLessThanAndHash)
 _Value = TypeVar("_Value")
-_Result = TypeVar("_Result")
-
-_T1 = TypeVar("_T1")
-_T2 = TypeVar("_T2")
-_T3 = TypeVar("_T3")
-_T4 = TypeVar("_T4")
-_T5 = TypeVar("_T5")
-_T6 = TypeVar("_T6")
 
 
+# Keep implicit generics here: early Python 3.12 dataclasses lose the weakref
+# slot when PEP 695 adds typing.Generic as a direct base.
 @dataclass(frozen=True, slots=True, weakref_slot=True, init=False, eq=False, repr=False, match_args=False)
 class Map(Mapping[_Key, _Value], PipeMixin):
     """The immutable map class."""
@@ -97,13 +90,13 @@ class Map(Mapping[_Key, _Value], PipeMixin):
     #     def MapRange (f:'Value->'Result) =
     #         return Map<'Key, 'Result>(comparer, maptree.map f tree)
 
-    def fold(self, folder: Callable[[_Result, tuple[_Key, _Value]], _Result], state: _Result) -> _Result:
+    def fold[Result](self, folder: Callable[[Result, tuple[_Key, _Value]], Result], state: Result) -> Result:
         return maptree.fold(folder, state, self._tree)
 
-    def fold_back(self, folder: Callable[[tuple[_Key, _Value], _Result], _Result], state: _Result) -> _Result:
+    def fold_back[Result](self, folder: Callable[[tuple[_Key, _Value], Result], Result], state: Result) -> Result:
         return maptree.fold_back(folder, self._tree, state)
 
-    def map(self, mapping: Callable[[_Key, _Value], _Result]) -> Map[_Key, _Result]:
+    def map[Result](self, mapping: Callable[[_Key, _Value], Result]) -> Map[_Key, Result]:
         """Map the mapping.
 
         Builds a new collection whose elements are the results of
@@ -165,11 +158,11 @@ class Map(Mapping[_Key, _Value], PipeMixin):
     def try_find(self, key: _Key) -> Option[_Value]:
         return maptree.try_find(key, self._tree)
 
-    def try_pick(self, chooser: Callable[[_Key, _Value], Option[_Result]]) -> Option[_Result]:
+    def try_pick[Result](self, chooser: Callable[[_Key, _Value], Option[Result]]) -> Option[Result]:
         return maptree.try_pick(chooser, self._tree)
 
     @staticmethod
-    def of(**args: _Result) -> Map[str, _Result]:
+    def of[Result](**args: Result) -> Map[str, Result]:
         return Map(maptree.of_seq(args.items()))
 
     @staticmethod
@@ -182,7 +175,7 @@ class Map(Mapping[_Key, _Value], PipeMixin):
         return of_block(lst)
 
     @staticmethod
-    def of_list(lst: list[tuple[_Key_, _Result]]) -> Map[_Key_, _Result]:
+    def of_list[Key_: SupportsLessThanAndHash, Result](lst: list[tuple[Key_, Result]]) -> Map[Key_, Result]:
         """Generate map from list.
 
         Returns:
@@ -191,7 +184,9 @@ class Map(Mapping[_Key, _Value], PipeMixin):
         return of_list(lst)
 
     @staticmethod
-    def of_seq(sequence: Iterable[tuple[_Key_, _Result]]) -> Map[_Key_, _Result]:
+    def of_seq[Key_: SupportsLessThanAndHash, Result](
+        sequence: Iterable[tuple[Key_, Result]],
+    ) -> Map[Key_, Result]:
         """Generate map from sequence.
 
         Generates a new map from an iterable of key/value tuples. This
@@ -261,7 +256,7 @@ class Map(Mapping[_Key, _Value], PipeMixin):
 
 
 @curry_flip(1)
-def add(table: Map[_Key, _Value], key: _Key, value: _Value) -> Map[_Key, _Value]:
+def add[Key: SupportsLessThanAndHash, Value](table: Map[Key, Value], key: Key, value: Value) -> Map[Key, Value]:
     """Add key with value to map.
 
     Returns a new map with the binding added to the given map. If a
@@ -282,7 +277,9 @@ def add(table: Map[_Key, _Value], key: _Key, value: _Value) -> Map[_Key, _Value]
 
 
 @curry_flip(1)
-def change(table: Map[_Key, _Value], key: _Key, fn: Callable[[Option[_Value]], Option[_Value]]) -> Map[_Key, _Value]:
+def change[Key: SupportsLessThanAndHash, Value](
+    table: Map[Key, Value], key: Key, fn: Callable[[Option[Value]], Option[Value]]
+) -> Map[Key, Value]:
     """Change element in map.
 
     Returns a new map with the value stored under key changed
@@ -300,7 +297,7 @@ def change(table: Map[_Key, _Value], key: _Key, fn: Callable[[Option[_Value]], O
 
 
 @curry_flip(1)
-def contains_key(table: Map[_Key, Any], key: _Key) -> bool:
+def contains_key[Key: SupportsLessThanAndHash](table: Map[Key, Any], key: Key) -> bool:
     return table.contains_key(key)
 
 
@@ -309,12 +306,12 @@ def count(table: Map[Any, Any]) -> int:
     return len(table)
 
 
-def create(ie: Iterable[tuple[_Key, _Value]]) -> Map[_Key, _Value]:
+def create[Key: SupportsLessThanAndHash, Value](ie: Iterable[tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_seq(ie))
 
 
 @curry_flip(1)
-def find(table: Map[_Key, _Value], key: _Key) -> _Value:
+def find[Key: SupportsLessThanAndHash, Value](table: Map[Key, Value], key: Key) -> Value:
     """Find element with key in map.
 
     Lookup an element in the map, raising KeyNotFoundException if no
@@ -340,15 +337,19 @@ def is_empty(table: Map[Any, Any]) -> bool:
     return table.is_empty()
 
 
-def iterate(action: Callable[[_Key, _Value], None]) -> Callable[[Map[_Key, _Value]], None]:
-    def _iterate(table: Map[_Key, _Value]) -> None:
+def iterate[Key: SupportsLessThanAndHash, Value](
+    action: Callable[[Key, Value], None],
+) -> Callable[[Map[Key, Value]], None]:
+    def _iterate(table: Map[Key, Value]) -> None:
         return table.iterate(action)
 
     return _iterate
 
 
 @curry_flip(1)
-def try_pick(table: Map[_Key, _Value], chooser: Callable[[_Key, _Value], Option[_Result]]) -> Option[_Result]:
+def try_pick[Key: SupportsLessThanAndHash, Value, Result](
+    table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]
+) -> Option[Result]:
     """Pick element in map.
 
     Searches the map looking for the first element where the given
@@ -367,7 +368,9 @@ def try_pick(table: Map[_Key, _Value], chooser: Callable[[_Key, _Value], Option[
 
 
 @curry_flip(1)
-def pick(table: Map[_Key, _Value], chooser: Callable[[_Key, _Value], Option[_Result]]) -> _Result:
+def pick[Key: SupportsLessThanAndHash, Value, Result](
+    table: Map[Key, Value], chooser: Callable[[Key, Value], Option[Result]]
+) -> Result:
     for res in table.try_pick(chooser):
         return res
     else:
@@ -375,7 +378,9 @@ def pick(table: Map[_Key, _Value], chooser: Callable[[_Key, _Value], Option[_Res
 
 
 @curry_flip(1)
-def exists(table: Map[_Key, _Value], predicate: Callable[[_Key, _Value], bool]) -> bool:
+def exists[Key: SupportsLessThanAndHash, Value](
+    table: Map[Key, Value], predicate: Callable[[Key, Value], bool]
+) -> bool:
     """Test if element exists in map.
 
     Returns true if the given predicate returns true for one of the
@@ -394,47 +399,53 @@ def exists(table: Map[_Key, _Value], predicate: Callable[[_Key, _Value], bool]) 
 
 
 @curry_flip(1)
-def filter(table: Map[_Key, _Value], predicate: Callable[[_Key, _Value], bool]) -> Map[_Key, _Value]:
+def filter[Key: SupportsLessThanAndHash, Value](
+    table: Map[Key, Value], predicate: Callable[[Key, Value], bool]
+) -> Map[Key, Value]:
     return table.filter(predicate)
 
 
 @curry_flip(1)
-def for_all(table: Map[_Key, _Value], predicate: Callable[[_Key, _Value], bool]) -> bool:
+def for_all[Key: SupportsLessThanAndHash, Value](
+    table: Map[Key, Value], predicate: Callable[[Key, Value], bool]
+) -> bool:
     return table.for_all(predicate)
 
 
 @curry_flip(1)
-def map(table: Map[_Key, _Value], mapping: Callable[[_Key, _Value], _Result]) -> Map[_Key, _Result]:
+def map[Key: SupportsLessThanAndHash, Value, Result](
+    table: Map[Key, Value], mapping: Callable[[Key, Value], Result]
+) -> Map[Key, Result]:
     return table.map(mapping)
 
 
 @curry_flip(1)
-def fold(
-    table: Map[_Key, _Value],
-    folder: Callable[[_Result, tuple[_Key, _Value]], _Result],
-    state: _Result,
-) -> _Result:
+def fold[Key: SupportsLessThanAndHash, Value, Result](
+    table: Map[Key, Value],
+    folder: Callable[[Result, tuple[Key, Value]], Result],
+    state: Result,
+) -> Result:
     return table.fold(folder, state)
 
 
 @curry_flip(1)
-def fold_back(
-    state: _Result,
-    folder: Callable[[tuple[_Key, _Value], _Result], _Result],
-    table: Map[_Key, _Value],
-) -> _Result:
+def fold_back[Result, Key: SupportsLessThanAndHash, Value](
+    state: Result,
+    folder: Callable[[tuple[Key, Value], Result], Result],
+    table: Map[Key, Value],
+) -> Result:
     return table.fold_back(folder, state)
 
 
 @curry_flip(1)
-def partition(
-    table: Map[_Key, _Value], predicate: Callable[[_Key, _Value], bool]
-) -> tuple[Map[_Key, _Value], Map[_Key, _Value]]:
+def partition[Key: SupportsLessThanAndHash, Value](
+    table: Map[Key, Value], predicate: Callable[[Key, Value], bool]
+) -> tuple[Map[Key, Value], Map[Key, Value]]:
     return table.partition(predicate)
 
 
 @curry_flip(1)
-def remove(table: Map[_Key, _Value], key: _Key) -> Map[_Key, _Value]:
+def remove[Key: SupportsLessThanAndHash, Value](table: Map[Key, Value], key: Key) -> Map[Key, Value]:
     """Remove element from map.
 
     Removes an element from the domain of the map. No exception is
@@ -450,33 +461,33 @@ def remove(table: Map[_Key, _Value], key: _Key) -> Map[_Key, _Value]:
     return table.remove(key)
 
 
-def of(**args: _Value) -> Map[str, _Value]:
+def of[Value](**args: Value) -> Map[str, Value]:
     """Create map from arguments."""
     return Map(maptree.of_seq(args.items()))
 
 
-def of_block(elements: Block[tuple[_Key, _Value]]) -> Map[_Key, _Value]:
+def of_block[Key: SupportsLessThanAndHash, Value](elements: Block[tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_list(elements))
 
 
-def of_list(elements: list[tuple[_Key, _Value]]) -> Map[_Key, _Value]:
+def of_list[Key: SupportsLessThanAndHash, Value](elements: list[tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_list(Block(elements)))
 
 
-def of_seq(elements: Iterable[tuple[_Key, _Value]]) -> Map[_Key, _Value]:
+def of_seq[Key: SupportsLessThanAndHash, Value](elements: Iterable[tuple[Key, Value]]) -> Map[Key, Value]:
     return Map(maptree.of_seq(elements))
 
 
-def to_list(table: Map[_Key, _Value]) -> Block[tuple[_Key, _Value]]:
+def to_list[Key: SupportsLessThanAndHash, Value](table: Map[Key, Value]) -> Block[tuple[Key, Value]]:
     return table.to_list()
 
 
-def to_seq(table: Map[_Key, _Value]) -> Iterable[tuple[_Key, _Value]]:
+def to_seq[Key: SupportsLessThanAndHash, Value](table: Map[Key, Value]) -> Iterable[tuple[Key, Value]]:
     return table.to_seq()
 
 
 @curry_flip(1)
-def try_find(table: Map[_Key, _Value], key: _Key) -> Option[_Value]:
+def try_find[Key: SupportsLessThanAndHash, Value](table: Map[Key, Value], key: Key) -> Option[Value]:
     """Try to find element with key in map.
 
     Lookup an element in the map, returning a `Some` value if the

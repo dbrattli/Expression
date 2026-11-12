@@ -13,280 +13,253 @@ Example:
 """
 
 from collections.abc import Callable
-from typing import Any, TypeVar, cast, overload
-
-from typing_extensions import TypeVarTuple, Unpack
+from typing import Any, Unpack, cast, overload
 
 from .compose import compose, starcompose
 from .misc import starid
 
 
-_A = TypeVar("_A")
-_B = TypeVar("_B")
-_C = TypeVar("_C")
-_D = TypeVar("_D")
-_E = TypeVar("_E")
-_F = TypeVar("_F")
-_G = TypeVar("_G")
-_H = TypeVar("_H")
-_T = TypeVar("_T")
-_J = TypeVar("_J")
-_I = TypeVar("_I")
-_K1 = TypeVar("_K1")
-_L = TypeVar("_L")
-_M = TypeVar("_M")
-_N = TypeVar("_N")
-_O = TypeVar("_O")
-_P1 = TypeVar("_P1")
-_P = TypeVarTuple("_P")
-_Q = TypeVarTuple("_Q")
-_X = TypeVarTuple("_X")
-_Y = TypeVarTuple("_Y")
-_Z = TypeVarTuple("_Z")
-_K = TypeVarTuple("_K")
+@overload
+def pipe[A](value: A, /) -> A: ...
 
 
 @overload
-def pipe(value: _A, /) -> _A: ...
+def pipe[A, B](value: A, fn1: Callable[[A], B], /) -> B: ...
 
 
 @overload
-def pipe(value: _A, fn1: Callable[[_A], _B], /) -> _B: ...
+def pipe[A, B, C](value: A, fn1: Callable[[A], B], fn2: Callable[[B], C], /) -> C: ...
 
 
 @overload
-def pipe(value: _A, fn1: Callable[[_A], _B], fn2: Callable[[_B], _C], /) -> _C: ...
-
-
-@overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
+def pipe[A, B, C, D](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
     /,
-) -> _D: ...
+) -> D: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
+def pipe[A, B, C, D, E](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
     /,
-) -> _E: ...
+) -> E: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
+def pipe[A, B, C, D, E, F](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
     /,
-) -> _F: ...
+) -> F: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
+def pipe[A, B, C, D, E, F, G](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
     /,
-) -> _G: ...
+) -> G: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
+def pipe[A, B, C, D, E, F, G, H](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
     /,
-) -> _H: ...
+) -> H: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
+def pipe[A, B, C, D, E, F, G, H, T](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
     /,
-) -> _T: ...
+) -> T: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
-    fn9: Callable[[_T], _J],
+def pipe[A, B, C, D, E, F, G, H, T, J](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
+    fn9: Callable[[T], J],
     /,
-) -> _J: ...
+) -> J: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
-    fn9: Callable[[_T], _J],
-    fn10: Callable[[_J], _I],
+def pipe[A, B, C, D, E, F, G, H, T, J, I](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
+    fn9: Callable[[T], J],
+    fn10: Callable[[J], I],
     /,
-) -> _I: ...
+) -> I: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
-    fn9: Callable[[_T], _J],
-    fn10: Callable[[_J], _I],
-    fn11: Callable[[_I], _K1],
+def pipe[A, B, C, D, E, F, G, H, T, J, I, K1](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
+    fn9: Callable[[T], J],
+    fn10: Callable[[J], I],
+    fn11: Callable[[I], K1],
     /,
-) -> _K1: ...
+) -> K1: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
-    fn9: Callable[[_T], _J],
-    fn10: Callable[[_J], _I],
-    fn11: Callable[[_I], _K1],
-    fn12: Callable[[_K1], _L],
+def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
+    fn9: Callable[[T], J],
+    fn10: Callable[[J], I],
+    fn11: Callable[[I], K1],
+    fn12: Callable[[K1], L],
     /,
-) -> _L: ...
+) -> L: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
-    fn9: Callable[[_T], _J],
-    fn10: Callable[[_J], _I],
-    fn11: Callable[[_I], _K1],
-    fn12: Callable[[_K1], _L],
-    fn13: Callable[[_L], _M],
+def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L, M](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
+    fn9: Callable[[T], J],
+    fn10: Callable[[J], I],
+    fn11: Callable[[I], K1],
+    fn12: Callable[[K1], L],
+    fn13: Callable[[L], M],
     /,
-) -> _M: ...
+) -> M: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
-    fn9: Callable[[_T], _J],
-    fn10: Callable[[_J], _I],
-    fn11: Callable[[_I], _K1],
-    fn12: Callable[[_K1], _L],
-    fn13: Callable[[_L], _M],
-    fn14: Callable[[_M], _N],
+def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L, M, N](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
+    fn9: Callable[[T], J],
+    fn10: Callable[[J], I],
+    fn11: Callable[[I], K1],
+    fn12: Callable[[K1], L],
+    fn13: Callable[[L], M],
+    fn14: Callable[[M], N],
     /,
-) -> _N: ...
+) -> N: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
-    fn9: Callable[[_T], _J],
-    fn10: Callable[[_J], _I],
-    fn11: Callable[[_I], _K1],
-    fn12: Callable[[_K1], _L],
-    fn13: Callable[[_L], _M],
-    fn14: Callable[[_M], _N],
-    fn15: Callable[[_N], _O],
+def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L, M, N, O](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
+    fn9: Callable[[T], J],
+    fn10: Callable[[J], I],
+    fn11: Callable[[I], K1],
+    fn12: Callable[[K1], L],
+    fn13: Callable[[L], M],
+    fn14: Callable[[M], N],
+    fn15: Callable[[N], O],
     /,
-) -> _O: ...
+) -> O: ...
 
 
 @overload
-def pipe(
-    value: _A,
-    fn1: Callable[[_A], _B],
-    fn2: Callable[[_B], _C],
-    fn3: Callable[[_C], _D],
-    fn4: Callable[[_D], _E],
-    fn5: Callable[[_E], _F],
-    fn6: Callable[[_F], _G],
-    fn7: Callable[[_G], _H],
-    fn8: Callable[[_H], _T],
-    fn9: Callable[[_T], _J],
-    fn10: Callable[[_J], _I],
-    fn11: Callable[[_I], _K1],
-    fn12: Callable[[_K1], _L],
-    fn13: Callable[[_L], _M],
-    fn14: Callable[[_M], _N],
-    fn15: Callable[[_N], _O],
-    fn16: Callable[[_O], _P1],
+def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L, M, N, O, P1](
+    value: A,
+    fn1: Callable[[A], B],
+    fn2: Callable[[B], C],
+    fn3: Callable[[C], D],
+    fn4: Callable[[D], E],
+    fn5: Callable[[E], F],
+    fn6: Callable[[F], G],
+    fn7: Callable[[G], H],
+    fn8: Callable[[H], T],
+    fn9: Callable[[T], J],
+    fn10: Callable[[J], I],
+    fn11: Callable[[I], K1],
+    fn12: Callable[[K1], L],
+    fn13: Callable[[L], M],
+    fn14: Callable[[M], N],
+    fn15: Callable[[N], O],
+    fn16: Callable[[O], P1],
     /,
-) -> _P1: ...
+) -> P1: ...
 
 
 def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:
@@ -304,30 +277,30 @@ def pipe(value: Any, *fns: Callable[[Any], Any]) -> Any:
 
 
 @overload
-def pipe2(values: tuple[_A, _B], /) -> tuple[_A, _B]: ...
+def pipe2[A, B](values: tuple[A, B], /) -> tuple[A, B]: ...
 
 
 @overload
-def pipe2(values: tuple[_A, _B], fn1: Callable[[_A], Callable[[_B], _C]], /) -> _C: ...
+def pipe2[A, B, C](values: tuple[A, B], fn1: Callable[[A], Callable[[B], C]], /) -> C: ...
 
 
 @overload
-def pipe2(
-    values: tuple[_A, _B],
-    fn1: Callable[[_A], Callable[[_B], _C]],
-    fn2: Callable[[_C], _D],
+def pipe2[A, B, C, D](
+    values: tuple[A, B],
+    fn1: Callable[[A], Callable[[B], C]],
+    fn2: Callable[[C], D],
     /,
-) -> _D: ...
+) -> D: ...
 
 
 @overload
-def pipe2(
-    values: tuple[_A, _B],
-    fn1: Callable[[_A], Callable[[_B], _C]],
-    fn2: Callable[[_C], _D],
-    fn3: Callable[[_D], _E],
+def pipe2[A, B, C, D, E](
+    values: tuple[A, B],
+    fn1: Callable[[A], Callable[[B], C]],
+    fn2: Callable[[C], D],
+    fn3: Callable[[D], E],
     /,
-) -> _E: ...
+) -> E: ...
 
 
 def pipe2(values: Any, /, *fns: Any) -> Any:
@@ -339,57 +312,57 @@ def pipe3(values: Any, /, *fns: Any) -> Any:
 
 
 @overload
-def starpipe(args: tuple[*_P], fn1: Callable[[Unpack[_P]], _B], /) -> _B: ...
+def starpipe[*P, B](args: tuple[*P], fn1: Callable[[Unpack[P]], B], /) -> B: ...
 
 
 @overload
-def starpipe(args: tuple[*_P], fn1: Callable[[Unpack[_P]], tuple[*_Q]], fn2: Callable[[*_Q], _B], /) -> _B: ...
+def starpipe[*P, *Q, B](args: tuple[*P], fn1: Callable[[Unpack[P]], tuple[*Q]], fn2: Callable[[*Q], B], /) -> B: ...
 
 
 @overload
-def starpipe(
-    args: tuple[*_P],
-    fn1: Callable[[Unpack[_P]], tuple[*_Q]],
-    fn2: Callable[[Unpack[_Q]], tuple[*_X]],
-    fn3: Callable[[Unpack[_X]], _B],
+def starpipe[*P, *Q, *X, B](
+    args: tuple[*P],
+    fn1: Callable[[Unpack[P]], tuple[*Q]],
+    fn2: Callable[[Unpack[Q]], tuple[*X]],
+    fn3: Callable[[Unpack[X]], B],
     /,
-) -> _B: ...
+) -> B: ...
 
 
 @overload
-def starpipe(
-    args: tuple[*_P],
-    fn1: Callable[[Unpack[_P]], tuple[*_Q]],
-    fn2: Callable[[Unpack[_Q]], tuple[*_X]],
-    fn3: Callable[[Unpack[_X]], tuple[*_Y]],
-    fn4: Callable[[Unpack[_Y]], _B],
+def starpipe[*P, *Q, *X, *Y, B](
+    args: tuple[*P],
+    fn1: Callable[[Unpack[P]], tuple[*Q]],
+    fn2: Callable[[Unpack[Q]], tuple[*X]],
+    fn3: Callable[[Unpack[X]], tuple[*Y]],
+    fn4: Callable[[Unpack[Y]], B],
     /,
-) -> _B: ...
+) -> B: ...
 
 
 @overload
-def starpipe(
-    args: tuple[*_P],
-    fn1: Callable[[Unpack[_P]], tuple[*_Q]],
-    fn2: Callable[[Unpack[_Q]], tuple[*_X]],
-    fn3: Callable[[Unpack[_X]], tuple[*_Y]],
-    fn4: Callable[[Unpack[_Y]], tuple[*_Z]],
-    fn5: Callable[[Unpack[_Z]], _B],
+def starpipe[*P, *Q, *X, *Y, *Z, B](
+    args: tuple[*P],
+    fn1: Callable[[Unpack[P]], tuple[*Q]],
+    fn2: Callable[[Unpack[Q]], tuple[*X]],
+    fn3: Callable[[Unpack[X]], tuple[*Y]],
+    fn4: Callable[[Unpack[Y]], tuple[*Z]],
+    fn5: Callable[[Unpack[Z]], B],
     /,
-) -> _B: ...
+) -> B: ...
 
 
 @overload
-def starpipe(
-    args: tuple[*_P],
-    fn1: Callable[[Unpack[_P]], tuple[*_Q]],
-    fn2: Callable[[Unpack[_Q]], tuple[*_X]],
-    fn3: Callable[[Unpack[_X]], tuple[*_Y]],
-    fn4: Callable[[Unpack[_Y]], tuple[*_Z]],
-    fn5: Callable[[Unpack[_Z]], tuple[*_K]],
-    fn6: Callable[[Unpack[_K]], _B],
+def starpipe[*P, *Q, *X, *Y, *Z, *K, B](
+    args: tuple[*P],
+    fn1: Callable[[Unpack[P]], tuple[*Q]],
+    fn2: Callable[[Unpack[Q]], tuple[*X]],
+    fn3: Callable[[Unpack[X]], tuple[*Y]],
+    fn4: Callable[[Unpack[Y]], tuple[*Z]],
+    fn5: Callable[[Unpack[Z]], tuple[*K]],
+    fn6: Callable[[Unpack[K]], B],
     /,
-) -> _B: ...
+) -> B: ...
 
 
 def starpipe(args: Any, /, *fns: Callable[..., Any]) -> Any:
@@ -417,221 +390,221 @@ class PipeMixin:
     __slots__ = ()
 
     @overload
-    def pipe(self: _A, fn1: Callable[[_A], _B], /) -> _B: ...
+    def pipe[A, B](self: A, fn1: Callable[[A], B], /) -> B: ...
 
     @overload
-    def pipe(self: _A, fn1: Callable[[_A], _B], fn2: Callable[[_B], _C], /) -> _C: ...
+    def pipe[A, B, C](self: A, fn1: Callable[[A], B], fn2: Callable[[B], C], /) -> C: ...
 
     @overload
-    def pipe(self: _A, fn1: Callable[[_A], _B], fn2: Callable[[_B], _C], fn3: Callable[[_C], _D], /) -> _D: ...
+    def pipe[A, B, C, D](self: A, fn1: Callable[[A], B], fn2: Callable[[B], C], fn3: Callable[[C], D], /) -> D: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
+    def pipe[A, B, C, D, E](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
         /,
-    ) -> _E: ...
+    ) -> E: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
+    def pipe[A, B, C, D, E, F](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
         /,
-    ) -> _F: ...
+    ) -> F: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
+    def pipe[A, B, C, D, E, F, G](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
         /,
-    ) -> _G: ...
+    ) -> G: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
+    def pipe[A, B, C, D, E, F, G, H](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
         /,
-    ) -> _H: ...
+    ) -> H: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
+    def pipe[A, B, C, D, E, F, G, H, T](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
         /,
-    ) -> _T: ...
+    ) -> T: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
-        fn9: Callable[[_T], _J],
+    def pipe[A, B, C, D, E, F, G, H, T, J](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
+        fn9: Callable[[T], J],
         /,
-    ) -> _J: ...
+    ) -> J: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
-        fn9: Callable[[_T], _J],
-        fn10: Callable[[_J], _I],
+    def pipe[A, B, C, D, E, F, G, H, T, J, I](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
+        fn9: Callable[[T], J],
+        fn10: Callable[[J], I],
         /,
-    ) -> _I: ...
+    ) -> I: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
-        fn9: Callable[[_T], _J],
-        fn10: Callable[[_J], _I],
-        fn11: Callable[[_I], _K1],
+    def pipe[A, B, C, D, E, F, G, H, T, J, I, K1](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
+        fn9: Callable[[T], J],
+        fn10: Callable[[J], I],
+        fn11: Callable[[I], K1],
         /,
-    ) -> _K1: ...
+    ) -> K1: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
-        fn9: Callable[[_T], _J],
-        fn10: Callable[[_J], _I],
-        fn11: Callable[[_I], _K1],
-        fn12: Callable[[_K1], _L],
+    def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
+        fn9: Callable[[T], J],
+        fn10: Callable[[J], I],
+        fn11: Callable[[I], K1],
+        fn12: Callable[[K1], L],
         /,
-    ) -> _L: ...
+    ) -> L: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
-        fn9: Callable[[_T], _J],
-        fn10: Callable[[_J], _I],
-        fn11: Callable[[_I], _K1],
-        fn12: Callable[[_K1], _L],
-        fn13: Callable[[_L], _M],
+    def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L, M](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
+        fn9: Callable[[T], J],
+        fn10: Callable[[J], I],
+        fn11: Callable[[I], K1],
+        fn12: Callable[[K1], L],
+        fn13: Callable[[L], M],
         /,
-    ) -> _M: ...
+    ) -> M: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
-        fn9: Callable[[_T], _J],
-        fn10: Callable[[_J], _I],
-        fn11: Callable[[_I], _K1],
-        fn12: Callable[[_K1], _L],
-        fn13: Callable[[_L], _M],
-        fn14: Callable[[_M], _N],
+    def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L, M, N](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
+        fn9: Callable[[T], J],
+        fn10: Callable[[J], I],
+        fn11: Callable[[I], K1],
+        fn12: Callable[[K1], L],
+        fn13: Callable[[L], M],
+        fn14: Callable[[M], N],
         /,
-    ) -> _N: ...
+    ) -> N: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
-        fn9: Callable[[_T], _J],
-        fn10: Callable[[_J], _I],
-        fn11: Callable[[_I], _K1],
-        fn12: Callable[[_K1], _L],
-        fn13: Callable[[_L], _M],
-        fn14: Callable[[_M], _N],
-        fn15: Callable[[_N], _O],
+    def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L, M, N, O](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
+        fn9: Callable[[T], J],
+        fn10: Callable[[J], I],
+        fn11: Callable[[I], K1],
+        fn12: Callable[[K1], L],
+        fn13: Callable[[L], M],
+        fn14: Callable[[M], N],
+        fn15: Callable[[N], O],
         /,
-    ) -> _O: ...
+    ) -> O: ...
 
     @overload
-    def pipe(
-        self: _A,
-        fn1: Callable[[_A], _B],
-        fn2: Callable[[_B], _C],
-        fn3: Callable[[_C], _D],
-        fn4: Callable[[_D], _E],
-        fn5: Callable[[_E], _F],
-        fn6: Callable[[_F], _G],
-        fn7: Callable[[_G], _H],
-        fn8: Callable[[_H], _T],
-        fn9: Callable[[_T], _J],
-        fn10: Callable[[_J], _I],
-        fn11: Callable[[_I], _K1],
-        fn12: Callable[[_K1], _L],
-        fn13: Callable[[_L], _M],
-        fn14: Callable[[_M], _N],
-        fn15: Callable[[_N], _O],
-        fn16: Callable[[_O], _P1],
+    def pipe[A, B, C, D, E, F, G, H, T, J, I, K1, L, M, N, O, P1](
+        self: A,
+        fn1: Callable[[A], B],
+        fn2: Callable[[B], C],
+        fn3: Callable[[C], D],
+        fn4: Callable[[D], E],
+        fn5: Callable[[E], F],
+        fn6: Callable[[F], G],
+        fn7: Callable[[G], H],
+        fn8: Callable[[H], T],
+        fn9: Callable[[T], J],
+        fn10: Callable[[J], I],
+        fn11: Callable[[I], K1],
+        fn12: Callable[[K1], L],
+        fn13: Callable[[L], M],
+        fn14: Callable[[M], N],
+        fn15: Callable[[N], O],
+        fn16: Callable[[O], P1],
         /,
-    ) -> _P1: ...
+    ) -> P1: ...
 
     def pipe(self, *args: Any) -> Any:
         """Pipe the left side object through the given functions."""

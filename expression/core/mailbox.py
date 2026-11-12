@@ -16,27 +16,21 @@ import asyncio
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from queue import Empty, SimpleQueue
-from typing import Generic, TypeVar
 
 from expression.system import CancellationToken, ObjectDisposedException
 
 from .aiotools import _start_task  # pyright: ignore[reportPrivateUsage]
 
 
-_Msg = TypeVar("_Msg")
-_Reply = TypeVar("_Reply")
-_StartedMsg = TypeVar("_StartedMsg")
-
-
-class AsyncReplyChannel(Generic[_Reply]):
-    def __init__(self, fn: Callable[[_Reply], None]) -> None:
+class AsyncReplyChannel[Reply]:
+    def __init__(self, fn: Callable[[Reply], None]) -> None:
         self.fn = fn
 
-    def reply(self, r: _Reply) -> None:
+    def reply(self, r: Reply) -> None:
         self.fn(r)
 
 
-class MailboxProcessor(Generic[_Msg]):
+class MailboxProcessor[Msg]:
     """A FIFO mailbox with one reader and thread-safe posting and replies.
 
     Construct and receive on the same running event loop. Timeouts use seconds,
@@ -44,7 +38,7 @@ class MailboxProcessor(Generic[_Msg]):
     """
 
     def __init__(self, cancellation_token: CancellationToken | None = None) -> None:
-        self.messages: SimpleQueue[_Msg] = SimpleQueue()
+        self.messages: SimpleQueue[Msg] = SimpleQueue()
         self.token = cancellation_token or CancellationToken.none()
         self.loop = asyncio.get_running_loop()
         # Presence owns the reader slot, even after the signal completes.
@@ -59,29 +53,29 @@ class MailboxProcessor(Generic[_Msg]):
         if self._receive_signal is not None and not self._receive_signal.done():
             self._receive_signal.set_result(None)
 
-    def post(self, msg: _Msg) -> None:
+    def post(self, msg: Msg) -> None:
         """Post a message synchronously, including from another thread."""
         if self.loop.is_closed():
             raise RuntimeError("Mailbox event loop is closed")
         self.messages.put(msg)
         self.loop.call_soon_threadsafe(self._wake)
 
-    def post_and_async_reply(
-        self, build_message: Callable[[AsyncReplyChannel[_Reply]], _Msg], timeout: float | None = None
-    ) -> Awaitable[_Reply]:
+    def post_and_async_reply[Reply](
+        self, build_message: Callable[[AsyncReplyChannel[Reply]], Msg], timeout: float | None = None
+    ) -> Awaitable[Reply]:
         """Post immediately and await a reply, optionally timing out in seconds.
 
         The first reply wins, including None. Replies may come from any thread;
         late replies after cancellation or timeout are ignored.
         """
         self._check_loop()
-        future: asyncio.Future[_Reply] = self.loop.create_future()
+        future: asyncio.Future[Reply] = self.loop.create_future()
 
-        def complete(value: _Reply) -> None:
+        def complete(value: Reply) -> None:
             if not future.done():
                 future.set_result(value)
 
-        def reply(value: _Reply) -> None:
+        def reply(value: Reply) -> None:
             if not self.loop.is_closed():
                 self.loop.call_soon_threadsafe(complete, value)
 
@@ -90,7 +84,7 @@ class MailboxProcessor(Generic[_Msg]):
             return future
         return asyncio.wait_for(future, timeout)
 
-    async def receive(self, timeout: float | None = None) -> _Msg:
+    async def receive(self, timeout: float | None = None) -> Msg:
         """Receive the next message; raise TimeoutError after timeout seconds.
 
         Only one receive may be active. Cancellation or timeout releases the
@@ -146,12 +140,12 @@ class MailboxProcessor(Generic[_Msg]):
         await asyncio.shield(self._task)
 
     @staticmethod
-    def start(
-        body: Callable[[MailboxProcessor[_StartedMsg]], Awaitable[None]],
+    def start[StartedMsg](
+        body: Callable[[MailboxProcessor[StartedMsg]], Awaitable[None]],
         cancellation_token: CancellationToken | None = None,
-    ) -> MailboxProcessor[_StartedMsg]:
+    ) -> MailboxProcessor[StartedMsg]:
         """Start a body whose completion can be observed with wait()."""
-        mbox: MailboxProcessor[_StartedMsg] = MailboxProcessor(cancellation_token)
+        mbox: MailboxProcessor[StartedMsg] = MailboxProcessor(cancellation_token)
         mbox._task = _start_task(body(mbox), cancellation_token)
         return mbox
 

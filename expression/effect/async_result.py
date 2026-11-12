@@ -6,30 +6,24 @@ works with async operations.
 """
 
 from collections.abc import AsyncGenerator, Awaitable, Callable
-from typing import Any, ParamSpec, TypeVar
+from typing import Any
 
 from expression.core import Error, Ok, Result
 from expression.core.async_builder import AsyncBuilder
 
 
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
-_TError = TypeVar("_TError")
-_P = ParamSpec("_P")
-
-
-class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
+class AsyncResultBuilder[TSource, TError](AsyncBuilder[TSource, Result[Any, TError]]):
     """AsyncResult builder.
 
     The AsyncResult builder allows for composing asynchronous operations that
     may fail, using the Result type.
     """
 
-    async def bind(
+    async def bind[TResult](
         self,
-        xs: Result[_TSource, _TError],
-        fn: Callable[[Any], Awaitable[Result[_TResult, _TError]]],
-    ) -> Result[_TResult, _TError]:
+        xs: Result[TSource, TError],
+        fn: Callable[[Any], Awaitable[Result[TResult, TError]]],
+    ) -> Result[TResult, TError]:
         """Bind a function to an async result value.
 
         In F# computation expressions, this corresponds to ``let!`` and enables
@@ -48,7 +42,7 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
             case Error(error):
                 return Error(error)
 
-    async def return_(self, x: _TSource) -> Result[_TSource, _TError]:
+    async def return_(self, x: TSource) -> Result[TSource, TError]:
         """Wrap a value in an async result.
 
         In F# computation expressions, this corresponds to ``return`` and lifts
@@ -62,7 +56,7 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
         """
         return Ok(x)
 
-    async def return_from(self, xs: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    async def return_from(self, xs: Result[TSource, TError]) -> Result[TSource, TError]:
         """Return an async result value directly.
 
         In F# computation expressions, this corresponds to ``return!`` and allows
@@ -76,7 +70,7 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
         """
         return xs
 
-    async def combine(self, xs: Result[_TSource, _TError], ys: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    async def combine(self, xs: Result[TSource, TError], ys: Result[TSource, TError]) -> Result[TSource, TError]:
         """Combine two async result computations.
 
         In F# computation expressions, this enables sequencing multiple
@@ -95,7 +89,7 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
             case Error(error):
                 return Error(error)
 
-    async def zero(self) -> Result[Any, _TError]:
+    async def zero(self) -> Result[Any, TError]:
         """Return the zero value for async results.
 
         In F# computation expressions, this is used when no value is returned,
@@ -106,31 +100,31 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
         """
         return Ok(None)
 
-    async def delay(self, fn: Callable[[], Result[_TSource, _TError]]) -> Result[_TSource, _TError]:
+    async def delay(self, fn: Callable[[], Result[TSource, TError]]) -> Result[TSource, TError]:
         """Delay the computation.
 
         Default implementation is to return the result of the function.
         """
         return fn()
 
-    async def run(self, computation: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    async def run(self, computation: Result[TSource, TError]) -> Result[TSource, TError]:
         """Run a computation.
 
         Default implementation is to return the computation as is.
         """
         return computation
 
-    def __call__(
+    def __call__[**P](
         self,
         fn: Callable[
-            _P,
-            AsyncGenerator[_TSource, _TSource]
-            | AsyncGenerator[_TSource, None]
-            | Awaitable[_TSource | None]
-            | _TSource
+            P,
+            AsyncGenerator[TSource, TSource]
+            | AsyncGenerator[TSource, None]
+            | Awaitable[TSource | None]
+            | TSource
             | None,
         ],
-    ) -> Callable[_P, Awaitable[Result[_TSource, _TError]]]:
+    ) -> Callable[P, Awaitable[Result[TSource, TError]]]:
         """The builder decorator."""
         return super().__call__(fn)
 
@@ -139,7 +133,7 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
 async_result: AsyncResultBuilder[Any, Any] = AsyncResultBuilder()
 
 
-class AsyncTryBuilder(AsyncResultBuilder[_TSource, Exception]):
+class AsyncTryBuilder[TSource](AsyncResultBuilder[TSource, Exception]):
     """AsyncTry builder.
 
     The AsyncTry builder allows for composing asynchronous operations that

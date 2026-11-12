@@ -6,29 +6,24 @@ works with async operations.
 """
 
 from collections.abc import AsyncGenerator, Awaitable, Callable
-from typing import Any, ParamSpec, TypeVar
+from typing import Any
 
 from expression.core import NOTHING, Option, Some
 from expression.core.async_builder import AsyncBuilder
 
 
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
-_P = ParamSpec("_P")
-
-
-class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
+class AsyncOptionBuilder[TSource](AsyncBuilder[TSource, Option[Any]]):
     """AsyncOption builder.
 
     The AsyncOption builder allows for composing asynchronous operations that
     may return an optional value, using the Option type.
     """
 
-    async def bind(
+    async def bind[TResult](
         self,
-        xs: Option[_TSource],
-        fn: Callable[[Any], Awaitable[Option[_TResult]]],
-    ) -> Option[_TResult]:
+        xs: Option[TSource],
+        fn: Callable[[Any], Awaitable[Option[TResult]]],
+    ) -> Option[TResult]:
         """Bind a function to an async option value.
 
         In F# computation expressions, this corresponds to ``let!`` and enables
@@ -47,7 +42,7 @@ class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
             case _:
                 return NOTHING
 
-    async def return_(self, x: _TSource) -> Option[_TSource]:
+    async def return_(self, x: TSource) -> Option[TSource]:
         """Wrap a value in an async option.
 
         In F# computation expressions, this corresponds to ``return`` and lifts
@@ -61,7 +56,7 @@ class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
         """
         return Some(x)
 
-    async def return_from(self, xs: Option[_TSource]) -> Option[_TSource]:
+    async def return_from(self, xs: Option[TSource]) -> Option[TSource]:
         """Return an async option value directly.
 
         In F# computation expressions, this corresponds to ``return!`` and allows
@@ -75,7 +70,7 @@ class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
         """
         return xs
 
-    async def combine(self, xs: Option[_TSource], ys: Option[_TSource]) -> Option[_TSource]:
+    async def combine(self, xs: Option[TSource], ys: Option[TSource]) -> Option[TSource]:
         """Combine two async option computations.
 
         In F# computation expressions, this enables sequencing multiple
@@ -105,31 +100,31 @@ class AsyncOptionBuilder(AsyncBuilder[_TSource, Option[Any]]):
         """
         return NOTHING
 
-    async def delay(self, fn: Callable[[], Option[_TSource]]) -> Option[_TSource]:
+    async def delay(self, fn: Callable[[], Option[TSource]]) -> Option[TSource]:
         """Delay the computation.
 
         Default implementation is to return the result of the function.
         """
         return fn()
 
-    async def run(self, computation: Option[_TSource]) -> Option[_TSource]:
+    async def run(self, computation: Option[TSource]) -> Option[TSource]:
         """Run a computation.
 
         Default implementation is to return the computation as is.
         """
         return computation
 
-    def __call__(
+    def __call__[**P](
         self,
         fn: Callable[
-            _P,
-            AsyncGenerator[_TSource, _TSource]
-            | AsyncGenerator[_TSource, None]
-            | Awaitable[_TSource | None]
-            | _TSource
+            P,
+            AsyncGenerator[TSource, TSource]
+            | AsyncGenerator[TSource, None]
+            | Awaitable[TSource | None]
+            | TSource
             | None,
         ],
-    ) -> Callable[_P, Awaitable[Option[_TSource]]]:
+    ) -> Callable[P, Awaitable[Option[TSource]]]:
         """The builder decorator."""
         return super().__call__(fn)
 

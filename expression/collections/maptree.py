@@ -25,7 +25,7 @@ Do not use directly. Use the `map` module instead.
 import builtins
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from expression.core import NOTHING, Option, Some, failwith, pipe
 from expression.core.typing import SupportsLessThanAndHash
@@ -34,22 +34,17 @@ from . import block, seq
 from .block import Block
 
 
-Key = TypeVar("Key", bound=SupportsLessThanAndHash)
-Value = TypeVar("Value")
-Result = TypeVar("Result")
-
-
 @dataclass(frozen=True, slots=True)
-class MapTreeLeaf(Generic[Key, Value]):
+class MapTreeLeaf[Key: SupportsLessThanAndHash, Value]:
     key: Key
     value: Value
 
 
-MapTree = Option[MapTreeLeaf[Key, Value]]
+type MapTree[Key: SupportsLessThanAndHash, Value] = Option[MapTreeLeaf[Key, Value]]
 
 
 @dataclass(frozen=True, slots=True)
-class MapTreeNode(MapTreeLeaf[Key, Value]):
+class MapTreeNode[Key: SupportsLessThanAndHash, Value](MapTreeLeaf[Key, Value]):
     left: MapTree[Key, Value]
     right: MapTree[Key, Value]
 
@@ -63,7 +58,7 @@ def is_empty(m: MapTree[Any, Any]):
     return m.is_none()
 
 
-def size_aux(acc: int, m: MapTree[Key, Value]) -> int:
+def size_aux[Key: SupportsLessThanAndHash, Value](acc: int, m: MapTree[Key, Value]) -> int:
     match m:
         case Some(MapTreeNode(left=left, right=right)):
             return size_aux(size_aux(acc + 1, left), right)
@@ -77,7 +72,7 @@ def size(x: MapTree[Any, Any]):
     return size_aux(0, x)
 
 
-def height(m: MapTree[Key, Value]) -> int:
+def height[Key: SupportsLessThanAndHash, Value](m: MapTree[Key, Value]) -> int:
     match m:
         case Some(MapTreeNode(height=height)):
             return height
@@ -90,7 +85,9 @@ def height(m: MapTree[Key, Value]) -> int:
 TOLERANCE = 2
 
 
-def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def mk[Key: SupportsLessThanAndHash, Value](
+    left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     hl = height(left)
     hr = height(right)
     m = hr if hl < hr else hl
@@ -100,7 +97,9 @@ def mk(left: MapTree[Key, Value], key: Key, value: Value, right: MapTree[Key, Va
         return Some(MapTreeNode(key, value, left, right, m + 1))  # new map is higher by 1 than the highest
 
 
-def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def rebalance[Key: SupportsLessThanAndHash, Value](
+    t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     t1h = height(t1)
     t2h = height(t2)
     if t2h > t1h + TOLERANCE:  # right is heavier than left
@@ -146,7 +145,7 @@ def rebalance(t1: MapTree[Key, Value], k: Key, v: Value, t2: MapTree[Key, Value]
             return mk(t1, k, v, t2)
 
 
-def add(k: Key, v: Value, m: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def add[Key: SupportsLessThanAndHash, Value](k: Key, v: Value, m: MapTree[Key, Value]) -> MapTree[Key, Value]:
     match m:
         case Some(MapTreeNode(key=key, value=value, left=left, right=right, height=height)):
             if k < key:
@@ -167,7 +166,7 @@ def add(k: Key, v: Value, m: MapTree[Key, Value]) -> MapTree[Key, Value]:
             return Some(MapTreeLeaf(k, v))
 
 
-def try_find(k: Key, m: MapTree[Key, Value]) -> Option[Value]:
+def try_find[Key: SupportsLessThanAndHash, Value](k: Key, m: MapTree[Key, Value]) -> Option[Value]:
     for m2 in m.to_list():
         if k == m2.key:
             return Some(m2.value)
@@ -181,14 +180,14 @@ def try_find(k: Key, m: MapTree[Key, Value]) -> Option[Value]:
         return NOTHING
 
 
-def find(k: Key, m: MapTree[Key, Value]) -> Value:
+def find[Key: SupportsLessThanAndHash, Value](k: Key, m: MapTree[Key, Value]) -> Value:
     for v in try_find(k, m).to_list():
         return v
     else:
         raise KeyError("Key not found")
 
 
-def partition1(
+def partition1[Key: SupportsLessThanAndHash, Value](
     predicate: Callable[[Key, Value], bool],
     k: Key,
     v: Value,
@@ -202,7 +201,7 @@ def partition1(
         return acc1, add(k, v, acc2)
 
 
-def partition_aux(
+def partition_aux[Key: SupportsLessThanAndHash, Value](
     predicate: Callable[[Key, Value], bool],
     m: MapTree[Key, Value],
     acc: tuple[MapTree[Key, Value], MapTree[Key, Value]],
@@ -218,20 +217,22 @@ def partition_aux(
             return acc
 
 
-def partition(
+def partition[Key: SupportsLessThanAndHash, Value](
     predicate: Callable[[Key, Value], bool], m: MapTree[Key, Value]
 ) -> tuple[MapTree[Key, Value], MapTree[Key, Value]]:
     return partition_aux(predicate, m, (empty, empty))
 
 
-def filter1(predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def filter1[Key: SupportsLessThanAndHash, Value](
+    predicate: Callable[[Key, Value], bool], k: Key, v: Value, acc: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     if predicate(k, v):
         return add(k, v, acc)
     else:
         return acc
 
 
-def filter_aux(
+def filter_aux[Key: SupportsLessThanAndHash, Value](
     predicate: Callable[[Key, Value], bool],
     m: MapTree[Key, Value],
     acc: MapTree[Key, Value],
@@ -247,11 +248,15 @@ def filter_aux(
             return acc
 
 
-def filter(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def filter[Key: SupportsLessThanAndHash, Value](
+    f: Callable[[Key, Value], bool], m: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     return filter_aux(f, m, empty)
 
 
-def splice_out_successor(m: MapTree[Key, Value]) -> tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
+def splice_out_successor[Key: SupportsLessThanAndHash, Value](
+    m: MapTree[Key, Value],
+) -> tuple[Key, Value, Option[MapTreeLeaf[Key, Value]]]:
     match m:
         case Some(MapTreeNode(key=key, value=value, left=left, right=right)):
             if is_empty(left):
@@ -265,7 +270,7 @@ def splice_out_successor(m: MapTree[Key, Value]) -> tuple[Key, Value, Option[Map
             failwith("internal error: Map.splice_out_successor")
 
 
-def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
+def remove[Key: SupportsLessThanAndHash, Value](k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
     match m:
         case Some(MapTreeNode(key=key, value=value, left=left, right=right)):
             if k < key:
@@ -289,7 +294,9 @@ def remove(k: Key, m: MapTree[Key, Value]) -> Option[MapTreeLeaf[Key, Value]]:
             return empty
 
 
-def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]) -> MapTree[Key, Value]:
+def change[Key: SupportsLessThanAndHash, Value](
+    k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, Value]
+) -> MapTree[Key, Value]:
     match m:
         case Some(MapTreeNode(key=key, value=value, left=left, right=right, height=height)):
             if k < key:
@@ -331,7 +338,7 @@ def change(k: Key, u: Callable[[Option[Value]], Option[Value]], m: MapTree[Key, 
                 return m
 
 
-def mem(k: Key, m: MapTree[Key, Value]) -> bool:
+def mem[Key: SupportsLessThanAndHash, Value](k: Key, m: MapTree[Key, Value]) -> bool:
     match m:
         case Some(MapTreeNode(key=key, left=left, right=right)):
             if k < key:
@@ -344,7 +351,7 @@ def mem(k: Key, m: MapTree[Key, Value]) -> bool:
             return False
 
 
-def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
+def iter[Key: SupportsLessThanAndHash, Value](fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
     """Iterate maptree."""
     match m:
         case Some(MapTreeNode(left=left, right=right, key=key, value=value)):
@@ -357,7 +364,9 @@ def iter(fn: Callable[[Key, Value], None], m: MapTree[Key, Value]) -> None:
             pass
 
 
-def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) -> Option[Result]:
+def try_pick[Key: SupportsLessThanAndHash, Value, Result](
+    f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]
+) -> Option[Result]:
     match m:
         case Some(MapTreeNode(left=left, right=right, key=key, value=value)):
             res = try_pick(f, left)
@@ -375,7 +384,7 @@ def try_pick(f: Callable[[Key, Value], Option[Result]], m: MapTree[Key, Value]) 
             return NOTHING
 
 
-def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
+def exists[Key: SupportsLessThanAndHash, Value](f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
     match m:
         case Some(MapTreeNode(left=left, right=right, key=key, value=value)):
             return exists(f, left) or f(key, value) or exists(f, right)
@@ -385,7 +394,7 @@ def exists(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
             return False
 
 
-def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
+def forall[Key: SupportsLessThanAndHash, Value](f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
     match m:
         case Some(MapTreeNode(left=left, right=right, key=key, value=value)):
             return forall(f, left) and f(key, value) and forall(f, right)
@@ -395,7 +404,9 @@ def forall(f: Callable[[Key, Value], bool], m: MapTree[Key, Value]) -> bool:
             return True
 
 
-def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Key, Result]:
+def map[Result, Key: SupportsLessThanAndHash, Value](
+    f: Callable[[Key, Value], Result], m: MapTree[Key, Value]
+) -> MapTree[Key, Result]:
     match m:
         case Some(MapTreeNode(left=left, right=right, key=key, value=value, height=height)):
             l2 = map(f, left)
@@ -408,7 +419,9 @@ def map(f: Callable[[Key, Value], Result], m: MapTree[Key, Value]) -> MapTree[Ke
             return empty
 
 
-def fold_back(f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result) -> Result:
+def fold_back[Result, Key: SupportsLessThanAndHash, Value](
+    f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, Value], x: Result
+) -> Result:
     match m:
         case Some(MapTreeNode(left=left, right=right, key=key, value=value)):
             x = fold_back(f, right, x)
@@ -420,7 +433,9 @@ def fold_back(f: Callable[[tuple[Key, Value], Result], Result], m: MapTree[Key, 
             return x
 
 
-def fold(f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]) -> Result:
+def fold[Result, Key: SupportsLessThanAndHash, Value](
+    f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree[Key, Value]
+) -> Result:
     match m:
         case Some(MapTreeNode(left=left, right=right, key=key, value=value)):
             x = fold(f, x, left)
@@ -432,7 +447,7 @@ def fold(f: Callable[[Result, tuple[Key, Value]], Result], x: Result, m: MapTree
             return x
 
 
-def to_list(m: MapTree[Key, Value]) -> Block[tuple[Key, Value]]:
+def to_list[Key: SupportsLessThanAndHash, Value](m: MapTree[Key, Value]) -> Block[tuple[Key, Value]]:
     def loop(m: MapTree[Key, Value], acc: Block[tuple[Key, Value]]) -> Block[tuple[Key, Value]]:
         match m:
             case Some(MapTreeNode(left=left, right=right, key=key, value=value)):
@@ -445,7 +460,7 @@ def to_list(m: MapTree[Key, Value]) -> Block[tuple[Key, Value]]:
     return loop(m, block.empty)
 
 
-def of_list(xs: Block[tuple[Key, Value]]) -> MapTree[Key, Value]:
+def of_list[Key: SupportsLessThanAndHash, Value](xs: Block[tuple[Key, Value]]) -> MapTree[Key, Value]:
     def folder(acc: MapTree[Key, Value], kv: tuple[Key, Value]):
         k, v = kv
         return add(k, v, acc)
@@ -453,7 +468,9 @@ def of_list(xs: Block[tuple[Key, Value]]) -> MapTree[Key, Value]:
     return xs.fold(folder, empty)
 
 
-def mk_from_iterator(acc: MapTree[Key, Value], e: Iterator[tuple[Key, Value]]) -> MapTree[Key, Value]:
+def mk_from_iterator[Key: SupportsLessThanAndHash, Value](
+    acc: MapTree[Key, Value], e: Iterator[tuple[Key, Value]]
+) -> MapTree[Key, Value]:
     try:
         (x, y) = next(e)
     except StopIteration:
@@ -462,7 +479,7 @@ def mk_from_iterator(acc: MapTree[Key, Value], e: Iterator[tuple[Key, Value]]) -
         return mk_from_iterator(add(x, y, acc), e)
 
 
-def of_seq(xs: Iterable[tuple[Key, Value]]) -> MapTree[Key, Value]:
+def of_seq[Key: SupportsLessThanAndHash, Value](xs: Iterable[tuple[Key, Value]]) -> MapTree[Key, Value]:
     ie = builtins.iter(xs)
     return mk_from_iterator(empty, ie)
 
@@ -473,7 +490,7 @@ def of_seq(xs: Iterable[tuple[Key, Value]]) -> MapTree[Key, Value]:
 # collapseLHS:
 # a) Always returns either [] or a list starting with MapOne.
 # b) The "fringe" of the set stack is unchanged.
-def collapseLHS(stack: Block[MapTree[Key, Value]]) -> Block[MapTree[Key, Value]]:
+def collapseLHS[Key: SupportsLessThanAndHash, Value](stack: Block[MapTree[Key, Value]]) -> Block[MapTree[Key, Value]]:
     if stack.is_empty():
         return block.empty
     m, rest = stack.head(), stack.tail()
@@ -487,7 +504,7 @@ def collapseLHS(stack: Block[MapTree[Key, Value]]) -> Block[MapTree[Key, Value]]
             return collapseLHS(rest)
 
 
-class MkIterator(Iterator[tuple[Key, Value]]):
+class MkIterator[Key: SupportsLessThanAndHash, Value](Iterator[tuple[Key, Value]]):
     def __init__(self, m: MapTree[Key, Value]) -> None:
         self.stack = collapseLHS(block.singleton(m))
 
@@ -514,11 +531,11 @@ def already_finished():
     failwith("enumeration already finished")
 
 
-def mk_iterator(m: MapTree[Key, Value]) -> Iterator[tuple[Key, Value]]:
+def mk_iterator[Key: SupportsLessThanAndHash, Value](m: MapTree[Key, Value]) -> Iterator[tuple[Key, Value]]:
     return MkIterator(m)
 
 
-def to_seq(s: MapTree[Key, Value]) -> Iterable[tuple[Key, Value]]:
+def to_seq[Key: SupportsLessThanAndHash, Value](s: MapTree[Key, Value]) -> Iterable[tuple[Key, Value]]:
     it = mk_iterator(s)
 
     def folder(it: Iterator[tuple[Key, Value]]):

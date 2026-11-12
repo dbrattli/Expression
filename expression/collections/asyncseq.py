@@ -1,24 +1,17 @@
 import builtins
 import itertools
 from collections.abc import AsyncIterable, AsyncIterator, Callable
-from typing import Any, TypeVar, cast, overload
+from typing import Any, cast, overload
 
 from expression.core import Option, pipe
 from expression.core.typing import SupportsLessThan, SupportsSum
 
 
-TSource = TypeVar("TSource")
-TResult = TypeVar("TResult")
-TState = TypeVar("TState")
-TSourceSortable = TypeVar("TSourceSortable", bound=SupportsLessThan)
-TSourceSum = TypeVar("TSourceSum", bound=SupportsSum)
-
-
-class AsyncSeq(AsyncIterable[TSource]):
+class AsyncSeq[TSource](AsyncIterable[TSource]):
     def __init__(self, ai: AsyncIterable[TSource]):
         self._ai = ai
 
-    async def map(self, mapper: Callable[[TSource], TResult]) -> "AsyncSeq[TResult]":
+    async def map[TResult](self, mapper: Callable[[TSource], TResult]) -> "AsyncSeq[TResult]":
         # Use the module-level `map` function defined later to transform the
         # underlying async iterable and wrap the result back into an AsyncSeq.
         return AsyncSeq(pipe(self._ai, map(mapper)))  # type: ignore[arg-type]
@@ -46,7 +39,7 @@ class AsyncSeq(AsyncIterable[TSource]):
     def __aiter__(self) -> AsyncIterator[TSource]:
         return self._ai.__aiter__()
 
-    async def choose(self, chooser: Callable[[TSource], Option[TResult]]) -> AsyncIterable[TResult]:
+    async def choose[TResult](self, chooser: Callable[[TSource], Option[TResult]]) -> AsyncIterable[TResult]:
         """Choose items from the sequence.
 
         Applies the given function to each element of the list. Returns
@@ -69,7 +62,7 @@ class AsyncSeq(AsyncIterable[TSource]):
 
         return pipe(self, _choose)
 
-    async def collect(self, mapping: Callable[[TSource], AsyncIterable[TResult]]) -> AsyncIterable[TResult]:
+    async def collect[TResult](self, mapping: Callable[[TSource], AsyncIterable[TResult]]) -> AsyncIterable[TResult]:
         """Collect items from the sequence.
 
         Applies the given function to each element of the list and
@@ -125,7 +118,7 @@ class AsyncSeq(AsyncIterable[TSource]):
 
         return pipe(self, _filter)
 
-    async def fold(self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
+    async def fold[TState](self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
         """Fold elements in sequence.
 
         Applies a function to each element of the collection,
@@ -136,7 +129,7 @@ class AsyncSeq(AsyncIterable[TSource]):
             result = folder(result, value)
         return result
 
-    async def fold_back(self, folder: Callable[[TSource, TState], TState], state: TState) -> TState:
+    async def fold_back[TState](self, folder: Callable[[TSource, TState], TState], state: TState) -> TState:
         """Fold elements in sequence backwards.
 
         Applies the function to each element of the collection,
@@ -151,7 +144,7 @@ class AsyncSeq(AsyncIterable[TSource]):
             result = folder(value, result)
         return result
 
-    async def scan(self, scanner: Callable[[TState, TSource], TState], state: TState) -> AsyncIterable[TState]:
+    async def scan[TState](self, scanner: Callable[[TState, TSource], TState], state: TState) -> AsyncIterable[TState]:
         """Scan elements in sequence.
 
         Like fold, but yields intermediate results.
@@ -216,14 +209,14 @@ class AsyncSeq(AsyncIterable[TSource]):
             count += 1
         return count
 
-    async def sum(self: "AsyncSeq[TSourceSum]") -> TSourceSum:
+    async def sum[TSourceSum: SupportsSum](self: "AsyncSeq[TSourceSum]") -> TSourceSum:
         """Returns the sum of the elements in the sequence."""
         result = cast(TSourceSum, 0)
         async for value in self:
             result = cast(TSourceSum, result + value)
         return result
 
-    async def max(self: "AsyncSeq[TSourceSortable]") -> TSourceSortable:
+    async def max[TSourceSortable: SupportsLessThan](self: "AsyncSeq[TSourceSortable]") -> TSourceSortable:
         """Return maximum of all elements."""
         items: list[TSourceSortable] = []
         async for value in self:
@@ -232,7 +225,7 @@ class AsyncSeq(AsyncIterable[TSource]):
             raise ValueError("Sequence contains no elements")
         return builtins.max(items)
 
-    async def min(self: "AsyncSeq[TSourceSortable]") -> TSourceSortable:
+    async def min[TSourceSortable: SupportsLessThan](self: "AsyncSeq[TSourceSortable]") -> TSourceSortable:
         """Return minimum of all elements."""
         items: list[TSourceSortable] = []
         async for value in self:
@@ -242,7 +235,7 @@ class AsyncSeq(AsyncIterable[TSource]):
         return builtins.min(items)
 
 
-def append(
+def append[TSource](
     other: AsyncIterable[TSource],
 ) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
     async def _append(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
@@ -259,7 +252,7 @@ async def empty() -> AsyncIterable[Any]:
         yield
 
 
-async def repeat(value: TSource, times: int | None = None) -> AsyncIterable[TSource]:
+async def repeat[TSource](value: TSource, times: int | None = None) -> AsyncIterable[TSource]:
     for v in itertools.repeat(value, times or 0):
         yield v
 
@@ -277,7 +270,7 @@ async def range(*args: int, **kw: int) -> AsyncIterable[int]:
         yield value
 
 
-def filter(predicate: Callable[[TSource], bool]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
+def filter[TSource](predicate: Callable[[TSource], bool]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TSource]]:
     async def _filter(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
         async for value in source:
             if predicate(value):
@@ -286,7 +279,9 @@ def filter(predicate: Callable[[TSource], bool]) -> Callable[[AsyncIterable[TSou
     return _filter
 
 
-def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
+def map[TResult, TSource](
+    mapper: Callable[[TSource], TResult],
+) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     async def _map(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
         async for value in source:
             yield mapper(value)
@@ -294,7 +289,9 @@ def map(mapper: Callable[[TSource], TResult]) -> Callable[[AsyncIterable[TSource
     return _map
 
 
-def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
+def choose[TSource, TResult](
+    chooser: Callable[[TSource], Option[TResult]],
+) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     """Choose items from the sequence."""
 
     async def _choose(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
@@ -306,7 +303,7 @@ def choose(chooser: Callable[[TSource], Option[TResult]]) -> Callable[[AsyncIter
     return _choose
 
 
-def collect(
+def collect[TSource, TResult](
     mapping: Callable[[TSource], AsyncIterable[TResult]],
 ) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
     """Collect items from the sequence."""

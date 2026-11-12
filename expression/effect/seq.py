@@ -1,16 +1,12 @@
 from collections.abc import Callable, Generator, Iterable
-from typing import Any, TypeVar
+from typing import Any
 
 from expression.collections import seq
 from expression.core import Builder
 
 
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
-
-
-class SeqBuilder(Builder[_TSource, Iterable[Any]]):
-    def bind(self, xs: Iterable[_TSource], fn: Callable[[_TSource], Iterable[_TResult]]) -> Iterable[_TResult]:
+class SeqBuilder[TSource](Builder[TSource, Iterable[Any]]):
+    def bind[TResult](self, xs: Iterable[TSource], fn: Callable[[TSource], Iterable[TResult]]) -> Iterable[TResult]:
         """Bind a function to a sequence value.
 
         In F# computation expressions, this corresponds to let! and enables
@@ -26,7 +22,7 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         # We do this eagerly to have progress in the sequence
         return [y for x in xs for y in fn(x)]
 
-    def return_(self, x: _TSource) -> Iterable[_TSource]:
+    def return_(self, x: TSource) -> Iterable[TSource]:
         """Wrap a value in a sequence.
 
         Args:
@@ -37,7 +33,7 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         """
         return seq.singleton(x)
 
-    def return_from(self, xs: Iterable[_TSource]) -> Iterable[_TSource]:
+    def return_from(self, xs: Iterable[TSource]) -> Iterable[TSource]:
         """Return a sequence value directly.
 
         Args:
@@ -48,7 +44,7 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         """
         return xs
 
-    def combine(self, xs: Iterable[_TSource], ys: Iterable[_TSource]) -> Iterable[_TSource]:
+    def combine(self, xs: Iterable[TSource], ys: Iterable[TSource]) -> Iterable[TSource]:
         """Combine two sequence computations.
 
         Args:
@@ -60,7 +56,7 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         """
         return seq.concat(xs, ys)
 
-    def zero(self) -> Iterable[_TSource]:
+    def zero(self) -> Iterable[TSource]:
         """Return the zero value for sequences.
 
         Returns:
@@ -68,7 +64,7 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         """
         return seq.empty
 
-    def delay(self, fn: Callable[[], Iterable[_TSource]]) -> Iterable[_TSource]:
+    def delay(self, fn: Callable[[], Iterable[TSource]]) -> Iterable[TSource]:
         """Delay the computation.
 
         Returns a sequence that is built from the given delayed specification of a
@@ -83,7 +79,7 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         """
         return fn()
 
-    def run(self, computation: Iterable[_TSource]) -> Iterable[_TSource]:
+    def run(self, computation: Iterable[TSource]) -> Iterable[TSource]:
         """Run a computation.
 
         In Python, the return value should be included in the sequence
@@ -102,12 +98,12 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         self,
         fn: Callable[
             ...,
-            Generator[_TSource | None, _TSource, _TSource | None]
-            | Generator[_TSource | None, None, _TSource | None]
-            | _TSource
+            Generator[TSource | None, TSource, TSource | None]
+            | Generator[TSource | None, None, TSource | None]
+            | TSource
             | None,
         ],
-    ) -> Callable[..., Iterable[_TSource]]:
+    ) -> Callable[..., Iterable[TSource]]:
         return super().__call__(fn)
 
 

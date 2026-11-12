@@ -1,8 +1,21 @@
 # Migrating to case unions
 
-This major version requires Python 3.11 or later. The optional Pydantic
+This major version requires Python 3.12 or later. The optional Pydantic
 integration requires Pydantic 2.10 or later to preserve generic payload
 validation when caller and library type-variable names overlap.
+
+Expression supports at least the latest three stable Python versions. Minimum
+Python versions are raised in major releases; this release supports 3.12–3.15.
+Python 3.11 users must remain on the previous major version.
+
+Generic functions and classes now use Python 3.12 type parameters, for example
+`def identity[T](value: T) -> T` and `class Seq[T]`. Explicit `TypeVar`
+declarations remain where they preserve case covariance or type parameter
+defaults, which the new syntax cannot express on Python 3.12. The public
+`Option`, `Result`, and `TaggedUnion` aliases remain evaluated aliases for
+runtime introspection and Pydantic integration. `Block` and `Map` retain their
+legacy class declarations to preserve weak references on early Python 3.12
+patch releases; their generic methods use modern type parameters.
 
 Option and Result now use explicit frozen case classes. Their public types are
 unions: `Option[T]` consists of `Some[T]` and `Nothing`; `Result[T, E]` consists

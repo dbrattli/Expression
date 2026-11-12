@@ -1,6 +1,6 @@
 # Expression
 
-Expression is a practical, typed functional-programming library for Python 3.11+.
+Expression is a practical, typed functional-programming library for Python 3.12+.
 It adds small, composable tools for common Python problems:
 
 - transform data in readable pipelines;

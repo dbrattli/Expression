@@ -30,16 +30,14 @@ from typing import (
 from ._union_schema import UnionSchema
 
 
-_T = TypeVar("_T")
-
-
 class _TaggedCase(Protocol):
     @property
     def tag(self) -> str: ...
 
 
 _Case = TypeVar("_Case", bound=_TaggedCase)
-TaggedUnion: TypeAlias = Annotated[_Case, UnionSchema()]
+# Keep an evaluated alias for runtime union introspection and Pydantic schemas.
+TaggedUnion: TypeAlias = Annotated[_Case, UnionSchema()]  # noqa: UP040
 
 
 def tag(*, init: Literal[False] = False, repr: bool = False) -> Any:
@@ -54,17 +52,17 @@ def tag(*, init: Literal[False] = False, repr: bool = False) -> Any:
 
 
 @overload
-def case(_cls: type[_T], /, *, repr: bool = True, kw_only: bool = False) -> type[_T]: ...
+def case[T](_cls: type[T], /, *, repr: bool = True, kw_only: bool = False) -> type[T]: ...
 
 
 @overload
-def case(*, repr: bool = True, kw_only: bool = False) -> Callable[[type[_T]], type[_T]]: ...
+def case[T](*, repr: bool = True, kw_only: bool = False) -> Callable[[type[T]], type[T]]: ...
 
 
 @dataclass_transform(frozen_default=True, field_specifiers=(tag, field))
-def case(
-    _cls: type[_T] | None = None, /, *, repr: bool = True, kw_only: bool = False
-) -> type[_T] | Callable[[type[_T]], type[_T]]:
+def case[T](
+    _cls: type[T] | None = None, /, *, repr: bool = True, kw_only: bool = False
+) -> type[T] | Callable[[type[T]], type[T]]:
     """Create a frozen case dataclass with runtime subclass rejection.
 
     Apply ``@final`` as well for static subclass rejection. Cases have ordinary
@@ -73,10 +71,10 @@ def case(
     ordinary values rather than automatically interned singletons.
     """
 
-    def transform(cls: type[_T]) -> type[_T]:
+    def transform(cls: type[T]) -> type[T]:
         return apply(cls, _declaration_namespace())
 
-    def apply(cls: type[_T], namespace: dict[str, object]) -> type[_T]:
+    def apply(cls: type[T], namespace: dict[str, object]) -> type[T]:
         if is_dataclass(cls):
             raise TypeError("@case requires a new class without a dataclass or case base")
         if "__init__" in vars(cls):

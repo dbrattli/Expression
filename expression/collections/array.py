@@ -14,7 +14,7 @@ import builtins
 import functools
 from collections.abc import Callable, Iterable, Iterator, MutableSequence
 from enum import Enum
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 from expression.core import (
     NOTHING,
@@ -30,14 +30,7 @@ from expression.core import (
 from . import seq
 
 
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
-_TState = TypeVar("_TState")
-
-_TSourceSortable = TypeVar("_TSourceSortable", bound=SupportsLessThan)
-
-_TSourceSum = TypeVar("_TSourceSum", bound=SupportsSum)
-_Array = list[_TSourceSum] | MutableSequence[_TSourceSum]
+type _Array[TSourceSum: SupportsSum] = list[TSourceSum] | MutableSequence[TSourceSum]
 
 
 class int8(int): ...
@@ -165,7 +158,7 @@ def array_from_initializer(
     return arr, type_code
 
 
-class TypedArray(MutableSequence[_TSource], PipeMixin):
+class TypedArray[TSource](MutableSequence[TSource], PipeMixin):
     __match_args__ = (
         "initializer",
         "typecode",
@@ -173,7 +166,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
 
     def __init__(
         self,
-        initializer: Iterable[_TSource] | None = None,
+        initializer: Iterable[TSource] | None = None,
         typecode: TypeCode | None = None,
     ) -> None:
         if typecode:
@@ -184,11 +177,11 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         self.value: _Array[Any] = arr
         self.typecode = typecode
 
-    def map(self, mapping: Callable[[_TSource], _TResult]) -> TypedArray[_TResult]:
+    def map[TResult](self, mapping: Callable[[TSource], TResult]) -> TypedArray[TResult]:
         result = builtins.map(mapping, self.value)
         return TypedArray(result)
 
-    def choose(self, chooser: Callable[[_TSource], Option[_TResult]]) -> TypedArray[_TResult]:
+    def choose[TResult](self, chooser: Callable[[TSource], Option[TResult]]) -> TypedArray[TResult]:
         """Choose items from the list.
 
         Applies the given function to each element of the list. Returns
@@ -203,17 +196,17 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
             function.
         """
 
-        def mapper(x: _TSource) -> TypedArray[_TResult]:
+        def mapper(x: TSource) -> TypedArray[TResult]:
             return TypedArray(chooser(x).to_seq())
 
         return self.collect(mapper)
 
-    def collect(self, mapping: Callable[[_TSource], TypedArray[_TResult]]) -> TypedArray[_TResult]:
+    def collect[TResult](self, mapping: Callable[[TSource], TypedArray[TResult]]) -> TypedArray[TResult]:
         mapped = builtins.map(mapping, self.value)
         xs = (y for x in mapped for y in x)
         return TypedArray(xs)
 
-    def insert(self, index: int, value: _TSource) -> None:
+    def insert(self, index: int, value: TSource) -> None:
         self.value.insert(index, value)
 
     def is_empty(self) -> bool:
@@ -225,7 +218,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """Returns empty array."""
         return TypedArray()
 
-    def filter(self, predicate: Callable[[_TSource], bool]) -> TypedArray[_TSource]:
+    def filter(self, predicate: Callable[[TSource], bool]) -> TypedArray[TSource]:
         """Filter list.
 
         Returns a new collection containing only the elements of the
@@ -240,7 +233,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return TypedArray(builtins.filter(predicate, self.value), typecode=self.typecode)
 
-    def fold(self, folder: Callable[[_TState, _TSource], _TState], state: _TState) -> _TState:
+    def fold[TState](self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
         """Fold array.
 
         Applies a function to each element of the array,
@@ -263,7 +256,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return functools.reduce(folder, self, state)
 
-    def forall(self, predicate: Callable[[_TSource], bool]) -> bool:
+    def forall(self, predicate: Callable[[TSource], bool]) -> bool:
         """Test all elements.
 
         Tests if all elements of the collection satisfy the given
@@ -277,7 +270,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return all(predicate(x) for x in self)
 
-    def head(self) -> _TSource:
+    def head(self) -> TSource:
         """Returns the first element of the list.
 
         Args:
@@ -292,7 +285,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         head, *_ = self
         return head
 
-    def indexed(self, start: int = 0) -> TypedArray[tuple[int, _TSource]]:
+    def indexed(self, start: int = 0) -> TypedArray[tuple[int, TSource]]:
         """Index array elements.
 
         Returns a new array whose elements are the corresponding
@@ -307,7 +300,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return of_seq(enumerate(self))
 
-    def item(self, index: int) -> _TSource:
+    def item(self, index: int) -> TSource:
         """Indexes into the list. The first element has index 0.
 
         Args:
@@ -319,16 +312,16 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         return self.value[index]
 
     @staticmethod
-    def of(*args: _TSource) -> TypedArray[_TSource]:
+    def of(*args: TSource) -> TypedArray[TSource]:
         """Create list from a number of arguments."""
         return TypedArray((*args,))
 
     @staticmethod
-    def of_seq(xs: Iterable[_TSource]) -> TypedArray[_TSource]:
+    def of_seq(xs: Iterable[TSource]) -> TypedArray[TSource]:
         """Create list from iterable sequence."""
         return TypedArray((*xs,))
 
-    def skip(self, count: int) -> TypedArray[_TSource]:
+    def skip(self, count: int) -> TypedArray[TSource]:
         """Returns the array after removing the first N elements.
 
         Args:
@@ -339,10 +332,12 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return TypedArray(self.value[count:])
 
-    def skip_last(self, count: int) -> TypedArray[_TSource]:
+    def skip_last(self, count: int) -> TypedArray[TSource]:
         return TypedArray(self.value[:-count] if count != 0 else self.value[:])
 
-    def sort(self: TypedArray[_TSourceSortable], reverse: bool = False) -> TypedArray[_TSourceSortable]:
+    def sort[TSourceSortable: SupportsLessThan](
+        self: TypedArray[TSourceSortable], reverse: bool = False
+    ) -> TypedArray[TSourceSortable]:
         """Sort array directly.
 
         Returns a new sorted collection.
@@ -355,7 +350,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return TypedArray(builtins.sorted(self.value, reverse=reverse))
 
-    def sort_with(self, func: Callable[[_TSource], Any], reverse: bool = False) -> TypedArray[_TSource]:
+    def sort_with(self, func: Callable[[TSource], Any], reverse: bool = False) -> TypedArray[TSource]:
         """Sort array with supplied function.
 
         Returns a new sorted collection.
@@ -369,21 +364,21 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return TypedArray(builtins.sorted(self.value, key=func, reverse=reverse))
 
-    def sum(self: TypedArray[_TSourceSum]) -> int:
+    def sum[TSourceSum: SupportsSum](self: TypedArray[TSourceSum]) -> int:
         return sum(self)
 
-    def sum_by(self, projection: Callable[[_TSource], _TSourceSum]) -> int:
+    def sum_by[TSourceSum: SupportsSum](self, projection: Callable[[TSource], TSourceSum]) -> int:
         return pipe(
             self,
             sum_by(projection),
         )
 
-    def tail(self) -> TypedArray[_TSource]:
+    def tail(self) -> TypedArray[TSource]:
         """Return tail of List."""
         _, *tail = self.value
         return TypedArray(tail)
 
-    def take(self, count: int) -> TypedArray[_TSource]:
+    def take(self, count: int) -> TypedArray[TSource]:
         """Returns the first N elements of the list.
 
         Args:
@@ -394,7 +389,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return TypedArray(self.value[:count])
 
-    def take_last(self, count: int) -> TypedArray[_TSource]:
+    def take_last(self, count: int) -> TypedArray[TSource]:
         """Take last elements.
 
         Returns a specified number of contiguous elements from the
@@ -408,22 +403,22 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
         """
         return TypedArray(self.value[-count:] if count != 0 else self.value[:0])
 
-    def try_head(self) -> Option[_TSource]:
+    def try_head(self) -> Option[TSource]:
         """Try to return first element.
 
         Returns the first element of the list, or None if the list is
         empty.
         """
         if self.value:
-            value = cast("_TSource", self.value[0])
+            value = cast("TSource", self.value[0])
             return Some(value)
 
         return NOTHING
 
     @staticmethod
-    def unfold(
-        generator: Callable[[_TState], Option[tuple[_TSource, _TState]]], state: _TState
-    ) -> TypedArray[_TSource]:
+    def unfold[TState](
+        generator: Callable[[TState], Option[tuple[TSource, TState]]], state: TState
+    ) -> TypedArray[TSource]:
         """Unfold array.
 
         Returns a list that contains the elements generated by the
@@ -453,7 +448,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
     def __len__(self) -> int:
         return len(self.value)
 
-    def __iter__(self) -> Iterator[_TSource]:
+    def __iter__(self) -> Iterator[TSource]:
         return iter(self.value)
 
     def __setitem__(self, key: slice | int, value: Any) -> None:
@@ -473,7 +468,7 @@ class TypedArray(MutableSequence[_TSource], PipeMixin):
 
 
 @curry_flip(1)
-def map(source: TypedArray[_TSource], mapper: Callable[[_TSource], _TResult]) -> TypedArray[_TResult]:
+def map[TSource, TResult](source: TypedArray[TSource], mapper: Callable[[TSource], TResult]) -> TypedArray[TResult]:
     """Map array.
 
     Builds a new array whose elements are the results of applying
@@ -494,7 +489,7 @@ def empty() -> TypedArray[Any]:
 
 
 @curry_flip(1)
-def filter(source: TypedArray[_TSource], predicate: Callable[[_TSource], bool]) -> TypedArray[_TSource]:
+def filter[TSource](source: TypedArray[TSource], predicate: Callable[[TSource], bool]) -> TypedArray[TSource]:
     """Filter array.
 
     Returns a new array containing only the elements of the
@@ -511,11 +506,11 @@ def filter(source: TypedArray[_TSource], predicate: Callable[[_TSource], bool]) 
 
 
 @curry_flip(1)
-def fold(
-    source: TypedArray[_TSource],
-    folder: Callable[[_TState, _TSource], _TState],
-    state: _TState,
-) -> _TState:
+def fold[TSource, TState](
+    source: TypedArray[TSource],
+    folder: Callable[[TState, TSource], TState],
+    state: TState,
+) -> TState:
     """Fold the array.
 
     Applies a function to each element of the collection, threading
@@ -541,10 +536,10 @@ def fold(
 
 
 @curry_flip(1)
-def indexed(
-    source: TypedArray[_TSource],
+def indexed[TSource](
+    source: TypedArray[TSource],
     start: int = 0,
-) -> TypedArray[tuple[int, _TSource]]:
+) -> TypedArray[tuple[int, TSource]]:
     return source.indexed()
 
 
@@ -554,21 +549,21 @@ def is_empty(source: TypedArray[Any]) -> bool:
 
 
 @curry_flip(1)
-def item(source: TypedArray[_TSource], index: int) -> _TSource:
+def item[TSource](source: TypedArray[TSource], index: int) -> TSource:
     return source.item(index)
 
 
-def of(*args: _TSource) -> TypedArray[_TSource]:
+def of[TSource](*args: TSource) -> TypedArray[TSource]:
     """Create list from a number of arguments."""
     return TypedArray((*args,))
 
 
-def of_seq(xs: Iterable[_TSource]) -> TypedArray[_TSource]:
+def of_seq[TSource](xs: Iterable[TSource]) -> TypedArray[TSource]:
     """Create list from iterable sequence."""
     return TypedArray((*xs,))
 
 
-def of_option(option: Option[_TSource]) -> TypedArray[_TSource]:
+def of_option[TSource](option: Option[TSource]) -> TypedArray[TSource]:
     match option:
         case Some(value):
             return singleton(value)
@@ -576,21 +571,23 @@ def of_option(option: Option[_TSource]) -> TypedArray[_TSource]:
             return empty()
 
 
-def singleton(value: _TSource) -> TypedArray[_TSource]:
+def singleton[TSource](value: TSource) -> TypedArray[TSource]:
     return TypedArray((value,))
 
 
-def sum(source: TypedArray[_TSourceSum]) -> int:
+def sum[TSourceSum: SupportsSum](source: TypedArray[TSourceSum]) -> int:
     return builtins.sum(source.value)
 
 
 @curry_flip(1)
-def sum_by(source: TypedArray[_TSource], projection: Callable[[_TSource], _TSourceSum]) -> int:
+def sum_by[TSource, TSourceSum: SupportsSum](
+    source: TypedArray[TSource], projection: Callable[[TSource], TSourceSum]
+) -> int:
     return builtins.sum(source.map(projection).value)
 
 
 @curry_flip(1)
-def take(source: TypedArray[_TSource], count: int) -> TypedArray[_TSource]:
+def take[TSource](source: TypedArray[TSource], count: int) -> TypedArray[TSource]:
     """Return the first N elements of the array.
 
     Args:
@@ -604,7 +601,7 @@ def take(source: TypedArray[_TSource], count: int) -> TypedArray[_TSource]:
 
 
 @curry_flip(1)
-def take_last(source: TypedArray[_TSource], count: int) -> TypedArray[_TSource]:
+def take_last[TSource](source: TypedArray[TSource], count: int) -> TypedArray[TSource]:
     """Take last elements.
 
     Returns a specified number of contiguous elements from the end of
@@ -620,7 +617,7 @@ def take_last(source: TypedArray[_TSource], count: int) -> TypedArray[_TSource]:
     return source.take_last(count)
 
 
-def try_head(source: TypedArray[_TSource]) -> Option[_TSource]:
+def try_head[TSource](source: TypedArray[TSource]) -> Option[TSource]:
     """Try to get the first element from the list.
 
     Returns the first element of the list, or None if the list is empty.
@@ -635,7 +632,9 @@ def try_head(source: TypedArray[_TSource]) -> Option[_TSource]:
 
 
 @curry_flip(1)
-def unfold(state: _TState, generator: Callable[[_TState], Option[tuple[_TSource, _TState]]]) -> TypedArray[_TSource]:
+def unfold[TState, TSource](
+    state: TState, generator: Callable[[TState], Option[tuple[TSource, TState]]]
+) -> TypedArray[TSource]:
     """Unfold array.
 
     Returns a list that contains the elements generated by the

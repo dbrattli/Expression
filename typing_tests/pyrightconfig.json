@@ -4,6 +4,6 @@
   "venvPath": "..",
   "venv": ".venv",
   "typeCheckingMode": "strict",
-  "pythonVersion": "3.11",
+  "pythonVersion": "3.12",
   "reportMissingImports": false
 }

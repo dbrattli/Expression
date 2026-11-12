@@ -1,16 +1,7 @@
 import functools
 from collections.abc import Callable
-from typing import Any, Concatenate, Literal, TypeVar, overload
+from typing import Any, Concatenate, Literal, overload
 
-from typing_extensions import ParamSpec
-
-
-_P = ParamSpec("_P")
-_A = TypeVar("_A")
-_B = TypeVar("_B")
-_C = TypeVar("_C")
-_D = TypeVar("_D")
-_E = TypeVar("_E")
 
 _Arity = Literal[0, 1, 2, 3, 4]
 
@@ -25,42 +16,42 @@ def _curry(args: tuple[Any, ...], arity: int, fun: Callable[..., Any]) -> Callab
 
 
 @overload
-def curry(num_args: Literal[0]) -> Callable[[Callable[_P, _B]], Callable[_P, _B]]: ...
+def curry[**P, B](num_args: Literal[0]) -> Callable[[Callable[P, B]], Callable[P, B]]: ...
 
 
 @overload
-def curry(
+def curry[B, A, **P](
     num_args: Literal[1],
-) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[[_A], Callable[_P, _B]]]: ...
+) -> Callable[[Callable[Concatenate[A, P], B]], Callable[[A], Callable[P, B]]]: ...
 
 
 @overload
-def curry(
+def curry[C, A, B, **P](
     num_args: Literal[2],
 ) -> Callable[
-    [Callable[Concatenate[_A, _B, _P], _C]],
+    [Callable[Concatenate[A, B, P], C]],
     Callable[
-        [_A],
+        [A],
         Callable[
-            [_B],
-            Callable[_P, _C],
+            [B],
+            Callable[P, C],
         ],
     ],
 ]: ...
 
 
 @overload
-def curry(
+def curry[D, A, B, C, **P](
     num_args: Literal[3],
 ) -> Callable[
-    [Callable[Concatenate[_A, _B, _C, _P], _D]],
+    [Callable[Concatenate[A, B, C, P], D]],
     Callable[
-        [_A],
+        [A],
         Callable[
-            [_B],
+            [B],
             Callable[
-                [_C],
-                Callable[_P, _D],
+                [C],
+                Callable[P, D],
             ],
         ],
     ],
@@ -68,17 +59,17 @@ def curry(
 
 
 @overload
-def curry(
+def curry[E, A, B, C, D, **P](
     num_args: Literal[4],
 ) -> Callable[
-    [Callable[Concatenate[_A, _B, _C, _D, _P], _E]],
+    [Callable[Concatenate[A, B, C, D, P], E]],
     Callable[
-        [_A],
+        [A],
         Callable[
-            [_B],
+            [B],
             Callable[
-                [_C],
-                Callable[[_D], Callable[_P, _E]],
+                [C],
+                Callable[[D], Callable[P, E]],
             ],
         ],
     ],
@@ -109,44 +100,44 @@ def curry(num_args: _Arity) -> Callable[..., Any]:
 
 
 @overload
-def curry_flip(
+def curry_flip[**P, A](
     num_args: Literal[0],
-) -> Callable[[Callable[_P, _A]], Callable[_P, _A]]: ...
+) -> Callable[[Callable[P, A]], Callable[P, A]]: ...
 
 
 @overload
-def curry_flip(
+def curry_flip[**P, B, A](
     num_args: Literal[1],
-) -> Callable[[Callable[Concatenate[_A, _P], _B]], Callable[_P, Callable[[_A], _B]]]: ...
+) -> Callable[[Callable[Concatenate[A, P], B]], Callable[P, Callable[[A], B]]]: ...
 
 
 @overload
-def curry_flip(
+def curry_flip[**P, C, A, B](
     num_args: Literal[2],
 ) -> Callable[
-    [Callable[Concatenate[_A, _B, _P], _C]],
+    [Callable[Concatenate[A, B, P], C]],
     Callable[
-        _P,
+        P,
         Callable[
-            [_A],
-            Callable[[_B], _C],
+            [A],
+            Callable[[B], C],
         ],
     ],
 ]: ...
 
 
 @overload
-def curry_flip(
+def curry_flip[**P, D, A, B, C](
     num_args: Literal[3],
 ) -> Callable[
-    [Callable[Concatenate[_A, _B, _C, _P], _D]],
+    [Callable[Concatenate[A, B, C, P], D]],
     Callable[
-        _P,
+        P,
         Callable[
-            [_A],
+            [A],
             Callable[
-                [_B],
-                Callable[[_C], _D],
+                [B],
+                Callable[[C], D],
             ],
         ],
     ],
@@ -154,17 +145,17 @@ def curry_flip(
 
 
 @overload
-def curry_flip(
+def curry_flip[**P, E, A, B, C, D](
     num_args: Literal[4],
 ) -> Callable[
-    [Callable[Concatenate[_A, _B, _C, _D, _P], _E]],
+    [Callable[Concatenate[A, B, C, D, P], E]],
     Callable[
-        _P,
+        P,
         Callable[
-            [_A],
+            [A],
             Callable[
-                [_B],
-                Callable[[_C], Callable[[_D], _E]],
+                [B],
+                Callable[[C], Callable[[D], E]],
             ],
         ],
     ],
@@ -205,12 +196,12 @@ def curry_flip(
     return _wrap_fun
 
 
-def pipeable(
-    function: Callable[Concatenate[_A, _P], _B],
+def pipeable[B, A, **P](
+    function: Callable[Concatenate[A, P], B],
     /,
-    *args: _P.args,
-    **kwargs: _P.kwargs,
-) -> Callable[[_A], _B]:
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> Callable[[A], B]:
     """Partially apply a function's arguments after its pipeline value.
 
     Args:
