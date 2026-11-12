@@ -1,7 +1,13 @@
+import copy
 import functools
+import pickle
+import weakref
+from dataclasses import FrozenInstanceError
 from builtins import list as list
 from collections.abc import Callable
 from typing import Any, List, Annotated
+
+import pytest
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
@@ -12,6 +18,38 @@ from expression import Nothing, Option, Some, pipe
 from expression.collections import Block, block
 
 Func = Callable[[int], int]
+
+
+def test_block_backing_state_is_frozen():
+    xs = Block([1, 2])
+    with pytest.raises(FrozenInstanceError):
+        setattr(xs, "_value", (9,))
+    with pytest.raises(FrozenInstanceError):
+        delattr(xs, "_value")
+    assert not hasattr(xs, "__dict__")
+    assert list(xs) == [1, 2]
+
+
+def test_block_immutability_is_shallow():
+    item: list[int] = []
+    source = [item]
+    xs = Block(source)
+    source.clear()
+    item.append(42)
+    assert list(xs) == [[42]]
+
+
+def test_block_frozen_copy_and_pickle():
+    xs = Block[int]([1, 2])
+    assert weakref.ref(xs)() is xs
+    for restored in (copy.copy(xs), copy.deepcopy(xs), pickle.loads(pickle.dumps(xs))):
+        assert restored == xs
+        assert repr(restored) == repr(xs)
+        assert not hasattr(restored, "__dict__")
+        with pytest.raises(FrozenInstanceError):
+            setattr(restored, "_value", ())
+    with pytest.raises(TypeError):
+        hash(xs)
 
 
 @given(st.integers(min_value=0, max_value=10000))  # type: ignore

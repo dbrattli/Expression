@@ -24,6 +24,7 @@ import builtins
 import functools
 import itertools
 from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 
 from typing_extensions import TypeVarTuple, Unpack
@@ -60,6 +61,7 @@ _T4 = TypeVar("_T4")
 _P = TypeVarTuple("_P")
 
 
+@dataclass(frozen=True, slots=True, weakref_slot=True, init=False, eq=False, repr=False)
 class Block(
     Collection[_TSource],  # Sequence breaks pydantic
     PipeMixin,
@@ -83,10 +85,12 @@ class Block(
 
     __match_args__ = ("_value",)
 
+    _value: tuple[_TSource, ...]
+
     def __init__(self, value: Iterable[_TSource] = ()) -> None:
         # Use composition instead of inheritance since generic tuples
         # are not suppored by mypy.
-        self._value: tuple[_TSource, ...] = tuple(value) if value else tuple()
+        object.__setattr__(self, "_value", tuple(value) if value else tuple())
 
     def append(self, other: Block[_TSource]) -> Block[_TSource]:
         """Append other block to end of the block."""

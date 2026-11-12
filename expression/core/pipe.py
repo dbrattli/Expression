@@ -414,6 +414,8 @@ def starpipe(args: Any, /, *fns: Callable[..., Any]) -> Any:
 class PipeMixin:
     """A pipe mixin class that enabled a class to use pipe fluently."""
 
+    __slots__ = ()
+
     @overload
     def pipe(self: _A, fn1: Callable[[_A], _B], /) -> _B: ...
 

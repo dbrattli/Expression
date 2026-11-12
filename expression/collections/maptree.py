@@ -39,7 +39,7 @@ Value = TypeVar("Value")
 Result = TypeVar("Result")
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class MapTreeLeaf(Generic[Key, Value]):
     key: Key
     value: Value
@@ -48,7 +48,7 @@ class MapTreeLeaf(Generic[Key, Value]):
 MapTree = Option[MapTreeLeaf[Key, Value]]
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class MapTreeNode(MapTreeLeaf[Key, Value]):
     left: MapTree[Key, Value]
     right: MapTree[Key, Value]
