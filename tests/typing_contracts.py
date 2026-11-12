@@ -70,7 +70,7 @@ _T = TypeVar("_T", covariant=True)
 @case
 class Circle:
     radius: float
-    tag: Literal["circle"] = tag("circle")
+    tag: Literal["circle"] = tag()
 
 
 @final
@@ -79,7 +79,7 @@ class Rectangle:
     width: float
     height: float
     label: str = field(default="", kw_only=True)
-    tag: Literal["rectangle"] = tag("rectangle")
+    tag: Literal["rectangle"] = tag()
 
 
 Shape: TypeAlias = TaggedUnion[Circle | Rectangle]
@@ -89,13 +89,13 @@ Shape: TypeAlias = TaggedUnion[Circle | Rectangle]
 @case
 class Just(Generic[_T]):
     value: _T
-    tag: Literal["just"] = tag("just")
+    tag: Literal["just"] = tag()
 
 
 @final
 @case
 class Missing:
-    tag: Literal["missing"] = tag("missing")
+    tag: Literal["missing"] = tag()
 
 
 Maybe: TypeAlias = TaggedUnion[Just[_T] | Missing]
@@ -106,7 +106,7 @@ Maybe: TypeAlias = TaggedUnion[Just[_T] | Missing]
 class Request:
     path: str
     retries: int = 3
-    tag: Literal["request"] = tag("request")
+    tag: Literal["request"] = tag()
 
 
 def custom_case_construction() -> None:
@@ -154,14 +154,14 @@ def custom_tag_narrowing(value: Maybe[int]) -> int:
 @case
 class Branch:
     children: tuple[Tree, ...]
-    tag: Literal["branch"] = tag("branch")
+    tag: Literal["branch"] = tag()
 
 
 @final
 @case
 class Leaf:
     value: int
-    tag: Literal["leaf"] = tag("leaf")
+    tag: Literal["leaf"] = tag()
 
 
 Tree: TypeAlias = TaggedUnion[Branch | Leaf]

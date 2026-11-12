@@ -9,14 +9,16 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
-from dataclasses import Field, dataclass, field, fields, is_dataclass
+from dataclasses import MISSING, Field, dataclass, field, fields, is_dataclass
 from inspect import currentframe, signature
 from typing import (
     Annotated,
+    Any,
     Literal,
     Protocol,
     TypeAlias,
     TypeVar,
+    cast,
     dataclass_transform,
     final,
     get_args,
@@ -29,7 +31,6 @@ from ._union_schema import UnionSchema
 
 
 _T = TypeVar("_T")
-_Tag = TypeVar("_Tag", bound=str)
 
 
 class _TaggedCase(Protocol):
@@ -41,17 +42,15 @@ _Case = TypeVar("_Case", bound=_TaggedCase)
 TaggedUnion: TypeAlias = Annotated[_Case, UnionSchema()]
 
 
-def tag(value: _Tag, *, init: Literal[False] = False, repr: bool = False) -> _Tag:
+def tag(*, init: Literal[False] = False, repr: bool = False) -> Any:
     """Declare a fixed discriminator excluded from a case's constructor.
 
-    Annotate the field as ``tag: Literal['name'] = tag('name')``. The literal
-    remains visible to checkers, while construction cannot override its value.
+    Annotate the field as ``tag: Literal['name'] = tag()``. The case decorator
+    derives the default from the annotation. The ``init`` default tells static
+    dataclass checking to exclude the tag from construction; runtime fields
+    always use ``init=False``.
     """
-    if type(value) is not str:
-        raise TypeError("A case tag must be a string")
-    if init is not False:
-        raise TypeError("A case tag cannot be a constructor parameter")
-    return field(default=value, init=False, repr=repr, metadata={"expression.tag": True})
+    return field(init=False, repr=repr, metadata={"expression.tag": True})
 
 
 @overload
@@ -82,6 +81,7 @@ def case(
             raise TypeError("@case requires a new class without a dataclass or case base")
         if "__init__" in vars(cls):
             raise TypeError("@case generates __init__; use __post_init__ for payload checks")
+        _infer_tag_default(cls, namespace)
         transformed = dataclass(cls, frozen=True, repr=repr, kw_only=kw_only)
         _validate_case(transformed, namespace)
         config = dict(getattr(transformed, "__pydantic_config__", {}))
@@ -91,6 +91,27 @@ def case(
         return final(transformed)
 
     return transform if _cls is None else apply(_cls, _declaration_namespace())
+
+
+def _infer_tag_default(cls: type[object], namespace: dict[str, object]) -> None:
+    discriminator = vars(cls).get("tag")
+    if not isinstance(discriminator, Field) or not discriminator.metadata.get("expression.tag"):
+        return
+    discriminator = cast(Field[object], discriminator)
+    if discriminator.default is not MISSING:
+        return
+    if sys.version_info >= (3, 14):
+        from annotationlib import Format, get_annotations
+
+        annotations = get_annotations(cls, format=Format.STRING)
+    else:
+        annotations = vars(cls).get("__annotations__", {})
+    annotation = annotations.get("tag")
+    literal = _resolve_tag_annotation(cls, annotation, namespace)
+    values = get_args(literal)
+    if get_origin(literal) is not Literal or len(values) != 1 or type(values[0]) is not str:
+        raise TypeError("An inferred case tag must declare a single string Literal")
+    discriminator.default = values[0]
 
 
 def _declaration_namespace() -> dict[str, object]:
@@ -129,7 +150,7 @@ def _case_discriminator(
 ) -> Field[object]:
     discriminator = next((item for item in declared if item.name == "tag"), None)
     if discriminator is None or discriminator.init or not discriminator.metadata.get("expression.tag"):
-        raise TypeError("A case must declare tag: Literal['name'] = tag('name')")
+        raise TypeError("A case must declare tag: Literal['name'] = tag()")
     literal = _resolve_tag_annotation(cls, discriminator.type, namespace)
     if get_origin(literal) is not Literal or get_args(literal) != (discriminator.default,):
         raise TypeError("The tag annotation must be a single Literal matching its tag() value")

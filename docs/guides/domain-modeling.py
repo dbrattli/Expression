@@ -16,13 +16,13 @@ from expression import TaggedUnion, case, tag
 @case
 class Card:
     last_four: str
-    tag: Literal["card"] = tag("card")
+    tag: Literal["card"] = tag()
 
 
 @final
 @case
 class Cash:
-    tag: Literal["cash"] = tag("cash")
+    tag: Literal["cash"] = tag()
 
 
 Payment: TypeAlias = TaggedUnion[Card | Cash]
@@ -52,4 +52,39 @@ needs no placeholder field.
 directly. The `assert_never` branch makes a missing case a type-checking error when the
 alias grows. Use a standard enum when every alternative is just a named constant.
 See [Tagged unions](reference_union) for serialization and the full API.
+"""
+
+
+# %% [markdown]
+"""
+## Single-case domain types
+
+A case can also wrap a primitive value in a distinct domain type, similar to an F#
+single-case discriminated union. The class itself serves as the type and constructor;
+a separate union alias is unnecessary for ordinary domain use.
+"""
+
+# %%
+@final
+@case
+class CustomerId:
+    value: int
+    tag: Literal["customer_id"] = tag()
+
+
+def customer_number(customer_id: CustomerId) -> int:
+    match customer_id:
+        case CustomerId(value):
+            return value
+
+
+assert customer_number(CustomerId(42)) == 42
+
+# %% [markdown]
+"""
+The annotation keeps `CustomerId` distinct from an ordinary `int` during static
+checking. `tag()` derives its fixed value from `Literal` when the class is declared,
+normally during module import. Constructing instances does not repeat that inference.
+For tagged Pydantic decoding, use `TypeAdapter(TaggedUnion[CustomerId])` at the
+serialization boundary.
 """

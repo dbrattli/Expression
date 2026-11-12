@@ -182,28 +182,28 @@ class Compare:
     left: Expression
     comparators: Block[Expression]
     ops: Block[ComparisonOperator]
-    tag: Literal["compare"] = tag("compare")
+    tag: Literal["compare"] = tag()
 
 
 @final
 @case
 class Name:
     name: str
-    tag: Literal["name"] = tag("name")
+    tag: Literal["name"] = tag()
 
 
 @final
 @case
 class Constant:
     value: object
-    tag: Literal["constant"] = tag("constant")
+    tag: Literal["constant"] = tag()
 
 
 @final
 @case
 class Boolean:
     operator: BoolOp
-    tag: Literal["boolean"] = tag("boolean")
+    tag: Literal["boolean"] = tag()
 
 
 Expression: TypeAlias = TaggedUnion[Name | Constant | Boolean | Compare]
