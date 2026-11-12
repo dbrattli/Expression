@@ -3,7 +3,21 @@
 from collections.abc import Awaitable, Callable
 from typing import Generic, Literal, TypeAlias, TypeVar, final
 
-from expression import Error, MailboxProcessor, Nothing, Option, Result, Some, TaggedUnion, apipe, case, tag
+from expression import (
+    Error,
+    MailboxProcessor,
+    Nothing,
+    Option,
+    Result,
+    Some,
+    TaggedUnion,
+    apipe,
+    case,
+    downcast,
+    tag,
+    try_downcast,
+    upcast,
+)
 from expression.collections import Block, Map, TypedArray
 from expression.extra import async_result
 from expression.extra.result import catch
@@ -169,3 +183,9 @@ integers[0] = "wrong"  # type-error
 integers[:] = ["wrong"]  # type-error
 integers["wrong"]  # type-error
 Block([1]).sum_by(str)  # type-error
+
+
+# Cast targets must be types, not instances.
+downcast(42, object())  # type-error
+try_downcast(42, object())  # type-error
+upcast(42, object())  # type-error

@@ -267,3 +267,17 @@ def collection_sum_and_index_contract() -> None:
     assert_type(values[:], MutableSequence[int])
     values[0] = 3
     values[:] = [4, 5]
+
+
+def downcast_contract(value: object) -> None:
+    from expression import downcast, try_downcast
+
+    assert_type(downcast(str, value), str)
+    assert_type(try_downcast(str, value), str | None)
+
+
+def upcast_target_contract(value: object) -> None:
+    from expression import upcast
+
+    assert_type(upcast(str, value), str)
+    assert_type(upcast(object, "value"), object)
