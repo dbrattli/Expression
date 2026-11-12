@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from typing import Any
+from typing import Any, assert_type
 
 import pytest
 
@@ -105,3 +105,67 @@ def test_catch_with_effect_exception():
             assert isinstance(ex, TypeError)
         case _:
             assert False
+
+
+def test_catch_preserves_signature_and_plain_return_type():
+    def add(a: int, *, b: int = 1) -> int:
+        return a + b
+
+    wrapped = catch(add, exception=ValueError)
+    decorated = catch(exception=ValueError)(add)
+    assert_type(wrapped(3, b=4), Result[int, ValueError])
+    assert_type(decorated(3, b=4), Result[int, ValueError])
+    assert wrapped(3, b=4) == decorated(3, b=4) == Ok(7)
+    assert wrapped.__name__ == "add"
+
+
+def test_catch_preserves_existing_result_and_error_type():
+    original: Result[int, str] = Error("failure")
+
+    def fn(value: int) -> Result[int, str]:
+        return Ok(value) if value else original
+
+    wrapped = catch(fn, exception=ValueError)
+    decorated = catch(exception=ValueError)(fn)
+    assert_type(wrapped(1), Result[int, str | ValueError])
+    assert_type(decorated(1), Result[int, str | ValueError])
+    assert wrapped(1) == decorated(1) == Ok(1)
+    assert wrapped(0) is original
+    assert decorated(0) is original
+
+
+def test_catch_chained_preserves_types():
+    @catch(exception=KeyError)
+    @catch(exception=ValueError)
+    def fn(value: int) -> int:
+        return value
+
+    assert_type(fn(1), Result[int, ValueError | KeyError])
+    assert fn(1) == Ok(1)
+
+
+def test_catch_direct_call_catches_exception():
+    error = ValueError("failure")
+
+    def fn() -> int:
+        raise error
+
+    wrapped = catch(fn, exception=ValueError)
+    assert wrapped() == Error(error)
+
+
+def test_catch_decorator_can_wrap_different_signatures():
+    decorator = catch(exception=ValueError)
+
+    @decorator
+    def number(value: int) -> int:
+        return value
+
+    @decorator
+    def text(*, value: str) -> str:
+        return value
+
+    assert_type(number(1), Result[int, ValueError])
+    assert_type(text(value="hello"), Result[str, ValueError])
+    assert number(1) == Ok(1)
+    assert text(value="hello") == Ok("hello")
