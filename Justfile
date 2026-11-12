@@ -7,6 +7,7 @@ install:
 # Run the complete test suite.
 test:
     uv run pytest
+    uv run python scripts/check_docs.py
 
 # Run all formatting, linting, type-checking, and repository checks.
 lint:

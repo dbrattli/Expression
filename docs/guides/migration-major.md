@@ -1,8 +1,8 @@
 # Migrating to case unions
 
 This major version requires Python 3.12 or later. The optional Pydantic
-integration requires Pydantic 2.10 or later to preserve generic payload
-validation when caller and library type-variable names overlap.
+integration requires Pydantic 2.11 or later to validate cases declared with
+Python 3.12 type parameters, including nested generic payloads.
 
 Expression supports at least the latest three stable Python versions. Minimum
 Python versions are raised in major releases; this release supports 3.12–3.15.

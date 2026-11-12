@@ -6,11 +6,16 @@ Use a pipeline when a value passes through several independent transformations. 
 step receives the previous result, so the order reads from top to bottom.
 """
 # %%
+from collections.abc import Mapping
+
 from expression import pipe
 from expression.collections import seq
 
-def is_active(user: dict[str, object]) -> bool:
+def is_active(user: Mapping[str, str | bool]) -> bool:
     return user["active"] is True
+
+def name(user: Mapping[str, str | bool]) -> str:
+    return str(user["name"])
 
 users = [
     {"name": "Ada", "active": True},
@@ -21,7 +26,7 @@ users = [
 names = pipe(
     users,
     seq.filter(is_active),
-    seq.map(lambda user: str(user["name"])),
+    seq.map(name),
     list,
 )
 
@@ -42,8 +47,8 @@ from expression import compose
 from expression.collections import seq
 
 active_names = compose(
-    seq.filter(lambda user: user["active"] is True),
-    seq.map(lambda user: str(user["name"])),
+    seq.filter(is_active),
+    seq.map(name),
     list,
 )
 

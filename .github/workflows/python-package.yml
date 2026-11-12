@@ -49,3 +49,38 @@ jobs:
 
       - name: Test with pytest
         run: uv run pytest
+
+      - name: Run documentation examples
+        run: uv run python scripts/check_docs.py
+
+  minimum-dependencies:
+    name: Python 3.12 minimum dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Build and install wheel without optional dependencies
+        run: |
+          uv build
+          uv venv "$RUNNER_TEMP/minimum-venv"
+          uv pip install --python "$RUNNER_TEMP/minimum-venv/bin/python" dist/*.whl 'typing-extensions==4.6.0'
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/minimum-venv/bin/python" -c 'from expression import Some; assert Some(1).map(str) == Some("1")'
+
+      - name: Install minimum Pydantic and test dependencies
+        run: |
+          uv pip install --python "$RUNNER_TEMP/minimum-venv/bin/python" 'pydantic==2.11.0' 'typing-extensions==4.12.2' pytest pytest-asyncio hypothesis
+
+      - name: Test the installed wheel outside the checkout
+        run: |
+          mkdir "$RUNNER_TEMP/wheel-tests"
+          cp -r tests "$RUNNER_TEMP/wheel-tests/tests"
+          cp pyproject.toml "$RUNNER_TEMP/wheel-tests/pyproject.toml"
+          cd "$RUNNER_TEMP/wheel-tests"
+          "$RUNNER_TEMP/minimum-venv/bin/python" -m pytest

@@ -63,7 +63,7 @@ You can install the latest `expression` from PyPI by running `pip` (or
 > pip install expression
 ```
 
-To add Pydantic 2.10+ support, install the `pydantic` extra:
+To add Pydantic 2.11+ support, install the `pydantic` extra:
 
 ```console
 > pip install expression[pydantic]

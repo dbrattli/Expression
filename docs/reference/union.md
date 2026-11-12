@@ -69,7 +69,7 @@ payloads, standard Python enums are usually sufficient.
 ## Tagged serialization
 
 `dataclasses.asdict(Circle(2.0))` returns `{"radius": 2.0, "tag": "circle"}`.
-With the optional Pydantic extra (Pydantic 2.10+), use the public alias at decoding
+With the optional Pydantic extra (Pydantic 2.11+), use the public alias at decoding
 boundaries:
 
 ```python

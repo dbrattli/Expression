@@ -1,7 +1,7 @@
 # Tagged unions: implementation and rationale
 
 **Status:** Implemented for the next major version of Expression.
-**Minimum Python:** 3.12. **Optional Pydantic:** 2.10 or later, below 3.
+**Minimum Python:** 3.12. **Optional Pydantic:** 2.11 or later, below 3.
 
 Expression now represents tagged unions as explicit, frozen, final case classes
 combined in public type aliases. Each case declares only its own payload. The
@@ -327,10 +327,9 @@ payloads; arbitrary leaf encoding remains the caller's responsibility. Custom
 cases retain ordinary dataclass facilities such as `asdict` rather than gaining
 a built-in `.dict()` method.
 
-Pydantic is optional. The minimum is 2.10.0 because earlier versions could resolve
-Expression's deferred generic annotations against caller-local type variables,
-silently losing payload validation. A repository regression covers that name
-collision. Old raw/null Option data requires explicit migration; no legacy codec
+Pydantic is optional. The minimum is 2.11.0 to support cases declared with
+Python 3.12 type parameters. Repository regressions cover nested generic
+payload validation and collisions with caller-local type-variable names. Old raw/null Option data requires explicit migration; no legacy codec
 is included.
 
 Source: [schema construction](expression/core/_union_schema.py),

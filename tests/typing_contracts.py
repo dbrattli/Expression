@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from dataclasses import field
 from typing import Generic, Literal, TypeAlias, TypeVar, assert_never, assert_type, cast, final
 
@@ -21,6 +21,28 @@ from expression import (
     result,
     tag,
 )
+from expression.collections import Block, Map, Seq, TypedArray
+
+
+def collection_factory_contract() -> None:
+    assert_type(Block.of("a", "b"), Block[str])
+    assert_type(Block.singleton(42), Block[int])
+    assert_type(Block.of_option(Some(42)), Block[int])
+    assert_type(TypedArray.of(1, 2), TypedArray[int])
+    assert_type(TypedArray.of_seq([1, 2]), TypedArray[int])
+    pairs: list[tuple[str, int]] = [("a", 1)]
+    assert_type(Map.create(pairs), Map[str, int])
+    entries: Block[tuple[str, int]] = Block.of(("a", 1))
+    assert_type(Map.of_block(entries), Map[str, int])
+    assert_type(Seq.delay(lambda: [1, 2]), Iterable[int])
+    assert_type(Seq.of_iterable([1, 2]), Seq[int])
+
+    def generate(state: int) -> Option[tuple[str, int]]:
+        return Some((str(state), state + 1)) if state < 3 else NOTHING
+
+    assert_type(Block.unfold(generate, 0), Block[str])
+    assert_type(TypedArray.unfold(generate, 0), TypedArray[str])
+    assert_type(Seq.unfold(generate, 0), Iterable[str])
 
 
 def option_contract(value: Option[int]) -> None:
