@@ -1,18 +1,11 @@
 from collections.abc import Callable, Generator
-from typing import Any, TypeVar
-
-from typing_extensions import ParamSpec
+from typing import Any
 
 from expression.core import NOTHING, Builder, Option, Some, option
 
 
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
-_P = ParamSpec("_P")
-
-
-class OptionBuilder(Builder[_TSource, Option[Any]]):
-    def bind(self, xs: Option[_TSource], fn: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
+class OptionBuilder[TSource](Builder[TSource, Option[Any]]):
+    def bind[TResult](self, xs: Option[TSource], fn: Callable[[TSource], Option[TResult]]) -> Option[TResult]:
         """Bind a function to an option value.
 
         In F# computation expressions, this corresponds to let! and enables
@@ -27,7 +20,7 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         """
         return option.bind(fn)(xs)
 
-    def return_(self, x: _TSource) -> Option[_TSource]:
+    def return_(self, x: TSource) -> Option[TSource]:
         """Wrap a value in an option.
 
         In F# computation expressions, this corresponds to return and lifts
@@ -41,7 +34,7 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         """
         return Some(x)
 
-    def return_from(self, xs: Option[_TSource]) -> Option[_TSource]:
+    def return_from(self, xs: Option[TSource]) -> Option[TSource]:
         """Return an option value directly.
 
         In F# computation expressions, this corresponds to return! and allows
@@ -55,7 +48,7 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         """
         return xs
 
-    def combine(self, xs: Option[_TSource], ys: Option[_TSource]) -> Option[_TSource]:
+    def combine(self, xs: Option[TSource], ys: Option[TSource]) -> Option[TSource]:
         """Combine two option computations.
 
         In F# computation expressions, this enables sequencing multiple
@@ -70,7 +63,7 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         """
         return xs.bind(lambda _: ys)
 
-    def zero(self) -> Option[_TSource]:
+    def zero(self) -> Option[TSource]:
         """Return the zero value for options.
 
         In F# computation expressions, this is used when no value is returned,
@@ -81,7 +74,7 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         """
         return NOTHING
 
-    def delay(self, fn: Callable[[], Option[_TSource]]) -> Option[_TSource]:
+    def delay(self, fn: Callable[[], Option[TSource]]) -> Option[TSource]:
         """Delay an option computation.
 
         In F# computation expressions, delay ensures proper sequencing of effects
@@ -95,16 +88,16 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         """
         return fn()
 
-    def __call__(
+    def __call__[**P](
         self,  # Ignored self parameter
         fn: Callable[
-            _P,
-            Generator[_TSource | None, _TSource, _TSource | None]
-            | Generator[_TSource | None, None, _TSource | None]
-            | _TSource
+            P,
+            Generator[TSource | None, TSource, TSource | None]
+            | Generator[TSource | None, None, TSource | None]
+            | TSource
             | None,
         ],
-    ) -> Callable[_P, Option[_TSource]]:
+    ) -> Callable[P, Option[TSource]]:
         return super().__call__(fn)
 
 

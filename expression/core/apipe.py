@@ -6,138 +6,124 @@ returns a Coroutine, it is awaited before its result is passed to the next funct
 
 import inspect
 from collections.abc import Callable, Coroutine
-from typing import Any, TypeVar, overload
+from typing import Any, overload
 
 
-_A = TypeVar("_A")
-_B = TypeVar("_B")
-_C = TypeVar("_C")
-_D = TypeVar("_D")
-_E = TypeVar("_E")
-_F = TypeVar("_F")
-_G = TypeVar("_G")
-_H = TypeVar("_H")
-_T = TypeVar("_T")
-_J = TypeVar("_J")
-
-_X = TypeVar("_X")
-_Y = TypeVar("_Y")
-
-SyncCallable = Callable[[_X], _Y]
-AsyncCallable = Callable[[_X], Coroutine[Any, Any, _Y]]
-SyncOrAsyncCallable = SyncCallable[_X, _Y] | AsyncCallable[_X, _Y]
+type SyncCallable[X, Y] = Callable[[X], Y]
+type AsyncCallable[X, Y] = Callable[[X], Coroutine[Any, Any, Y]]
+type SyncOrAsyncCallable[X, Y] = SyncCallable[X, Y] | AsyncCallable[X, Y]
 
 
 @overload
-async def apipe(value: Coroutine[Any, Any, _A] | _A, /) -> _A: ...
+async def apipe[A](value: Coroutine[Any, Any, A] | A, /) -> A: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
+async def apipe[A, B](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
     /,
-) -> _B: ...
+) -> B: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
-    fn2: SyncOrAsyncCallable[_B, _C],
+async def apipe[A, B, C](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
+    fn2: SyncOrAsyncCallable[B, C],
     /,
-) -> _C: ...
+) -> C: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
-    fn2: SyncOrAsyncCallable[_B, _C],
-    fn3: SyncOrAsyncCallable[_C, _D],
+async def apipe[A, B, C, D](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
+    fn2: SyncOrAsyncCallable[B, C],
+    fn3: SyncOrAsyncCallable[C, D],
     /,
-) -> _D: ...
+) -> D: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
-    fn2: SyncOrAsyncCallable[_B, _C],
-    fn3: SyncOrAsyncCallable[_C, _D],
-    fn4: SyncOrAsyncCallable[_D, _E],
+async def apipe[A, B, C, D, E](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
+    fn2: SyncOrAsyncCallable[B, C],
+    fn3: SyncOrAsyncCallable[C, D],
+    fn4: SyncOrAsyncCallable[D, E],
     /,
-) -> _E: ...
+) -> E: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
-    fn2: SyncOrAsyncCallable[_B, _C],
-    fn3: SyncOrAsyncCallable[_C, _D],
-    fn4: SyncOrAsyncCallable[_D, _E],
-    fn5: SyncOrAsyncCallable[_E, _F],
+async def apipe[A, B, C, D, E, F](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
+    fn2: SyncOrAsyncCallable[B, C],
+    fn3: SyncOrAsyncCallable[C, D],
+    fn4: SyncOrAsyncCallable[D, E],
+    fn5: SyncOrAsyncCallable[E, F],
     /,
-) -> _F: ...
+) -> F: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
-    fn2: SyncOrAsyncCallable[_B, _C],
-    fn3: SyncOrAsyncCallable[_C, _D],
-    fn4: SyncOrAsyncCallable[_D, _E],
-    fn5: SyncOrAsyncCallable[_E, _F],
-    fn6: SyncOrAsyncCallable[_F, _G],
+async def apipe[A, B, C, D, E, F, G](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
+    fn2: SyncOrAsyncCallable[B, C],
+    fn3: SyncOrAsyncCallable[C, D],
+    fn4: SyncOrAsyncCallable[D, E],
+    fn5: SyncOrAsyncCallable[E, F],
+    fn6: SyncOrAsyncCallable[F, G],
     /,
-) -> _G: ...
+) -> G: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
-    fn2: SyncOrAsyncCallable[_B, _C],
-    fn3: SyncOrAsyncCallable[_C, _D],
-    fn4: SyncOrAsyncCallable[_D, _E],
-    fn5: SyncOrAsyncCallable[_E, _F],
-    fn6: SyncOrAsyncCallable[_F, _G],
-    fn7: SyncOrAsyncCallable[_G, _H],
+async def apipe[A, B, C, D, E, F, G, H](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
+    fn2: SyncOrAsyncCallable[B, C],
+    fn3: SyncOrAsyncCallable[C, D],
+    fn4: SyncOrAsyncCallable[D, E],
+    fn5: SyncOrAsyncCallable[E, F],
+    fn6: SyncOrAsyncCallable[F, G],
+    fn7: SyncOrAsyncCallable[G, H],
     /,
-) -> _H: ...
+) -> H: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
-    fn2: SyncOrAsyncCallable[_B, _C],
-    fn3: SyncOrAsyncCallable[_C, _D],
-    fn4: SyncOrAsyncCallable[_D, _E],
-    fn5: SyncOrAsyncCallable[_E, _F],
-    fn6: SyncOrAsyncCallable[_F, _G],
-    fn7: SyncOrAsyncCallable[_G, _H],
-    fn8: SyncOrAsyncCallable[_H, _T],
+async def apipe[A, B, C, D, E, F, G, H, T](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
+    fn2: SyncOrAsyncCallable[B, C],
+    fn3: SyncOrAsyncCallable[C, D],
+    fn4: SyncOrAsyncCallable[D, E],
+    fn5: SyncOrAsyncCallable[E, F],
+    fn6: SyncOrAsyncCallable[F, G],
+    fn7: SyncOrAsyncCallable[G, H],
+    fn8: SyncOrAsyncCallable[H, T],
     /,
-) -> _T: ...
+) -> T: ...
 
 
 @overload
-async def apipe(
-    value: Coroutine[Any, Any, _A] | _A,
-    fn1: SyncOrAsyncCallable[_A, _B],
-    fn2: SyncOrAsyncCallable[_B, _C],
-    fn3: SyncOrAsyncCallable[_C, _D],
-    fn4: SyncOrAsyncCallable[_D, _E],
-    fn5: SyncOrAsyncCallable[_E, _F],
-    fn6: SyncOrAsyncCallable[_F, _G],
-    fn7: SyncOrAsyncCallable[_G, _H],
-    fn8: SyncOrAsyncCallable[_H, _T],
-    fn9: SyncOrAsyncCallable[_T, _J],
+async def apipe[A, B, C, D, E, F, G, H, T, J](
+    value: Coroutine[Any, Any, A] | A,
+    fn1: SyncOrAsyncCallable[A, B],
+    fn2: SyncOrAsyncCallable[B, C],
+    fn3: SyncOrAsyncCallable[C, D],
+    fn4: SyncOrAsyncCallable[D, E],
+    fn5: SyncOrAsyncCallable[E, F],
+    fn6: SyncOrAsyncCallable[F, G],
+    fn7: SyncOrAsyncCallable[G, H],
+    fn8: SyncOrAsyncCallable[H, T],
+    fn9: SyncOrAsyncCallable[T, J],
     /,
-) -> _J: ...
+) -> J: ...
 
 
 async def apipe(value: Any, *functions: SyncOrAsyncCallable[Any, Any]) -> Any:

@@ -45,6 +45,19 @@ def option_contract(value: Option[int]) -> None:
             assert_never(value)
 
 
+def modern_generic_option_contract[T](value: T) -> Option[T]:
+    present = Some(value)
+    widened: Option[object] = present
+    assert_type(widened, Some[T])
+    assert_type(present.map(lambda item: (item,)), Some[tuple[T]])
+
+    def wrap(item: T) -> tuple[T]:
+        return (item,)
+
+    assert_type(present.pipe(option.map(wrap)), Option[tuple[T]])
+    return present
+
+
 def result_contract(value: Result[int, str]) -> None:
     assert_type(Ok(42), Ok[int])
     assert_type(Error("failure"), Error[str])

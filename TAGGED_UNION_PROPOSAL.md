@@ -1,7 +1,7 @@
 # Tagged unions: implementation and rationale
 
 **Status:** Implemented for the next major version of Expression.
-**Minimum Python:** 3.11. **Optional Pydantic:** 2.10 or later, below 3.
+**Minimum Python:** 3.12. **Optional Pydantic:** 2.10 or later, below 3.
 
 Expression now represents tagged unions as explicit, frozen, final case classes
 combined in public type aliases. Each case declares only its own payload. The
@@ -362,7 +362,7 @@ namespace. `Option.Some`, `Result.Ok`, direct union-class construction, and old
 ordering is also removed. Container awaiting and generator-based Option/Result
 computations are preserved. See the [migration guide](docs/guides/migration-major.md) for replacements.
 
-The supported minimum is Python 3.11. The repository pins Pyright **1.1.414** in
+The supported minimum is Python 3.12. The repository pins Pyright **1.1.414** in
 [pre-commit](.pre-commit-config.yaml); the design relies on explicit unions and
 dataclass typing, not on a checker-specific plugin. Versioned dependency
 requirements live in [pyproject.toml](pyproject.toml).

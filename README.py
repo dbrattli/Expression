@@ -18,7 +18,7 @@
 # %% [markdown]
 """
 Expression aims to be a solid, type-safe, pragmatic, and high performance library for
-frictionless and practical functional programming in Python 3.11+.
+frictionless and practical functional programming in Python 3.12+.
 
 By pragmatic, we mean that the goal of the library is to use simple abstractions to
 enable you to do practical and productive functional programming in Python (instead of
@@ -66,7 +66,7 @@ many ways very similar to Python, but F# can also do a lot of things better than
 ## Getting Started
 
 You can install the latest `expression` from PyPI by running `pip` (or
-`pip3`). Note that `expression` only works for Python 3.11+.
+`pip3`). Note that `expression` only works for Python 3.12+.
 
 ```console
 > pip install expression
@@ -689,7 +689,7 @@ Each case exposes only its own fields. `Option` and `Result` use this same model
 
 # %%
 from dataclasses import asdict
-from typing import Literal, TypeAlias, assert_never, final
+from typing import Literal, assert_never, final
 
 from expression import TaggedUnion, case, tag
 
@@ -709,7 +709,7 @@ class Circle:
     tag: Literal["circle"] = tag()
 
 
-Shape: TypeAlias = TaggedUnion[Rectangle | Circle]
+type Shape = TaggedUnion[Rectangle | Circle]
 
 
 # %% [markdown]

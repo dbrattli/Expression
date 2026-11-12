@@ -2,7 +2,7 @@
 """
 # Getting started
 
-Expression works with Python 3.11 and later. Install it from PyPI:
+Expression works with Python 3.12 and later. Install it from PyPI:
 
 ```console
 python -m pip install expression
@@ -25,10 +25,19 @@ from expression.collections import seq
 
 scores = [4, 7, 12, 15]
 
+
+def qualifies(score: int) -> bool:
+    return score >= 10
+
+
+def double(score: int) -> int:
+    return score * 2
+
+
 total = pipe(
     scores,
-    seq.filter(lambda score: score >= 10),
-    seq.map(lambda score: score * 2),
+    seq.filter(qualifies),
+    seq.map(double),
     seq.sum,
 )
 
@@ -48,7 +57,9 @@ assert total == 54
 """
 Both styles use ordinary Python functions, type hints, and values. Choose the style that
 your team finds easiest to read; the functional form is often easier to extend one step
-per line.
+per line. Named functions with parameter annotations let type checkers infer the
+functional pipeline's intermediate types; unannotated lambdas inside curried calls
+may not receive enough type information from the surrounding `pipe` call.
 
 ## Where to go next
 

@@ -19,11 +19,12 @@ from typing import (
     Never,
     TypeAlias,
     TypeGuard,
+    Unpack,
     final,
     overload,
 )
 
-from typing_extensions import TypeVar, TypeVarTuple, Unpack
+from typing_extensions import TypeVar
 
 from ._serialization import encode
 from ._union_schema import UnionSchema
@@ -39,19 +40,12 @@ if TYPE_CHECKING:
 
 
 _TSourceOut = TypeVar("_TSourceOut", covariant=True)
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
-_TError = TypeVar("_TError")
 _TEmpty = TypeVar("_TEmpty", default=Never)
-_T1 = TypeVar("_T1")
-_T2 = TypeVar("_T2")
-_TOption = TypeVar("_TOption", bound="Some[object] | Nothing")
-_P = TypeVarTuple("_P")
 
 
 @final
 @case
-class Some(PipeMixin, Generic[_TSourceOut]):
+class Some(PipeMixin, Generic[_TSourceOut]):  # noqa: UP046 - Preserve explicit covariance.
     """An optional value that is present, including when its payload is None."""
 
     some: _TSourceOut
@@ -65,23 +59,23 @@ class Some(PipeMixin, Generic[_TSourceOut]):
         """Return the present value without evaluating the fallback."""
         return self.some
 
-    def map(self, mapper: Callable[[_TSourceOut], _TResult]) -> Some[_TResult]:
+    def map[TResult](self, mapper: Callable[[_TSourceOut], TResult]) -> Some[TResult]:
         """Transform the present value."""
         return Some(mapper(self.some))
 
-    def map2(self, mapper: Callable[[_TSourceOut, _T2], _TResult], other: Option[_T2]) -> Option[_TResult]:
+    def map2[TResult, T2](self, mapper: Callable[[_TSourceOut, T2], TResult], other: Option[T2]) -> Option[TResult]:
         """Transform two present values, or return Nothing."""
         return other.map(lambda value: mapper(self.some, value))
 
-    def apply(self, function: Option[Callable[[_TSourceOut], _TResult]]) -> Option[_TResult]:
+    def apply[TResult](self, function: Option[Callable[[_TSourceOut], TResult]]) -> Option[TResult]:
         """Apply an optional function to the present value."""
         return function.map(lambda mapper: mapper(self.some))
 
-    def starmap(self: Some[tuple[*_P]], mapper: Callable[[Unpack[_P]], _TResult]) -> Some[_TResult]:
+    def starmap[*P, TResult](self: Some[tuple[*P]], mapper: Callable[[Unpack[P]], TResult]) -> Some[TResult]:
         """Apply a function to the unpacked tuple payload."""
         return Some(mapper(*self.some))
 
-    def bind(self, mapper: Callable[[_TSourceOut], _TOption]) -> _TOption:
+    def bind[TOption: Some[object] | Nothing](self, mapper: Callable[[_TSourceOut], TOption]) -> TOption:
         """Apply a function returning another option."""
         return mapper(self.some)
 
@@ -168,11 +162,11 @@ class Nothing(PipeMixin):
             cls._instance = object.__new__(cls)
         return cls._instance
 
-    def default_value(self, value: _TResult) -> _TResult:
+    def default_value[TResult](self, value: TResult) -> TResult:
         """Return the fallback value."""
         return value
 
-    def default_with(self, getter: Callable[[], _TResult]) -> _TResult:
+    def default_with[TResult](self, getter: Callable[[], TResult]) -> TResult:
         """Evaluate the fallback factory."""
         return getter()
 
@@ -180,7 +174,7 @@ class Nothing(PipeMixin):
         """Keep the empty option without evaluating the mapper."""
         return self
 
-    def map2(self, mapper: Callable[[Never, _T2], object], other: Option[_T2]) -> Nothing:
+    def map2[T2](self, mapper: Callable[[Never, T2], object], other: Option[T2]) -> Nothing:
         """Keep the empty option without evaluating the mapper."""
         return self
 
@@ -192,15 +186,15 @@ class Nothing(PipeMixin):
         """Keep the empty option without evaluating the mapper."""
         return self
 
-    def bind(self, mapper: Callable[[Never], _TOption]) -> Nothing:
+    def bind[TOption: Some[object] | Nothing](self, mapper: Callable[[Never], TOption]) -> Nothing:
         """Keep the empty option without evaluating the continuation."""
         return self
 
-    def or_else(self, if_none: _TOption) -> _TOption:
+    def or_else[TOption: Some[object] | Nothing](self, if_none: TOption) -> TOption:
         """Return the fallback option."""
         return if_none
 
-    def or_else_with(self, if_none: Callable[[], _TOption]) -> _TOption:
+    def or_else_with[TOption: Some[object] | Nothing](self, if_none: Callable[[], TOption]) -> TOption:
         """Evaluate the fallback option factory."""
         return if_none()
 
@@ -230,13 +224,13 @@ class Nothing(PipeMixin):
         """Return None."""
         return None
 
-    def to_result(self, error: _TError) -> Error[_TError]:
+    def to_result[TError](self, error: TError) -> Error[TError]:
         """Return the supplied error as a failed result."""
         from expression.core.result import Error
 
         return Error(error)
 
-    def to_result_with(self, error: Callable[[], _TError]) -> Error[_TError]:
+    def to_result_with[TError](self, error: Callable[[], TError]) -> Error[TError]:
         """Evaluate the error factory and return a failed result."""
         from expression.core.result import Error
 
@@ -267,52 +261,55 @@ NOTHING: Final = Nothing()
 """The canonical empty option, available without a constructor call."""
 
 
-Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(NOTHING,))]
+# Keep an evaluated alias for runtime union introspection and Pydantic schemas.
+Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(NOTHING,))]  # noqa: UP040
 
 
-def bind(mapper: Callable[[_TSource], _TOption]) -> Callable[[Option[_TSource]], _TOption | Nothing]:
+def bind[TOption: Some[object] | Nothing, TSource](
+    mapper: Callable[[TSource], TOption],
+) -> Callable[[Option[TSource]], TOption | Nothing]:
     """Apply an option-returning function to a present value."""
 
-    def apply(source: Option[_TSource]) -> _TOption | Nothing:
+    def apply(source: Option[TSource]) -> TOption | Nothing:
         return source.bind(mapper)
 
     return apply
 
 
-class _DefaultValue(Generic[_T1]):
-    def __init__(self, value: _T1) -> None:
+class _DefaultValue[T1]:
+    def __init__(self, value: T1) -> None:
         self._value = value
 
     @overload
-    def __call__(self, source: Some[_TSource]) -> _TSource: ...
+    def __call__[TSource](self, source: Some[TSource]) -> TSource: ...
 
     @overload
-    def __call__(self, source: Nothing) -> _T1: ...
+    def __call__(self, source: Nothing) -> T1: ...
 
-    def __call__(self, source: Option[_TSource]) -> _TSource | _T1:
+    def __call__[TSource](self, source: Option[TSource]) -> TSource | T1:
         return source.default_value(self._value)
 
 
-def default_value(value: _T1) -> _DefaultValue[_T1]:
+def default_value[T1](value: T1) -> _DefaultValue[T1]:
     """Return an operation selecting the payload or a fallback value."""
     return _DefaultValue(value)
 
 
-class _DefaultWith(Generic[_T1]):
-    def __init__(self, getter: Callable[[], _T1]) -> None:
+class _DefaultWith[T1]:
+    def __init__(self, getter: Callable[[], T1]) -> None:
         self._getter = getter
 
     @overload
-    def __call__(self, source: Some[_TSource]) -> _TSource: ...
+    def __call__[TSource](self, source: Some[TSource]) -> TSource: ...
 
     @overload
-    def __call__(self, source: Nothing) -> _T1: ...
+    def __call__(self, source: Nothing) -> T1: ...
 
-    def __call__(self, source: Option[_TSource]) -> _TSource | _T1:
+    def __call__[TSource](self, source: Option[TSource]) -> TSource | T1:
         return source.default_with(self._getter)
 
 
-def default_with(getter: Callable[[], _T1]) -> _DefaultWith[_T1]:
+def default_with[T1](getter: Callable[[], T1]) -> _DefaultWith[T1]:
     """Return an operation selecting the payload or evaluating a fallback."""
     return _DefaultWith(getter)
 
@@ -322,18 +319,18 @@ def is_none(option: Option[object]) -> TypeGuard[Nothing]:
     return isinstance(option, Nothing)
 
 
-def is_some(option: Option[_TSource]) -> TypeGuard[Some[_TSource]]:
+def is_some[TSource](option: Option[TSource]) -> TypeGuard[Some[TSource]]:
     """Narrow an option to its present case."""
     return isinstance(option, Some)
 
 
 @curry_flip(1)
-def map(option: Option[_TSource], mapper: Callable[[_TSource], _TResult]) -> Option[_TResult]:
+def map[TSource, TResult](option: Option[TSource], mapper: Callable[[TSource], TResult]) -> Option[TResult]:
     return option.map(mapper)
 
 
 @curry_flip(2)
-def map2(opt1: Option[_T1], opt2: Option[_T2], mapper: Callable[[_T1, _T2], _TResult]) -> Option[_TResult]:
+def map2[T1, T2, TResult](opt1: Option[T1], opt2: Option[T2], mapper: Callable[[T1, T2], TResult]) -> Option[TResult]:
     return opt1.map2(mapper, opt2)
 
 
@@ -342,24 +339,28 @@ def apply(function: Nothing) -> Callable[[Option[object]], Nothing]: ...
 
 
 @overload
-def apply(function: Option[Callable[[_TSource], _TResult]]) -> Callable[[Option[_TSource]], Option[_TResult]]: ...
+def apply[TResult, TSource](
+    function: Option[Callable[[TSource], TResult]],
+) -> Callable[[Option[TSource]], Option[TResult]]: ...
 
 
-def apply(function: Option[Callable[[_TSource], _TResult]]) -> Callable[[Option[_TSource]], Option[_TResult]]:
+def apply[TResult, TSource](
+    function: Option[Callable[[TSource], TResult]],
+) -> Callable[[Option[TSource]], Option[TResult]]:
     """Apply an optional function to an optional value."""
 
-    def apply(source: Option[_TSource]) -> Option[_TResult]:
+    def apply(source: Option[TSource]) -> Option[TResult]:
         return source.apply(function)
 
     return apply
 
 
 @curry_flip(1)
-def starmap(option: Option[tuple[*_P]], mapper: Callable[[Unpack[_P]], _TResult]) -> Option[_TResult]:
+def starmap[*P, TResult](option: Option[tuple[*P]], mapper: Callable[[Unpack[P]], TResult]) -> Option[TResult]:
     return option.starmap(mapper)
 
 
-def or_else(option: Option[_TSource], if_none: Option[_TResult]) -> Option[_TSource | _TResult]:
+def or_else[TSource, TResult](option: Option[TSource], if_none: Option[TResult]) -> Option[TSource | TResult]:
     """Return the first present option, allowing a different fallback type."""
     return option.or_else(if_none)
 
@@ -375,14 +376,14 @@ def to_seq(option: Option[_TEmpty]) -> Seq[_TEmpty]:
 
 
 @overload
-def to_optional(value: Some[_TSource]) -> _TSource: ...
+def to_optional[TSource](value: Some[TSource]) -> TSource: ...
 
 
 @overload
 def to_optional(value: Nothing) -> None: ...
 
 
-def to_optional(value: Option[_TSource]) -> _TSource | None:
+def to_optional[TSource](value: Option[TSource]) -> TSource | None:
     """Erase the option wrapper, mapping Nothing to None."""
     return value.to_optional()
 
@@ -392,10 +393,10 @@ def of_optional(value: None) -> Nothing: ...
 
 
 @overload
-def of_optional(value: _TSource | None) -> Option[_TSource]: ...
+def of_optional[TSource](value: TSource | None) -> Option[TSource]: ...
 
 
-def of_optional(value: _TSource | None) -> Option[_TSource]:
+def of_optional[TSource](value: TSource | None) -> Option[TSource]:
     """Wrap a value, treating None as absence."""
     return NOTHING if value is None else Some(value)
 
@@ -405,23 +406,23 @@ def of_obj(value: None) -> Nothing: ...
 
 
 @overload
-def of_obj(value: _TSource | None) -> Option[_TSource]: ...
+def of_obj[TSource](value: TSource | None) -> Option[TSource]: ...
 
 
-def of_obj(value: _TSource | None) -> Option[_TSource]:
+def of_obj[TSource](value: TSource | None) -> Option[TSource]:
     """Wrap a value, treating None as absence."""
     return of_optional(value)
 
 
 @overload
-def of_result(result: Ok[_TSource]) -> Some[_TSource]: ...
+def of_result[TSource](result: Ok[TSource]) -> Some[TSource]: ...
 
 
 @overload
 def of_result(result: Error[object]) -> Nothing: ...
 
 
-def of_result(result: Result[_TSource, object]) -> Option[_TSource]:
+def of_result[TSource](result: Result[TSource, object]) -> Option[TSource]:
     """Keep the successful result payload, or return Nothing."""
     from expression.core.result import Ok
 
@@ -429,26 +430,26 @@ def of_result(result: Result[_TSource, object]) -> Option[_TSource]:
 
 
 @overload
-def to_result(value: Some[_TSource], error: object) -> Ok[_TSource]: ...
+def to_result[TSource](value: Some[TSource], error: object) -> Ok[TSource]: ...
 
 
 @overload
-def to_result(value: Nothing, error: _TError) -> Error[_TError]: ...
+def to_result[TError](value: Nothing, error: TError) -> Error[TError]: ...
 
 
-def to_result(value: Option[_TSource], error: _TError) -> Result[_TSource, _TError]:
+def to_result[TSource, TError](value: Option[TSource], error: TError) -> Result[TSource, TError]:
     return value.to_result(error)
 
 
 @overload
-def to_result_with(value: Some[_TSource], error: Callable[[], object]) -> Ok[_TSource]: ...
+def to_result_with[TSource](value: Some[TSource], error: Callable[[], object]) -> Ok[TSource]: ...
 
 
 @overload
-def to_result_with(value: Nothing, error: Callable[[], _TError]) -> Error[_TError]: ...
+def to_result_with[TError](value: Nothing, error: Callable[[], TError]) -> Error[TError]: ...
 
 
-def to_result_with(value: Option[_TSource], error: Callable[[], _TError]) -> Result[_TSource, _TError]:
+def to_result_with[TSource, TError](value: Option[TSource], error: Callable[[], TError]) -> Result[TSource, TError]:
     return value.to_result_with(error)
 
 
@@ -457,7 +458,7 @@ def model_dump(value: Option[object]) -> builtins.dict[str, object]:
     return value.dict()
 
 
-def default_arg(value: Option[_TSource], default_value: _T1) -> _TSource | _T1:
+def default_arg[TSource, T1](value: Option[TSource], default_value: T1) -> TSource | T1:
     """Return the payload or an uncurried fallback value."""
     return value.default_value(default_value)
 

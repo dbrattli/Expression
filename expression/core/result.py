@@ -47,14 +47,11 @@ _B = TypeVar("_B", default=object)
 _U = TypeVar("_U", default=Never)
 _F = TypeVar("_F", default=Never)
 _R = TypeVar("_R", bound="Ok[object] | Error[object]", default=Never)
-_Input = TypeVar("_Input", contravariant=True)
-_Output = TypeVar("_Output", covariant=True)
-_Failure = TypeVar("_Failure", covariant=True)
 
 
 @final
 @case
-class Ok(PipeMixin, Generic[_T]):
+class Ok(PipeMixin, Generic[_T]):  # noqa: UP046 - Python 3.12 cannot express type parameter defaults.
     """A successful result containing a value."""
 
     ok: _T
@@ -141,7 +138,7 @@ class Ok(PipeMixin, Generic[_T]):
 
 @final
 @case
-class Error(PipeMixin, Generic[_E]):
+class Error(PipeMixin, Generic[_E]):  # noqa: UP046 - Python 3.12 cannot express type parameter defaults.
     """A failed result containing an error."""
 
     error: _E
@@ -229,7 +226,8 @@ class Error(PipeMixin, Generic[_E]):
         return f"Error {self.error}"
 
 
-Result: TypeAlias = TaggedUnion[Ok[_T] | Error[_E]]
+# Keep an evaluated alias for runtime union introspection and Pydantic schemas.
+Result: TypeAlias = TaggedUnion[Ok[_T] | Error[_E]]  # noqa: UP040
 
 
 # Case-specific callable overloads preserve the untouched channel when a pipe
@@ -290,12 +288,12 @@ def map(mapper: Callable[[_A], _U]) -> _Map[_A, _U]:
     return _Map(mapper)
 
 
-class _ResultOperation(Protocol[_Input, _Output, _Failure]):
+class _ResultOperation[Input, Output, Failure](Protocol):
     @overload
-    def __call__(self, source: Ok[_Input], /) -> Result[_Output, _Failure]: ...
+    def __call__(self, source: Ok[Input], /) -> Result[Output, Failure]: ...
 
     @overload
-    def __call__(self, source: Error[_E], /) -> Error[_E] | Error[_Failure]: ...
+    def __call__(self, source: Error[_E], /) -> Error[_E] | Error[Failure]: ...
 
 
 class _Map2Ok(_ResultOperation[_B, _U, Never], Generic[_A, _B, _U]):
@@ -313,7 +311,7 @@ class _Map2Ok(_ResultOperation[_B, _U, Never], Generic[_A, _B, _U]):
         return other.map(lambda value: self._mapper(self._value, value))
 
 
-class _Map2Error(_ResultOperation[object, Never, _E], Generic[_E]):
+class _Map2Error(_ResultOperation[object, Never, _E], Generic[_E]):  # noqa: UP046 - Python 3.12 cannot express type parameter defaults.
     def __init__(self, source: Error[_E]) -> None:
         self._source = source
 

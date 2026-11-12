@@ -1,23 +1,15 @@
 from collections.abc import Callable, Generator
-from typing import Any, TypeVar
-
-from typing_extensions import ParamSpec
+from typing import Any
 
 from expression.core import Builder, Ok, Result
 
 
-_TSource = TypeVar("_TSource")
-_TResult = TypeVar("_TResult")
-_TError = TypeVar("_TError")
-_P = ParamSpec("_P")
-
-
-class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
-    def bind(
+class ResultBuilder[TSource, TError](Builder[TSource, Result[Any, TError]]):
+    def bind[TResult](
         self,
-        xs: Result[_TSource, _TError],
-        fn: Callable[[Any], Result[_TResult, _TError]],
-    ) -> Result[_TResult, _TError]:
+        xs: Result[TSource, TError],
+        fn: Callable[[Any], Result[TResult, TError]],
+    ) -> Result[TResult, TError]:
         """Bind a function to a result value.
 
         In F# computation expressions, this corresponds to ``let!`` and enables
@@ -32,7 +24,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         """
         return xs.bind(fn)
 
-    def return_(self, x: _TSource) -> Result[_TSource, _TError]:  # Use Any for return_ type
+    def return_(self, x: TSource) -> Result[TSource, TError]:  # Use Any for return_ type
         """Wrap a value in a result.
 
         In F# computation expressions, this corresponds to ``return`` and lifts
@@ -46,7 +38,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         """
         return Ok(x)
 
-    def return_from(self, xs: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    def return_from(self, xs: Result[TSource, TError]) -> Result[TSource, TError]:
         """Return a result value directly.
 
         In F# computation expressions, this corresponds to ``return!`` and allows
@@ -60,7 +52,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         """
         return xs
 
-    def combine(self, xs: Result[_TSource, _TError], ys: Result[_TSource, _TError]) -> Result[_TSource, _TError]:
+    def combine(self, xs: Result[TSource, TError], ys: Result[TSource, TError]) -> Result[TSource, TError]:
         """Combine two result computations.
 
         In F# computation expressions, this enables sequencing multiple
@@ -75,7 +67,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         """
         return xs.bind(lambda _: ys)
 
-    def zero(self) -> Result[Any, _TError]:  # Use Any for zero return type
+    def zero(self) -> Result[Any, TError]:  # Use Any for zero return type
         """Return the zero value for results.
 
         In F# computation expressions, this is used when no value is returned,
@@ -86,20 +78,20 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         """
         return Ok(None)
 
-    def __call__(
+    def __call__[**P](
         self,  # Ignored self parameter
         fn: Callable[
-            _P,
-            Generator[_TSource | None, _TSource, _TSource | None]
-            | Generator[_TSource | None, None, _TSource | None]
-            | _TSource
+            P,
+            Generator[TSource | None, TSource, TSource | None]
+            | Generator[TSource | None, None, TSource | None]
+            | TSource
             | None,
         ],
-    ) -> Callable[_P, Result[_TSource, _TError]]:
+    ) -> Callable[P, Result[TSource, TError]]:
         return super().__call__(fn)
 
 
-class TryBuilder(ResultBuilder[_TSource, Exception]): ...
+class TryBuilder[TSource](ResultBuilder[TSource, Exception]): ...
 
 
 __all__ = ["ResultBuilder", "TryBuilder"]

@@ -149,6 +149,22 @@ class SchemaBox(Generic[_SchemaValue]):
 
 @final
 @case
+class ModernSchemaBox[T]:
+    value: T
+    tag: Literal["modern_box"] = tag()
+
+
+def test_python312_type_parameters_preserve_payload_validation():
+    adapter = TypeAdapter(TaggedUnion[ModernSchemaBox[Option[int]]])
+    value = adapter.validate_python({"tag": "modern_box", "value": {"tag": "some", "some": 42}})
+    assert value == ModernSchemaBox(Some(42))
+    assert adapter.validate_json(adapter.dump_json(value)) == value
+    with pytest.raises(ValidationError):
+        adapter.validate_python({"tag": "modern_box", "value": {"tag": "some", "some": "invalid"}})
+
+
+@final
+@case
 class SchemaUnit:
     initialized: ClassVar[list[str]] = []
     tag: Literal["unit"] = tag()

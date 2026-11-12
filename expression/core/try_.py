@@ -1,15 +1,12 @@
 """Result specialized to exception errors, with convenience constructors."""
 
-from typing import TypeAlias, TypeVar
-
 from .result import Error, Ok, Result
 
 
-_T = TypeVar("_T")
-Try: TypeAlias = Result[_T, Exception]
+type Try[T] = Result[T, Exception]
 
 
-def Success(value: _T) -> Ok[_T]:
+def Success[T](value: T) -> Ok[T]:
     """Construct a successful Try value."""
     return Ok(value)
 

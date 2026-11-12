@@ -2,45 +2,42 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar, cast, overload
+from typing import Any, cast, overload
 
 from expression.core import Error, Ok, Result
 
 
-_TSource = TypeVar("_TSource")
-_TError = TypeVar("_TError", bound=Exception)
-_TError_ = TypeVar("_TError_", bound=Exception)
-
-
 @overload
-def catch(
-    exception: type[_TError_],
+def catch[TError_: Exception, TSource, TError: Exception](
+    exception: type[TError_],
 ) -> Callable[
-    [Callable[..., _TSource | Result[_TSource, _TError]]],
-    Callable[..., Result[_TSource, _TError | _TError_]],
+    [Callable[..., TSource | Result[TSource, TError]]],
+    Callable[..., Result[TSource, TError | TError_]],
 ]: ...
 
 
 @overload
-def catch(f: Callable[..., _TSource], *, exception: type[_TError]) -> Callable[..., Result[_TSource, _TError]]: ...
+def catch[TSource, TError: Exception](
+    f: Callable[..., TSource], *, exception: type[TError]
+) -> Callable[..., Result[TSource, TError]]: ...
 
 
-def catch(  # type: ignore
-    f: Callable[..., _TSource] | None = None, *, exception: type[_TError]
+def catch[TSource, TError: Exception](  # type: ignore
+    f: Callable[..., TSource] | None = None, *, exception: type[TError]
 ) -> Callable[
-    [Callable[..., _TSource]],
-    Callable[..., Result[_TSource, _TError]] | Result[_TSource, _TError],
+    [Callable[..., TSource]],
+    Callable[..., Result[TSource, TError]] | Result[TSource, TError],
 ]:
-    def decorator(fn: Callable[..., _TSource]) -> Callable[..., Result[_TSource, _TError]]:
+    def decorator(fn: Callable[..., TSource]) -> Callable[..., Result[TSource, TError]]:
         @wraps(fn)
-        def wrapper(*args: Any, **kwargs: Any) -> Result[_TSource, _TError]:
+        def wrapper(*args: Any, **kwargs: Any) -> Result[TSource, TError]:
             try:
                 out = fn(*args, **kwargs)
             except exception as exn:
-                return Error(cast(_TError, exn))
+                return Error(cast(TError, exn))
             else:
                 if isinstance(out, (Ok, Error)):
-                    return cast(Result[_TSource, _TError], out)
+                    return cast(Result[TSource, TError], out)
 
                 return Ok(out)
 

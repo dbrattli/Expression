@@ -2,13 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
-from typing import Any, Protocol, TypeVar, get_origin
-
-
-_T_co = TypeVar("_T_co", covariant=True)
-
-_Base = TypeVar("_Base")
-_Derived = TypeVar("_Derived")
+from typing import Any, Protocol, get_origin
 
 
 class SupportsLessThan(Protocol):
@@ -37,11 +31,11 @@ class SupportsGreaterThan(Protocol):
         raise NotImplementedError
 
 
-class SupportsMatch(Protocol[_T_co]):
+class SupportsMatch[T_co](Protocol):
     """Pattern matching protocol."""
 
     @abstractmethod
-    def __match__(self, pattern: Any) -> Iterable[_T_co]:
+    def __match__(self, pattern: Any) -> Iterable[T_co]:
         """Match pattern with value.
 
         Return a singleton iterable item (e.g `[ value ]`) if pattern
@@ -58,7 +52,7 @@ class ModelField:
     def validate(self, value: Any, values: dict[str, str], loc: str) -> tuple[Any, Any]: ...
 
 
-def upcast(type: type[_Base], expr: _Base) -> _Base:
+def upcast[Base](type: type[Base], expr: Base) -> Base:
     """Upcast expression from a `Derived` to `Base`.
 
     Note: F# `:>` or `upcast`.
@@ -66,7 +60,7 @@ def upcast(type: type[_Base], expr: _Base) -> _Base:
     return expr
 
 
-def downcast(type: type[_Derived], expr: Any) -> _Derived:
+def downcast[Derived](type: type[Derived], expr: Any) -> Derived:
     """Downcast expression `Derived` to `Base`.
 
     Checks at compile time that the type of expression Base is a
@@ -79,7 +73,7 @@ def downcast(type: type[_Derived], expr: Any) -> _Derived:
     return expr
 
 
-def try_downcast(type_: type[_Derived], expr: Any) -> _Derived | None:
+def try_downcast[Derived](type_: type[Derived], expr: Any) -> Derived | None:
     """Downcast expression `Base` to `Derived`.
 
     Check that the `Derived` type is a supertype of `Base`.
@@ -89,7 +83,7 @@ def try_downcast(type_: type[_Derived], expr: Any) -> _Derived | None:
     Returns:
         None if `Derived` is not a supertype of `Base`.
     """
-    origin: type[_Derived] | None = get_origin(type_) or type_
+    origin: type[Derived] | None = get_origin(type_) or type_
     if origin is not None and isinstance(expr, origin):
         return expr
 

@@ -2,12 +2,13 @@
   "include": [
     "expression",
     "tests",
-    "README.py"
+    "README.py",
+    "docs/guides/getting-started.py"
   ],
   "reportImportCycles": false,
   "reportMissingImports": false,
   "venvPath": ".",
   "venv": ".venv",
-  "pythonVersion": "3.11",
+  "pythonVersion": "3.12",
   "typeCheckingMode": "strict"
 }
