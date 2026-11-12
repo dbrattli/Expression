@@ -14,14 +14,14 @@ def pipeline[A, B, TError](__fn: Callable[[A], Result[B, TError]]) -> Callable[[
 
 
 @overload
-def pipeline[A, B, TError, C](
+def pipeline[A, B, C, TError](
     __fn1: Callable[[A], Result[B, TError]],
     __fn2: Callable[[B], Result[C, TError]],
 ) -> Callable[[A], Result[C, TError]]: ...
 
 
 @overload
-def pipeline[A, B, TError, C, D](
+def pipeline[A, B, C, D, TError](
     __fn1: Callable[[A], Result[B, TError]],
     __fn2: Callable[[B], Result[C, TError]],
     __fn3: Callable[[C], Result[D, TError]],
@@ -29,7 +29,7 @@ def pipeline[A, B, TError, C, D](
 
 
 @overload
-def pipeline[A, B, TError, C, D, E](
+def pipeline[A, B, C, D, E, TError](
     __fn1: Callable[[A], Result[B, TError]],
     __fn2: Callable[[B], Result[C, TError]],
     __fn3: Callable[[C], Result[D, TError]],
@@ -38,7 +38,7 @@ def pipeline[A, B, TError, C, D, E](
 
 
 @overload
-def pipeline[A, B, TError, C, D, E, F](
+def pipeline[A, B, C, D, E, F, TError](
     __fn1: Callable[[A], Result[B, TError]],
     __fn2: Callable[[B], Result[C, TError]],
     __fn3: Callable[[C], Result[D, TError]],
@@ -48,7 +48,7 @@ def pipeline[A, B, TError, C, D, E, F](
 
 
 @overload
-def pipeline[A, B, TError, C, D, E, F, G](
+def pipeline[A, B, C, D, E, F, G, TError](
     __fn1: Callable[[A], Result[B, TError]],
     __fn2: Callable[[B], Result[C, TError]],
     __fn3: Callable[[C], Result[D, TError]],
