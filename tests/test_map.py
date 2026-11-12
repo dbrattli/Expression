@@ -1,10 +1,68 @@
+import copy
+import pickle
+import weakref
 from collections.abc import Callable, ItemsView, Iterable
+from dataclasses import FrozenInstanceError
+
+import pytest
 
 from hypothesis import given  # type: ignore
 from hypothesis import strategies as st
 
 from expression import Some, pipe
 from expression.collections import Block, Map, map
+from expression.collections.maptree import MapTreeLeaf, MapTreeNode, empty
+
+
+def test_map_backing_state_is_frozen():
+    xs = map.create([(1, "one")])
+    with pytest.raises(FrozenInstanceError):
+        setattr(xs, "_tree", empty)
+    with pytest.raises(FrozenInstanceError):
+        delattr(xs, "_tree")
+    assert not hasattr(xs, "__dict__")
+    assert xs[1] == "one"
+
+
+def test_map_shared_nodes_are_frozen():
+    leaf = MapTreeLeaf(1, "one")
+    a = Map[int, str](Some(leaf))
+    b = a.add(2, "two")
+    for field, replacement in (("key", 9), ("value", "changed")):
+        with pytest.raises(FrozenInstanceError):
+            setattr(leaf, field, replacement)
+        with pytest.raises(FrozenInstanceError):
+            delattr(leaf, field)
+    assert not hasattr(leaf, "__dict__")
+    assert a[1] == b[1] == "one"
+
+
+def test_map_branch_structure_is_frozen():
+    node = MapTreeNode(1, "one", empty, empty, 2)
+    for field in ("key", "value", "left", "right", "height"):
+        with pytest.raises(FrozenInstanceError):
+            setattr(node, field, None)
+        with pytest.raises(FrozenInstanceError):
+            delattr(node, field)
+    assert not hasattr(node, "__dict__")
+
+
+def test_map_frozen_copy_and_pickle():
+    xs = Map[int, str].create([(1, "one"), (2, "two")])
+    assert weakref.ref(xs)() is xs
+    for restored in (copy.copy(xs), copy.deepcopy(xs), pickle.loads(pickle.dumps(xs))):
+        assert restored == xs
+        assert hash(restored) == hash(xs)
+        assert not hasattr(restored, "__dict__")
+        with pytest.raises(FrozenInstanceError):
+            setattr(restored, "_tree", empty)
+
+
+def test_map_immutability_is_shallow():
+    item: list[int] = []
+    xs = map.create([(1, item)])
+    item.append(42)
+    assert xs[1] == [42]
 
 
 def test_map_empty():

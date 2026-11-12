@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, ItemsView, Iterable, Iterator, Mapping
+from dataclasses import dataclass
 from typing import Any, TypeVar, cast
 
 from expression.core import Option, PipeMixin, curry_flip, pipe
@@ -40,11 +41,14 @@ _T5 = TypeVar("_T5")
 _T6 = TypeVar("_T6")
 
 
+@dataclass(frozen=True, slots=True, weakref_slot=True, init=False, eq=False, repr=False, match_args=False)
 class Map(Mapping[_Key, _Value], PipeMixin):
     """The immutable map class."""
 
+    _tree: MapTree[_Key, _Value]
+
     def __init__(self, __tree: MapTree[_Key, _Value] | None = None) -> None:
-        self._tree: MapTree[_Key, _Value] = __tree if __tree else maptree.empty
+        object.__setattr__(self, "_tree", __tree if __tree else maptree.empty)
 
     def add(self, key: _Key, value: _Value) -> Map[_Key, _Value]:
         return Map(maptree.add(key, value, self._tree))
