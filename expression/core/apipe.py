@@ -1,12 +1,13 @@
-"""Async Pipe module
+"""Asynchronous pipe composition.
 
 The pipe handles both synchronous and asynchronous functions; if a function
 returns a Coroutine, it is awaited before its result is passed to the next function.
 """
 
-from collections.abc import Callable
-from typing import Any, TypeVar, overload, Union, Coroutine
 import inspect
+from collections.abc import Callable, Coroutine
+from typing import Any, TypeVar, overload
+
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")
@@ -24,24 +25,24 @@ _Y = TypeVar("_Y")
 
 SyncCallable = Callable[[_X], _Y]
 AsyncCallable = Callable[[_X], Coroutine[Any, Any, _Y]]
-SyncOrAsyncCallable = Union[SyncCallable[_X, _Y], AsyncCallable[_X, _Y]]
+SyncOrAsyncCallable = SyncCallable[_X, _Y] | AsyncCallable[_X, _Y]
 
 
 @overload
-async def async_pipe(value: _A, /) -> _A: ...
+async def apipe(value: Coroutine[Any, Any, _A] | _A, /) -> _A: ...
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     /,
 ) -> _B: ...
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     fn2: SyncOrAsyncCallable[_B, _C],
     /,
@@ -49,8 +50,8 @@ async def async_pipe(
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     fn2: SyncOrAsyncCallable[_B, _C],
     fn3: SyncOrAsyncCallable[_C, _D],
@@ -59,8 +60,8 @@ async def async_pipe(
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     fn2: SyncOrAsyncCallable[_B, _C],
     fn3: SyncOrAsyncCallable[_C, _D],
@@ -70,8 +71,8 @@ async def async_pipe(
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     fn2: SyncOrAsyncCallable[_B, _C],
     fn3: SyncOrAsyncCallable[_C, _D],
@@ -82,8 +83,8 @@ async def async_pipe(
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     fn2: SyncOrAsyncCallable[_B, _C],
     fn3: SyncOrAsyncCallable[_C, _D],
@@ -95,8 +96,8 @@ async def async_pipe(
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     fn2: SyncOrAsyncCallable[_B, _C],
     fn3: SyncOrAsyncCallable[_C, _D],
@@ -109,8 +110,8 @@ async def async_pipe(
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     fn2: SyncOrAsyncCallable[_B, _C],
     fn3: SyncOrAsyncCallable[_C, _D],
@@ -124,8 +125,8 @@ async def async_pipe(
 
 
 @overload
-async def async_pipe(
-    value: _A,
+async def apipe(
+    value: Coroutine[Any, Any, _A] | _A,
     fn1: SyncOrAsyncCallable[_A, _B],
     fn2: SyncOrAsyncCallable[_B, _C],
     fn3: SyncOrAsyncCallable[_C, _D],
@@ -139,30 +140,22 @@ async def async_pipe(
 ) -> _J: ...
 
 
-async def async_pipe(value: Any, *functions: SyncOrAsyncCallable[Any, Any]) -> Any:
-    """Functional async pipe (`|>`).
+async def apipe(value: Any, *functions: SyncOrAsyncCallable[Any, Any]) -> Any:
+    """Apply mixed synchronous and asynchronous stages sequentially.
 
-    Passes the `value` to the first function in `functions`, then the result of that
-    to the second function, and so on, recursively. If any function in the sequence
-    returns a coroutine, it is `await`ed before its result is passed to the next function.
-
-    Args:
-        value: The initial value for the pipeline.
-        *functions: A sequence of functions to apply. Each function should
-                    accept the output of the previous function (or the initial
-                    `value` for the first function) as its input. Functions can be
-                    synchronous or asynchronous.
-
-    Returns:
-        The result of passing the value through all functions in the sequence.
+    Await native coroutines in the initial value and each stage's output once.
+    Other values, including Option, Result, tasks, and futures, pass through
+    unchanged. Wrap other awaitables in an async function to resolve them.
+    Execution starts when the returned coroutine is awaited. Exceptions and
+    cancellation propagate without running subsequent stages.
     """
     if inspect.iscoroutine(value):
         value = await value
-    if not functions:
-        return value
-    next_func, *remaining_functions = functions
-    result_or_awaitable = next_func(value)
-    return await async_pipe(result_or_awaitable, *remaining_functions)
+    for function in functions:
+        value = function(value)
+        if inspect.iscoroutine(value):
+            value = await value
+    return value
 
 
-__all__ = ["async_pipe"]
+__all__ = ["apipe"]

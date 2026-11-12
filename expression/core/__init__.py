@@ -1,6 +1,7 @@
 """Core abstractions such as pipes, options and results."""
 
 from . import aiotools, option, result, tagged_union
+from .apipe import apipe
 from .builder import Builder
 from .compose import compose
 from .curry import curry, curry_flip, pipeable
@@ -48,6 +49,7 @@ __all__ = [
     "TailCallResult",
     "Try",
     "aiotools",
+    "apipe",
     "case",
     "compose",
     "curry",

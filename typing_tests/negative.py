@@ -1,8 +1,10 @@
 """Intentional caller errors; scripts/check_typing.py verifies each marked line."""
 
+from collections.abc import Awaitable, Callable
 from typing import Generic, Literal, TypeAlias, TypeVar, final
 
-from expression import Error, MailboxProcessor, Nothing, Option, Result, Some, TaggedUnion, case, tag
+from expression import Error, MailboxProcessor, Nothing, Option, Result, Some, TaggedUnion, apipe, case, tag
+from expression.extra import async_result
 
 
 def unchecked(value: Option[int]) -> None:
@@ -115,3 +117,26 @@ async def integer_mailbox_body(inbox: MailboxProcessor[int]) -> None:
 def invalid_mailbox_message() -> None:
     agent = MailboxProcessor.start(integer_mailbox_body)
     agent.post("wrong")  # type-error
+
+
+# Asynchronous composition must reject incompatible stages and error channels.
+
+
+async def numeric_stage(value: int) -> int:
+    return value + 1
+
+
+def string_stage(value: str) -> str:
+    return value.upper()
+
+
+async def wrong_async_stage() -> None:
+    await apipe(1, numeric_stage, string_stage)  # type-error
+
+
+async def integer_error(value: int) -> Result[str, int]:
+    return Error(42)
+
+
+StringErrorBind = Callable[[Result[int, str]], Awaitable[Result[str, str]]]
+wrong_async_bind: StringErrorBind = async_result.bind(integer_error)  # type-error
