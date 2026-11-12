@@ -102,7 +102,10 @@ class SeqBuilder(Builder[_TSource, Iterable[Any]]):
         self,
         fn: Callable[
             ...,
-            Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
+            Generator[_TSource | None, _TSource, _TSource | None]
+            | Generator[_TSource | None, None, _TSource | None]
+            | _TSource
+            | None,
         ],
     ) -> Callable[..., Iterable[_TSource]]:
         return super().__call__(fn)

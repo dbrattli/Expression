@@ -8,7 +8,7 @@ works with async operations.
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from typing import Any, ParamSpec, TypeVar
 
-from expression.core import Ok, Result
+from expression.core import Error, Ok, Result
 from expression.core.async_builder import AsyncBuilder
 
 
@@ -43,10 +43,10 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
             The result of applying fn to the value if Ok, otherwise Error
         """
         match xs:
-            case Result(tag="ok", ok=value):
+            case Ok(value):
                 return await fn(value)
-            case Result(error=error):
-                return Result[_TResult, _TError].Error(error)
+            case Error(error):
+                return Error(error)
 
     async def return_(self, x: _TSource) -> Result[_TSource, _TError]:
         """Wrap a value in an async result.
@@ -90,10 +90,10 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
             The second computation if first is Ok, otherwise Error
         """
         match xs:
-            case Result(tag="ok", ok=_):
+            case Ok(_):
                 return ys
-            case Result(error=error):
-                return Result[_TSource, _TError].Error(error)
+            case Error(error):
+                return Error(error)
 
     async def zero(self) -> Result[Any, _TError]:
         """Return the zero value for async results.
@@ -124,7 +124,11 @@ class AsyncResultBuilder(AsyncBuilder[_TSource, Result[Any, _TError]]):
         self,
         fn: Callable[
             _P,
-            AsyncGenerator[_TSource, _TSource] | AsyncGenerator[_TSource, None],
+            AsyncGenerator[_TSource, _TSource]
+            | AsyncGenerator[_TSource, None]
+            | Awaitable[_TSource | None]
+            | _TSource
+            | None,
         ],
     ) -> Callable[_P, Awaitable[Result[_TSource, _TError]]]:
         """The builder decorator."""

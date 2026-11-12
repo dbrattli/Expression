@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from pydantic_core import CoreSchema
 
 from expression.core import (
-    Nothing,
+    NOTHING,
     Option,
     PipeMixin,
     Some,
@@ -252,7 +252,7 @@ class Block(
         """
         return Block((*builtins.map(mapping, self),))
 
-    def starmap(self: Block[tuple[Unpack[_P]]], mapping: Callable[[Unpack[_P]], _TResult]) -> Block[_TResult]:
+    def starmap(self: Block[tuple[*_P]], mapping: Callable[[Unpack[_P]], _TResult]) -> Block[_TResult]:
         """Starmap source sequence.
 
         Unpack arguments grouped as tuple elements. Builds a new collection
@@ -384,7 +384,7 @@ class Block(
         return Block(self._value[count:])
 
     def skip_last(self, count: int) -> Block[_TSource]:
-        return Block(self._value[:-count])
+        return Block(self._value[:-count] if count != 0 else self._value)
 
     def tail(self) -> Block[_TSource]:
         """Return tail of List."""
@@ -441,7 +441,7 @@ class Block(
         Returns:
             The result list.
         """
-        return Block(self._value[-count:])
+        return Block(self._value[-count:] if count != 0 else ())
 
     def dict(self) -> list[_TSource]:
         """Returns a json serializable representation of the list."""
@@ -464,7 +464,7 @@ class Block(
             value = self._value[0]
             return Some(value)
 
-        return Nothing
+        return NOTHING
 
     @staticmethod
     def unfold(generator: Callable[[_TState], Option[tuple[_TSource, _TState]]], state: _TState) -> Block[_TSource]:
@@ -515,9 +515,10 @@ class Block(
     @overload
     def __getitem__(self, key: int) -> _TSource: ...
 
-    def __getitem__(self, key: Any) -> Any:
-        ret: Any = self._value[key]
-        return ret
+    def __getitem__(self, key: slice | int) -> Block[_TSource] | _TSource:
+        if isinstance(key, slice):
+            return Block(self._value[key])
+        return self._value[key]
 
     def __iter__(self) -> Iterator[_TSource]:
         return iter(self._value)
@@ -761,7 +762,7 @@ def reduce(
     return source.tail().fold(reduction, source.head())
 
 
-def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[Unpack[_P]]]], Block[_TResult]]:
+def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[*_P]]], Block[_TResult]]:
     """Starmap source sequence.
 
     Unpack arguments grouped as tuple elements. Builds a new collection
@@ -775,7 +776,7 @@ def starmap(mapper: Callable[[Unpack[_P]], _TResult]) -> Callable[[Block[tuple[U
         Partially applied map function.
     """
 
-    def mapper_(args: tuple[Unpack[_P]]) -> _TResult:
+    def mapper_(args: tuple[*_P]) -> _TResult:
         return mapper(*args)
 
     return map(mapper_)
@@ -821,7 +822,7 @@ def of_seq(xs: Iterable[_TSource]) -> Block[_TSource]:
 
 def of_option(option: Option[_TSource]) -> Block[_TSource]:
     match option:
-        case Option(tag="some", some=value):
+        case Some(value):
             return singleton(value)
         case _:
             return empty
@@ -988,7 +989,7 @@ def try_head(source: Block[_TSource]) -> Option[_TSource]:
         source: The input list.
 
     Returns:
-        The first element of the list or `Nothing`.
+        The first element of the list or `Nothing()`.
     """
     return source.try_head()
 

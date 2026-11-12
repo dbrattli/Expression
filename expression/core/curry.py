@@ -205,4 +205,23 @@ def curry_flip(
     return _wrap_fun
 
 
-__all__ = ["curry", "curry_flip"]
+def pipeable(
+    function: Callable[Concatenate[_A, _P], _B],
+    /,
+    *args: _P.args,
+    **kwargs: _P.kwargs,
+) -> Callable[[_A], _B]:
+    """Partially apply a function's arguments after its pipeline value.
+
+    Args:
+        function: Function whose first argument is supplied by a pipeline.
+        *args: Positional arguments after the pipeline value.
+        **kwargs: Keyword arguments after the pipeline value.
+
+    Returns:
+        A single-argument function suitable for ``pipe``.
+    """
+    return curry_flip(1)(function)(*args, **kwargs)
+
+
+__all__ = ["curry", "curry_flip", "pipeable"]

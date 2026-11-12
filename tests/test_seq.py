@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable, Iterable
-from itertools import accumulate
+from itertools import accumulate, takewhile
 from typing import Any, Optional
 
 import pytest
@@ -113,7 +113,7 @@ def test_seq_head_pipe(xs: list[int]):
 
 def test_seq_head_empty_source():
     with pytest.raises(ValueError):
-        empty: Seq[Any] = Seq.empty()
+        empty = Seq[Any].empty()
         pipe(
             empty,
             seq.head,
@@ -147,7 +147,7 @@ def test_list_unfold(x: int):
     def unfolder(state: int) -> Option[tuple[int, int]]:
         if state < x:
             return Some((state, state + 1))
-        return Nothing
+        return Nothing()
 
     result = pipe(0, seq.unfold(unfolder))
 
@@ -250,6 +250,43 @@ def test_seq_take_is_lazy():
 
 
 @given(st.lists(st.integers()))  # type: ignore
+def test_seq_take_while(xs: list[int]):
+    def predicate(x: int) -> bool:
+        return x >= 0
+
+    ys = seq.of_iterable(xs)
+    zs = pipe(ys, seq.take_while(predicate))
+    assert list(zs) == list(takewhile(predicate, xs))
+
+
+@given(st.lists(st.integers()))  # type: ignore
+def test_seq_take_while_fluent(xs: list[int]):
+    def predicate(x: int) -> bool:
+        return x >= 0
+
+    ys = seq.of_iterable(xs).take_while(predicate)
+    assert list(ys) == list(takewhile(predicate, xs))
+
+
+def test_seq_take_while_stops_on_first_false():
+    def is_even(x: int) -> bool:
+        return x % 2 == 0
+
+    xs = seq.of_iterable([2, 4, 1, 6, 8])
+    ys = pipe(xs, seq.take_while(is_even))
+    assert list(ys) == [2, 4]
+
+
+def test_seq_take_while_is_lazy():
+    def predicate(x: int) -> bool:
+        return x < 5
+
+    xs = seq.infinite
+    ys = pipe(xs, seq.take_while(predicate))
+    assert list(ys) == [0, 1, 2, 3, 4]
+
+
+@given(st.lists(st.integers()))  # type: ignore
 def test_seq_length(xs: list[int]):
     ys = seq.of_iterable(xs)
     n = pipe(ys, seq.length)
@@ -316,6 +353,154 @@ def test_seq_infinite(xs: list[int]):
 
     expected = list(enumerate(xs))
     assert expected == list(ys)
+
+
+@given(st.lists(st.integers()))  # type: ignore
+def test_seq_pairwise_pipe(xs: list[int]):
+    pairs = pipe(xs, seq.pairwise)
+
+    assert list(pairs) == list(zip(xs, xs[1:]))
+
+
+@given(st.lists(st.integers()))  # type: ignore
+def test_seq_pairwise_fluent(xs: list[int]):
+    source = Seq[int].of_iterable(xs)
+    pairs = source.pairwise()
+
+    assert list(pairs) == list(zip(xs, xs[1:]))
+
+
+def test_seq_pairwise_short_sources_are_empty():
+    empty: list[int] = []
+
+    assert list(seq.pairwise(empty)) == []
+    assert list(seq.pairwise([1])) == []
+
+
+def test_seq_pairwise_preserves_repeatable_sources():
+    pairs = seq.pairwise([1, 2, 3])
+
+    assert list(pairs) == [(1, 2), (2, 3)]
+    assert list(pairs) == [(1, 2), (2, 3)]
+
+
+def test_seq_pairwise_is_lazy():
+    consumed: list[int] = []
+
+    def source() -> Iterable[int]:
+        for value in [1, 2, 3]:
+            consumed.append(value)
+            yield value
+
+    pairs = seq.pairwise(source())
+    assert consumed == []
+
+    iterator = iter(pairs)
+    assert next(iterator) == (1, 2)
+    assert consumed == [1, 2]
+
+
+def test_seq_try_find_index_pipe_returns_first_matching_index():
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+    result = pipe([1, 3, 4, 6], seq.try_find_index(is_even))
+
+    assert result == Some(2)
+
+
+def test_seq_try_find_index_fluent():
+    source = Seq[int].of_iterable([1, 3, 4, 6])
+
+    assert source.try_find_index(lambda value: value % 2 == 0) == Some(2)
+
+
+def test_seq_try_find_index_can_return_zero():
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+
+    assert pipe([2, 4], seq.try_find_index(is_even)) == Some(0)
+
+
+def test_seq_try_find_index_returns_nothing_without_match():
+    empty: list[int] = []
+    always_true: Callable[[int], bool] = lambda _: True
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+
+    assert pipe(empty, seq.try_find_index(always_true)) is Nothing()
+    assert pipe([1, 3], seq.try_find_index(is_even)) is Nothing()
+
+
+def test_seq_try_find_index_stops_after_first_match():
+    consumed: list[int] = []
+    is_even: Callable[[int], bool] = lambda value: value % 2 == 0
+
+    def source() -> Iterable[int]:
+        for value in [1, 3, 4, 6]:
+            consumed.append(value)
+            yield value
+
+    result = pipe(source(), seq.try_find_index(is_even))
+
+    assert result == Some(2)
+    assert consumed == [1, 3, 4]
+
+
+def test_seq_try_find_index_propagates_predicate_exceptions():
+    def predicate(_: int) -> bool:
+        raise ValueError("predicate failed")
+
+    with pytest.raises(ValueError, match="predicate failed"):
+        pipe([1], seq.try_find_index(predicate))
+
+
+def test_seq_try_pick_pipe_returns_first_transformed_value():
+    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing()
+    result = pipe([1, 2, 4], seq.try_pick(choose_even))
+
+    assert result == Some("2")
+
+
+def test_seq_try_pick_fluent():
+    choose_even: Callable[[int], Option[str]] = lambda value: Some(str(value)) if value % 2 == 0 else Nothing()
+    source = Seq[int].of_iterable([1, 2, 4])
+
+    assert source.try_pick(choose_even) == Some("2")
+
+
+def test_seq_try_pick_returns_nothing_without_a_choice():
+    empty: list[int] = []
+    never_choose: Callable[[int], Option[str]] = lambda _: Nothing()
+
+    assert pipe(empty, seq.try_pick(never_choose)) is Nothing()
+    assert pipe([1, 2], seq.try_pick(never_choose)) is Nothing()
+
+
+def test_seq_try_pick_preserves_some_none():
+    choose_none: Callable[[int], Option[None]] = lambda value: Some(None) if value == 2 else Nothing()
+    result = pipe([1, 2, 3], seq.try_pick(choose_none))
+
+    assert result == Some(None)
+
+
+def test_seq_try_pick_stops_after_first_choice():
+    consumed: list[int] = []
+    choose_two: Callable[[int], Option[int]] = lambda value: Some(value * 10) if value == 2 else Nothing()
+
+    def source() -> Iterable[int]:
+        for value in [1, 2, 3]:
+            consumed.append(value)
+            yield value
+
+    result = pipe(source(), seq.try_pick(choose_two))
+
+    assert result == Some(20)
+    assert consumed == [1, 2]
+
+
+def test_seq_try_pick_propagates_chooser_exceptions():
+    def chooser(_: int) -> Option[str]:
+        raise ValueError("chooser failed")
+
+    with pytest.raises(ValueError, match="chooser failed"):
+        pipe([1], seq.try_pick(chooser))
 
 
 rtn: Callable[[int], Seq[int]] = seq.singleton

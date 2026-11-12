@@ -86,7 +86,7 @@ async def test_async_result_builder_return_from():
 
     computation = await fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 42
         case _:
             assert False
@@ -118,7 +118,7 @@ async def test_async_result_builder_yield_ok():
 
     computation = await fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 43
         case _:
             assert False
@@ -136,7 +136,7 @@ async def test_async_result_builder_yield_error():
 
     computation = await fn()
     match computation:
-        case Result(tag="error", error=err):
+        case Error(err):
             assert err == "error"
         case _:
             assert False
@@ -155,7 +155,7 @@ async def test_async_result_builder_multiple_operations():
 
     computation = await fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 129  # 42 + 43 + 44
         case _:
             assert False
@@ -210,7 +210,7 @@ async def test_async_result_builder_return_ok():
 
     computation = await fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 42  # Value should be wrapped in Ok
         case _:
             assert False
@@ -227,7 +227,7 @@ async def test_async_result_builder_yield_ok_wrapped():
 
     computation = await fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 42  # Value should be unwrapped
         case _:
             assert False
@@ -243,9 +243,9 @@ async def test_async_result_builder_return_error_wrapped():
 
     computation = await fn()
     match computation:
-        case Result(tag="ok", ok=inner_result):  # Match Ok case now
+        case Ok(inner_result):  # Match Ok case now
             match inner_result:
-                case Result(tag="error", error=err):  # Match inner Error case
+                case Error(err):  # Match inner Error case
                     assert err == "error"  # Assert against inner Error value
                 case _:
                     assert False  # Inner result should be Error
@@ -264,7 +264,7 @@ async def test_async_result_builder_yield_value_async():
 
     computation = await fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == 42
         case _:
             assert False
@@ -306,7 +306,7 @@ async def test_async_result_builder_projection_int_str():
 
     computation = await fn()
     match computation:
-        case Result(tag="ok", ok=value):
+        case Ok(value):
             assert value == "42"
         case _:
             assert False
@@ -326,7 +326,7 @@ async def test_async_result_builder_yield_error_short_circuit():
 
     computation = await fn()
     match computation:
-        case Result(tag="error", error=err):
+        case Error(err):
             assert err == "error"
         case _:
             assert False
@@ -417,3 +417,41 @@ async def test_async_result_builder_with_nested_async_generators():
 
     computation = await outer_gen()
     assert computation == Ok(42)  # 40 -> 41 -> 42
+
+
+@pytest.mark.asyncio
+async def test_async_result_builder_plain_function_body():
+    """A body without a yield statement is treated like a `return` statement."""
+
+    @effect.async_result[int, str]()
+    async def fn() -> int:
+        await asyncio.sleep(0)  # Simulate async work
+        return 42
+
+    computation = await fn()
+    assert computation == Ok(42)
+
+
+@pytest.mark.asyncio
+async def test_async_result_builder_plain_function_body_none():
+    """A plain async function body returning None maps to zero()."""
+
+    @effect.async_result[int, str]()
+    async def fn() -> None:
+        return None
+
+    computation = await fn()
+    assert computation == Ok(None)
+
+
+@pytest.mark.asyncio
+async def test_async_result_builder_runtime_error_propagates():
+    """A RuntimeError raised in the body propagates instead of being swallowed."""
+
+    @effect.async_result[int, str]()
+    async def fn() -> AsyncGenerator[int, int]:
+        raise RuntimeError("boom")
+        yield 42  # Should not reach here
+
+    with raises(RuntimeError, match="boom"):
+        await fn()

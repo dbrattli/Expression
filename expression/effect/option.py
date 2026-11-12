@@ -3,7 +3,7 @@ from typing import Any, TypeVar
 
 from typing_extensions import ParamSpec
 
-from expression.core import Builder, Nothing, Option, Some, option
+from expression.core import NOTHING, Builder, Option, Some, option
 
 
 _TSource = TypeVar("_TSource")
@@ -23,7 +23,7 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
             fn: The function to apply to the value if Some
 
         Returns:
-            The result of applying fn to the value if Some, otherwise Nothing
+            The result of applying fn to the value if Some, otherwise NOTHING
         """
         return option.bind(fn)(xs)
 
@@ -66,7 +66,7 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
             ys: Second option computation
 
         Returns:
-            The second computation if first is Some, otherwise Nothing
+            The second computation if first is Some, otherwise NOTHING
         """
         return xs.bind(lambda _: ys)
 
@@ -77,9 +77,9 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         corresponding to None in F#.
 
         Returns:
-            Nothing
+            NOTHING
         """
-        return Nothing
+        return NOTHING
 
     def delay(self, fn: Callable[[], Option[_TSource]]) -> Option[_TSource]:
         """Delay an option computation.
@@ -99,7 +99,10 @@ class OptionBuilder(Builder[_TSource, Option[Any]]):
         self,  # Ignored self parameter
         fn: Callable[
             _P,
-            Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
+            Generator[_TSource | None, _TSource, _TSource | None]
+            | Generator[_TSource | None, None, _TSource | None]
+            | _TSource
+            | None,
         ],
     ) -> Callable[_P, Option[_TSource]]:
         return super().__call__(fn)

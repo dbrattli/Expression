@@ -7,7 +7,7 @@ from typing import List
 import pytest
 from pytest import raises
 
-from expression import effect, Some, Nothing, Option
+from expression import effect, Some, NOTHING
 from tests.utils import CustomException
 
 
@@ -34,7 +34,7 @@ async def test_async_option_builder_evaluation_order():
 
 @pytest.mark.asyncio
 async def test_async_option_builder_short_circuit():
-    """Test that async_option builder properly short circuits with Nothing."""
+    """Test that async_option builder properly short circuits with NOTHING."""
     evaluated: List[int] = []
 
     @effect.async_option[int]()
@@ -43,15 +43,15 @@ async def test_async_option_builder_short_circuit():
         x: int = yield 42
 
         evaluated.append(2)  # Should not reach here
-        # Use await with Nothing to leverage the awaitable functionality
-        y: int = yield await Nothing  # Short circuits here
+        # Use await with NOTHING to leverage the awaitable functionality
+        y: int = yield await NOTHING  # Short circuits here
 
         evaluated.append(3)  # Should not reach here
         yield x + y  # This won't be reached
 
     computation = await fn()
-    assert evaluated == [1, 2]  # Should run until yield Nothing
-    assert computation is Nothing
+    assert evaluated == [1, 2]  # Should run until yield NOTHING
+    assert computation is NOTHING
 
 
 @pytest.mark.asyncio
@@ -86,7 +86,7 @@ async def test_async_option_builder_return_from():
 
     computation = await fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 42
         case _:
             assert False
@@ -103,7 +103,7 @@ async def test_async_option_builder_zero():
         # No yield should use zero()
 
     computation = await fn()
-    assert computation is Nothing  # Assert that zero() returns Nothing
+    assert computation is NOTHING  # Assert that zero() returns NOTHING
 
 
 @pytest.mark.asyncio
@@ -118,7 +118,7 @@ async def test_async_option_builder_yield_some():
 
     computation = await fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 43
         case _:
             assert False
@@ -126,16 +126,16 @@ async def test_async_option_builder_yield_some():
 
 @pytest.mark.asyncio
 async def test_async_option_builder_yield_nothing():
-    """Test that async_option builder properly handles yielding Nothing."""
+    """Test that async_option builder properly handles yielding NOTHING."""
 
     @effect.async_option[int]()
     async def fn() -> AsyncGenerator[int, int]:
-        # Use await with Nothing to leverage the awaitable functionality
-        x: int = yield await Nothing
+        # Use await with NOTHING to leverage the awaitable functionality
+        x: int = yield await NOTHING
         yield x + 1  # Should not reach here
 
     computation = await fn()
-    assert computation is Nothing
+    assert computation is NOTHING
 
 
 @pytest.mark.asyncio
@@ -151,7 +151,7 @@ async def test_async_option_builder_multiple_operations():
 
     computation = await fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 129  # 42 + 43 + 44
         case _:
             assert False
@@ -206,7 +206,7 @@ async def test_async_option_builder_return_some():
 
     computation = await fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 42  # Value should be wrapped in Some
         case _:
             assert False
@@ -223,7 +223,7 @@ async def test_async_option_builder_yield_some_wrapped():
 
     computation = await fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 42  # Value should be unwrapped
         case _:
             assert False
@@ -240,7 +240,7 @@ async def test_async_option_builder_yield_value_async():
 
     computation = await fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == 42
         case _:
             assert False
@@ -282,7 +282,7 @@ async def test_async_option_builder_projection_int_str():
 
     computation = await fn()
     match computation:
-        case Option(tag="some", some=value):
+        case Some(value):
             assert value == "42"
         case _:
             assert False
@@ -290,18 +290,18 @@ async def test_async_option_builder_projection_int_str():
 
 @pytest.mark.asyncio
 async def test_async_option_builder_yield_nothing_short_circuit():
-    """Test that yielding Nothing properly short circuits nested operations."""
+    """Test that yielding NOTHING properly short circuits nested operations."""
 
     @effect.async_option[int]()
     async def fn() -> AsyncGenerator[int, int]:
-        x = yield await Nothing  # Short circuits here
+        x = yield await NOTHING  # Short circuits here
 
         # The rest should not execute
         y = yield await Some(43)
         yield x + y
 
     computation = await fn()
-    assert computation is Nothing
+    assert computation is NOTHING
 
 
 @pytest.mark.asyncio
@@ -336,7 +336,7 @@ async def test_async_option_builder_with_async_option_functions():
 
     async def async_nothing_function() -> int:
         await asyncio.sleep(0.01)  # Small delay to simulate async work
-        return await Nothing
+        return await NOTHING
 
     @effect.async_option[int]()
     async def success_fn() -> AsyncGenerator[int, int]:
@@ -364,7 +364,7 @@ async def test_async_option_builder_with_async_option_functions():
     assert success_computation == Some(42)
 
     nothing_computation = await nothing_fn()
-    assert nothing_computation is Nothing
+    assert nothing_computation is NOTHING
 
 
 @pytest.mark.asyncio
@@ -389,3 +389,41 @@ async def test_async_option_builder_with_nested_async_generators():
 
     computation = await outer_gen()
     assert computation == Some(42)  # 40 -> 41 -> 42
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_plain_function_body():
+    """A body without a yield statement is treated like a `return` statement."""
+
+    @effect.async_option[int]()
+    async def fn() -> int:
+        await asyncio.sleep(0)  # Simulate async work
+        return 42
+
+    computation = await fn()
+    assert computation == Some(42)
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_plain_function_body_none():
+    """A plain async function body returning None maps to zero()."""
+
+    @effect.async_option[int]()
+    async def fn() -> None:
+        return None
+
+    computation = await fn()
+    assert computation is NOTHING
+
+
+@pytest.mark.asyncio
+async def test_async_option_builder_runtime_error_propagates():
+    """A RuntimeError raised in the body propagates instead of being swallowed."""
+
+    @effect.async_option[int]()
+    async def fn() -> AsyncGenerator[int, int]:
+        raise RuntimeError("boom")
+        yield 42  # Should not reach here
+
+    with raises(RuntimeError, match="boom"):
+        await fn()

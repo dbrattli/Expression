@@ -29,4 +29,4 @@ Add any other context about the problem here.
 
  - OS [e.g. Windows]
  - Expression version [e.g 1.0.0]
- - Python version [e.g. 3.10.2]
+ - Python version [e.g. 3.11.2]

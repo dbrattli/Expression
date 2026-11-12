@@ -31,8 +31,10 @@ from collections.abc import Callable, Iterable, Iterator
 from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from expression.core import (
+    NOTHING,
     Option,
     PipeMixin,
+    Some,
     SupportsGreaterThan,
     SupportsLessThan,
     SupportsSum,
@@ -243,6 +245,10 @@ class Seq(Iterable[_TSource], PipeMixin):
         """
         return Seq(mapi(mapping)(self))
 
+    def pairwise(self) -> Seq[tuple[_TSource, _TSource]]:
+        """Return adjacent elements paired with their predecessor."""
+        return Seq(pairwise(self))
+
     @overload
     @staticmethod
     def range(stop: int) -> Iterable[int]: ...
@@ -315,8 +321,29 @@ class Seq(Iterable[_TSource], PipeMixin):
         """
         return Seq(pipe(self, take(count)))
 
+    def take_while(self, predicate: Callable[[_TSource], bool]) -> Seq[_TSource]:
+        """Returns elements while a predicate holds.
+
+        Returns a sequence that yields elements from the underlying
+        sequence while the given predicate returns `True`, and then
+        skips the remaining elements.
+
+        Args:
+            predicate: A function that evaluates to `False` when no more
+                items should be returned.
+        """
+        return Seq(pipe(self, take_while(predicate)))
+
     def to_list(self) -> Block[_TSource]:
         return to_list(self)
+
+    def try_find_index(self, predicate: Callable[[_TSource], bool]) -> Option[int]:
+        """Return the index of the first element matching the predicate, if any."""
+        return pipe(self, try_find_index(predicate))
+
+    def try_pick(self, chooser: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
+        """Return the first value produced by the chooser, if any."""
+        return pipe(self, try_pick(chooser))
 
     def dict(self) -> Iterable[_TSource]:
         """Returns a json serializable representation of the list."""
@@ -793,6 +820,25 @@ of_list = of_iterable
 """Alias to `seq.of_iterable`."""
 
 
+def pairwise(source: Iterable[_TSource]) -> Iterable[tuple[_TSource, _TSource]]:
+    """Return adjacent elements paired with their predecessor.
+
+    The result is evaluated lazily and contains no elements when the source has
+    fewer than two elements.
+
+    Args:
+        source: The input sequence.
+
+    Returns:
+        A sequence of overlapping adjacent pairs.
+
+    Example:
+        >>> list(pairwise([1, 2, 3, 4]))
+        [(1, 2), (2, 3), (3, 4)]
+    """
+    return SeqGen(lambda: itertools.pairwise(source))
+
+
 @overload
 def range(stop: int) -> Iterable[int]: ...
 
@@ -913,10 +959,89 @@ def take(source: Iterable[_TSource], count: int) -> Iterable[_TSource]:
     return Seq()
 
 
+@curry_flip(1)
+def take_while(source: Iterable[_TSource], predicate: Callable[[_TSource], bool]) -> Iterable[_TSource]:
+    """Returns elements while a predicate holds.
+
+    Returns a sequence that yields elements from the underlying
+    sequence while the given predicate returns `True`, and then
+    skips the remaining elements.
+
+    Args:
+        source: The source sequence.
+        predicate: A function that evaluates to `False` when no more
+            items should be returned.
+
+    Returns:
+        The result sequence.
+    """
+
+    def gen() -> Iterator[_TSource]:
+        for item in source:
+            if not predicate(item):
+                break
+            yield item
+
+    return SeqGen(gen)
+
+
 def to_list(source: Iterable[_TSource]) -> Block[_TSource]:
     from .block import Block
 
     return Block.of_seq(source)
+
+
+@curry_flip(1)
+def try_find_index(source: Iterable[_TSource], predicate: Callable[[_TSource], bool]) -> Option[int]:
+    """Return the index of the first element matching the predicate, if any.
+
+    Indices are zero-based, and evaluation stops as soon as the predicate
+    returns `True`.
+
+    Args:
+        source: The input sequence.
+        predicate: A function to test each element.
+
+    Returns:
+        The first matching index wrapped in `Some`, or `Nothing()` when no
+        element matches.
+
+    Example:
+        >>> pipe([1, 2, 3], try_find_index(lambda value: value % 2 == 0))
+        Some 1
+    """
+    for index, value in enumerate(source):
+        if predicate(value):
+            return Some(index)
+
+    return NOTHING
+
+
+@curry_flip(1)
+def try_pick(source: Iterable[_TSource], chooser: Callable[[_TSource], Option[_TResult]]) -> Option[_TResult]:
+    """Return the first value produced by the chooser, if any.
+
+    The chooser is evaluated in sequence order, and evaluation stops as
+    soon as it returns `Some`.
+
+    Args:
+        source: The input sequence.
+        chooser: A function that transforms elements into optional results.
+
+    Returns:
+        The first result wrapped in `Some`, or `Nothing()` when the chooser
+        returns `Nothing()` for every element.
+
+    Example:
+        >>> pipe([1, 2, 3], try_pick(lambda value: option.of_obj(value * 10 if value % 2 == 0 else None)))
+        Some 20
+    """
+    for value in source:
+        result = chooser(value)
+        if result.is_some():
+            return result
+
+    return NOTHING
 
 
 @curry_flip(1)
@@ -1003,6 +1128,7 @@ __all__ = [
     "of",
     "of_iterable",
     "of_list",
+    "pairwise",
     "range",
     "scan",
     "singleton",
@@ -1011,6 +1137,9 @@ __all__ = [
     "sum_by",
     "tail",
     "take",
+    "take_while",
+    "try_find_index",
+    "try_pick",
     "unfold",
     "zip",
 ]

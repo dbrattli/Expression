@@ -251,3 +251,14 @@ def test_seq_builder_yield_from_empty_sequence_short_circuit():
 
     computation = fn()
     assert list(computation) == [43, 44, 87]
+
+
+def test_seq_builder_plain_function_body():
+    """A body without a yield statement is treated like a `return` statement."""
+
+    @effect.seq[int]()
+    def fn() -> int:
+        return 42
+
+    computation = fn()
+    assert list(computation) == [42]

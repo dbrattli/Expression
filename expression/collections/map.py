@@ -19,15 +19,16 @@ from __future__ import annotations
 from collections.abc import Callable, ItemsView, Iterable, Iterator, Mapping
 from typing import Any, TypeVar, cast
 
-from expression.core import Option, PipeMixin, SupportsLessThan, curry_flip, pipe
+from expression.core import Option, PipeMixin, curry_flip, pipe
+from expression.core.typing import SupportsLessThanAndHash
 
 from . import maptree, seq
 from .block import Block
 from .maptree import MapTree
 
 
-_Key = TypeVar("_Key", bound=SupportsLessThan)
-_Key_ = TypeVar("_Key_", bound=SupportsLessThan)
+_Key = TypeVar("_Key", bound=SupportsLessThanAndHash)
+_Key_ = TypeVar("_Key_", bound=SupportsLessThanAndHash)
 _Value = TypeVar("_Value")
 _Result = TypeVar("_Result")
 
@@ -236,7 +237,7 @@ class Map(Mapping[_Key, _Value], PipeMixin):
             else:
                 if kv != kv_other:
                     return False
-        return True
+        return next(iterator, None) is None
 
     def __bool__(self) -> bool:
         return not maptree.is_empty(self._tree)
@@ -475,7 +476,7 @@ def try_find(table: Map[_Key, _Value], key: _Key) -> Option[_Value]:
     """Try to find element with key in map.
 
     Lookup an element in the map, returning a `Some` value if the
-    element is in the domain of the map and `Nothing` if not.
+    element is in the domain of the map and `Nothing()` if not.
 
     Args:
         table: The input map.
@@ -488,7 +489,7 @@ def try_find(table: Map[_Key, _Value], key: _Key) -> Option[_Value]:
     return table.try_find(key)
 
 
-empty: Map[Any, Any] = Map.empty()
+empty = Map[Any, Any].empty()
 
 __all__ = [
     "Map",

@@ -11,9 +11,10 @@ by itself.
 import asyncio
 from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
+from inspect import iscoroutine
 from typing import Any, TypeVar
 
-from expression.system import CancellationToken, OperationCanceledError
+from expression.system import CancellationToken, ObjectDisposedException, OperationCanceledError
 
 
 _TSource = TypeVar("_TSource")
@@ -68,53 +69,49 @@ def from_continuations(callback: Callbacks[_TSource]) -> Awaitable[_TSource]:
 __running_tasks: set[Task[Any]] = set()
 
 
-def start(computation: Awaitable[Any], token: CancellationToken | None = None) -> None:
-    """Start computation.
+def _start_task(computation: Awaitable[_TSource], token: CancellationToken | None = None) -> Task[_TSource]:
+    async def runner() -> _TSource:
+        if token is not None and token.is_cancellation_requested:
+            raise asyncio.CancelledError()
+        return await computation
 
-    Starts the asynchronous computation in the event loop. Do not await
-    its result.
-
-    If no cancellation token is provided then the default cancellation
-    token is used.
-    """
-
-    async def runner() -> Any:
-        result = await computation
-        __running_tasks.remove(task)
-        return result
-
-    task = asyncio.create_task(runner())
+    loop = asyncio.get_running_loop()
+    task = loop.create_task(runner())
     __running_tasks.add(task)
+    registration = None
 
-    def cb():
-        task.cancel()
+    def cancel() -> None:
+        loop.call_soon_threadsafe(task.cancel)
 
-    if token:
-        token.register(cb)
-    return None
+    if token is not None:
+        try:
+            registration = token.register(cancel)
+        except ObjectDisposedException:
+            cancel()
+
+    def cleanup(completed: Task[_TSource]) -> None:
+        __running_tasks.discard(completed)
+        if registration is not None:
+            registration.dispose()
+        # The wrapper may be cancelled before it ever awaits the coroutine.
+        if iscoroutine(computation):
+            computation.close()
+
+    task.add_done_callback(cleanup)
+    return task
+
+
+def start(computation: Awaitable[Any], token: CancellationToken | None = None) -> None:
+    """Schedule a computation on the running event loop."""
+    _start_task(computation, token)
 
 
 def start_immediate(computation: Awaitable[Any], token: CancellationToken | None = None) -> None:
-    """Start computation immediately.
+    """Schedule a computation on the running event loop.
 
-    Runs an asynchronous computation, starting immediately on the
-    current operating system thread.
+    Execution begins when the event loop next runs the task.
     """
-
-    async def runner() -> Any:
-        result = await computation
-        __running_tasks.remove(task)
-        return result
-
-    task = asyncio.create_task(runner())
-    __running_tasks.add(task)
-
-    def cb() -> None:
-        task.cancel()
-
-    if token:
-        token.register(cb)
-    return None
+    _start_task(computation, token)
 
 
 def run_synchronously(computation: Awaitable[_TSource]) -> _TSource:

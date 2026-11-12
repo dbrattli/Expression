@@ -1,24 +1,21 @@
-# Reference
+# API reference
 
-## Core Types
+This reference describes the public API. Use the guides for explanations, decisions,
+and complete examples; use these pages when you know the feature you need.
 
-- [Option](reference_option)
-- [Result](reference_result)
-- [Try](reference_try)
-- [Tagged Union](reference_union)
+## Start with an overview
 
-## Functional Helpers
+- {doc}`Core types and helpers <core>`: `Option`, `Result`, `Try`, pipelines, and tagged unions.
+- {doc}`Collections <collections>`: lazy sequences and immutable collections.
+- {doc}`Effects <effects>`: generator-based and asynchronous workflows.
+- {doc}`Extras <extras>`: parsers and helpers for optional and fallible values.
+- {doc}`System utilities <system>`: mailbox processing, cancellation, and disposables.
 
-- [Misc](reference_misc)
-- [Pipe](reference_pipe)
-- [Pipeline](reference_pipeline)
-- [Compose](reference_compose)
-- [Curry](reference_curry)
-- [Mailbox](reference_mailbox)
+## Detailed modules
 
-## Collections
+The following generated pages list all public members by module:
 
-- [Typed Array](reference_array)
-- [Map](reference_map)
-- [Block](reference_block)
-- [Seq](reference_seq)
+- [Option](reference_option), [Result](reference_result), and [Try](reference_try)
+- [Pipe](reference_pipe), [Pipeline](reference_pipeline), and [Compose](reference_compose)
+- [Seq](reference_seq), [Block](reference_block), [Map](reference_map), and [TypedArray](reference_array)
+- [Tagged unions](reference_union)

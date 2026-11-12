@@ -3,7 +3,7 @@ from typing import Any, TypeVar
 
 from typing_extensions import ParamSpec
 
-from expression.core import Builder, Ok, Result, pipe, result
+from expression.core import Builder, Ok, Result
 
 
 _TSource = TypeVar("_TSource")
@@ -30,7 +30,7 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         Returns:
             The result of applying fn to the value if Ok, otherwise Error
         """
-        return pipe(xs, result.bind(fn))
+        return xs.bind(fn)
 
     def return_(self, x: _TSource) -> Result[_TSource, _TError]:  # Use Any for return_ type
         """Wrap a value in a result.
@@ -90,7 +90,10 @@ class ResultBuilder(Builder[_TSource, Result[Any, _TError]]):
         self,  # Ignored self parameter
         fn: Callable[
             _P,
-            Generator[_TSource | None, _TSource, _TSource | None] | Generator[_TSource | None, None, _TSource | None],
+            Generator[_TSource | None, _TSource, _TSource | None]
+            | Generator[_TSource | None, None, _TSource | None]
+            | _TSource
+            | None,
         ],
     ) -> Callable[_P, Result[_TSource, _TError]]:
         return super().__call__(fn)
