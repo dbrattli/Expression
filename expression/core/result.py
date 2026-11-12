@@ -418,6 +418,9 @@ class _Bind(Generic[_A, _R]):
     @overload
     def __call__(self, source: Error[_F]) -> Error[_F]: ...
 
+    @overload
+    def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]: ...
+
     def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]:
         return source.bind(self._mapper)
 
