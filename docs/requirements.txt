@@ -1,4 +1,4 @@
 # This site uses Jupyter Book's Sphinx backend; version 2 uses MyST instead.
 # Let Jupyter Book select its compatible Sphinx and extension dependencies.
-jupyter-book>=1.0.4,<2.0
+jupyter-book>=1.0.4.post1,<2.0
 jupytext>=1.19.6,<2.0
