@@ -20,6 +20,41 @@ return annotations include this empty-input case. `sum_by` requires summable
 projection results, not summable source elements; for example,
 `Block.of("one", "four").sum_by(len)` returns `7`.
 
+## Async mapping
+
+Use `asyncseq.amap` when the mapper returns an awaitable. It accepts ordinary
+iterables and async iterables, and returns a lazy async iterable:
+
+```python
+from expression import pipe
+from expression.collections import asyncseq
+
+
+async def enrich_inputs(value: int) -> int:
+    return value * 2
+
+
+async def example() -> list[int]:
+    stream = pipe(
+        [1, 2, 3],
+        asyncseq.amap(enrich_inputs),
+        asyncseq.filter(lambda value: value > 2),
+    )
+    return [value async for value in stream]  # [4, 6]
+```
+
+The fluent equivalent is `AsyncSeq.range(3).amap(enrich_inputs)`. Constructing
+either transformation requires no `await`; iteration awaits each mapper call.
+Ordinary `pipe` is sufficient because the stages return async iterables, rather
+than coroutines that must be resolved before passing to the next stage.
+
+`asyncseq.map` applies a synchronous mapper; `asyncseq.amap` awaits its mapper.
+Both preserve one output per input: an awaited list remains one list element,
+unlike `collect`, which flattens inner sequences. Mapping is sequential and
+preserves source order, with no task scheduling or prefetching. Mapper and source
+exceptions, including cancellation, propagate to the consumer. Sources supporting
+both iteration protocols are consumed asynchronously.
+
 ## Additional modules
 
 ```{eval-rst}

@@ -1,6 +1,6 @@
 import builtins
 import itertools
-from collections.abc import AsyncIterable, AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterable
 from typing import Any, cast, overload
 
 from expression.core import Option, pipe
@@ -15,6 +15,14 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
         # Use the module-level `map` function defined later to transform the
         # underlying async iterable and wrap the result back into an AsyncSeq.
         return AsyncSeq(pipe(self._ai, map(mapper)))
+
+    def amap[TResult](self, mapper: Callable[[TSource], Awaitable[TResult]]) -> "AsyncSeq[TResult]":
+        """Lazily await the mapper for each item, sequentially and in source order.
+
+        Constructing the sequence requires no await. Exceptions and cancellation
+        propagate during iteration; returned collections remain individual items.
+        """
+        return AsyncSeq(amap(mapper)(self))
 
     @classmethod
     def empty(cls) -> "AsyncSeq[Any]":
@@ -287,6 +295,29 @@ def map[TSource, TResult](
             yield mapper(value)
 
     return _map
+
+
+def amap[TSource, TResult](
+    mapper: Callable[[TSource], Awaitable[TResult]],
+) -> Callable[[Iterable[TSource] | AsyncIterable[TSource]], AsyncIterable[TResult]]:
+    """Map an ordinary or async iterable with an awaitable-returning callback.
+
+    The returned async iterable is lazy: each requested item awaits one mapper
+    call before advancing the source. Results preserve source order and are not
+    flattened. No tasks are scheduled, and exceptions and cancellation propagate.
+    Use ordinary ``pipe`` to compose this transformation; consume it with
+    ``async for``. Sources implementing both protocols use async iteration.
+    """
+
+    async def _amap(source: Iterable[TSource] | AsyncIterable[TSource]) -> AsyncIterator[TResult]:
+        if isinstance(source, AsyncIterable):
+            async for value in source:
+                yield await mapper(value)
+        else:
+            for value in source:
+                yield await mapper(value)
+
+    return _amap
 
 
 def choose[TSource, TResult](
