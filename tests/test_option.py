@@ -1,4 +1,5 @@
-from collections.abc import Callable
+import asyncio
+from collections.abc import Awaitable, Callable
 from copy import copy, deepcopy
 from dataclasses import FrozenInstanceError, asdict, replace
 from operator import lt
@@ -21,6 +22,7 @@ from expression import (
     Option,
     Result,
     Some,
+    apipe,
     option,
     pipe,
     pipe2,
@@ -712,3 +714,155 @@ def test_option_starmap_typed_callback_preserves_union_payload():
 
     assert consume(Some((3, "x"))) == Some("xxx")
     assert consume(Nothing()) is Nothing()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("functional", [False, True])
+@pytest.mark.parametrize("binding", [False, True])
+async def test_async_operations_await_once_and_preserve_nested_values(functional: bool, binding: bool):
+    calls: list[int] = []
+    nested = Some(None)
+
+    def callback(value: int) -> Awaitable[Some[None]]:
+        calls.append(value)
+        future: asyncio.Future[Some[None]] = asyncio.get_running_loop().create_future()
+        future.set_result(nested)
+        return future
+
+    source = Some(42)
+    if binding:
+        pending = pipe(source, option.abind(callback)) if functional else source.abind(callback)
+    else:
+        pending = pipe(source, option.amap(callback)) if functional else source.amap(callback)
+    assert calls == []
+    actual = await pending
+    assert calls == [42]
+    if binding:
+        assert actual is nested
+    else:
+        assert actual == Some(nested)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("functional", [False, True])
+@pytest.mark.parametrize("binding", [False, True])
+async def test_async_operations_skip_absent_callback(functional: bool, binding: bool):
+    def callback(value: int) -> Awaitable[Some[int]]:
+        raise AssertionError("Callback must not even be invoked")
+
+    source = NOTHING
+    if binding:
+        pending = pipe(source, option.abind(callback)) if functional else source.abind(callback)
+    else:
+        pending = pipe(source, option.amap(callback)) if functional else source.amap(callback)
+    assert await pending is source
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("functional", [False, True])
+@pytest.mark.parametrize("binding", [False, True])
+@pytest.mark.parametrize("immediate", [False, True])
+async def test_async_operations_propagate_callback_errors(functional: bool, binding: bool, immediate: bool):
+    failure = ValueError("callback failed")
+
+    async def delayed() -> Some[int]:
+        await asyncio.sleep(0)
+        raise failure
+
+    def callback(value: int) -> Awaitable[Some[int]]:
+        if immediate:
+            raise failure
+        return delayed()
+
+    source = Some(42)
+    if binding:
+        pending = pipe(source, option.abind(callback)) if functional else source.abind(callback)
+    else:
+        pending = pipe(source, option.amap(callback)) if functional else source.amap(callback)
+    with pytest.raises(ValueError) as error:
+        await pending
+    assert error.value is failure
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("functional", [False, True])
+@pytest.mark.parametrize("binding", [False, True])
+async def test_async_operations_propagate_cancellation(functional: bool, binding: bool):
+    started = asyncio.Event()
+    finished = asyncio.Event()
+
+    async def callback(value: int) -> Some[int]:
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            finished.set()
+        return Some(value)
+
+    source = Some(42)
+    if binding:
+        pending = pipe(source, option.abind(callback)) if functional else source.abind(callback)
+    else:
+        pending = pipe(source, option.amap(callback)) if functional else source.amap(callback)
+    task = asyncio.create_task(pending)
+    try:
+        await asyncio.wait_for(started.wait(), timeout=5)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert finished.is_set()
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_short_circuits_binding():
+    failure = NOTHING
+
+    async def stop(value: int) -> Option[int]:
+        return failure
+
+    async def unreachable(value: int) -> str:
+        raise AssertionError("Later callback must not run")
+
+    assert await apipe(Some(42), option.abind(stop), option.amap(unreachable)) is failure
+    assert await Some(42).abind(stop) is failure
+
+
+@pytest.mark.asyncio
+async def test_async_operations_preserve_inferred_case_types():
+    async def stringify(value: int) -> str:
+        return str(value)
+
+    async def bind_value(value: int) -> Some[str]:
+        return Some(str(value))
+
+    assert_type(await Some(1).amap(stringify), Some[str])
+    assert_type(await Some(1).abind(bind_value), Some[str])
+    assert_type(await option.amap(stringify)(Some(1)), Some[str])
+    assert_type(await option.abind(bind_value)(Some(1)), Some[str])
+    assert await apipe(Some(1), option.amap(stringify)) == Some("1")
+
+
+@pytest.mark.asyncio
+async def test_async_option_union_types():
+    async def stringify(value: int) -> str:
+        return str(value)
+
+    async def bind_value(value: int) -> Option[str]:
+        return Some(str(value)) if value else NOTHING
+
+    async def check(source: Option[int]) -> None:
+        assert_type(await source.amap(stringify), Some[str] | Nothing)
+        assert_type(await source.abind(bind_value), Some[str] | Nothing)
+        assert_type(await option.amap(stringify)(source), Some[str] | Nothing)
+        assert_type(await option.abind(bind_value)(source), Some[str] | Nothing)
+        assert_type(await pipe(source, option.abind(bind_value)), Some[str] | Nothing)
+        assert_type(await apipe(source, option.abind(bind_value)), Some[str] | Nothing)
+        assert_type(await apipe(source, option.amap(stringify)), Some[str] | Nothing)
+
+    await check(Some(1))
+    await check(NOTHING)
+    assert_type(await NOTHING.amap(stringify), Nothing)
+    assert_type(await option.abind(bind_value)(NOTHING), Nothing)

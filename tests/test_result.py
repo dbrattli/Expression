@@ -1,6 +1,7 @@
+import asyncio
 import json
 import pickle
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from copy import copy, deepcopy
 from dataclasses import FrozenInstanceError, asdict, dataclass, replace
 from typing import Annotated, Any, assert_type
@@ -11,7 +12,7 @@ from hypothesis import strategies as st
 from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
 from pydantic_core import CoreSchema, core_schema
 
-from expression import Error, Nothing, Ok, Option, Result, Some, result
+from expression import Error, Nothing, Ok, Option, Result, Some, apipe, pipe, result
 from expression.collections import Block
 from expression.extra.result import pipeline, sequence
 
@@ -789,3 +790,164 @@ def test_traverse_preserves_order_and_first_error():
 
     assert traverse(check, Block([1, 2, 3])) == Error("1")
     assert visited == [3, 2, 1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("functional", [False, True])
+@pytest.mark.parametrize("binding", [False, True])
+async def test_async_operations_await_once_and_preserve_nested_values(functional: bool, binding: bool):
+    calls: list[int] = []
+    nested = Ok(None)
+
+    def callback(value: int) -> Awaitable[Ok[None]]:
+        calls.append(value)
+        future: asyncio.Future[Ok[None]] = asyncio.get_running_loop().create_future()
+        future.set_result(nested)
+        return future
+
+    source = Ok(42)
+    if binding:
+        pending = pipe(source, result.abind(callback)) if functional else source.abind(callback)
+    else:
+        pending = pipe(source, result.amap(callback)) if functional else source.amap(callback)
+    assert calls == []
+    actual = await pending
+    assert calls == [42]
+    if binding:
+        assert actual is nested
+    else:
+        assert actual == Ok(nested)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("functional", [False, True])
+@pytest.mark.parametrize("binding", [False, True])
+async def test_async_operations_skip_absent_callback(functional: bool, binding: bool):
+    def callback(value: int) -> Awaitable[Ok[int]]:
+        raise AssertionError("Callback must not even be invoked")
+
+    source = Error("original")
+    if binding:
+        pending = pipe(source, result.abind(callback)) if functional else source.abind(callback)
+    else:
+        pending = pipe(source, result.amap(callback)) if functional else source.amap(callback)
+    assert await pending is source
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("functional", [False, True])
+@pytest.mark.parametrize("binding", [False, True])
+@pytest.mark.parametrize("immediate", [False, True])
+async def test_async_operations_propagate_callback_errors(functional: bool, binding: bool, immediate: bool):
+    failure = ValueError("callback failed")
+
+    async def delayed() -> Ok[int]:
+        await asyncio.sleep(0)
+        raise failure
+
+    def callback(value: int) -> Awaitable[Ok[int]]:
+        if immediate:
+            raise failure
+        return delayed()
+
+    source = Ok(42)
+    if binding:
+        pending = pipe(source, result.abind(callback)) if functional else source.abind(callback)
+    else:
+        pending = pipe(source, result.amap(callback)) if functional else source.amap(callback)
+    with pytest.raises(ValueError) as error:
+        await pending
+    assert error.value is failure
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("functional", [False, True])
+@pytest.mark.parametrize("binding", [False, True])
+async def test_async_operations_propagate_cancellation(functional: bool, binding: bool):
+    started = asyncio.Event()
+    finished = asyncio.Event()
+
+    async def callback(value: int) -> Ok[int]:
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        finally:
+            finished.set()
+        return Ok(value)
+
+    source = Ok(42)
+    if binding:
+        pending = pipe(source, result.abind(callback)) if functional else source.abind(callback)
+    else:
+        pending = pipe(source, result.amap(callback)) if functional else source.amap(callback)
+    task = asyncio.create_task(pending)
+    try:
+        await asyncio.wait_for(started.wait(), timeout=5)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert finished.is_set()
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_async_pipeline_short_circuits_binding():
+    failure = Error("original")
+
+    async def stop(value: int) -> Result[int, str]:
+        return failure
+
+    async def unreachable(value: int) -> str:
+        raise AssertionError("Later callback must not run")
+
+    assert await apipe(Ok(42), result.abind(stop), result.amap(unreachable)) is failure
+    assert await Ok(42).abind(stop) is failure
+
+
+@pytest.mark.asyncio
+async def test_async_operations_preserve_inferred_case_types():
+    async def stringify(value: int) -> str:
+        return str(value)
+
+    async def bind_value(value: int) -> Ok[str]:
+        return Ok(str(value))
+
+    assert_type(await Ok(1).amap(stringify), Ok[str])
+    assert_type(await Ok(1).abind(bind_value), Ok[str])
+    assert_type(await result.amap(stringify)(Ok(1)), Ok[str])
+    assert_type(await result.abind(bind_value)(Ok(1)), Ok[str])
+    assert await apipe(Ok(1), result.amap(stringify)) == Ok("1")
+
+
+@pytest.mark.asyncio
+async def test_async_result_union_types_and_existing_helper():
+    from expression.extra import async_result
+
+    async def bind_value(value: int) -> Result[str, ValueError]:
+        return Ok(str(value)) if value else Error(ValueError("zero"))
+
+    async def stringify(value: int) -> str:
+        return str(value)
+
+    async def check(source: Result[int, str]) -> None:
+        assert_type(await source.amap(stringify), Ok[str] | Error[str])
+        assert_type(await source.abind(bind_value), Ok[str] | Error[ValueError] | Error[str])
+        assert_type(await result.amap(stringify)(source), Ok[str] | Error[str])
+        assert_type(await result.abind(bind_value)(source), Ok[str] | Error[ValueError] | Error[str])
+        assert_type(await pipe(source, result.abind(bind_value)), Ok[str] | Error[ValueError] | Error[str])
+        assert_type(await apipe(source, result.abind(bind_value)), Ok[str] | Error[ValueError] | Error[str])
+        assert_type(await apipe(source, result.amap(stringify)), Ok[str] | Error[str])
+
+    await check(Ok(1))
+    await check(Error("original"))
+    assert_type(await Error("original").amap(stringify), Error[str])
+    assert_type(await result.abind(bind_value)(Error("original")), Error[str])
+
+    async def increment(value: int) -> Result[int, str]:
+        return Ok(value + 1)
+
+    assert await async_result.bind(increment)(Ok(1)) == Ok(2)
+    failure = Error("original")
+    assert await async_result.bind(increment)(failure) is failure
