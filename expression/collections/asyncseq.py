@@ -3,18 +3,24 @@ import itertools
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Coroutine, Iterable
 from typing import Any, cast, overload
 
-from expression.core import Option, pipe
+from expression.core import Option
 from expression.core.typing import SupportsLessThan, SupportsSum
 
 
 class AsyncSeq[TSource](AsyncIterable[TSource]):
+    """A lazy async sequence with directly chainable transformations.
+
+    Stream transformations return AsyncSeq without awaiting. Terminal operations
+    are awaited to consume the source and compute a result. Operations prefixed
+    with ``a`` await their callbacks during consumption.
+    """
+
     def __init__(self, ai: AsyncIterable[TSource]):
         self._ai = ai
 
-    async def map[TResult](self, mapper: Callable[[TSource], TResult]) -> "AsyncSeq[TResult]":
-        # Use the module-level `map` function defined later to transform the
-        # underlying async iterable and wrap the result back into an AsyncSeq.
-        return AsyncSeq(pipe(self._ai, map(mapper)))
+    def map[TResult](self, mapper: Callable[[TSource], TResult]) -> "AsyncSeq[TResult]":
+        """Lazily transform each item with a synchronous callback."""
+        return AsyncSeq(map(mapper)(self))
 
     def amap[TResult](self, mapper: Callable[[TSource], Awaitable[TResult]]) -> "AsyncSeq[TResult]":
         """Lazily await the mapper for each item, sequentially and in source order.
@@ -75,33 +81,26 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
     def __aiter__(self) -> AsyncIterator[TSource]:
         return self._ai.__aiter__()
 
-    async def choose[TResult](self, chooser: Callable[[TSource], Option[TResult]]) -> AsyncIterable[TResult]:
+    def choose[TResult](self, chooser: Callable[[TSource], Option[TResult]]) -> "AsyncSeq[TResult]":
         """Choose items from the sequence.
 
-        Applies the given function to each element of the list. Returns
-        the list comprised of the results x for each element where the
+        Applies the given function to each element of the sequence. Returns
+        the sequence comprised of the results x for each element where the
         function returns `Some(x)`.
 
         Args:
             chooser: The function to generate options from the elements.
 
         Returns:
-            The list comprising the values selected from the chooser
+            The async sequence comprising the values selected from the chooser
             function.
         """
+        return AsyncSeq(choose(chooser)(self))
 
-        async def _choose(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
-            async for value in source:
-                result = chooser(value)
-                if not result.is_none():
-                    yield result.value
-
-        return pipe(self, _choose)
-
-    async def collect[TResult](self, mapping: Callable[[TSource], AsyncIterable[TResult]]) -> AsyncIterable[TResult]:
+    def collect[TResult](self, mapping: Callable[[TSource], AsyncIterable[TResult]]) -> "AsyncSeq[TResult]":
         """Collect items from the sequence.
 
-        Applies the given function to each element of the list and
+        Applies the given function to each element of the sequence and
         concatenates all the resulting sequences. This function is known
         as `bind` or `flat_map` in other languages.
 
@@ -109,31 +108,25 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
             mapping: The function that generates an async iterable for each element.
 
         Returns:
-            An async iterable yielding all items from the inner iterables.
+            An async sequence yielding all items from the inner iterables.
         """
+        return AsyncSeq(collect(mapping)(self))
 
-        async def _collect(source: AsyncIterable[TSource]) -> AsyncIterable[TResult]:
-            async for value in source:
-                async for item in mapping(value):
-                    yield item
-
-        return pipe(self, _collect)
-
-    async def concat(self: "AsyncSeq[AsyncIterable[TSource]]") -> AsyncIterable[TSource]:
+    def concat[TResult](self: "AsyncSeq[AsyncIterable[TResult]]") -> "AsyncSeq[TResult]":
         """Concatenate sequences.
 
         Combines the given variable number of enumerations and/or
         enumeration-of-enumerations as a single concatenated enumeration.
         """
 
-        async def _concat(source: AsyncIterable[AsyncIterable[TSource]]) -> AsyncIterable[TSource]:
+        async def _concat(source: AsyncIterable[AsyncIterable[TResult]]) -> AsyncIterable[TResult]:
             async for value in source:
                 async for item in value:
                     yield item
 
-        return pipe(self, _concat)
+        return AsyncSeq(_concat(self))
 
-    async def filter(self, predicate: Callable[[TSource], bool]) -> AsyncIterable[TSource]:
+    def filter(self, predicate: Callable[[TSource], bool]) -> "AsyncSeq[TSource]":
         """Filter sequence.
 
         Filters the sequence to a new sequence containing only the
@@ -144,15 +137,9 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
             predicate: A function that tests each item.
 
         Returns:
-            The filtered async iterable.
+            The filtered async sequence.
         """
-
-        async def _filter(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
-            async for value in source:
-                if predicate(value):
-                    yield value
-
-        return pipe(self, _filter)
+        return AsyncSeq(filter(predicate)(self))
 
     async def fold[TState](self, folder: Callable[[TState, TSource], TState], state: TState) -> TState:
         """Fold elements in sequence.
@@ -180,19 +167,19 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
             result = folder(value, result)
         return result
 
-    async def scan[TState](self, scanner: Callable[[TState, TSource], TState], state: TState) -> AsyncIterable[TState]:
-        """Scan elements in sequence.
+    def scan[TState](self, scanner: Callable[[TState, TSource], TState], state: TState) -> "AsyncSeq[TState]":
+        """Lazily yield the initial state and each synchronous accumulator update."""
 
-        Like fold, but yields intermediate results.
-        """
-        result = state
-        yield result
-
-        async for value in self:
-            result = scanner(result, value)
+        async def _scan() -> AsyncIterator[TState]:
+            result = state
             yield result
+            async for value in self:
+                result = scanner(result, value)
+                yield result
 
-    async def take(self, count: int) -> AsyncIterable[TSource]:
+        return AsyncSeq(_scan())
+
+    def take(self, count: int) -> "AsyncSeq[TSource]":
         """Returns the first N elements of the sequence."""
 
         async def _take(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
@@ -205,9 +192,9 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
                 if i >= count:
                     break
 
-        return pipe(self, _take)
+        return AsyncSeq(_take(self))
 
-    async def skip(self, count: int) -> AsyncIterable[TSource]:
+    def skip(self, count: int) -> "AsyncSeq[TSource]":
         """Skip elements from sequence."""
 
         async def _skip(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
@@ -217,7 +204,7 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
                     yield value
                 i += 1
 
-        return pipe(self, _skip)
+        return AsyncSeq(_skip(self))
 
     async def head(self) -> TSource:
         """Returns the first element of the sequence."""
@@ -225,7 +212,7 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
             return value
         raise ValueError("Sequence contains no elements")
 
-    async def tail(self) -> AsyncIterable[TSource]:
+    def tail(self) -> "AsyncSeq[TSource]":
         """Return the tail of the sequence."""
 
         async def _tail(source: AsyncIterable[TSource]) -> AsyncIterable[TSource]:
@@ -236,7 +223,7 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
                     continue
                 yield value
 
-        return pipe(self, _tail)
+        return AsyncSeq(_tail(self))
 
     async def length(self) -> int:
         """Returns the length of the sequence."""
