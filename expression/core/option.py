@@ -8,7 +8,7 @@ the computation-expression protocol, including short-circuiting on Nothing.
 from __future__ import annotations
 
 import builtins
-from collections.abc import Callable, Generator
+from collections.abc import Awaitable, Callable, Generator
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -62,6 +62,16 @@ class Some(PipeMixin, Generic[_TSourceOut]):  # noqa: UP046 - Preserve explicit 
     def map[TResult](self, mapper: Callable[[_TSourceOut], TResult]) -> Some[TResult]:
         """Transform the present value."""
         return Some(mapper(self.some))
+
+    async def amap[TResult](self, mapper: Callable[[_TSourceOut], Awaitable[TResult]]) -> Some[TResult]:
+        """Await a mapper and wrap its value, propagating exceptions and cancellation."""
+        return Some(await mapper(self.some))
+
+    async def abind[TOption: Some[object] | Nothing](
+        self, mapper: Callable[[_TSourceOut], Awaitable[TOption]]
+    ) -> TOption:
+        """Await an option-returning callback without wrapping its result."""
+        return await mapper(self.some)
 
     def map2[T2, TResult](self, mapper: Callable[[_TSourceOut, T2], TResult], other: Option[T2]) -> Option[TResult]:
         """Transform two present values, or return Nothing."""
@@ -174,6 +184,14 @@ class Nothing(PipeMixin):
         """Keep the empty option without evaluating the mapper."""
         return self
 
+    async def amap(self, mapper: Callable[[Never], Awaitable[object]]) -> Nothing:
+        """Return Nothing without invoking the callback."""
+        return self
+
+    async def abind[TOption: Some[object] | Nothing](self, mapper: Callable[[Never], Awaitable[TOption]]) -> Nothing:
+        """Return Nothing without invoking the continuation."""
+        return self
+
     def map2[T2](self, mapper: Callable[[Never, T2], object], other: Option[T2]) -> Nothing:
         """Keep the empty option without evaluating the mapper."""
         return self
@@ -274,6 +292,60 @@ def bind[TOption: Some[object] | Nothing, TSource](
         return source.bind(mapper)
 
     return apply
+
+
+class _AsyncMap[TSource, TResult]:
+    def __init__(self, mapper: Callable[[TSource], Awaitable[TResult]]) -> None:
+        self._mapper = mapper
+
+    @overload
+    async def __call__(self, source: Some[TSource]) -> Some[TResult]: ...
+
+    @overload
+    async def __call__(self, source: Nothing) -> Nothing: ...
+
+    @overload
+    async def __call__(self, source: Option[TSource]) -> Option[TResult]: ...
+
+    async def __call__(self, source: Option[TSource]) -> Option[TResult]:
+        return await source.amap(self._mapper)
+
+
+def amap[TSource, TResult](mapper: Callable[[TSource], Awaitable[TResult]]) -> _AsyncMap[TSource, TResult]:
+    """Create an async mapping stage for pipe or apipe.
+
+    Await the returned stage's coroutine to map Some, preserving Nothing without
+    invoking the callback. Exceptions and cancellation propagate.
+    """
+    return _AsyncMap(mapper)
+
+
+class _AsyncBind[TSource, TOption: Some[object] | Nothing]:
+    def __init__(self, mapper: Callable[[TSource], Awaitable[TOption]]) -> None:
+        self._mapper = mapper
+
+    @overload
+    async def __call__(self, source: Some[TSource]) -> TOption: ...
+
+    @overload
+    async def __call__(self, source: Nothing) -> Nothing: ...
+
+    @overload
+    async def __call__(self, source: Option[TSource]) -> TOption | Nothing: ...
+
+    async def __call__(self, source: Option[TSource]) -> TOption | Nothing:
+        return await source.abind(self._mapper)
+
+
+def abind[TSource, TOption: Some[object] | Nothing](
+    mapper: Callable[[TSource], Awaitable[TOption]],
+) -> _AsyncBind[TSource, TOption]:
+    """Create an async binding stage, preserving Nothing without invoking the callback.
+
+    Await the stage's coroutine to obtain the callback's option directly.
+    Exceptions and cancellation propagate.
+    """
+    return _AsyncBind(mapper)
 
 
 class _DefaultValue[T1]:
@@ -468,6 +540,8 @@ __all__ = [
     "Nothing",
     "Option",
     "Some",
+    "abind",
+    "amap",
     "apply",
     "bind",
     "default_arg",

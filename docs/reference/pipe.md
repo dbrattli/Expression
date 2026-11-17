@@ -30,21 +30,21 @@ these types implement `__await__`. Tasks, futures, and custom awaitables also pa
 through unchanged: use an `async def` wrapper that explicitly awaits them when
 you want their resolved values. The existing `pipe` never inserts awaits.
 
-For asynchronous Result mapping, use `expression.extra.async_result.bind`:
+For asynchronous Result mapping and binding, use `result.amap` and `result.abind`:
 
 ```python
-from expression import Ok, Result, apipe
-from expression.extra import async_result
+from expression import Ok, Result, apipe, result
 
 async def increment(value: int) -> Result[int, str]:
     return Ok(value + 1)
 
 async def example() -> Result[str, str]:
-    return await apipe(Ok(2), async_result.bind(increment), lambda value: value.map(str))
+    return await apipe(Ok(2), result.abind(increment), lambda value: value.map(str))
 ```
 
-`bind` skips the mapper on `Error`; plain `apipe` itself does not short-circuit
-Result values.
+`abind` and `amap` skip their callbacks on `Error`; plain `apipe` itself does not
+short-circuit Result values. The matching Option functions are `option.abind` and
+`option.amap`. The existing `expression.extra.async_result.bind` remains supported.
 
 ```{eval-rst}
 .. automodule:: expression.core.apipe

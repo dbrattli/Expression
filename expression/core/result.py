@@ -8,7 +8,7 @@ computation-expression protocol, including short-circuiting on Error.
 from __future__ import annotations
 
 import builtins
-from collections.abc import Callable, Generator
+from collections.abc import Awaitable, Callable, Generator
 from typing import (
     TYPE_CHECKING,
     Generic,
@@ -68,6 +68,14 @@ class Ok(PipeMixin, Generic[_T]):  # noqa: UP046 - Python 3.12 cannot express ty
     def map(self, mapper: Callable[[_T], _U]) -> Ok[_U]:
         """Transform the successful value."""
         return Ok(mapper(self.ok))
+
+    async def amap(self, mapper: Callable[[_T], Awaitable[_U]]) -> Ok[_U]:
+        """Await a mapper and wrap its value, propagating exceptions and cancellation."""
+        return Ok(await mapper(self.ok))
+
+    async def abind(self, mapper: Callable[[_T], Awaitable[_R]]) -> _R:
+        """Await a result-returning callback without wrapping its result."""
+        return await mapper(self.ok)
 
     def map2(self, other: Result[_A, _F], mapper: Callable[[_T, _A], _U]) -> Result[_U, _F]:
         """Map two successful results, preserving the other result's error."""
@@ -156,6 +164,14 @@ class Error(PipeMixin, Generic[_E]):  # noqa: UP046 - Python 3.12 cannot express
         """Preserve the error without evaluating the mapper."""
         return self
 
+    async def amap(self, mapper: Callable[[Never], Awaitable[_U]]) -> Error[_E]:
+        """Preserve this error without invoking the callback."""
+        return self
+
+    async def abind(self, mapper: Callable[[Never], Awaitable[_R]]) -> Error[_E]:
+        """Preserve this error without invoking the continuation."""
+        return self
+
     def map2(self, other: Result[_A, _F], mapper: Callable[[Never, _A], _U]) -> Error[_E]:
         """Preserve this error without evaluating the mapper."""
         return self
@@ -232,6 +248,58 @@ Result: TypeAlias = TaggedUnion[Ok[_T] | Error[_E]]  # noqa: UP040
 
 # Case-specific callable overloads preserve the untouched channel when a pipe
 # dispatches over a union. A generic closure instead leaks unsolved type variables.
+class _AsyncMap(Generic[_A, _U]):
+    def __init__(self, mapper: Callable[[_A], Awaitable[_U]]) -> None:
+        self._mapper = mapper
+
+    @overload
+    async def __call__(self, source: Ok[_A]) -> Ok[_U]: ...
+
+    @overload
+    async def __call__(self, source: Error[_F]) -> Error[_F]: ...
+
+    @overload
+    async def __call__(self, source: Result[_A, _F]) -> Result[_U, _F]: ...
+
+    async def __call__(self, source: Result[_A, _F]) -> Result[_U, _F]:
+        return await source.amap(self._mapper)
+
+
+def amap(mapper: Callable[[_A], Awaitable[_U]]) -> _AsyncMap[_A, _U]:
+    """Create an async mapping stage for pipe or apipe.
+
+    Await the returned stage's coroutine to map Ok, preserving Error without
+    invoking the callback. Exceptions and cancellation propagate.
+    """
+    return _AsyncMap(mapper)
+
+
+class _AsyncBind(Generic[_A, _R]):
+    def __init__(self, mapper: Callable[[_A], Awaitable[_R]]) -> None:
+        self._mapper = mapper
+
+    @overload
+    async def __call__(self, source: Ok[_A]) -> _R: ...
+
+    @overload
+    async def __call__(self, source: Error[_F]) -> Error[_F]: ...
+
+    @overload
+    async def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]: ...
+
+    async def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]:
+        return await source.abind(self._mapper)
+
+
+def abind(mapper: Callable[[_A], Awaitable[_R]]) -> _AsyncBind[_A, _R]:
+    """Create an async binding stage that retains both possible error channels.
+
+    Await the stage's coroutine to bind Ok, preserving Error without invoking the
+    callback. Exceptions and cancellation propagate.
+    """
+    return _AsyncBind(mapper)
+
+
 class _DefaultValue(Generic[_U]):
     def __init__(self, value: _U) -> None:
         self._value = value
@@ -580,6 +648,8 @@ __all__ = [
     "Error",
     "Ok",
     "Result",
+    "abind",
+    "amap",
     "apply",
     "bind",
     "default_value",

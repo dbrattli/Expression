@@ -7,6 +7,7 @@ from expression import (
     Error,
     MailboxProcessor,
     Nothing,
+    Ok,
     Option,
     Result,
     Some,
@@ -14,6 +15,8 @@ from expression import (
     apipe,
     case,
     downcast,
+    option,
+    result,
     tag,
     try_downcast,
     upcast,
@@ -189,3 +192,21 @@ Block([1]).sum_by(str)  # type-error
 downcast(42, object())  # type-error
 try_downcast(42, object())  # type-error
 upcast(42, object())  # type-error
+
+
+# Async value operations require awaitable callbacks and bind container results.
+async def invalid_async_value_operations() -> None:
+    await Some(1).amap(str)  # type-error
+    await Ok(1).amap(str)  # type-error
+    await option.amap(str)(Some(1))  # type-error
+    await result.amap(str)(Ok(1))  # type-error
+    await Some(1).abind(numeric_stage)  # type-error
+    await Ok(1).abind(numeric_stage)  # type-error
+    await option.abind(numeric_stage)(Some(1))  # type-error
+    await result.abind(numeric_stage)(Ok(1))  # type-error
+    await Some("wrong").amap(numeric_stage)  # type-error
+    await Ok("wrong").amap(numeric_stage)  # type-error
+    await result.abind(integer_error)(Ok("wrong"))  # type-error
+
+
+wrong_core_async_bind: StringErrorBind = result.abind(integer_error)  # type-error
