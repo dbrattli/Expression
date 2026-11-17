@@ -5,6 +5,7 @@
 ```{eval-rst}
 .. automodule:: expression.core.option
     :members:
+    :imported-members:
 ```
 
 ## Async mapping and binding
