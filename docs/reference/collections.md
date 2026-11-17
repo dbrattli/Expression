@@ -94,6 +94,53 @@ When a fold's resolved result must feed another pipeline stage, use `apipe` to
 await it between stages. Operations without callbacks, such as `take`, `skip`,
 and `length`, do not need another variant.
 
+## Migrating fluent AsyncSeq transformations (breaking change)
+
+Fluent stream transformations now return `AsyncSeq` immediately. Constructing a
+pipeline does not consume the source or invoke its callbacks. Use `async for` to
+consume the stream, or await a terminal operation to compute a final result.
+
+Remove construction-time `await` from `map`, `filter`, `choose`, `collect`,
+`concat`, `take`, `skip`, and `tail`:
+
+```python
+# Before
+stream = await AsyncSeq.range(5).map(lambda value: value * 2)
+stream = await stream.take(3)
+
+# After
+stream = AsyncSeq.range(5).map(lambda value: value * 2).take(3)
+```
+
+`scan` already needed no construction-time `await`; it now returns `AsyncSeq`
+instead of a bare async iterable, allowing further fluent transformations.
+All nine transformations can chain directly with the async-callback operations
+introduced in #312. The `a` prefix means the callback is awaited during consumption.
+
+```python
+from expression.collections.asyncseq import AsyncSeq
+
+
+async def enrich(value: int) -> int:
+    return value * 10
+
+
+async def chained_total() -> int:
+    stream = (
+        AsyncSeq.range(5)
+        .map(lambda value: value + 1)
+        .amap(enrich)
+        .filter(lambda value: value > 20)
+        .take(2)
+    )
+    return await stream.sum()  # 70
+```
+
+Keep `await` for terminal operations: `fold`, `fold_back`, `afold`, `afold_back`,
+`head`, `length`, `sum`, `min`, and `max`. Their results require consuming the
+source. Existing module-level functions and async-callback operations retain
+their calling conventions.
+
 ## Additional modules
 
 ```{eval-rst}

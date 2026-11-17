@@ -39,19 +39,19 @@ def test_asyncseq_map(count: int):
 
     async def runner():
         nonlocal acc
-        xs = AsyncSeq.range(count)
+        xs = AsyncSeq.range(count).map(lambda value: value * 2)
         async for x in xs:
             acc += x
 
     asyncio.run(runner())
-    assert acc == sum(range(count))
+    assert acc == 2 * sum(range(count))
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("count", [0, 1, 3, 4])
 async def test_asyncseq_take_preserves_remaining_items(count: int):
     source = AsyncSeq.range(3)
-    taken = [value async for value in await source.take(count)]
+    taken = [value async for value in source.take(count)]
     remaining = [value async for value in source]
     assert taken == list(range(min(count, 3)))
     assert remaining == list(range(min(count, 3), 3))
@@ -65,7 +65,7 @@ async def test_asyncseq_take_does_not_request_another_item(count: int):
             yield value
         raise AssertionError("Requested an item beyond the take limit")
 
-    assert [value async for value in await AsyncSeq(source()).take(count)] == list(range(count))
+    assert [value async for value in AsyncSeq(source()).take(count)] == list(range(count))
 
 
 @pytest.mark.asyncio
@@ -400,3 +400,128 @@ async def test_async_operations_propagate_source_failure(operation: str):
 
     with pytest.raises(ValueError, match="source failed"):
         await _consume_callback_operation(operation, source(), callback)
+
+
+@pytest.mark.asyncio
+async def test_sync_transformations_chain_lazily_with_async_callbacks():
+    events: list[int] = []
+
+    async def source() -> AsyncIterator[int]:
+        for value in range(6):
+            events.append(value)
+            yield value
+
+    async def enrich(value: int) -> int:
+        return value * 10
+
+    stream = (
+        AsyncSeq(source())
+        .map(lambda value: value + 1)
+        .filter(lambda value: value % 2 == 0)
+        .choose(lambda value: Some(value) if value < 6 else NOTHING)
+        .collect(lambda value: AsyncSeq.range(value, value + 2))
+        .skip(1)
+        .tail()
+        .scan(lambda state, value: state + value, 0)
+        .amap(enrich)
+        .take(3)
+    )
+    assert_type(stream, AsyncSeq[int])
+    assert events == []
+    assert [value async for value in stream] == [0, 40, 90]
+    assert events == [0, 1, 2, 3]
+
+
+@pytest.mark.asyncio
+async def test_concat_returns_chainable_lazy_sequence():
+    events: list[str] = []
+
+    async def inner() -> AsyncIterator[int]:
+        events.append("inner")
+        yield 2
+        yield 3
+
+    async def outer() -> AsyncIterator[AsyncIterable[int]]:
+        events.append("outer")
+        yield AsyncSeq.empty()
+        yield inner()
+
+    stream = AsyncSeq(outer()).concat()
+    assert_type(stream, AsyncSeq[int])
+    assert events == []
+    assert await stream.map(lambda value: value * 2).sum() == 10
+    assert events == ["outer", "inner"]
+
+
+@pytest.mark.asyncio
+async def test_scan_initial_state_is_lazy_and_chainable():
+    async def source() -> AsyncIterator[int]:
+        raise AssertionError("Source must not be advanced")
+        yield 0
+
+    stream = AsyncSeq(source()).scan(lambda state, value: state + value, 42)
+    assert_type(stream, AsyncSeq[int])
+    assert await stream.take(1).head() == 42
+    assert [value async for value in AsyncSeq.range(0).scan(lambda state, value: state + value, 42)] == [42]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("count", [-1, 0, 2, 5])
+async def test_skip_and_tail_preserve_values(count: int):
+    stream = AsyncSeq.range(4).skip(count)
+    assert_type(stream, AsyncSeq[int])
+    assert [value async for value in stream] == list(range(4))[max(count, 0) :]
+    assert [value async for value in AsyncSeq.range(count).tail()] == list(range(count))[1:]
+
+
+@pytest.mark.asyncio
+async def test_fluent_sync_transformations_match_functional_api():
+    def mapper(value: int) -> int:
+        return value * 2
+
+    def predicate(value: int) -> bool:
+        return value % 3 != 0
+
+    def chooser(value: int) -> Option[int]:
+        return Some(value) if value < 7 else NOTHING
+
+    def mapping(value: int) -> AsyncIterable[int]:
+        return AsyncSeq.range(value, value + 2)
+
+    fluent = AsyncSeq.range(5).map(mapper).filter(predicate).choose(chooser).collect(mapping)
+    functional = pipe(
+        asyncseq.range(5),
+        asyncseq.map(mapper),
+        asyncseq.filter(predicate),
+        asyncseq.choose(chooser),
+        asyncseq.collect(mapping),
+    )
+    assert_type(fluent, AsyncSeq[int])
+    assert [value async for value in fluent] == [value async for value in functional]
+
+
+@pytest.mark.asyncio
+async def test_sync_mapper_failure_is_deferred_until_consumption():
+    def fail(value: int) -> int:
+        raise ValueError("mapper failed")
+
+    stream = AsyncSeq.range(1).map(fail).filter(lambda value: True)
+    with pytest.raises(ValueError, match="mapper failed"):
+        await stream.head()
+
+
+@pytest.mark.asyncio
+async def test_terminal_operations_remain_awaitable_after_transformations():
+    def source() -> AsyncSeq[int]:
+        return AsyncSeq.range(4).map(lambda value: value + 1)
+
+    assert await source().fold(lambda state, value: state + str(value), "") == "1234"
+    assert await source().fold_back(lambda value, state: state + str(value), "") == "4321"
+    assert await source().head() == 1
+    assert await source().length() == 4
+    assert await source().sum() == 10
+    assert await source().min() == 1
+    assert await source().max() == 4
+    assert await source().take(0).fold(lambda state, value: state + value, 42) == 42
+    with pytest.raises(ValueError, match="Sequence contains no elements"):
+        await source().take(0).head()
