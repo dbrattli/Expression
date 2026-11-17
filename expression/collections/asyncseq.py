@@ -1,6 +1,6 @@
 import builtins
 import itertools
-from collections.abc import AsyncIterable, AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Coroutine, Iterable
 from typing import Any, cast, overload
 
 from expression.core import Option, pipe
@@ -15,6 +15,42 @@ class AsyncSeq[TSource](AsyncIterable[TSource]):
         # Use the module-level `map` function defined later to transform the
         # underlying async iterable and wrap the result back into an AsyncSeq.
         return AsyncSeq(pipe(self._ai, map(mapper)))
+
+    def amap[TResult](self, mapper: Callable[[TSource], Awaitable[TResult]]) -> "AsyncSeq[TResult]":
+        """Lazily await the mapper for each item, sequentially and in source order.
+
+        Constructing the sequence requires no await. Exceptions and cancellation
+        propagate during iteration; returned collections remain individual items.
+        """
+        return AsyncSeq(amap(mapper)(self))
+
+    def afilter(self, predicate: Callable[[TSource], Awaitable[bool]]) -> "AsyncSeq[TSource]":
+        """Lazily keep items whose awaited predicate is true."""
+        return AsyncSeq(afilter(predicate)(self))
+
+    def achoose[TResult](self, chooser: Callable[[TSource], Awaitable[Option[TResult]]]) -> "AsyncSeq[TResult]":
+        """Lazily await the chooser and yield the values of present options."""
+        return AsyncSeq(achoose(chooser)(self))
+
+    def acollect[TResult](
+        self, mapping: Callable[[TSource], Awaitable[Iterable[TResult] | AsyncIterable[TResult]]]
+    ) -> "AsyncSeq[TResult]":
+        """Lazily await each mapping and flatten its ordinary or async iterable."""
+        return AsyncSeq(acollect(mapping)(self))
+
+    async def afold[TState](self, folder: Callable[[TState, TSource], Awaitable[TState]], state: TState) -> TState:
+        """Consume the sequence, awaiting each accumulator update in order."""
+        return await afold(folder, state)(self)
+
+    async def afold_back[TState](self, folder: Callable[[TSource, TState], Awaitable[TState]], state: TState) -> TState:
+        """Buffer the sequence, then await accumulator updates in reverse order."""
+        return await afold_back(folder, state)(self)
+
+    def ascan[TState](
+        self, scanner: Callable[[TState, TSource], Awaitable[TState]], state: TState
+    ) -> "AsyncSeq[TState]":
+        """Lazily yield the initial state and each awaited accumulator update."""
+        return AsyncSeq(ascan(scanner, state)(self))
 
     @classmethod
     def empty(cls) -> "AsyncSeq[Any]":
@@ -289,6 +325,25 @@ def map[TSource, TResult](
     return _map
 
 
+def amap[TSource, TResult](
+    mapper: Callable[[TSource], Awaitable[TResult]],
+) -> Callable[[Iterable[TSource] | AsyncIterable[TSource]], AsyncIterable[TResult]]:
+    """Map an ordinary or async iterable with an awaitable-returning callback.
+
+    The returned async iterable is lazy: each requested item awaits one mapper
+    call before advancing the source. Results preserve source order and are not
+    flattened. No tasks are scheduled, and exceptions and cancellation propagate.
+    Use ordinary ``pipe`` to compose this transformation; consume it with
+    ``async for``. Sources implementing both protocols use async iteration.
+    """
+
+    async def _amap(source: Iterable[TSource] | AsyncIterable[TSource]) -> AsyncIterator[TResult]:
+        async for value in _iterate(source):
+            yield await mapper(value)
+
+    return _amap
+
+
 def choose[TSource, TResult](
     chooser: Callable[[TSource], Option[TResult]],
 ) -> Callable[[AsyncIterable[TSource]], AsyncIterable[TResult]]:
@@ -314,3 +369,122 @@ def collect[TSource, TResult](
                 yield item
 
     return _collect
+
+
+async def _iterate[TSource](source: Iterable[TSource] | AsyncIterable[TSource]) -> AsyncIterator[TSource]:
+    if isinstance(source, AsyncIterable):
+        async for value in source:
+            yield value
+    else:
+        for value in source:
+            yield value
+
+
+def afilter[TSource](
+    predicate: Callable[[TSource], Awaitable[bool]],
+) -> Callable[[Iterable[TSource] | AsyncIterable[TSource]], AsyncIterable[TSource]]:
+    """Lazily await a predicate for each item, yielding only matching items.
+
+    Accept ordinary or async iterables. Callbacks run sequentially in source
+    order; exceptions and cancellation propagate during iteration.
+    """
+
+    async def _afilter(source: Iterable[TSource] | AsyncIterable[TSource]) -> AsyncIterator[TSource]:
+        async for value in _iterate(source):
+            if await predicate(value):
+                yield value
+
+    return _afilter
+
+
+def achoose[TSource, TResult](
+    chooser: Callable[[TSource], Awaitable[Option[TResult]]],
+) -> Callable[[Iterable[TSource] | AsyncIterable[TSource]], AsyncIterable[TResult]]:
+    """Lazily await a chooser and yield present values, skipping Nothing.
+
+    Accept ordinary or async iterables. Callbacks run sequentially in source
+    order; exceptions and cancellation propagate during iteration.
+    """
+
+    async def _achoose(source: Iterable[TSource] | AsyncIterable[TSource]) -> AsyncIterator[TResult]:
+        async for value in _iterate(source):
+            result = await chooser(value)
+            if not result.is_none():
+                yield result.value
+
+    return _achoose
+
+
+def acollect[TSource, TResult](
+    mapping: Callable[[TSource], Awaitable[Iterable[TResult] | AsyncIterable[TResult]]],
+) -> Callable[[Iterable[TSource] | AsyncIterable[TSource]], AsyncIterable[TResult]]:
+    """Lazily await each mapping and flatten its ordinary or async iterable.
+
+    Accept ordinary or async sources. Consume each inner iterable before advancing
+    the source. Exceptions and cancellation propagate. For callbacks returning
+    async iterables directly, without an awaitable wrapper, use ``collect``.
+    """
+
+    async def _acollect(source: Iterable[TSource] | AsyncIterable[TSource]) -> AsyncIterator[TResult]:
+        async for value in _iterate(source):
+            async for item in _iterate(await mapping(value)):
+                yield item
+
+    return _acollect
+
+
+def afold[TSource, TState](
+    folder: Callable[[TState, TSource], Awaitable[TState]], state: TState
+) -> Callable[[Iterable[TSource] | AsyncIterable[TSource]], Coroutine[Any, Any, TState]]:
+    """Consume an ordinary or async iterable, awaiting each accumulator update.
+
+    Return the initial state for empty input. Run callbacks sequentially in source
+    order, propagating exceptions and cancellation. Await the resulting coroutine.
+    """
+
+    async def _afold(source: Iterable[TSource] | AsyncIterable[TSource]) -> TState:
+        result = state
+        async for value in _iterate(source):
+            result = await folder(result, value)
+        return result
+
+    return _afold
+
+
+def afold_back[TSource, TState](
+    folder: Callable[[TSource, TState], Awaitable[TState]], state: TState
+) -> Callable[[Iterable[TSource] | AsyncIterable[TSource]], Coroutine[Any, Any, TState]]:
+    """Buffer a finite ordinary or async iterable, then fold in reverse order.
+
+    Await callbacks sequentially with item before state. Empty input returns the
+    initial state. Exceptions and cancellation propagate. Memory use is linear in
+    source length; await the resulting coroutine.
+    """
+
+    async def _afold_back(source: Iterable[TSource] | AsyncIterable[TSource]) -> TState:
+        items = [value async for value in _iterate(source)]
+        result = state
+        for value in reversed(items):
+            result = await folder(value, result)
+        return result
+
+    return _afold_back
+
+
+def ascan[TSource, TState](
+    scanner: Callable[[TState, TSource], Awaitable[TState]], state: TState
+) -> Callable[[Iterable[TSource] | AsyncIterable[TSource]], AsyncIterable[TState]]:
+    """Lazily yield the initial state and each awaited accumulator update.
+
+    Accept ordinary or async iterables. Yield the initial state without touching
+    the source. Callbacks run sequentially; exceptions and cancellation propagate.
+    """
+
+    async def _ascan(source: Iterable[TSource] | AsyncIterable[TSource]) -> AsyncIterator[TState]:
+        result = state
+        yield result
+        async for value in _iterate(source):
+            result = await scanner(result, value)
+            yield result
+
+    return _ascan
