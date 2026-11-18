@@ -271,31 +271,6 @@ from ._result_sync import (  # noqa: E402
 )
 
 
-# Runtime-only aliases for callable stages pickled before helper extraction.
-if not TYPE_CHECKING:
-    from ._result_async import (  # noqa: F401
-        _AsyncBind,
-        _AsyncMap,
-    )
-    from ._result_sync import (  # noqa: F401
-        _ApplyError,
-        _ApplyOk,
-        _Bind,
-        _DefaultValue,
-        _DefaultWith,
-        _Filter,
-        _FilterWith,
-        _Map,
-        _Map2,
-        _Map2Error,
-        _Map2Ok,
-        _MapError,
-        _OrElse,
-        _OrElseWith,
-        _ResultOperation,
-    )
-
-
 __all__ = [
     "Error",
     "Ok",

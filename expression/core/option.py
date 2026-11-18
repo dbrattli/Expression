@@ -310,18 +310,6 @@ from ._option_sync import (  # noqa: E402
 )
 
 
-# Runtime-only aliases for callable stages pickled before helper extraction.
-if not TYPE_CHECKING:
-    from ._option_async import (  # noqa: F401
-        _AsyncBind,
-        _AsyncMap,
-    )
-    from ._option_sync import (  # noqa: F401
-        _DefaultValue,
-        _DefaultWith,
-    )
-
-
 __all__ = [
     "NOTHING",
     "Nothing",

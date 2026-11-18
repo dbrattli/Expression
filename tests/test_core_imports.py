@@ -60,32 +60,3 @@ asyncio.run(check())
 '''
     completed = subprocess.run([sys.executable, "-c", script, first_import], capture_output=True, text=True, timeout=30)
     assert completed.returncode == 0, completed.stdout + completed.stderr
-
-
-def test_callable_stages_unpickle_from_original_public_modules():
-    import asyncio
-    import pickle
-
-    from expression import NOTHING, Ok, Some
-
-    # Protocol-0 fixtures produced before the extraction, including class paths.
-    fallback = pickle.loads(
-        b'ccopy_reg\n_reconstructor\np0\n(cexpression.core.option\n_DefaultValue\np1\n'
-        b'c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nV_value\np6\nI7\nsb.'
-    )
-    mapping = pickle.loads(
-        b'ccopy_reg\n_reconstructor\np0\n(cexpression.core.result\n_Map\np1\n'
-        b'c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nV_mapper\np6\nc__builtin__\nunicode\np7\nsb.'
-    )
-    async_mapping = pickle.loads(
-        b'ccopy_reg\n_reconstructor\np0\n(cexpression.core.option\n_AsyncMap\np1\n'
-        b'c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nV_mapper\np6\ncexpression.core.aiotools\nsingleton\np7\nsb.'
-    )
-    async_binding = pickle.loads(
-        b'ccopy_reg\n_reconstructor\np0\n(cexpression.core.result\n_AsyncBind\np1\n'
-        b'c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nV_mapper\np6\ncexpression.core.aiotools\nsingleton\np7\nsb.'
-    )
-    assert fallback(NOTHING) == 7
-    assert mapping(Ok(1)) == Ok("1")
-    assert asyncio.run(async_mapping(Some(1))) == Some(1)
-    assert asyncio.run(async_binding(Ok(Ok(1)))) == Ok(1)
