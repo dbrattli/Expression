@@ -14,11 +14,8 @@ from typing import (
     Generic,
     Literal,
     Never,
-    Protocol,
     TypeAlias,
-    TypeGuard,
     final,
-    overload,
 )
 
 from typing_extensions import TypeVar
@@ -31,7 +28,7 @@ from .tagged_union import TaggedUnion, case, tag
 
 
 if TYPE_CHECKING:
-    from .option import Option, Some
+    from .option import Some
 
 
 if TYPE_CHECKING:
@@ -43,7 +40,6 @@ else:
     _T = TypeVar("_T", covariant=True)
     _E = TypeVar("_E", covariant=True)
 _A = TypeVar("_A", default=object)
-_B = TypeVar("_B", default=object)
 _U = TypeVar("_U", default=Never)
 _F = TypeVar("_F", default=Never)
 _R = TypeVar("_R", bound="Ok[object] | Error[object]", default=Never)
@@ -246,402 +242,33 @@ class Error(PipeMixin, Generic[_E]):  # noqa: UP046 - Python 3.12 cannot express
 Result: TypeAlias = TaggedUnion[Ok[_T] | Error[_E]]  # noqa: UP040
 
 
-# Case-specific callable overloads preserve the untouched channel when a pipe
-# dispatches over a union. A generic closure instead leaks unsolved type variables.
-class _AsyncMap(Generic[_A, _U]):
-    def __init__(self, mapper: Callable[[_A], Awaitable[_U]]) -> None:
-        self._mapper = mapper
-
-    @overload
-    async def __call__(self, source: Ok[_A]) -> Ok[_U]: ...
-
-    @overload
-    async def __call__(self, source: Error[_F]) -> Error[_F]: ...
-
-    @overload
-    async def __call__(self, source: Result[_A, _F]) -> Result[_U, _F]: ...
-
-    async def __call__(self, source: Result[_A, _F]) -> Result[_U, _F]:
-        return await source.amap(self._mapper)
-
-
-def amap(mapper: Callable[[_A], Awaitable[_U]]) -> _AsyncMap[_A, _U]:
-    """Create an async mapping stage for pipe or apipe.
-
-    Await the returned stage's coroutine to map Ok, preserving Error without
-    invoking the callback. Exceptions and cancellation propagate.
-    """
-    return _AsyncMap(mapper)
-
-
-class _AsyncBind(Generic[_A, _R]):
-    def __init__(self, mapper: Callable[[_A], Awaitable[_R]]) -> None:
-        self._mapper = mapper
-
-    @overload
-    async def __call__(self, source: Ok[_A]) -> _R: ...
-
-    @overload
-    async def __call__(self, source: Error[_F]) -> Error[_F]: ...
-
-    @overload
-    async def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]: ...
-
-    async def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]:
-        return await source.abind(self._mapper)
-
-
-def abind(mapper: Callable[[_A], Awaitable[_R]]) -> _AsyncBind[_A, _R]:
-    """Create an async binding stage that retains both possible error channels.
-
-    Await the stage's coroutine to bind Ok, preserving Error without invoking the
-    callback. Exceptions and cancellation propagate.
-    """
-    return _AsyncBind(mapper)
-
-
-class _DefaultValue(Generic[_U]):
-    def __init__(self, value: _U) -> None:
-        self._value = value
-
-    @overload
-    def __call__(self, source: Ok[_A]) -> _A: ...
-
-    @overload
-    def __call__(self, source: Error[object]) -> _U: ...
-
-    def __call__(self, source: Result[_A, object]) -> _A | _U:
-        return source.default_value(self._value)
-
-
-def default_value(value: _U) -> _DefaultValue[_U]:
-    """Return an operation selecting the value or a fallback."""
-    return _DefaultValue(value)
-
-
-class _DefaultWith(Generic[_A, _U]):
-    def __init__(self, getter: Callable[[_A], _U]) -> None:
-        self._getter = getter
-
-    @overload
-    def __call__(self, source: Ok[_B]) -> _B: ...
-
-    @overload
-    def __call__(self, source: Error[_A]) -> _U: ...
-
-    def __call__(self, source: Result[_B, _A]) -> _B | _U:
-        return source.default_with(self._getter)
-
-
-def default_with(getter: Callable[[_A], _U]) -> _DefaultWith[_A, _U]:
-    """Return an operation selecting the value or computing a fallback."""
-    return _DefaultWith(getter)
-
-
-class _Map(Generic[_A, _U]):
-    def __init__(self, mapper: Callable[[_A], _U]) -> None:
-        self._mapper = mapper
-
-    @overload
-    def __call__(self, source: Ok[_A]) -> Ok[_U]: ...
-
-    @overload
-    def __call__(self, source: Error[_F]) -> Error[_F]: ...
-
-    def __call__(self, source: Result[_A, _F]) -> Result[_U, _F]:
-        return source.map(self._mapper)
-
-
-def map(mapper: Callable[[_A], _U]) -> _Map[_A, _U]:
-    return _Map(mapper)
-
-
-class _ResultOperation[Input, Output, Failure](Protocol):
-    @overload
-    def __call__(self, source: Ok[Input], /) -> Result[Output, Failure]: ...
-
-    @overload
-    def __call__(self, source: Error[_E], /) -> Error[_E] | Error[Failure]: ...
-
-
-class _Map2Ok(_ResultOperation[_B, _U, Never], Generic[_A, _B, _U]):
-    def __init__(self, value: _A, mapper: Callable[[_A, _B], _U]) -> None:
-        self._value = value
-        self._mapper = mapper
-
-    @overload
-    def __call__(self, other: Ok[_B]) -> Ok[_U]: ...
-
-    @overload
-    def __call__(self, other: Error[_F]) -> Error[_F]: ...
-
-    def __call__(self, other: Result[_B, _F]) -> Result[_U, _F]:
-        return other.map(lambda value: self._mapper(self._value, value))
-
-
-class _Map2Error(_ResultOperation[object, Never, _E], Generic[_E]):  # noqa: UP046 - Python 3.12 cannot express type parameter defaults.
-    def __init__(self, source: Error[_E]) -> None:
-        self._source = source
-
-    def __call__(self, other: Result[object, object]) -> Error[_E]:
-        return self._source
-
-
-class _Map2(Generic[_A, _B, _U]):
-    def __init__(self, mapper: Callable[[_A, _B], _U]) -> None:
-        self._mapper = mapper
-
-    @overload
-    def __call__(self, source: Ok[_A]) -> _Map2Ok[_A, _B, _U]: ...
-
-    @overload
-    def __call__(self, source: Error[_E]) -> _Map2Error[_E]: ...
-
-    @overload
-    def __call__(self, source: Result[_A, _E]) -> _ResultOperation[_B, _U, _E]: ...
-
-    def __call__(self, source: Result[_A, _E]) -> _ResultOperation[_B, _U, _E]:
-        match source:
-            case Ok(value):
-                return _Map2Ok(value, self._mapper)
-            case Error():
-                return _Map2Error(source)
-
-
-def map2(mapper: Callable[[_A, _B], _U]) -> _Map2[_A, _B, _U]:
-    """Map two results in source order, preserving the first error."""
-    return _Map2(mapper)
-
-
-class _ApplyOk(_ResultOperation[_A, _U, Never], Generic[_A, _U]):
-    def __init__(self, mapper: Callable[[_A], _U]) -> None:
-        self._mapper = mapper
-
-    @overload
-    def __call__(self, source: Ok[_A]) -> Ok[_U]: ...
-
-    @overload
-    def __call__(self, source: Error[_E]) -> Error[_E]: ...
-
-    def __call__(self, source: Result[_A, _E]) -> Result[_U, _E]:
-        return source.map(self._mapper)
-
-
-class _ApplyError(_ResultOperation[object, Never, _F], Generic[_F]):
-    def __init__(self, error: Error[_F]) -> None:
-        self._error = error
-
-    def __call__(self, source: Result[object, object]) -> Error[_F]:
-        return self._error
-
-
-@overload
-def apply(function: Ok[Callable[[_A], _U]]) -> _ApplyOk[_A, _U]: ...
-
-
-@overload
-def apply(function: Error[_F]) -> _ApplyError[_F]: ...
-
-
-@overload
-def apply(function: Result[Callable[[_A], _U], _F]) -> _ResultOperation[_A, _U, _F]: ...
-
-
-def apply(function: Result[Callable[[_A], _U], _F]) -> _ResultOperation[_A, _U, _F]:
-    """Apply a function result, preferring its error when both inputs fail."""
-    match function:
-        case Ok(mapper):
-            return _ApplyOk(mapper)
-        case Error():
-            return _ApplyError(function)
-
-
-class _MapError(Generic[_A, _U]):
-    def __init__(self, mapper: Callable[[_A], _U]) -> None:
-        self._mapper = mapper
-
-    @overload
-    def __call__(self, source: Ok[_B]) -> Ok[_B]: ...
-
-    @overload
-    def __call__(self, source: Error[_A]) -> Error[_U]: ...
-
-    def __call__(self, source: Result[_B, _A]) -> Result[_B, _U]:
-        return source.map_error(self._mapper)
-
-
-def map_error(mapper: Callable[[_A], _U]) -> _MapError[_A, _U]:
-    return _MapError(mapper)
-
-
-class _Bind(Generic[_A, _R]):
-    def __init__(self, mapper: Callable[[_A], _R]) -> None:
-        self._mapper = mapper
-
-    @overload
-    def __call__(self, source: Ok[_A]) -> _R: ...
-
-    @overload
-    def __call__(self, source: Error[_F]) -> Error[_F]: ...
-
-    @overload
-    def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]: ...
-
-    def __call__(self, source: Result[_A, _F]) -> _R | Error[_F]:
-        return source.bind(self._mapper)
-
-
-def bind(mapper: Callable[[_A], _R]) -> _Bind[_A, _R]:
-    """Bind a result while retaining both possible error channels."""
-    return _Bind(mapper)
-
-
-def dict(source: Result[object, object]) -> builtins.dict[str, object]:
-    return source.dict()
-
-
-def is_ok(source: Result[_A, object]) -> TypeGuard[Ok[_A]]:
-    """Narrow a result to its successful case."""
-    return isinstance(source, Ok)
-
-
-def is_error(source: Result[object, _F]) -> TypeGuard[Error[_F]]:
-    """Narrow a result to its error case."""
-    return isinstance(source, Error)
-
-
-class _Filter(Generic[_A, _F]):
-    def __init__(self, predicate: Callable[[_A], bool], default: _F) -> None:
-        self._predicate = predicate
-        self._default = default
-
-    @overload
-    def __call__(self, source: Ok[_A]) -> Result[_A, _F]: ...
-
-    @overload
-    def __call__(self, source: Error[_E]) -> Error[_E]: ...
-
-    def __call__(self, source: Result[_A, _E]) -> Result[_A, _F | _E]:
-        return source.filter(self._predicate, self._default)
-
-
-def filter(predicate: Callable[[_A], bool], default: _F) -> _Filter[_A, _F]:
-    return _Filter(predicate, default)
-
-
-class _FilterWith(Generic[_A, _F]):
-    def __init__(self, predicate: Callable[[_A], bool], default: Callable[[_A], _F]) -> None:
-        self._predicate = predicate
-        self._default = default
-
-    @overload
-    def __call__(self, source: Ok[_A]) -> Result[_A, _F]: ...
-
-    @overload
-    def __call__(self, source: Error[_E]) -> Error[_E]: ...
-
-    def __call__(self, source: Result[_A, _E]) -> Result[_A, _F | _E]:
-        return source.filter_with(self._predicate, self._default)
-
-
-def filter_with(predicate: Callable[[_A], bool], default: Callable[[_A], _F]) -> _FilterWith[_A, _F]:
-    return _FilterWith(predicate, default)
-
-
-@overload
-def swap(source: Ok[_A]) -> Error[_A]: ...
-
-
-@overload
-def swap(source: Error[_F]) -> Ok[_F]: ...
-
-
-def swap(source: Result[_A, _F]) -> Result[_F, _A]:
-    return source.swap()
-
-
-class _OrElse(Generic[_R]):
-    def __init__(self, other: _R) -> None:
-        self._other = other
-
-    @overload
-    def __call__(self, source: Ok[_A]) -> Ok[_A]: ...
-
-    @overload
-    def __call__(self, source: Error[object]) -> _R: ...
-
-    def __call__(self, source: Result[_A, object]) -> Ok[_A] | _R:
-        return source.or_else(self._other)
-
-
-def or_else(other: _R) -> _OrElse[_R]:
-    return _OrElse(other)
-
-
-class _OrElseWith(Generic[_A, _R]):
-    def __init__(self, other: Callable[[_A], _R]) -> None:
-        self._other = other
-
-    @overload
-    def __call__(self, source: Ok[_B]) -> Ok[_B]: ...
-
-    @overload
-    def __call__(self, source: Error[_A]) -> _R: ...
-
-    def __call__(self, source: Result[_B, _A]) -> Ok[_B] | _R:
-        return source.or_else_with(self._other)
-
-
-def or_else_with(other: Callable[[_A], _R]) -> _OrElseWith[_A, _R]:
-    return _OrElseWith(other)
-
-
-@overload
-def merge(source: Ok[_A]) -> _A: ...
-
-
-@overload
-def merge(source: Error[_B]) -> _B: ...
-
-
-def merge(source: Result[_A, _B]) -> _A | _B:
-    return source.merge()
-
-
-@overload
-def to_option(source: Ok[_A]) -> Some[_A]: ...
-
-
-@overload
-def to_option(source: Error[object]) -> Nothing: ...
-
-
-def to_option(source: Result[_A, object]) -> Option[_A]:
-    return source.to_option()
-
-
-@overload
-def of_option(value: Some[_A], error: object) -> Ok[_A]: ...
-
-
-@overload
-def of_option(value: Nothing, error: _F) -> Error[_F]: ...
-
-
-def of_option(value: Option[_A], error: _F) -> Result[_A, _F]:
-    return value.to_result(error)
-
-
-@overload
-def of_option_with(value: Some[_A], error: Callable[[], object]) -> Ok[_A]: ...
-
-
-@overload
-def of_option_with(value: Nothing, error: Callable[[], _F]) -> Error[_F]: ...
-
-
-def of_option_with(value: Option[_A], error: Callable[[], _F]) -> Result[_A, _F]:
-    return value.to_result_with(error)
+# Load functional helpers only after the cases and runtime alias exist.
+# Helpers import these definitions; this order avoids partial types at startup.
+from ._result_async import (  # noqa: E402
+    abind,
+    amap,
+)
+from ._result_sync import (  # noqa: E402
+    apply,
+    bind,
+    default_value,
+    default_with,
+    dict,
+    filter,
+    filter_with,
+    is_error,
+    is_ok,
+    map,
+    map2,
+    map_error,
+    merge,
+    of_option,
+    of_option_with,
+    or_else,
+    or_else_with,
+    swap,
+    to_option,
+)
 
 
 __all__ = [

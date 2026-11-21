@@ -18,17 +18,14 @@ from typing import (
     Literal,
     Never,
     TypeAlias,
-    TypeGuard,
     Unpack,
     final,
-    overload,
 )
 
 from typing_extensions import TypeVar
 
 from ._serialization import encode
 from ._union_schema import UnionSchema
-from .curry import curry_flip
 from .error import EffectError
 from .pipe import PipeMixin
 from .tagged_union import case, tag
@@ -36,7 +33,7 @@ from .tagged_union import case, tag
 
 if TYPE_CHECKING:
     from expression.collections.seq import Seq
-    from expression.core.result import Error, Ok, Result
+    from expression.core.result import Error, Ok
 
 
 _TSourceOut = TypeVar("_TSourceOut", covariant=True)
@@ -283,256 +280,34 @@ NOTHING: Final = Nothing()
 Option: TypeAlias = Annotated[Some[_TSourceOut] | Nothing, UnionSchema(canonical_values=(NOTHING,))]  # noqa: UP040
 
 
-def bind[TOption: Some[object] | Nothing, TSource](
-    mapper: Callable[[TSource], TOption],
-) -> Callable[[Option[TSource]], TOption | Nothing]:
-    """Apply an option-returning function to a present value."""
-
-    def apply(source: Option[TSource]) -> TOption | Nothing:
-        return source.bind(mapper)
-
-    return apply
-
-
-class _AsyncMap[TSource, TResult]:
-    def __init__(self, mapper: Callable[[TSource], Awaitable[TResult]]) -> None:
-        self._mapper = mapper
-
-    @overload
-    async def __call__(self, source: Some[TSource]) -> Some[TResult]: ...
-
-    @overload
-    async def __call__(self, source: Nothing) -> Nothing: ...
-
-    @overload
-    async def __call__(self, source: Option[TSource]) -> Option[TResult]: ...
-
-    async def __call__(self, source: Option[TSource]) -> Option[TResult]:
-        return await source.amap(self._mapper)
-
-
-def amap[TSource, TResult](mapper: Callable[[TSource], Awaitable[TResult]]) -> _AsyncMap[TSource, TResult]:
-    """Create an async mapping stage for pipe or apipe.
-
-    Await the returned stage's coroutine to map Some, preserving Nothing without
-    invoking the callback. Exceptions and cancellation propagate.
-    """
-    return _AsyncMap(mapper)
-
-
-class _AsyncBind[TSource, TOption: Some[object] | Nothing]:
-    def __init__(self, mapper: Callable[[TSource], Awaitable[TOption]]) -> None:
-        self._mapper = mapper
-
-    @overload
-    async def __call__(self, source: Some[TSource]) -> TOption: ...
-
-    @overload
-    async def __call__(self, source: Nothing) -> Nothing: ...
-
-    @overload
-    async def __call__(self, source: Option[TSource]) -> TOption | Nothing: ...
-
-    async def __call__(self, source: Option[TSource]) -> TOption | Nothing:
-        return await source.abind(self._mapper)
-
-
-def abind[TSource, TOption: Some[object] | Nothing](
-    mapper: Callable[[TSource], Awaitable[TOption]],
-) -> _AsyncBind[TSource, TOption]:
-    """Create an async binding stage, preserving Nothing without invoking the callback.
-
-    Await the stage's coroutine to obtain the callback's option directly.
-    Exceptions and cancellation propagate.
-    """
-    return _AsyncBind(mapper)
-
-
-class _DefaultValue[T1]:
-    def __init__(self, value: T1) -> None:
-        self._value = value
-
-    @overload
-    def __call__[TSource](self, source: Some[TSource]) -> TSource: ...
-
-    @overload
-    def __call__(self, source: Nothing) -> T1: ...
-
-    def __call__[TSource](self, source: Option[TSource]) -> TSource | T1:
-        return source.default_value(self._value)
-
-
-def default_value[T1](value: T1) -> _DefaultValue[T1]:
-    """Return an operation selecting the payload or a fallback value."""
-    return _DefaultValue(value)
-
-
-class _DefaultWith[T1]:
-    def __init__(self, getter: Callable[[], T1]) -> None:
-        self._getter = getter
-
-    @overload
-    def __call__[TSource](self, source: Some[TSource]) -> TSource: ...
-
-    @overload
-    def __call__(self, source: Nothing) -> T1: ...
-
-    def __call__[TSource](self, source: Option[TSource]) -> TSource | T1:
-        return source.default_with(self._getter)
-
-
-def default_with[T1](getter: Callable[[], T1]) -> _DefaultWith[T1]:
-    """Return an operation selecting the payload or evaluating a fallback."""
-    return _DefaultWith(getter)
-
-
-def is_none(option: Option[object]) -> TypeGuard[Nothing]:
-    """Narrow an option to its empty case."""
-    return isinstance(option, Nothing)
-
-
-def is_some[TSource](option: Option[TSource]) -> TypeGuard[Some[TSource]]:
-    """Narrow an option to its present case."""
-    return isinstance(option, Some)
-
-
-@curry_flip(1)
-def map[TSource, TResult](option: Option[TSource], mapper: Callable[[TSource], TResult]) -> Option[TResult]:
-    return option.map(mapper)
-
-
-@curry_flip(2)
-def map2[T1, T2, TResult](opt1: Option[T1], opt2: Option[T2], mapper: Callable[[T1, T2], TResult]) -> Option[TResult]:
-    return opt1.map2(mapper, opt2)
-
-
-@overload
-def apply(function: Nothing) -> Callable[[Option[object]], Nothing]: ...
-
-
-@overload
-def apply[TSource, TResult](
-    function: Option[Callable[[TSource], TResult]],
-) -> Callable[[Option[TSource]], Option[TResult]]: ...
-
-
-def apply[TSource, TResult](
-    function: Option[Callable[[TSource], TResult]],
-) -> Callable[[Option[TSource]], Option[TResult]]:
-    """Apply an optional function to an optional value."""
-
-    def apply(source: Option[TSource]) -> Option[TResult]:
-        return source.apply(function)
-
-    return apply
-
-
-@curry_flip(1)
-def starmap[*P, TResult](option: Option[tuple[*P]], mapper: Callable[[Unpack[P]], TResult]) -> Option[TResult]:
-    return option.starmap(mapper)
-
-
-def or_else[TSource, TResult](option: Option[TSource], if_none: Option[TResult]) -> Option[TSource | TResult]:
-    """Return the first present option, allowing a different fallback type."""
-    return option.or_else(if_none)
-
-
-def to_list(option: Option[_TEmpty]) -> list[_TEmpty]:
-    return option.to_list()
-
-
-def to_seq(option: Option[_TEmpty]) -> Seq[_TEmpty]:
-    from expression.collections.seq import Seq
-
-    return Seq(option.to_list())
-
-
-@overload
-def to_optional[TSource](value: Some[TSource]) -> TSource: ...
-
-
-@overload
-def to_optional(value: Nothing) -> None: ...
-
-
-def to_optional[TSource](value: Option[TSource]) -> TSource | None:
-    """Erase the option wrapper, mapping Nothing to None."""
-    return value.to_optional()
-
-
-@overload
-def of_optional(value: None) -> Nothing: ...
-
-
-@overload
-def of_optional[TSource](value: TSource | None) -> Option[TSource]: ...
-
-
-def of_optional[TSource](value: TSource | None) -> Option[TSource]:
-    """Wrap a value, treating None as absence."""
-    return NOTHING if value is None else Some(value)
-
-
-@overload
-def of_obj(value: None) -> Nothing: ...
-
-
-@overload
-def of_obj[TSource](value: TSource | None) -> Option[TSource]: ...
-
-
-def of_obj[TSource](value: TSource | None) -> Option[TSource]:
-    """Wrap a value, treating None as absence."""
-    return of_optional(value)
-
-
-@overload
-def of_result[TSource](result: Ok[TSource]) -> Some[TSource]: ...
-
-
-@overload
-def of_result(result: Error[object]) -> Nothing: ...
-
-
-def of_result[TSource](result: Result[TSource, object]) -> Option[TSource]:
-    """Keep the successful result payload, or return Nothing."""
-    from expression.core.result import Ok
-
-    return Some(result.ok) if isinstance(result, Ok) else NOTHING
-
-
-@overload
-def to_result[TSource](value: Some[TSource], error: object) -> Ok[TSource]: ...
-
-
-@overload
-def to_result[TError](value: Nothing, error: TError) -> Error[TError]: ...
-
-
-def to_result[TSource, TError](value: Option[TSource], error: TError) -> Result[TSource, TError]:
-    return value.to_result(error)
-
-
-@overload
-def to_result_with[TSource](value: Some[TSource], error: Callable[[], object]) -> Ok[TSource]: ...
-
-
-@overload
-def to_result_with[TError](value: Nothing, error: Callable[[], TError]) -> Error[TError]: ...
-
-
-def to_result_with[TSource, TError](value: Option[TSource], error: Callable[[], TError]) -> Result[TSource, TError]:
-    return value.to_result_with(error)
-
-
-def model_dump(value: Option[object]) -> builtins.dict[str, object]:
-    """Encode an option using its tagged wire representation."""
-    return value.dict()
-
-
-def default_arg[TSource, T1](value: Option[TSource], default_value: T1) -> TSource | T1:
-    """Return the payload or an uncurried fallback value."""
-    return value.default_value(default_value)
+# Load functional helpers only after the cases and runtime alias exist.
+# Helpers import these definitions; this order avoids partial types at startup.
+from ._option_async import (  # noqa: E402
+    abind,
+    amap,
+)
+from ._option_sync import (  # noqa: E402
+    apply,
+    bind,
+    default_arg,
+    default_value,
+    default_with,
+    is_none,
+    is_some,
+    map,
+    map2,
+    model_dump,
+    of_obj,
+    of_optional,
+    of_result,
+    or_else,
+    starmap,
+    to_list,
+    to_optional,
+    to_result,
+    to_result_with,
+    to_seq,
+)
 
 
 __all__ = [
